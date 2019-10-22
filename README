@@ -9,7 +9,7 @@ wrapper                 - wrappers for supported guest OS/environment. (DOS/Wind
 00-qemu410-3dfx.patch   - Patch for QEMU version 4.xx
 00-qemu311-3dfx.patch   - Patch for QEMU version 3.xx
 99-3dfx.patch           - Patch for QEMU version 1.6.x to 2.12.1 (deprecated)
-99-oldqemu.patch        - Addition patch for QEMU version <= 2.10 (deprecated)
+99-oldqemu.patch        - Addition patch for QEMU version < 2.10 (deprecated)
 
 Simple guide to apply the patch:
 
