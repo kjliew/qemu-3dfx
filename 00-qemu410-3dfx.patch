@@ -1,0 +1,210 @@
+diff -ru ../qemu-4.1.0/configure ./configure
+--- ../qemu-4.1.0/configure	2019-08-15 12:01:42.000000000 -0700
++++ ./configure	2019-08-20 01:18:53.829240757 -0700
+@@ -871,6 +871,8 @@
+   # won't work when we're compiling with gcc as a C compiler.
+   QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
+   HOST_VARIANT_DIR="darwin"
++# For 3Dfx Glide pass-through ##
++  LIBS="-ldl $LIBS"
+   supported_os="yes"
+ ;;
+ SunOS)
+@@ -903,6 +905,8 @@
+   linux_user="yes"
+   kvm="yes"
+   QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$PWD/linux-headers $QEMU_INCLUDES"
++# For 3Dfx Glide pass-through ##
++  LIBS="-ldl $LIBS"
+   supported_os="yes"
+   libudev="yes"
+ ;;
+Only in ./hw: 3dfx
+diff -ru ../qemu-4.1.0/hw/i386/pc.c ./hw/i386/pc.c
+--- ../qemu-4.1.0/hw/i386/pc.c	2019-08-15 12:01:42.000000000 -0700
++++ ./hw/i386/pc.c	2019-08-20 01:18:53.829240757 -0700
+@@ -2155,6 +2155,16 @@
+     for (i = 0; i < IOAPIC_NUM_PINS; i++) {
+         gsi_state->ioapic_irq[i] = qdev_get_gpio_in(dev, i);
+     }
++    glidept_mm_init();
++}
++
++void glidept_mm_init(void)
++{
++    DeviceState *glidept_dev = NULL;
++
++    glidept_dev = qdev_create(NULL, TYPE_GLIDEPT);
++    qdev_init_nofail(glidept_dev);
++    sysbus_mmio_map(SYS_BUS_DEVICE(glidept_dev), 0, GLIDEPT_MM_BASE);
+ }
+ 
+ static void pc_memory_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
+diff -ru ../qemu-4.1.0/hw/Makefile.objs ./hw/Makefile.objs
+--- ../qemu-4.1.0/hw/Makefile.objs	2019-08-15 12:01:42.000000000 -0700
++++ ./hw/Makefile.objs	2019-08-20 01:18:53.832574122 -0700
+@@ -9,6 +9,7 @@
+ devices-dirs-y += char/
+ devices-dirs-y += cpu/
+ devices-dirs-y += display/
++devices-dirs-y += 3dfx/
+ devices-dirs-y += dma/
+ devices-dirs-y += gpio/
+ devices-dirs-$(CONFIG_HYPERV) += hyperv/
+diff -ru ../qemu-4.1.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
+--- ../qemu-4.1.0/include/hw/i386/pc.h	2019-08-15 12:01:42.000000000 -0700
++++ ./include/hw/i386/pc.h	2019-08-20 01:18:53.832574122 -0700
+@@ -173,6 +173,11 @@
+ 
+ void gsi_handler(void *opaque, int n, int level);
+ 
++/* GLIDE pass-through */
++#define TYPE_GLIDEPT "glidept"
++#define GLIDEPT_MM_BASE 0xfbdff000
++void glidept_mm_init(void);
++
+ /* vmport.c */
+ #define TYPE_VMPORT "vmport"
+ typedef uint32_t (VMPortReadFunc)(void *opaque, uint32_t address);
+diff -ru ../qemu-4.1.0/include/ui/console.h ./include/ui/console.h
+--- ../qemu-4.1.0/include/ui/console.h	2019-08-15 12:01:42.000000000 -0700
++++ ./include/ui/console.h	2019-08-20 01:18:53.835907487 -0700
+@@ -453,4 +453,12 @@
+ /* input.c */
+ int index_from_key(const char *key, size_t key_length);
+ 
++/* glidewnd.c */
++uintptr_t glide_prepare_window(int w, int h);
++void glide_release_window(void);
++uint32_t glide_window_stat(int);
++int is_glide_enabled(void);
++void glide_enabled_set(void);
++void glide_enabled_reset(void);
++
+ #endif
+diff -ru ../qemu-4.1.0/ui/console.c ./ui/console.c
+--- ../qemu-4.1.0/ui/console.c	2019-08-15 12:01:43.000000000 -0700
++++ ./ui/console.c	2019-08-20 01:21:12.165643259 -0700
+@@ -259,8 +259,15 @@
+     ds->have_text = have_text;
+ }
+ 
++static int glide_enabled = 0;
++int is_glide_enabled(void) { return glide_enabled; }
++void glide_enabled_set(void)   { glide_enabled = 1; }
++void glide_enabled_reset(void) { glide_enabled = 0; }
++
+ void graphic_hw_update(QemuConsole *con)
+ {
++    if (is_glide_enabled())
++        return;
+     if (!con) {
+         con = active_console;
+     }
+diff -ru ../qemu-4.1.0/ui/sdl2-2d.c ./ui/sdl2-2d.c
+--- ../qemu-4.1.0/ui/sdl2-2d.c	2019-08-15 12:01:43.000000000 -0700
++++ ./ui/sdl2-2d.c	2019-08-20 01:18:53.835907487 -0700
+@@ -38,6 +38,9 @@
+     size_t surface_data_offset;
+     assert(!scon->opengl);
+ 
++    if (is_glide_enabled())
++	return;
++
+     if (!surf) {
+         return;
+     }
+diff -ru ../qemu-4.1.0/ui/sdl2.c ./ui/sdl2.c
+--- ../qemu-4.1.0/ui/sdl2.c	2019-08-15 12:01:43.000000000 -0700
++++ ./ui/sdl2.c	2019-08-20 01:21:26.639463335 -0700
+@@ -36,6 +36,8 @@
+ static SDL_Surface *guest_sprite_surface;
+ static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
+ 
++static int gui_saved_width;
++static int gui_saved_height;
+ static int gui_saved_grab;
+ static int gui_fullscreen;
+ static int gui_grab_code = KMOD_LALT | KMOD_LCTRL;
+@@ -528,6 +530,14 @@
+         sdl2_redraw(scon);
+         break;
+     case SDL_WINDOWEVENT_EXPOSED:
++	if (ev->window.data1 && ev->window.data2) {
++	    if ((ev->window.data1 == gui_saved_width) &&
++		(ev->window.data2 == gui_saved_height)) {
++		gui_saved_width = 0;
++		gui_saved_height = 0;
++	    }
++	    SDL_SetWindowSize(scon->real_window, ev->window.data1, ev->window.data2);
++	}
+         sdl2_redraw(scon);
+         break;
+     case SDL_WINDOWEVENT_FOCUS_GAINED:
+@@ -712,6 +722,66 @@
+     SDL_QuitSubSystem(SDL_INIT_VIDEO);
+ }
+ 
++uintptr_t glide_prepare_window(int w, int h)
++{
++    uintptr_t hwndSDL = 0;
++    SDL_SysWMinfo wmi;
++    SDL_Event ev1, *ev = &ev1;
++    int scr_w, scr_h;
++
++    if (!sdl2_console)
++        return hwndSDL;
++
++    SDL_VERSION(&wmi.version);
++    if (SDL_GetWindowWMInfo(sdl2_console[0].real_window, &wmi)) {
++#if defined(SDL_VIDEO_DRIVER_WINDOWS)	
++	hwndSDL = (uintptr_t)wmi.info.win.window;
++#elif defined(SDL_VIDEO_DRIVER_X11)
++	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#endif
++    }
++    SDL_GetWindowSize(sdl2_console[0].real_window, &scr_w, &scr_h);
++    gui_saved_width = scr_w;
++    gui_saved_height = scr_h;
++
++    glide_enabled_set();
++    smp_mb();
++
++    ev->type = SDL_WINDOWEVENT;
++    ev->window.windowID = SDL_GetWindowID(sdl2_console[0].real_window);
++    ev->window.event = SDL_WINDOWEVENT_EXPOSED;
++    ev->window.data1 = w;
++    ev->window.data2 = h;
++    SDL_PushEvent(ev);
++
++    return hwndSDL;
++}
++
++void glide_release_window(void)
++{
++    glide_enabled_reset();
++    smp_mb();
++    SDL_Event ev1, *ev = &ev1;
++    ev->type = SDL_WINDOWEVENT;
++    ev->window.windowID = SDL_GetWindowID(sdl2_console[0].real_window);
++    ev->window.event = SDL_WINDOWEVENT_EXPOSED;
++    ev->window.data1 = gui_saved_width;
++    ev->window.data2 = gui_saved_height;
++    SDL_PushEvent(ev);
++}
++
++uint32_t glide_window_stat(int activate)
++{
++    int scr_w, scr_h;
++    uint32_t stat;
++    SDL_GetWindowSize(sdl2_console[0].real_window, &scr_w, &scr_h);
++    if (activate)
++	stat = (uint32_t)(((scr_h & 0xFFFFU) << 0x10) | scr_w);
++    else
++	stat = (((gui_saved_height & 0xFFFFU) << 0x10) | gui_saved_width)? 1:0;
++    return stat;
++}
++
+ static const DisplayChangeListenerOps dcl_2d_ops = {
+     .dpy_name             = "sdl2-2d",
+     .dpy_gfx_update       = sdl2_2d_update,

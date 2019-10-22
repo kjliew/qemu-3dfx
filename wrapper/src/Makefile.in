@@ -1,0 +1,70 @@
+CC=gcc
+CFLAGS=-Werror -O3 -fomit-frame-pointer
+LDFLAGS=
+SRCDIR=../src
+TARGET1=glide.dll
+TARGET2=glide2x.dll
+TARGET3=glide3x.dll
+PEXPORTS=pexports
+
+C_OBJS:=\
+    fxlib9x.o \
+    fxlibnt.o \
+
+ifeq ($(FXSYS),1)
+    CFLAGS+=-D__FXSYS__
+    KDRV=fxptl.sys
+else
+    CFLAGS+=-D__FXVXD__
+    KDRV=fxmemmap.vxd
+endif
+
+all: $(TARGET1) $(TARGET2) $(TARGET3) kdrvcpy
+
+kdrvcpy:
+	@if [ $(KDRV) == fxmemmap.vxd ]; then \
+	    make -C ../dxe; make -C ../ovl ;fi
+	@echo "  DRV $(KDRV)"
+	@cp $(SRCDIR)/kdrv/$(KDRV) .
+
+$(TARGET2): $(C_OBJS) glidedll.o
+	@echo "  CFLAGS $(CFLAGS)"
+	@echo "  LD  $@"
+	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
+	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
+	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
+	dlltool -U -d lib$(@:dll=def) -l lib$@.a
+
+$(TARGET1): $(C_OBJS) gl211dll.o
+	@echo "  CFLAGS $(CFLAGS)"
+	@echo "  LD  $@"
+	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
+	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
+
+$(TARGET3): $(C_OBJS) gl301dll.o
+	@echo "  CFLAGS $(CFLAGS)"
+	@echo "  LD  $@"
+	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
+	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
+	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
+	dlltool -U -d lib$(@:dll=def) -l lib$@.a
+
+%.o: $(SRCDIR)/%.c
+	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi
+	@echo "  CC  $@"
+	@$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	make -C ../dxe $@
+	make -C ../ovl $@
+	@rm -f *.o *.def
+	@for i in $$(find -iregex ".*\.a\|.*\.dll"); do strip --strip-unneeded $$i; done
+
+distclean: clean
+	make -C ../dxe $@
+	make -C ../ovl $@
+	@rm -f $(TARGET1) $(TARGET2) $(TARGET3) *.a *.vxd *.sys *.exe *.zip
+

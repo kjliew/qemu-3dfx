@@ -1,0 +1,12 @@
+--- ../orig/hw/3dfx/glidept_mm.c	2019-01-06 23:10:24 -0800
++++ ./hw/3dfx/glidept_mm.c	2019-01-07 00:25:13 -0800
+@@ -935,6 +935,9 @@
+ 
+     memory_region_init_ram(&s->glfb_ram, NULL, "grlfbshm", GRLFB_SIZE >> 1, &error_fatal);
+     memory_region_init_ram(&s->fifo_ram, NULL, "glideshm", GRSHM_SIZE, &error_fatal);
++    /* QEMU version < 2.10 require additional API to register memory */
++    vmstate_register_ram_global(&s->glfb_ram);
++    vmstate_register_ram_global(&s->fifo_ram);
+     s->glfb_ptr = memory_region_get_ram_ptr(&s->glfb_ram);
+     s->fifo_ptr = memory_region_get_ram_ptr(&s->fifo_ram);
+     memory_region_add_subregion(sysmem, (GLIDE_LFB_BASE + (GRLFB_SIZE >> 1)), &s->glfb_ram);

@@ -1,0 +1,19 @@
+WATCOM_PATH=/opt/watcom11/bin
+WCC=$(WATCOM_PATH)/wcc386
+WLD=$(WATCOM_PATH)/wlink
+INCLUDES=-I..\src
+
+all: glide2x.ovl
+
+glide2x.ovl: glideovl.obj
+	@$(WLD) @$(<:obj=lnk)
+	@if [ -d ../build ]; then cp -v $@ ../build; fi
+
+glideovl.obj: glideovl.c
+	@$(WCC) $(INCLUDES) -we -6s -ohtx -bd -fpi87 $<
+
+clean:
+	@rm -f *.map *.obj *.err *.ovl
+	
+distclean: clean
+	@rm -f ../build/*.ovl
