@@ -25,7 +25,7 @@ kdrvcpy:
 	@if [ $(KDRV) == fxmemmap.vxd ]; then \
 	    make -C ../dxe; make -C ../ovl ;fi
 	@echo "  DRV $(KDRV)"
-	@cp $(SRCDIR)/kdrv/$(KDRV) .
+	@if [ -f $(SRCDIR)/kdrv/$(KDRV) ]; then cp $(SRCDIR)/kdrv/$(KDRV) . ;fi
 
 $(TARGET2): $(C_OBJS) glidedll.o
 	@echo "  CFLAGS $(CFLAGS)"
