@@ -20,7 +20,7 @@ $ wget https://download.qemu.org/qemu-4.1.0.tar.xz
 $ tar xf qemu-4.1.0.tar.xz
 $ cd qemu-4.1.0
 $ rsync -r ../qemu-0/hw ./
-$ patch -p0 -i ../qemu-0/00-qemu410-3dfx.patch
+$ patch -p0 -i ../00-qemu410-3dfx.patch
 $ mkdir ../build && cd ../buid
 $ ../qemu-4.1.0/configure && make
 
