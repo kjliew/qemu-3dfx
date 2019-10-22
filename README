@@ -14,7 +14,7 @@ wrapper                 - wrappers for supported guest OS/environment. (DOS/Wind
 Simple guide to apply the patch:
 
 $ mkdir myqemu && cd myqemu
-$ git clone <this>
+$ git clone https://github.com/kjliew/qemu-3dfx.git
 $ cd qemu-3dfx
 $ wget https://download.qemu.org/qemu-4.1.0.tar.xz
 $ tar xf qemu-4.1.0.tar.xz
