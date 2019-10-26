@@ -46,6 +46,12 @@ static int strncmp(const char *s1, const char *s2, unsigned n)
     return (0);
 }
 
+static char *basename(const char *name)
+{
+    char *p = (char *)name;
+    return p;
+}
+
 static int open(const char *path)
 {
     int retval, err;

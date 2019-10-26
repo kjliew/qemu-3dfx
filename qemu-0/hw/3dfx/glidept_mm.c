@@ -85,6 +85,7 @@ typedef struct GlidePTState
     GlideLfbState *lfbDev;
     uint8_t *GrState;
     uint8_t *GrVertexLayout;
+    uint8_t *vtxCache;
     uint32_t reg[4];
     uintptr_t parg[4];
     char version[80];
@@ -418,9 +419,20 @@ static void processArgs(GlidePTState *s)
 	case FEnum_grDrawPolygon:
 	case FEnum_grAADrawPolygon:
 	case FEnum_grDrawPlanarPolygon:
-            s->datacb = ALIGNED(s->arg[0] * SIZE_GRVERTEX) + ALIGNED(s->arg[0] * sizeof(int));
-	    s->parg[2] = VAL(PTR(s->hshm, 0));
-	    s->parg[1] = VAL(PTR(s->hshm, ALIGNED(s->arg[0] * SIZE_GRVERTEX)));
+            {
+                int i, v = 0, *ilist = (int *)PTR(s->hshm, 0);
+                uint8_t *vlist = PTR(s->hshm, ALIGNED(s->arg[0] * sizeof(int)));
+                for (i = 0; i < s->arg[0]; i++)
+                    v = (ilist[i] > v)? ilist[i]:v;
+                s->vtxCache = g_malloc((v + 1) * SIZE_GRVERTEX);
+                for (i = 0; i < s->arg[0]; i++) {
+                    memcpy(s->vtxCache + (ilist[i] * SIZE_GRVERTEX), vlist, SIZE_GRVERTEX);
+                    vlist += ALIGNED(SIZE_GRVERTEX);
+                }
+            }
+            s->datacb = ALIGNED(s->arg[0] * sizeof(int)) + (s->arg[0] * ALIGNED(SIZE_GRVERTEX));
+	    s->parg[1] = VAL(PTR(s->hshm, 0));
+	    s->parg[2] = VAL(s->vtxCache);
 	    break;
 	case FEnum_grDrawPolygonVertexList:
 	case FEnum_grAADrawPolygonVertexList:
@@ -568,6 +580,11 @@ static void processFRet(GlidePTState *s)
     uint8_t *outshm = s->fifo_ptr + (GRSHM_SIZE - TARGET_PAGE_SIZE);
 
     switch (s->FEnum) {
+	case FEnum_grDrawPolygon:
+	case FEnum_grAADrawPolygon:
+	case FEnum_grDrawPlanarPolygon:
+            g_free(s->vtxCache);
+            break;
         case FEnum_grGlideGetVersion:
             strncpy(s->version, (const char *)outshm, sizeof(char [80]));
             DPRINTF("grGlideGetVersion  %s\n", s->version);

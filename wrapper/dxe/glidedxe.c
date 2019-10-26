@@ -246,9 +246,10 @@ static int detTomb(void) {
 static int grGlidePresent = 0;
 static int grGlideWnd = 0;
 void PT_CALL grSstWinClose(void);
+char *basename(const char *name);
 
 #define FIFO_GRFUNC(_func,_nargs) \
-    if ((mfifo[0] + (_nargs + 1)) < MAX_FIFO) \
+    if (((mfifo[0] + (_nargs + 1)) < MAX_FIFO) && (mdata[0] < MAX_DATA))  \
         fifoAddEntry(&pt[1], _func, _nargs); \
     else *pt0 = _func \
 
@@ -268,8 +269,10 @@ void PT_CALL grAADrawPoint(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAADrawPoint, 1);
 }
 void PT_CALL grAADrawPolygon(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(arg0 * SIZE_GRVERTEX));
+    int i, *ilist = (int *)arg1;
     fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(int)));
+    for (i = 0; i < arg0; i++)
+        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), ALIGNED(SIZE_GRVERTEX));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAADrawPolygon, 3);
 }
@@ -385,8 +388,10 @@ void PT_CALL grDrawLine(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawLine, 2);
 }
 void PT_CALL grDrawPlanarPolygon(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(arg0 * SIZE_GRVERTEX));
+    int i, *ilist = (int *)arg1;
     fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(int)));
+    for (i = 0; i < arg0; i++)
+        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), ALIGNED(SIZE_GRVERTEX));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawPlanarPolygon, 3);
 }
@@ -400,8 +405,10 @@ void PT_CALL grDrawPoint(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawPoint, 1);
 }
 void PT_CALL grDrawPolygon(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(arg0 * SIZE_GRVERTEX));
+    int i, *ilist = (int *)arg1;
     fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(int)));
+    for (i = 0; i < arg0; i++)
+        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), ALIGNED(SIZE_GRVERTEX));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawPolygon, 3);
 }
@@ -638,7 +645,7 @@ void PT_CALL grSstWinClose(void) {
 uint32_t PT_CALL grSstWinOpen(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     uint32_t ret, wait = 1;
     if (grGlideWnd)
-	return 1;
+	grSstWinClose();
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6;
     pt[8] = (uint32_t)lfb;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grSstWinOpen;
@@ -797,7 +804,7 @@ uint32_t PT_CALL gu3dfGetInfo(uint32_t arg0, uint32_t arg1) {
     m3df[0] = len;
     ft[0] = MAX_3DF;
 #endif
-    fifoAddData(0, arg0, sizeof(char[64]));
+    fifoAddData(0, (uint32_t)(basename((const char *)arg0)), sizeof(char[64]));
     pt[1] = arg0; pt[2] = arg1;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_gu3dfGetInfo;
     ret = *pt0;
@@ -808,7 +815,7 @@ uint32_t PT_CALL gu3dfGetInfo(uint32_t arg0, uint32_t arg1) {
 uint32_t PT_CALL gu3dfLoad(uint32_t arg0, uint32_t arg1) {
     int ret;
     wr3dfInfo *info = (wr3dfInfo *)arg1;
-    fifoAddData(0, arg0, sizeof(char[64]));
+    fifoAddData(0, (uint32_t)(basename((const char *)arg0)), sizeof(char[64]));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_gu3dfLoad;
     ret = *pt0;

@@ -178,6 +178,7 @@ typedef enum {
 
 
 #define MAX_FIFO                                0x10000
+#define MAX_DATA                                ((3584 * 1024) >> 2)
 #define FIRST_FIFO                              24
 #define GRSHM_SIZE                              0x400000
 #define GRLFB_SIZE                              0x400000
