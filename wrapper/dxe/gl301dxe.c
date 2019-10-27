@@ -158,6 +158,7 @@ static int grGlidePresent = 0;
 static int grGlideWnd = 0;
 uint32_t PT_CALL grSstWinClose(uint32_t arg0);
 char *basename(const char *name);
+uint32_t PT_CALL grGet(uint32_t arg0, uint32_t arg1, uint32_t arg2);
 
 #define FIFO_GRFUNC(_func,_nargs) \
     if (((mfifo[0] + (_nargs + 1)) < MAX_FIFO) && (mdata[0] < MAX_DATA))  \
@@ -286,8 +287,11 @@ void PT_CALL grFogTable(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogTable, 1);
 }
 void PT_CALL grGlideGetState(uint32_t arg0) {
+    uint32_t n;
+    grGet(GR_GLIDE_STATE_SIZE, sizeof(uint32_t), (uint32_t)&n);
   /*  pt[1] = arg0;  */
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideGetState;
+    fifoOutData(0, arg0, n);
 }
 void PT_CALL grGlideInit(void) {
 
@@ -298,7 +302,11 @@ void PT_CALL grGlideInit(void) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideInit;
 }
 void PT_CALL grGlideSetState(uint32_t arg0) {
+    uint32_t n;
+    grGet(GR_GLIDE_STATE_SIZE, sizeof(uint32_t), (uint32_t)&n);
   /*  pt[1] = arg0;  */
+    fifoAddData(0, (uint32_t)&n, ALIGNED(sizeof(uint32_t)));
+    fifoAddData(1, arg0, ALIGNED(n));
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideSetState;
 }
 void PT_CALL grGlideShutdown(void) {
@@ -672,11 +680,18 @@ const char * PT_CALL grGetString(uint32_t arg0) {
 	return 0;
 }
 void PT_CALL grGlideGetVertexLayout(uint32_t arg0) {
+    uint32_t n;
+    grGet(GR_GLIDE_VERTEXLAYOUT_SIZE, sizeof(uint32_t), (uint32_t)&n);
   /*  pt[1] = arg0; */
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideGetVertexLayout;
+    fifoOutData(0, arg0, n);
 }
 void PT_CALL grGlideSetVertexLayout(uint32_t arg0) {
+    uint32_t n;
+    grGet(GR_GLIDE_VERTEXLAYOUT_SIZE, sizeof(uint32_t), (uint32_t)&n);
   /*  pt[1] = arg0; */
+    fifoAddData(0, (uint32_t)&n, ALIGNED(sizeof(uint32_t)));
+    fifoAddData(1, arg0, ALIGNED(n));
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideSetVertexLayout;
 }
 void PT_CALL grLoadGammaTable(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {

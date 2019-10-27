@@ -185,4 +185,6 @@ typedef enum {
 #define ALIGNED(x)                              ((x%8)?(((x>>3)+1)<<3):x)
 #define G3_LOD_TRANSLATE(lod)                       (0x8-lod)
 #define G3_ASPECT_TRANSLATE(aspect)                 (0x3-(aspect))
+#define GR_GLIDE_STATE_SIZE             0x06
+#define GR_GLIDE_VERTEXLAYOUT_SIZE      0x07
 

@@ -83,8 +83,6 @@ typedef struct GlidePTState
     uint32_t lfb_w, lfb_h;
 
     GlideLfbState *lfbDev;
-    uint8_t *GrState;
-    uint8_t *GrVertexLayout;
     uint8_t *vtxCache;
     uint32_t reg[4];
     uintptr_t parg[4];
@@ -214,8 +212,18 @@ static void processArgs(GlidePTState *s)
             s->parg[0] = VAL(PTR(s->hshm,0));
 	    break;
         case FEnum_grGlideSetState:
+            if (s->initDLL == 0x301a0) {
+                uint32_t n = *(uint32_t *)PTR(s->hshm, 0);
+                s->datacb = ALIGNED(sizeof(uint32_t)) + ALIGNED(n);
+                s->parg[0] = VAL(PTR(s->hshm, ALIGNED(sizeof(uint32_t))));
+            }
+            else {
+                s->datacb = ALIGNED(SIZE_GRSTATE);
+                s->parg[0] = VAL(PTR(s->hshm, 0));
+            }
+            break;
         case FEnum_grGlideGetState:
-	    s->parg[0] = VAL(s->GrState);
+	    s->parg[0] = VAL(outshm);
 	    break;
         case FEnum_grGlideGetVersion:
             s->parg[0] = VAL(outshm);
@@ -548,10 +556,16 @@ static void processArgs(GlidePTState *s)
 	case FEnum_grGet:
 	    s->parg[2] = VAL(outshm);
 	    break;
-	case FEnum_grGlideGetVertexLayout:
 	case FEnum_grGlideSetVertexLayout:
-            s->parg[0] = VAL(s->GrVertexLayout);
+            do {
+                uint32_t n = *(uint32_t *)PTR(s->hshm, 0);
+                s->datacb = ALIGNED(sizeof(uint32_t)) + ALIGNED(n);
+                s->parg[0] = VAL(PTR(s->hshm, ALIGNED(sizeof(uint32_t))));
+            } while(0);
 	    break;
+	case FEnum_grGlideGetVertexLayout:
+	    s->parg[0] = VAL(outshm);
+            break;
         case FEnum_grDrawVertexArray:
             s->datacb = s->arg[1] * ALIGNED(s->arg[1] * SIZE_GRVERTEX);
             do {
@@ -827,7 +841,6 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 		    s->lfbDev->emu211 = 0;
 		    DPRINTF("DLL loaded - glide2x.dll\n");
 		}
-                s->GrState = g_new0(uint8_t, SIZE_GRSTATE);
 	    }
 	    if (val == 0xa0211) {
 		strncpy(s->version, "Glide", sizeof(char [80]));
@@ -844,7 +857,6 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 		    s->lfbDev->emu211 = 1;
 		    DPRINTF("DLL loaded - glide2x.dll, emulating API 2.11\n");
 		}
-                s->GrState = g_new0(uint8_t, SIZE_GRSTATE);
 	    }
             if (val == 0xa0301) {
                 strncpy(s->version, "Glide3x", sizeof(char [80]));
@@ -854,8 +866,6 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
                     s->lfbDev->emu211 = 0;
                     DPRINTF("DLL loaded - glide3x.dll\n");
                 }
-                s->GrState = g_new0(uint8_t, 0x300);
-                s->GrVertexLayout = g_new0(uint8_t, 0x100);
             }
 	    if ((val == 0xd0243) || (val == 0xd0211) || (val == 0xd0301)) {
 		s->initDLL = 0;
@@ -863,9 +873,6 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 		fini_glide2x();
 		memset(s->version, 0, sizeof(char [80]));
 		DPRINTF("DLL unloaded\n");
-                if (val == 0xd0301)
-                    g_free(s->GrVertexLayout);
-                g_free(s->GrState);
 	    }
 	    break;
 		
