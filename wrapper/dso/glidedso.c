@@ -443,13 +443,13 @@ void PT_CALL grGammaCorrectionValue(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grGammaCorrectionValue, 1);
 }
 void PT_CALL grGlideGetState(uint32_t arg0) {
-  /*  pt[1] = arg0;  */
+    pt[1] = arg0;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideGetState;
 }
 void PT_CALL grGlideGetVersion(uint32_t arg0) {
     if ((!grGlidePresent) && (!Init()))
         return;
-    pt[1] = arg0; 
+  /*  pt[1] = arg0; */
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideGetVersion;
     fifoOutData(0, arg0, sizeof(char[80]));
 }
@@ -462,7 +462,7 @@ void PT_CALL grGlideInit(void) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideInit;
 }
 void PT_CALL grGlideSetState(uint32_t arg0) {
-  /*  pt[1] = arg0;  */
+    pt[1] = arg0;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideSetState;
 }
 void PT_CALL grGlideShamelessPlug(uint32_t arg0) {

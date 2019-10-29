@@ -26,6 +26,7 @@
 #include "hw/sysbus.h"
 
 #include "glide2x_impl.h"
+#include "gllstbuf.h"
 
 #define DEBUG_GLIDEPT
 
@@ -83,6 +84,8 @@ typedef struct GlidePTState
     uint32_t lfb_w, lfb_h;
 
     GlideLfbState *lfbDev;
+    uint32_t szGrState;
+    uint32_t szVtxLayout;
     uint8_t *vtxCache;
     uint32_t reg[4];
     uintptr_t parg[4];
@@ -212,18 +215,8 @@ static void processArgs(GlidePTState *s)
             s->parg[0] = VAL(PTR(s->hshm,0));
 	    break;
         case FEnum_grGlideSetState:
-            if (s->initDLL == 0x301a0) {
-                uint32_t n = *(uint32_t *)PTR(s->hshm, 0);
-                s->datacb = ALIGNED(sizeof(uint32_t)) + ALIGNED(n);
-                s->parg[0] = VAL(PTR(s->hshm, ALIGNED(sizeof(uint32_t))));
-            }
-            else {
-                s->datacb = ALIGNED(SIZE_GRSTATE);
-                s->parg[0] = VAL(PTR(s->hshm, 0));
-            }
-            break;
         case FEnum_grGlideGetState:
-	    s->parg[0] = VAL(outshm);
+	    s->parg[0] = VAL(LookupGrState(s->arg[0], s->szGrState));
 	    break;
         case FEnum_grGlideGetVersion:
             s->parg[0] = VAL(outshm);
@@ -557,14 +550,8 @@ static void processArgs(GlidePTState *s)
 	    s->parg[2] = VAL(outshm);
 	    break;
 	case FEnum_grGlideSetVertexLayout:
-            do {
-                uint32_t n = *(uint32_t *)PTR(s->hshm, 0);
-                s->datacb = ALIGNED(sizeof(uint32_t)) + ALIGNED(n);
-                s->parg[0] = VAL(PTR(s->hshm, ALIGNED(sizeof(uint32_t))));
-            } while(0);
-	    break;
 	case FEnum_grGlideGetVertexLayout:
-	    s->parg[0] = VAL(outshm);
+	    s->parg[0] = VAL(LookupVtxLayout(s->arg[0], s->szVtxLayout));
             break;
         case FEnum_grDrawVertexArray:
             s->datacb = s->arg[1] * ALIGNED(s->arg[1] * SIZE_GRVERTEX);
@@ -647,6 +634,8 @@ static void processFRet(GlidePTState *s)
 	    fini_window();
 	    break;
 	case FEnum_grGlideInit:
+            s->szGrState = SIZE_GRSTATE;
+            s->szVtxLayout = SIZE_GRVERTEX;
             memset(s->lfbDev->stride, 0, 2 * sizeof(uint32_t));
 	    memset(s->lfbDev->lock, 0, 2 * sizeof(int));
 	    s->lfbDev->lfbPtr[0] = 0;
@@ -663,6 +652,7 @@ static void processFRet(GlidePTState *s)
 	    /* TODO - Window management */
 	    DPRINTF("grGlideShutdown called, fifo 0x%04x data 0x%04x shm 0x%07x lfb 0x%07x\n", 
                     s->fifoMax, s->dataMax, (MAX_FIFO + s->dataMax) << 2, GLIDE_LFB_BASE + s->lfbDev->lfbMax);
+            DPRINTF("    GrState %d VtxLayout %d\n", FreeGrState(), FreeVtxLayout());
 	    memset(s->reg, 0, sizeof(uint32_t [4]));
 	    memset(s->arg, 0, sizeof(uint32_t [16]));
 	    strncpy(s->version, "Glide2x", sizeof(char [80]));
@@ -746,6 +736,15 @@ static void processFRet(GlidePTState *s)
 		    ((wrg3dfInfo *)outshm)->mem_required);
             if (texTableValid(((wr3dfHeader *)info3df->header)->format))
                 memcpy(PTR(outshm, SIZE_GU3DFHEADER), info3df->table, SIZE_GUTEXTABLE);
+            break;
+
+        case FEnum_grGet:
+            if (s->FRet) {
+                if (s->arg[0] == GR_GLIDE_STATE_SIZE)
+                    s->szGrState = *(uint32_t *)outshm;
+                if (s->arg[0] == GR_GLIDE_VERTEXLAYOUT_SIZE)
+                    s->szVtxLayout = *(uint32_t *)outshm;
+            }
             break;
 
 	case FEnum_grLfbBegin:
