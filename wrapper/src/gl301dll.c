@@ -281,7 +281,10 @@ void PT_CALL grFogMode(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogMode, 1);
 }
 void PT_CALL grFogTable(uint32_t arg0) {
-    fifoAddData(0, arg0, sizeof(uint8_t[64]));
+    uint32_t n;
+    grGet(GR_FOG_TABLE_ENTRIES, sizeof(uint32_t), (uint32_t)&n);
+    fifoAddData(0, (uint32_t)&n, ALIGNED(sizeof(uint32_t)));
+    fifoAddData(0, arg0, ALIGNED(n * sizeof(uint8_t)));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogTable, 1);
 }
@@ -652,6 +655,14 @@ static void PT_CALL grChromaRangeModeExt(uint32_t arg0) {
     pt[1] = arg0;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grChromaRangeModeExt;
 }
+static void PT_CALL grTexChromaModeExt(uint32_t arg0, uint32_t arg1) {
+    pt[1] = arg0; pt[2] = arg1;
+    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grTexChromaModeExt;
+}
+static void PT_CALL grTexChromaRangeExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3;
+    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grTexChromaRangeExt;
+}
 /* ---- end g3ext ---- */
 
 uint32_t PT_CALL grGetProcAddress(uint32_t arg0) {
@@ -662,11 +673,15 @@ uint32_t PT_CALL grGetProcAddress(uint32_t arg0) {
 	fptr = &grChromaRangeModeExt;
     if (!memcmp((const void *)arg0, "grChromaRangeExt", sizeof("grChromaRangeExt")))
 	fptr = &grChromaRangeExt;
+    if (!memcmp((const void *)arg0, "grTexChromaModeExt", sizeof("grTexChromaModeExt")))
+	fptr = &grTexChromaModeExt;
+    if (!memcmp((const void *)arg0, "grTexChromaRangeExt", sizeof("grTexChromaRangeExt")))
+	fptr = &grTexChromaRangeExt;
     return (uint32_t)fptr;
 }
 const char * PT_CALL grGetString(uint32_t arg0) {
     static const char *cstrTbl[] = {
-	"GETGAMMA CHROMARANGE TEXMIRROR PALETTE6666",
+	"GETGAMMA CHROMARANGE TEXCHROMA TEXMIRROR PALETTE6666 FOGCOORD",
 	"Voodoo2",
 	"Glide",
 	"3Dfx Interactive",

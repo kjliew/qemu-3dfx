@@ -361,8 +361,11 @@ static void processArgs(GlidePTState *s)
             break;
 
 	case FEnum_grFogTable:
-            s->datacb = sizeof(uint8_t[64]);
-	    s->parg[0] = VAL(s->hshm);
+            {
+                uint32_t n = *(uint32_t *)PTR(s->hshm, 0);
+                s->datacb = ALIGNED(sizeof(uint32_t)) + ALIGNED(n * sizeof(uint8_t));
+            }
+	    s->parg[0] = VAL(PTR(s->hshm, ALIGNED(sizeof(uint32_t))));
 	    break;
 	case FEnum_guFogGenerateExp:
 	case FEnum_guFogGenerateExp2:
@@ -661,7 +664,7 @@ static void processFRet(GlidePTState *s)
 	    /* TODO - Window management */
 	    DPRINTF("grGlideShutdown called, fifo 0x%04x data 0x%04x shm 0x%07x lfb 0x%07x\n", 
                     s->fifoMax, s->dataMax, (MAX_FIFO + s->dataMax) << 2, GLIDE_LFB_BASE + s->lfbDev->lfbMax);
-            DPRINTF("    GrState %d VtxLayout %d\n", FreeGrState(), FreeVtxLayout());
+            DPRINTF("  GrState %d VtxLayout %d\n", FreeGrState(), FreeVtxLayout());
 	    memset(s->reg, 0, sizeof(uint32_t [4]));
 	    memset(s->arg, 0, sizeof(uint32_t [16]));
 	    strncpy(s->version, "Glide2x", sizeof(char [80]));

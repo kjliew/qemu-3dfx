@@ -429,7 +429,9 @@ void PT_CALL grFogMode(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogMode, 1);
 }
 void PT_CALL grFogTable(uint32_t arg0) {
-    fifoAddData(0, arg0, sizeof(uint8_t[64]));
+    uint32_t n = 64;
+    fifoAddData(0, (uint32_t)&n, ALIGNED(sizeof(uint32_t)));
+    fifoAddData(0, arg0, ALIGNED(n * sizeof(uint8_t)));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogTable, 1);
 }
