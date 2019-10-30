@@ -145,7 +145,8 @@ int stat_window(const int res, const int activate)
     stat = (cfg_createWnd)? 0:1;
 
     if (stat) {
-	uint32_t wndStat = glide_window_stat(activate);
+	uint32_t wndStat = (glide_gui_fullscreen())?
+            (((tblRes[sel].h & 0xFFFFU) << 0x10) | tblRes[sel].w) : glide_window_stat(activate);
 	if (activate) {
 	    if (wndStat == (((tblRes[sel].h & 0xFFFFU) << 0x10) | tblRes[sel].w)) {
 		DPRINTF("    window %ux%u\n", (wndStat & 0xFFFFU), (wndStat >> 0x10));   
@@ -158,6 +159,8 @@ int stat_window(const int res, const int activate)
             if (stat)
                 glide_release_window();
 #endif
+            if (glide_gui_fullscreen())
+                stat = 0;
         }
     }
     return stat;

@@ -69,7 +69,7 @@ diff -ru ../qemu-4.1.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
 diff -ru ../qemu-4.1.0/include/ui/console.h ./include/ui/console.h
 --- ../qemu-4.1.0/include/ui/console.h	2019-08-15 12:01:42.000000000 -0700
 +++ ./include/ui/console.h	2019-08-20 01:18:53.835907487 -0700
-@@ -453,4 +453,12 @@
+@@ -453,4 +453,13 @@
  /* input.c */
  int index_from_key(const char *key, size_t key_length);
  
@@ -77,6 +77,7 @@ diff -ru ../qemu-4.1.0/include/ui/console.h ./include/ui/console.h
 +uintptr_t glide_prepare_window(int w, int h);
 +void glide_release_window(void);
 +uint32_t glide_window_stat(int);
++int glide_gui_fullscreen(void);
 +int is_glide_enabled(void);
 +void glide_enabled_set(void);
 +void glide_enabled_reset(void);
@@ -141,7 +142,7 @@ diff -ru ../qemu-4.1.0/ui/sdl2.c ./ui/sdl2.c
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
-@@ -712,6 +722,66 @@
+@@ -712,6 +722,68 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -204,6 +205,8 @@ diff -ru ../qemu-4.1.0/ui/sdl2.c ./ui/sdl2.c
 +	stat = (((gui_saved_height & 0xFFFFU) << 0x10) | gui_saved_width)? 1:0;
 +    return stat;
 +}
++
++int glide_gui_fullscreen(void) { return gui_fullscreen; }
 +
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
