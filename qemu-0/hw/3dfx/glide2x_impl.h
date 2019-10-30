@@ -112,6 +112,7 @@ uint32_t texTableValid(uint32_t);
 uint32_t wrReadRegion(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uintptr_t arg6);
 uint32_t wrWriteRegion(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uintptr_t arg7);
 uintptr_t wrGetProcAddress(uintptr_t);
+const char *wrGetString(uint32_t);
 
 #ifndef CONSOLE_H
 void glide_enabled_set(void);
@@ -121,6 +122,7 @@ void glide_enabled_reset(void);
 void doGlideFunc(int, uint32_t *, uintptr_t *, uint32_t *, int);
 int init_glide2x(const char *);
 void fini_glide2x(void);
+int init_g3ext(void);
 
 #endif // GLIDE2X_IMPL_H
 

@@ -169,6 +169,7 @@ typedef enum {
     FEnum_grVertexLayout,                    /* 0xa4 */
     FEnum_grViewport,                        /* 0xa5 */
     FEnum_guGammaCorrectionRGB,              /* 0xa6 */
+    FEnum_grGetGammaTableExt,
     FEnum_grChromaRangeModeExt,
     FEnum_grChromaRangeExt,
     FEnum_zzG2xFuncEnum_max,

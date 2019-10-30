@@ -538,6 +538,11 @@ static void processArgs(GlidePTState *s)
             s->parg[2] = VAL(PTR(s->hshm,   ALIGNED(s->arg[0] * sizeof(uint32_t))));
             s->parg[3] = VAL(PTR(s->hshm, 2*ALIGNED(s->arg[0] * sizeof(uint32_t))));
             break;
+        case FEnum_grGetGammaTableExt:
+            s->parg[1] = VAL(outshm);
+            s->parg[2] = VAL(PTR(outshm,   s->arg[0] * sizeof(uint32_t)));
+            s->parg[3] = VAL(PTR(outshm, 2*s->arg[0] * sizeof(uint32_t)));
+            break;
 	case FEnum_grQueryResolutions:
             s->datacb = SIZE_GRRESOLUTION;
 	    s->parg[0] = VAL(s->hshm);
@@ -636,6 +641,10 @@ static void processFRet(GlidePTState *s)
 	case FEnum_grGlideInit:
             s->szGrState = SIZE_GRSTATE;
             s->szVtxLayout = SIZE_GRVERTEX;
+            if (s->initDLL == 0x301a0) {
+                DPRINTF("host g3ext: %s\n", wrGetString(0xa0)); /* GR_EXTENSTION */
+                init_g3ext();
+            }
             memset(s->lfbDev->stride, 0, 2 * sizeof(uint32_t));
 	    memset(s->lfbDev->lock, 0, 2 * sizeof(int));
 	    s->lfbDev->lfbPtr[0] = 0;

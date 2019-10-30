@@ -216,6 +216,7 @@ static struct tblFuncs tblGlide2x[] = {
   {.sym = "_grVertexLayout@12", .impl = 0, .ptr = 0 },
   {.sym = "_grViewport@16", .impl = 0, .ptr = 0 },
   {.sym = "_guGammaCorrectionRGB@12", .impl = 0, .ptr = 0 },
+  {.sym = "_grGetGammaTableExt@16", .impl = 0, .ptr = 0 },
   {.sym = "_grChromaRangeModeExt@4", .impl = 0, .ptr = 0 },
   {.sym = "_grChromaRangeExt@12", .impl = 0, .ptr = 0 },
 
@@ -278,6 +279,13 @@ uintptr_t wrGetProcAddress(uintptr_t a0)
     uintptr_t __stdcall (*fprp0)(uintptr_t arg0);
     fprp0 = tblGlide2x[FEnum_grGetProcAddress].ptr;
     return (*fprp0)(a0);
+}
+
+const char *wrGetString(uint32_t a0)
+{
+    const char * __stdcall (*fpra0)(uint32_t arg0);
+    fpra0 = tblGlide2x[FEnum_grGetString].ptr;
+    return (*fpra0)(a0);
 }
 
 void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int emu211)
@@ -388,6 +396,7 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
             numArgs = -1;
             break;
         case FEnum_grLoadGammaTable:
+        case FEnum_grGetGammaTableExt:
             sfp.fpra0p3 = tblGlide2x[FEnum].ptr;
             *ret = (*(sfp.fpra0p3))(arg[0], parg[1], parg[2], parg[3]);
             numArgs = -1;
@@ -775,10 +784,14 @@ int init_glide2x(const char *dllname)
 #endif
     }
 
-    if (!strncmp(dllname, "glide3x.dll", sizeof("glide3x.dll"))) {
-	tblGlide2x[FEnum_grChromaRangeModeExt].ptr = (void *)(wrGetProcAddress((uintptr_t)"grChromaRangeModeExt"));
-	tblGlide2x[FEnum_grChromaRangeExt].ptr = (void *)(wrGetProcAddress((uintptr_t)"grChromaRangeExt"));
-    }
+    return 0;
+}
+
+int init_g3ext(void)
+{
+    tblGlide2x[FEnum_grGetGammaTableExt].ptr   = (void *)(wrGetProcAddress((uintptr_t)"grGetGammaTableExt"));
+    tblGlide2x[FEnum_grChromaRangeModeExt].ptr = (void *)(wrGetProcAddress((uintptr_t)"grChromaRangeModeExt"));
+    tblGlide2x[FEnum_grChromaRangeExt].ptr     = (void *)(wrGetProcAddress((uintptr_t)"grChromaRangeExt"));
 
     return 0;
 }

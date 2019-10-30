@@ -635,6 +635,15 @@ uint32_t PT_CALL grGet(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     fifoOutData(0, arg2, arg1);
     return ret;
 }
+
+/* ---- start g3ext ---- */
+static void PT_CALL grGetGammaTableExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    pt[1] = arg0;
+    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGetGammaTableExt;
+    fifoOutData(                          0, arg1, (arg0 * sizeof(uint32_t)));
+    fifoOutData(  (arg0 * sizeof(uint32_t)), arg2, (arg0 * sizeof(uint32_t)));
+    fifoOutData(2*(arg0 * sizeof(uint32_t)), arg3, (arg0 * sizeof(uint32_t)));
+}
 static void PT_CALL grChromaRangeExt(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grChromaRangeExt;
@@ -643,8 +652,12 @@ static void PT_CALL grChromaRangeModeExt(uint32_t arg0) {
     pt[1] = arg0;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grChromaRangeModeExt;
 }
+/* ---- end g3ext ---- */
+
 uint32_t PT_CALL grGetProcAddress(uint32_t arg0) {
     void *fptr = 0;
+    if (!memcmp((const void *)arg0, "grGetGammaTableExt", sizeof("grGetGammaTableExt")))
+        fptr = &grGetGammaTableExt;
     if (!memcmp((const void *)arg0, "grChromaRangeModeExt", sizeof("grChromaRangeModeExt")))
 	fptr = &grChromaRangeModeExt;
     if (!memcmp((const void *)arg0, "grChromaRangeExt", sizeof("grChromaRangeExt")))
