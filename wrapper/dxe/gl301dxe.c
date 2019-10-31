@@ -159,6 +159,9 @@ static int grGlideWnd = 0;
 uint32_t PT_CALL grSstWinClose(uint32_t arg0);
 char *basename(const char *name);
 uint32_t PT_CALL grGet(uint32_t arg0, uint32_t arg1, uint32_t arg2);
+static char g3ext_str[192] = " ";
+static char g3hw_str[16]   = "Voodoo2";
+static char g3ver_str[32]  = "3.01";
 
 #define FIFO_GRFUNC(_func,_nargs) \
     if (((mfifo[0] + (_nargs + 1)) < MAX_FIFO) && (mdata[0] < MAX_DATA))  \
@@ -300,6 +303,9 @@ void PT_CALL grGlideInit(void) {
     if (grGlideWnd)
 	return;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideInit;
+    fifoOutData(0, (uint32_t)g3ext_str, sizeof(char[192]));
+    fifoOutData(sizeof(char[192]), (uint32_t)g3hw_str, sizeof(char[16]));
+    fifoOutData(sizeof(char[208]), (uint32_t)g3ver_str, sizeof(char[32]));
 }
 void PT_CALL grGlideSetState(uint32_t arg0) {
     pt[1] = arg0;
@@ -657,19 +663,96 @@ static void PT_CALL grGetGammaTableExt(uint32_t arg0, uint32_t arg1, uint32_t ar
 }
 static void PT_CALL grChromaRangeExt(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2;
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grChromaRangeExt;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grChromaRangeExt, 3);
 }
 static void PT_CALL grChromaRangeModeExt(uint32_t arg0) {
     pt[1] = arg0;
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grChromaRangeModeExt;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grChromaRangeModeExt, 1);
 }
 static void PT_CALL grTexChromaModeExt(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1;
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grTexChromaModeExt;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexChromaModeExt, 2);
 }
 static void PT_CALL grTexChromaRangeExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3;
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grTexChromaRangeExt;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexChromaRangeExt, 4);
+}
+static void PT_CALL grColorCombineExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grColorCombineExt, 10);
+}
+static void PT_CALL grAlphaCombineExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAlphaCombineExt, 10);
+}
+static void PT_CALL grTexColorCombineExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexColorCombineExt, 11);
+}
+static void PT_CALL grTexAlphaCombineExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexAlphaCombineExt, 11);
+}
+static void PT_CALL grAlphaBlendFunctionExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAlphaBlendFunctionExt, 6);
+}
+static void PT_CALL grConstantColorValueExt(uint32_t arg0, uint32_t arg1) {
+    pt[1] = arg0; pt[2] = arg1;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grConstantColorValueExt, 2);
+}
+static void PT_CALL grColorMaskExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grColorMaskExt, 4);
+}
+static void PT_CALL grTBufferWriteMaskExt(uint32_t arg0) {
+    pt[1] = arg0;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTBufferWriteMaskExt, 1);
+}
+static void PT_CALL grBufferClearExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3;
+    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grBufferClearExt;
+}
+static void PT_CALL grTextureBufferExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTextureBufferExt, 7);
+}
+static void PT_CALL grTextureAuxBufferExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTextureAuxBufferExt, 7);
+}
+static void PT_CALL grAuxBufferExt(uint32_t arg0) {
+    pt[1] = arg0;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAuxBufferExt, 1);
+}
+static void PT_CALL grStencilFuncExt(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grStencilFuncExt, 3);
+}
+static void PT_CALL grStencilMaskExt(uint32_t arg0) {
+    pt[1] = arg0;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grStencilMaskExt, 1);
+}
+static void PT_CALL grStencilOpExt(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grStencilOpExt, 3);
+}
+static void PT_CALL grLfbConstantStencilExt(uint32_t arg0) {
+    pt[1] = arg0;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grLfbConstantStencilExt, 1);
+}
+static uint32_t PT_CALL grSstWinOpenExt(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7) {
+    uint32_t ret, wait = 1;
+    if (grGlideWnd)
+	grSstWinClose(grGlideWnd);
+    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7;
+    pt[9] = (uint32_t)lfb;
+    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grSstWinOpenExt;
+    ret = *pt0;
+    while (ret && wait)
+        wait = ptm[0xfb8U >> 2];
+    grGlideWnd = ret;
+    return ret;
 }
 /* ---- end g3ext ---- */
 
@@ -685,20 +768,54 @@ uint32_t PT_CALL grGetProcAddress(uint32_t arg0) {
 	fptr = &grTexChromaModeExt;
     if (!memcmp((const void *)arg0, "grTexChromaRangeExt", sizeof("grTexChromaRangeExt")))
 	fptr = &grTexChromaRangeExt;
+    if (!memcmp((const void *)arg0, "grColorCombineExt", sizeof("grColorCombineExt")))
+	fptr = &grColorCombineExt;
+    if (!memcmp((const void *)arg0, "grAlphaCombineExt", sizeof("grAlphaCombineExt")))
+	fptr = &grAlphaCombineExt;
+    if (!memcmp((const void *)arg0, "grTexColorCombineExt", sizeof("grTexColorCombineExt")))
+	fptr = &grTexColorCombineExt;
+    if (!memcmp((const void *)arg0, "grTexAlphaCombineExt", sizeof("grTexAlphaCombineExt")))
+	fptr = &grTexAlphaCombineExt;
+    if (!memcmp((const void *)arg0, "grAlphaBlendFunctionExt", sizeof("grAlphaBlendFunctionExt")))
+	fptr = &grAlphaBlendFunctionExt;
+    if (!memcmp((const void *)arg0, "grConstantColorValueExt", sizeof("grConstantColorValueExt")))
+	fptr = &grConstantColorValueExt;
+    if (!memcmp((const void *)arg0, "grColorMaskExt", sizeof("grColorMaskExt")))
+	fptr = &grColorMaskExt;
+    if (!memcmp((const void *)arg0, "grTBufferWriteMaskExt", sizeof("grTBufferWriteMaskExt")))
+	fptr = &grTBufferWriteMaskExt;
+    if (!memcmp((const void *)arg0, "grBufferClearExt", sizeof("grBufferClearExt")))
+	fptr = &grBufferClearExt;
+    if (!memcmp((const void *)arg0, "grTextureBufferExt", sizeof("grTextureBufferExt")))
+	fptr = &grTextureBufferExt;
+    if (!memcmp((const void *)arg0, "grTextureAuxBufferExt", sizeof("grTextureAuxBufferExt")))
+	fptr = &grTextureAuxBufferExt;
+    if (!memcmp((const void *)arg0, "grAuxBufferExt", sizeof("grAuxBufferExt")))
+	fptr = &grAuxBufferExt;
+    if (!memcmp((const void *)arg0, "grStencilFuncExt", sizeof("grStencilFuncExt")))
+	fptr = &grStencilFuncExt;
+    if (!memcmp((const void *)arg0, "grStencilMaskExt", sizeof("grStencilMaskExt")))
+	fptr = &grStencilMaskExt;
+    if (!memcmp((const void *)arg0, "grStencilOpExt", sizeof("grStencilOpExt")))
+	fptr = &grStencilOpExt;
+    if (!memcmp((const void *)arg0, "grLfbConstantStencilExt", sizeof("grLfbConstantStencilExt")))
+	fptr = &grLfbConstantStencilExt;
+    if (!memcmp((const void *)arg0, "grSstWinOpenExt", sizeof("grSstWinOpenExt")))
+	fptr = &grSstWinOpenExt;
     return (uint32_t)fptr;
 }
 const char * PT_CALL grGetString(uint32_t arg0) {
     static const char *cstrTbl[] = {
-	"GETGAMMA CHROMARANGE TEXCHROMA TEXMIRROR PALETTE6666 FOGCOORD",
-	"Voodoo2",
+	g3ext_str,
+	g3hw_str,
 	"Glide",
 	"3Dfx Interactive",
-	"3.01",
+	g3ver_str,
     };
+    const char *p = 0;
     if ((arg0 & 0x0F) < 0x05)
-	return cstrTbl[arg0 & 0x0F];
-    else
-	return 0;
+	p = cstrTbl[arg0 & 0x0F];
+    return p;
 }
 void PT_CALL grGlideGetVertexLayout(uint32_t arg0) {
     pt[1] = arg0;

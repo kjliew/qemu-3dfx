@@ -263,7 +263,15 @@ static void processArgs(GlidePTState *s)
 	    s->arg[0] = s->GrContext;
 	    break;
         case FEnum_grSstWinOpen:
-	    DPRINTF("grSstWinOpen called, fmt %d org %d buf %u aux %u gLfb 0x%08x\n", s->arg[3], s->arg[4], s->arg[5], s->arg[6], s->arg[7]);
+        case FEnum_grSstWinOpenExt:
+            if (s->FEnum == FEnum_grSstWinOpenExt) {
+                DPRINTF("grSstWinOpenExt called, cf %d org %d pf %d buf %u aux %u gLfb 0x%08x\n",
+                        s->arg[3], s->arg[4], s->arg[5], s->arg[6], s->arg[7], s->arg[8]);
+            }
+            else {
+                DPRINTF("grSstWinOpen called, fmt %d org %d buf %u aux %u gLfb 0x%08x\n",
+                        s->arg[3], s->arg[4], s->arg[5], s->arg[6], s->arg[7]);
+            }
 	    /* TODO - Window management */
 	    s->arg[0] = init_window(s->arg[1], s->version);
 	    break;
@@ -613,9 +621,10 @@ static void processFRet(GlidePTState *s)
 		DPRINTF("grSstOpen failed\n");
 	    break;
 	case FEnum_grSstWinOpen:
+        case FEnum_grSstWinOpenExt:
 	    if (s->FRet != 0) {
 		s->lfbDev->origin = s->arg[4];
-		s->lfbDev->guestLfb = s->arg[7];
+		s->lfbDev->guestLfb = (s->FEnum == FEnum_grSstWinOpenExt)? s->arg[8]:s->arg[7];
 		s->GrContext = s->FRet;
                 s->GrRes = s->arg[1];
 		s->reg[0] = 1;
@@ -645,8 +654,13 @@ static void processFRet(GlidePTState *s)
             s->szGrState = SIZE_GRSTATE;
             s->szVtxLayout = SIZE_GRVERTEX;
             if (s->initDLL == 0x301a0) {
-                DPRINTF("host g3ext: %s\n", wrGetString(0xa0)); /* GR_EXTENSTION */
                 init_g3ext();
+                strncpy((char *)outshm, wrGetString(GR_EXTENSION), sizeof(char[192]));
+                strncpy((char *)PTR(outshm, sizeof(char[192])), wrGetString(GR_HARDWARE), sizeof(char[16]));
+                strncpy((char *)PTR(outshm, sizeof(char[208])), wrGetString(GR_VERSION), sizeof(char[32]));
+                DPRINTF("\n  Extension: %s\n  Hardware: %s\n  Version: %s\n",
+                        outshm, PTR(outshm, sizeof(char[192])), PTR(outshm, sizeof(char[208])));
+
             }
             memset(s->lfbDev->stride, 0, 2 * sizeof(uint32_t));
 	    memset(s->lfbDev->lock, 0, 2 * sizeof(int));

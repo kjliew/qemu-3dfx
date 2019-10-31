@@ -174,6 +174,23 @@ typedef enum {
     FEnum_grChromaRangeExt,
     FEnum_grTexChromaModeExt,
     FEnum_grTexChromaRangeExt,
+    FEnum_grColorCombineExt,
+    FEnum_grAlphaCombineExt,
+    FEnum_grTexColorCombineExt,
+    FEnum_grTexAlphaCombineExt,
+    FEnum_grAlphaBlendFunctionExt,
+    FEnum_grConstantColorValueExt,
+    FEnum_grColorMaskExt,
+    FEnum_grTBufferWriteMaskExt,
+    FEnum_grBufferClearExt,
+    FEnum_grTextureBufferExt,
+    FEnum_grTextureAuxBufferExt,
+    FEnum_grAuxBufferExt,
+    FEnum_grStencilFuncExt,
+    FEnum_grStencilMaskExt,
+    FEnum_grStencilOpExt,
+    FEnum_grLfbConstantStencilExt,
+    FEnum_grSstWinOpenExt,
     FEnum_zzG2xFuncEnum_max,
 } G2xFuncEnum;
 
@@ -191,4 +208,9 @@ typedef enum {
 #define GR_FOG_TABLE_ENTRIES            0x04
 #define GR_GLIDE_STATE_SIZE             0x06
 #define GR_GLIDE_VERTEXLAYOUT_SIZE      0x07
+#define GR_EXTENSION                    0xa0
+#define GR_HARDWARE                     0xa1
+#define GR_RENDERER                     0xa2
+#define GR_VENDOR                       0xa3
+#define GR_VERSION                      0xa4
 
