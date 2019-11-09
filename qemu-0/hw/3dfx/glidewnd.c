@@ -149,7 +149,7 @@ int stat_window(const int res, const int activate)
             (((tblRes[sel].h & 0xFFFFU) << 0x10) | tblRes[sel].w) : glide_window_stat(activate);
 	if (activate) {
 	    if (wndStat == (((tblRes[sel].h & 0xFFFFU) << 0x10) | tblRes[sel].w)) {
-		DPRINTF("    window %ux%u\n", (wndStat & 0xFFFFU), (wndStat >> 0x10));   
+		DPRINTF("    window %ux%u %s\n", (wndStat & 0xFFFFU), (wndStat >> 0x10), (cfg_scaleX)? "(scaled)":"");
 		stat = 0;
 	    }
 	}
@@ -211,7 +211,11 @@ uint32_t init_window(const int res, const char *wndTitle)
         cfg_lfbWriteMerge = 0;
     }
 
-    sel = (cfg_scaleX)? scaledRes(cfg_scaleX, ((float)tblRes[res].h) / tblRes[res].w):res;
+    sel = res;
+    if (cfg_scaleX) {
+        sel = scaledRes(cfg_scaleX, ((float)tblRes[res].h) / tblRes[res].w);
+        conf_glide2x(tblRes[sel].w);
+    }
 #if defined(CONFIG_WIN32) && CONFIG_WIN32	    
     if (cfg_createWnd)
         hwnd = (uintptr_t)CreateGlideWindow(wndTitle, tblRes[sel].w, tblRes[sel].h);

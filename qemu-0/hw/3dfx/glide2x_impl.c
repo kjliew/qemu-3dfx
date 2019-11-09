@@ -740,12 +740,18 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
 }
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
-void __stdcall (*setConfig)(const uint32_t flag);
 static HINSTANCE hDll = 0;
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
 static void *hDll = 0;
 #endif
+void __stdcall (*setConfig)(const uint32_t flag);
+void __stdcall (*setConfigRes)(const int res);
+void conf_glide2x(const int res)
+{
+    if (setConfigRes)
+        (*setConfigRes)(res);
+}
 
 void fini_glide2x(void)
 {
@@ -769,19 +775,22 @@ int init_glide2x(const char *dllname)
 {
     int i;
     
+#define WRAPPER_FLAG_QEMU       0x80
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
     hDll = LoadLibrary(dllname);
-#define WRAPPER_FLAG_QEMU       0x80
     setConfig = (void *)(GetProcAddress(hDll, "_setConfig@4"));
-    if (setConfig)
-        (*setConfig)(WRAPPER_FLAG_QEMU);
+    setConfigRes = (void *)(GetProcAddress(hDll, "_setConfigRes@4"));
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
     if (!strncmp(dllname, "glide2x.dll", sizeof("glide2x.dll")))
         hDll = dlopen("libglide2x.so", RTLD_NOW);
     if (!strncmp(dllname, "glide3x.dll", sizeof("glide3x.dll")))
         hDll = dlopen("libglide3x.so", RTLD_NOW);
+    setConfig = (void *)(dlsym(hDll, "setConfig"));
+    setConfigRes = (void *)(dlsym(hDll, "setConfigRes"));
 #endif
+    if (setConfig)
+        (*setConfig)(WRAPPER_FLAG_QEMU);
     
     if (!hDll) {
         return 1;
