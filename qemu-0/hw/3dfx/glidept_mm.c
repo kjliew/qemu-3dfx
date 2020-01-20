@@ -709,6 +709,10 @@ static void processFRet(GlidePTState *s)
 		gLfbInfo->writeMode = ((wrLfbInfo *)PTR(outshm, ALIGNED(sizeof(wrgLfbInfo))))->writeMode;
 		gLfbInfo->origin = ((wrLfbInfo *)PTR(outshm, ALIGNED(sizeof(wrgLfbInfo))))->origin;
 		gLfbInfo->size = sizeof(wrgLfbInfo);
+                if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) {
+                    gLfbInfo->writeMode = s->arg[2];
+                    gLfbInfo->origin = s->arg[3];
+                }
                 if ((s->lfbDev->grBuffer < 2) && (s->arg[2] < 0xff) && (s->arg[2] != gLfbInfo->writeMode))
                     DPRINTF("LFB writeMode mismatch, buf %d %x %x\n", s->lfbDev->grBuffer, s->arg[2], gLfbInfo->writeMode);
                 if ((s->arg[3] < 0xff) && (s->arg[3] != gLfbInfo->origin))
