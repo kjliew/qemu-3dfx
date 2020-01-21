@@ -1,4 +1,4 @@
-CROSS=i686-msdosdjgpp
+CROSS=i686-pc-msdosdjgpp
 CC=$(CROSS)-gcc
 CFLAGS=-Werror -O3 -fomit-frame-pointer
 DXEGEN=dxe3gen

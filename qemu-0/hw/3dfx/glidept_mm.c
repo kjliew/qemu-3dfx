@@ -1048,11 +1048,11 @@ static void glidept_init(Object *obj)
     GlidePTState *s = GLIDEPT(obj);
     MemoryRegion *sysmem = get_system_memory();
 
-    memory_region_init_ram(&s->glfb_ram, NULL, "grlfbshm", GRLFB_SIZE >> 1, &error_fatal);
+    memory_region_init_ram(&s->glfb_ram, NULL, "grlfbshm", SHLFB_SIZE, &error_fatal);
     memory_region_init_ram(&s->fifo_ram, NULL, "glideshm", GRSHM_SIZE, &error_fatal);
     s->glfb_ptr = memory_region_get_ram_ptr(&s->glfb_ram);
     s->fifo_ptr = memory_region_get_ram_ptr(&s->fifo_ram);
-    memory_region_add_subregion(sysmem, (GLIDE_LFB_BASE + (GRLFB_SIZE >> 1)), &s->glfb_ram);
+    memory_region_add_subregion(sysmem, (GLIDE_LFB_BASE + GRLFB_SIZE), &s->glfb_ram);
     memory_region_add_subregion(sysmem, GLIDE_FIFO_BASE, &s->fifo_ram);
 
     memory_region_init_io(&s->iomem, obj, &glidept_ops, s, TYPE_GLIDEPT, TARGET_PAGE_SIZE);

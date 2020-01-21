@@ -29,8 +29,6 @@ static FILE *logfp = NULL;
 
 #define GLIDEVER 0x301
 #define GLIDEPT_MM_BASE 0xfbdff000
-#define GLIDE_FIFO_BASE 0xfb400000
-#define GLIDE_LFB_BASE  0xfb000000
 #define PAGE_SIZE 0x1000
 #define PUSH_F3DF 1
 #define MAX_3DF 256*1024
@@ -79,12 +77,12 @@ static int InitGlidePTMMBase(void) {
     if (fxMapLinear(0, GLIDE_FIFO_BASE, &linear_addr, &length)) {
         mfifo = (uint32_t *)linear_addr;
     }
-    length = GRLFB_SIZE >> 1;
+    length = GRLFB_SIZE;
     if (fxMapLinear(0, GLIDE_LFB_BASE, &linear_addr, &length)) {
         lfb = (uint32_t *)linear_addr;
     }
-    length = GRLFB_SIZE >> 1;
-    if (fxMapLinear(0, (GLIDE_LFB_BASE + (GRLFB_SIZE >> 1)), &linear_addr, &length)) {
+    length = SHLFB_SIZE;
+    if (fxMapLinear(0, (GLIDE_LFB_BASE + GRLFB_SIZE), &linear_addr, &length)) {
         vgLfb = (uint32_t *)linear_addr;
     }
 

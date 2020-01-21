@@ -27,8 +27,6 @@
 #include "szgrdata.h"
 
 #define GLIDEPT_MM_BASE 0xfbdff000
-#define GLIDE_FIFO_BASE 0xfb400000
-#define GLIDE_LFB_BASE	0xfb000000
 
 #define GR_RESOLUTION_320x200   0x0
 #define GR_RESOLUTION_320x240   0x1
