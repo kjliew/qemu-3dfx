@@ -782,10 +782,13 @@ int init_glide2x(const char *dllname)
     setConfigRes = (void *)(GetProcAddress(hDll, "_setConfigRes@4"));
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
+    int enWrap3x = 0;
     if (!strncmp(dllname, "glide2x.dll", sizeof("glide2x.dll")))
         hDll = dlopen("libglide2x.so", RTLD_NOW);
-    if (!strncmp(dllname, "glide3x.dll", sizeof("glide3x.dll")))
+    if (!strncmp(dllname, "glide3x.dll", sizeof("glide3x.dll"))) {
         hDll = dlopen("libglide3x.so", RTLD_NOW);
+        enWrap3x = 1;
+    }
     setConfig = (void *)(dlsym(hDll, "setConfig"));
     setConfigRes = (void *)(dlsym(hDll, "setConfigRes"));
 #endif
@@ -801,7 +804,7 @@ int init_glide2x(const char *dllname)
         tblGlide2x[i].ptr = (void *)(GetProcAddress(hDll, tblGlide2x[i].sym));
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
-	char lnxsym[128];
+	char lnxsym[128], wrapsym[128] = "wrap3x_", *pws = wrapsym;
 	strncpy(lnxsym, tblGlide2x[i].sym + 1, sizeof(lnxsym));
 	for (int i = 0; i < sizeof(lnxsym); i++) {
 	    if (lnxsym[i] == '@') {
@@ -809,7 +812,9 @@ int init_glide2x(const char *dllname)
 		break;
 	    }
 	}
-        tblGlide2x[i].ptr = (void *)(dlsym(hDll, lnxsym));
+        pws = strncat(wrapsym, lnxsym, sizeof(wrapsym)-1);
+        void *plf = dlsym(hDll, lnxsym), *pwf = dlsym(hDll, pws);
+        tblGlide2x[i].ptr = (enWrap3x && pwf)? pwf:plf;
 #endif
     }
 
