@@ -747,9 +747,11 @@ static void *hDll = 0;
 #endif
 void __stdcall (*setConfig)(const uint32_t flag);
 void __stdcall (*setConfigRes)(const int res);
-void conf_glide2x(const int res)
+void conf_glide2x(const uint32_t flags, const int res)
 {
-    if (setConfigRes)
+    if (setConfig)
+        (*setConfig)(flags);
+    if (res && setConfigRes)
         (*setConfigRes)(res);
 }
 
@@ -775,7 +777,6 @@ int init_glide2x(const char *dllname)
 {
     int i;
     
-#define WRAPPER_FLAG_QEMU       0x80
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
     hDll = LoadLibrary(dllname);
     setConfig = (void *)(GetProcAddress(hDll, "_setConfig@4"));
@@ -792,8 +793,6 @@ int init_glide2x(const char *dllname)
     setConfig = (void *)(dlsym(hDll, "setConfig"));
     setConfigRes = (void *)(dlsym(hDll, "setConfigRes"));
 #endif
-    if (setConfig)
-        (*setConfig)(WRAPPER_FLAG_QEMU);
     
     if (!hDll) {
         return 1;

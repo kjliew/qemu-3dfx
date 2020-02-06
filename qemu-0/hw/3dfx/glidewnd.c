@@ -189,7 +189,11 @@ uint32_t init_window(const int res, const char *wndTitle)
 	uintptr_t uptr;
     } cvHWnd;
 
-    int sel;
+    cfg_createWnd = 0;
+    cfg_scaleX = 0;
+    cfg_lfbHandler = 0;
+    cfg_lfbNoAux = 0;
+    cfg_lfbWriteMerge = 0;
 
     FILE *fp = fopen(GLIDECFG, "r");
     if (fp != NULL) {
@@ -203,19 +207,20 @@ uint32_t init_window(const int res, const char *wndTitle)
 	}
         fclose(fp);
     }
-    else {
-        cfg_createWnd = 0;
-	cfg_scaleX = 0;
-        cfg_lfbHandler = 0;
-        cfg_lfbNoAux = 0;
-        cfg_lfbWriteMerge = 0;
-    }
 
-    sel = res;
+#define WRAPPER_FLAG_WINDOWED   0x01
+#define WRAPPER_FLAG_QEMU       0x80
+    uint32_t flags = (glide_gui_fullscreen())? WRAPPER_FLAG_QEMU:
+        (WRAPPER_FLAG_QEMU | WRAPPER_FLAG_WINDOWED);
+
+    int sel = res;
     if (cfg_scaleX) {
         sel = scaledRes(cfg_scaleX, ((float)tblRes[res].h) / tblRes[res].w);
-        conf_glide2x(tblRes[sel].w);
+        conf_glide2x(flags, tblRes[sel].w);
     }
+    else
+        conf_glide2x(flags, 0);
+
 #if defined(CONFIG_WIN32) && CONFIG_WIN32	    
     if (cfg_createWnd)
         hwnd = (uintptr_t)CreateGlideWindow(wndTitle, tblRes[sel].w, tblRes[sel].h);
