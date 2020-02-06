@@ -171,15 +171,17 @@ static void guest_memory_write(hwaddr vaddr, void *buf, int len)
 
 static void vgLfbFlush(GlidePTState *s)
 {
+    uint32_t stride = (s->lfbDev->writeMode & 0x04)? 0x1000:0x800;
+    uint32_t xwidth = (s->lfbDev->writeMode & 0x04)? (s->lfb_w << 2):(s->lfb_w << 1);
     uint8_t *gLfb = ((s->FEnum == FEnum_grLfbUnlock) && (s->arg[1] & 0xFEU))? (s->glfb_ptr + (s->lfb_h * 0x800)):s->glfb_ptr;
     uint8_t *hLfb = s->lfbDev->lfbPtr[1];
     if (hLfb == 0)
         DPRINTF("WARN: LFB write pointer is NULL\n");
     else {
         for (int y = 0; y < s->lfb_h; y++) {
-            memcpy(hLfb, gLfb, (s->lfb_w << 1));
+            memcpy(hLfb, gLfb, xwidth);
             hLfb += s->lfbDev->stride[1];
-            gLfb += 0x800;
+            gLfb += stride;
         }
     }
 }
@@ -709,6 +711,8 @@ static void processFRet(GlidePTState *s)
 		gLfbInfo->writeMode = ((wrLfbInfo *)PTR(outshm, ALIGNED(sizeof(wrgLfbInfo))))->writeMode;
 		gLfbInfo->origin = ((wrLfbInfo *)PTR(outshm, ALIGNED(sizeof(wrgLfbInfo))))->origin;
 		gLfbInfo->size = sizeof(wrgLfbInfo);
+                s->lfbDev->writeMode = gLfbInfo->writeMode;
+                s->lfbDev->origin = gLfbInfo->origin;
                 if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) {
                     gLfbInfo->writeMode = s->arg[2];
                     gLfbInfo->origin = s->arg[3];
@@ -718,20 +722,21 @@ static void processFRet(GlidePTState *s)
                 if ((s->arg[3] < 0xff) && (s->arg[3] != gLfbInfo->origin))
                     DPRINTF("LFB origin mismatch, %x %x\n", s->arg[3], gLfbInfo->origin);
                 if (s->lfb_real == 0)
-                    gLfbInfo->lfbPtr = ((s->lfbDev->grBuffer & 0xFEU) == 0)? 0:(s->lfb_h * 0x800);
+                    gLfbInfo->lfbPtr = (s->lfbDev->grBuffer & 0xFEU)? (s->lfb_h * 0x800):0;
 	    }
             if (s->lfb_real == 0) {
-                uint8_t *gLfb = ((s->lfbDev->grBuffer & 0xFEU) == 0)? s->glfb_ptr:(s->glfb_ptr + (s->lfb_h * 0x800));
+                uint8_t *gLfb = (s->lfbDev->grBuffer & 0xFEU)? (s->glfb_ptr + (s->lfb_h * 0x800)):s->glfb_ptr;
                 if (s->lfbDev->grLock) {
                     if (s->lfb_dirty & 0x01U) {
                         s->lfb_dirty = 0;
-                        if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) { }
-                        else
+                        if ((s->lfbDev->writeMode & 0x04) || (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU))) { }
+                        else {
                             wrReadRegion(s->lfbDev->grBuffer, 0, 0, s->lfb_w, s->lfb_h, 0x800, (uintptr_t)gLfb);
+                        }
                     }
                 }
                 else {
-                    if (s->lfb_dirty) {
+                    if (s->lfb_dirty & 0x01U) {
                         uint8_t *hLfb = s->lfbDev->lfbPtr[0];
                         s->lfb_dirty = 0;
                         if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) { }

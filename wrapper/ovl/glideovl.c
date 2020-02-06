@@ -493,7 +493,7 @@ uint32_t PT_CALL grLfbLock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t
     if (ret & 0x10U) {
         shmaddr = (uint32_t)vgLfb + (uint32_t)(((wrLfbInfo *)arg5)->lfbPtr);
         ((wrLfbInfo *)arg5)->lfbPtr = (uint32_t *)shmaddr;
-        ((wrLfbInfo *)arg5)->stride = 0x800;
+        ((wrLfbInfo *)arg5)->stride = (arg2 & 0x04)? 0x1000:0x800;
         ((wrLfbInfo *)arg5)->writeMode = arg2;
         ((wrLfbInfo *)arg5)->origin = arg3;
         ret = 1;
