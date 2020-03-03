@@ -75,24 +75,24 @@ static uint32_t *m3df;
 static uint32_t *mdata;
 static uint32_t *mfifo;
 static uint32_t *vgLfb;
-static int InitGlidePTMMBase(void) { 
+static int InitGlidePTMMBase(PDRVFUNC pDrv) {
     //return (uint32_t *)GLIDEPT_MM_BASE; 
     FxU32 linear_addr, length;
 
     length = PAGE_SIZE;
-    if (fxMapLinear(0, GLIDEPT_MM_BASE, &linear_addr, &length)) {
+    if (pDrv->MapLinear(0, GLIDEPT_MM_BASE, &linear_addr, &length)) {
         ptm = (uint32_t *)linear_addr;
     }
     length = GRSHM_SIZE;
-    if (fxMapLinear(0, GLIDE_FIFO_BASE, &linear_addr, &length)) {
+    if (pDrv->MapLinear(0, GLIDE_FIFO_BASE, &linear_addr, &length)) {
         mfifo = (uint32_t *)linear_addr;
     }
     length = GRLFB_SIZE;
-    if (fxMapLinear(0, GLIDE_LFB_BASE, &linear_addr, &length)) {
+    if (pDrv->MapLinear(0, GLIDE_LFB_BASE, &linear_addr, &length)) {
         lfb = (uint32_t *)linear_addr;
     }
     length = SHLFB_SIZE;
-    if (fxMapLinear(0, (GLIDE_LFB_BASE + GRLFB_SIZE), &linear_addr, &length)) {
+    if (pDrv->MapLinear(0, (GLIDE_LFB_BASE + GRLFB_SIZE), &linear_addr, &length)) {
         vgLfb = (uint32_t *)linear_addr;
     }
 
@@ -939,6 +939,14 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         )
 {
     uint32_t HostRet;
+    OSVERSIONINFO osInfo;
+    DRVFUNC drv;
+    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&osInfo);
+    if (osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT)
+        kmdDrvInit(&drv);
+    else
+        vxdDrvInit(&drv);
 
     switch(dwReason) {
         case DLL_THREAD_ATTACH:
@@ -946,9 +954,9 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         case DLL_THREAD_DETACH:
             break;
         case DLL_PROCESS_ATTACH:
-            if (fxlibInit()) {
-                if (InitGlidePTMMBase()) {
-                    fxlibFini();
+            if (drv.Init()) {
+                if (InitGlidePTMMBase(&drv)) {
+                    drv.Fini();
                     return FALSE;
                 }
             }
@@ -972,7 +980,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 #ifdef DEBUG_WRAPPER
 	    fclose(logfp);
 #endif
-            fxlibFini();
+            drv.Fini();
             break;
     }
 

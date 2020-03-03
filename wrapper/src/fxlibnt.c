@@ -1,19 +1,18 @@
 #include <windows.h>
 #include "fxlib.h"
 
-#ifdef __FXSYS__
 
 static FxU32 pciErrorCode = 0;
 static HANDLE hMemmapFile;
 
-FxBool fxlibFini(void)
+static FxBool fxlibFini(void)
 {
   if (hMemmapFile != INVALID_HANDLE_VALUE) CloseHandle(hMemmapFile);
 
   return FXTRUE;
 }
 
-FxBool fxlibInit(void)
+static FxBool fxlibInit(void)
 {
   hMemmapFile = INVALID_HANDLE_VALUE;
 
@@ -32,7 +31,7 @@ FxBool fxlibInit(void)
   return FXTRUE;
 }
 
-FxBool
+static FxBool
 fxMapLinear(FxU32 busNumber, FxU32 physical_addr,
                FxU32 *linear_addr, FxU32 *length)
 {
@@ -58,7 +57,7 @@ fxMapLinear(FxU32 busNumber, FxU32 physical_addr,
   return FXTRUE;
 }
 
-FxBool
+static FxBool
 fxUnmapLinear(FxU32 linear_addr, FxU32 length)
 {
   FxU32                cbReturned;
@@ -70,11 +69,18 @@ fxUnmapLinear(FxU32 linear_addr, FxU32 length)
                          &cbReturned, NULL);
 }
 
-FxBool
+static FxBool
 fxSetPermission(const FxU32 addrBase, const FxU32 addrLen,
                    const FxBool writePermP)
 {
   return FXFALSE;
 }
 
-#endif // __FXSYS__
+void kmdDrvInit(PDRVFUNC drv)
+{
+    drv->Init = &fxlibInit;
+    drv->Fini = &fxlibFini;
+    drv->MapLinear = &fxMapLinear;
+    drv->UnmapLinear = &fxUnmapLinear;
+    drv->SetPermission = &fxSetPermission;
+}

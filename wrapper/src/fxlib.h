@@ -21,7 +21,6 @@ typedef unsigned long FxU32;
   #include <ddk/ntddk.h>
 #endif
 
-#ifdef __FXSYS__
 #ifndef _DDK_NTDDK_H 
 typedef enum _INTERFACE_TYPE {
   InterfaceTypeUndefined = -1,
@@ -77,13 +76,17 @@ typedef struct
 
 }
 PHYSICAL_MEMORY_INFO, *PPHYSICAL_MEMORY_INFO;
-#endif // __FXSYS__
 
-FxBool fxlibInit(void);
-FxBool fxlibFini(void);
-FxBool fxMapLinear(FxU32 busNumber, FxU32 physical_addr, FxU32 *linear_addr, FxU32 *length);
-FxBool fxUnmapLinear(FxU32 linear_addr, FxU32 length);
-FxBool fxSetPermission(const FxU32 addrBase, const FxU32 addrLen, const FxBool writePermP);
+typedef struct DrvFuncTbl {
+    FxBool (*Init)(void);
+    FxBool (*Fini)(void);
+    FxBool (*MapLinear)(FxU32, FxU32, FxU32 *, FxU32 *);
+    FxBool (*UnmapLinear)(FxU32, FxU32);
+    FxBool (*SetPermission)(const FxU32, const FxU32, const FxBool);
+} DRVFUNC, * PDRVFUNC;
+
+void vxdDrvInit(PDRVFUNC);
+void kmdDrvInit(PDRVFUNC);
 
 #endif // FXLIB_H
 

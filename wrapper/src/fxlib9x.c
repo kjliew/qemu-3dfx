@@ -1,12 +1,10 @@
 #include <windows.h>
 #include "fxlib.h"
 
-#ifdef __FXVXD__
-
 static FxU32 pciErrorCode = 0;
 static HANDLE hMemmapFile;
 
-FxBool fxlibFini(void)
+static FxBool fxlibFini(void)
 {
   FxBool
     retVal = (hMemmapFile != INVALID_HANDLE_VALUE);
@@ -15,7 +13,7 @@ FxBool fxlibFini(void)
   return retVal;
 }
 
-FxBool fxlibInit(void)
+static FxBool fxlibInit(void)
 {
   hMemmapFile = CreateFile("\\\\.\\FXMEMMAP.VXD", 0, 0, NULL, 0,
                            FILE_FLAG_DELETE_ON_CLOSE, NULL);
@@ -27,7 +25,7 @@ FxBool fxlibInit(void)
   return FXTRUE;
 }
 
-FxBool
+static FxBool
 fxMapLinear(FxU32 busNumber, FxU32 physical_addr,
                FxU32 *linear_addr, FxU32 *length)
 {
@@ -55,7 +53,7 @@ fxMapLinear(FxU32 busNumber, FxU32 physical_addr,
   return FXTRUE;
 }
 
-FxBool
+static FxBool
 fxUnmapLinear(FxU32 linear_addr, FxU32 length)
 {
     return FXTRUE;
@@ -64,7 +62,7 @@ fxUnmapLinear(FxU32 linear_addr, FxU32 length)
 /* Ganked from vmm.h */
 #define PC_USER         0x00040000  /* make the pages ring 3 accessible */
 
-FxBool
+static FxBool
 fxSetPermission(const FxU32 addrBase, const FxU32 addrLen,
                    const FxBool writePermP)
 {
@@ -86,4 +84,11 @@ fxSetPermission(const FxU32 addrBase, const FxU32 addrLen,
                          &nRet, NULL);
 }
 
-#endif // __FXVXD__
+void vxdDrvInit(PDRVFUNC drv)
+{
+    drv->Init = &fxlibInit;
+    drv->Fini = &fxlibFini;
+    drv->MapLinear = &fxMapLinear;
+    drv->UnmapLinear = &fxUnmapLinear;
+    drv->SetPermission = &fxSetPermission;
+}

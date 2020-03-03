@@ -11,21 +11,12 @@ C_OBJS:=\
     fxlib9x.o \
     fxlibnt.o \
 
-ifeq ($(FXSYS),1)
-    CFLAGS+=-D__FXSYS__
-    KDRV=fxptl.sys
-else
-    CFLAGS+=-D__FXVXD__
-    KDRV=fxmemmap.vxd
-endif
 
 all: $(TARGET1) $(TARGET2) $(TARGET3) kdrvcpy
 
 kdrvcpy:
-	@if [ $(KDRV) == fxmemmap.vxd ]; then \
-	    make -C ../dxe; make -C ../ovl ;fi
-	@echo "  DRV $(KDRV)"
-	@if [ -f $(SRCDIR)/kdrv/$(KDRV) ]; then cp $(SRCDIR)/kdrv/$(KDRV) . ;fi
+	make -C ../dxe
+	make -C ../ovl
 
 $(TARGET2): $(C_OBJS) glidedll.o
 	@echo "  CFLAGS $(CFLAGS)"
