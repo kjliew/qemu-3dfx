@@ -105,7 +105,7 @@ typedef struct {
     uint32_t origin;
 } wrgLfbInfo;
 
-int FEnumArgsCnt(int);
+int GRFEnumArgsCnt(int);
 uint32_t texTableValid(uint32_t);
 uint32_t wrReadRegion(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uintptr_t arg6);
 uint32_t wrWriteRegion(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uintptr_t arg7);

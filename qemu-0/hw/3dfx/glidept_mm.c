@@ -97,6 +97,7 @@ typedef struct GlidePTState
     uint32_t GrRes;
     uint8_t *fbuf;
     uint32_t flen;
+    PERFSTAT perfs;
 } GlidePTState;
 
 static uint64_t glidept_read(void *opaque, hwaddr addr, unsigned size)
@@ -335,6 +336,7 @@ static void processArgs(GlidePTState *s)
                 s->lfb_dirty = 1;
             }
             //DPRINTF("  >>>>>> _grBufferSwap <<<<<<\n");
+            s->perfs.stat();
             break;
 	case FEnum_grLfbLock:
             s->datacb = ALIGNED(SIZE_GRLFBINFO);
@@ -645,7 +647,7 @@ static void processFRet(GlidePTState *s)
 	    break;
 	case FEnum_grSstWinClose:
         case FEnum_grSstWinClose3x:
-	    profile_last();
+	    s->perfs.last();
 	    /* TODO - Window management */
 	    DPRINTF("grSstWinClose called\n");
 	    s->GrContext = 0;
@@ -664,6 +666,7 @@ static void processFRet(GlidePTState *s)
                         outshm, PTR(outshm, sizeof(char[192])), PTR(outshm, sizeof(char[208])));
 
             }
+            glidestat(&s->perfs);
             memset(s->lfbDev->stride, 0, 2 * sizeof(uint32_t));
 	    memset(s->lfbDev->lock, 0, 2 * sizeof(int));
 	    s->lfbDev->lfbPtr[0] = 0;
@@ -676,7 +679,7 @@ static void processFRet(GlidePTState *s)
             s->fifoMax = 0; s->dataMax = 0;
 	    break;
 	case FEnum_grGlideShutdown:
-	    profile_last();
+	    s->perfs.last();
 	    /* TODO - Window management */
 	    DPRINTF("grGlideShutdown called, fifo 0x%04x data 0x%04x shm 0x%07x lfb 0x%07x\n", 
                     s->fifoMax, s->dataMax, (MAX_FIFO + s->dataMax) << 2, GLIDE_LFB_BASE + s->lfbDev->lfbMax);
@@ -819,7 +822,7 @@ static void processFifo(GlidePTState *s)
         while (i < fifoptr[0]) {
             int numArgs, numData;
             s->FEnum = fifoptr[i++];
-            numArgs = FEnumArgsCnt(s->FEnum);
+            numArgs = GRFEnumArgsCnt(s->FEnum);
 #define DEBUG_FIFO 0
 #if DEBUG_FIFO
             if (i == (FIRST_FIFO + 1))

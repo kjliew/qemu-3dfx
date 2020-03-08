@@ -254,7 +254,7 @@ static void profile_dump(void)
     }
 }
 
-void profile_last(void)
+static void profile_last(void)
 {
     PSTATSFX p = &fxstats;
     if (p->last) {
@@ -267,7 +267,7 @@ void profile_last(void)
 #define NANOSECONDS_PER_SECOND get_ticks_per_sec()
 #endif
 
-void profile_stat(void)
+static void profile_stat(void)
 {
     uint64_t curr;
     int i;
@@ -289,5 +289,11 @@ void profile_stat(void)
     i = (int) p->ftime;
     if (i && ((i % 5) == 0))
 	profile_dump();
+}
+
+void glidestat(PPERFSTAT s)
+{
+    s->stat = &profile_stat;
+    s->last = &profile_last;
 }
 

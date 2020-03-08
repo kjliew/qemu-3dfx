@@ -28,7 +28,11 @@ int stat_window(const int, const int);
 uint32_t init_window(const int, const char *);
 void fini_window(void);
 
-void profile_last(void);
-void profile_stat(void);
+typedef struct _perfstat {
+    void (*stat)(void);
+    void (*last)(void);
+} PERFSTAT, *PPERFSTAT;
+
+void glidestat(PPERFSTAT);
 
 #endif // GLIDEWND_H
