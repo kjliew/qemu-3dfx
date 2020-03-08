@@ -21,7 +21,7 @@ $ tar xf qemu-4.1.0.tar.xz
 $ cd qemu-4.1.0
 $ rsync -r ../qemu-0/hw ./
 $ patch -p0 -i ../00-qemu410-3dfx.patch
-$ mkdir ../build && cd ../buid
+$ mkdir ../build && cd ../build
 $ ../qemu-4.1.0/configure && make
 
 
