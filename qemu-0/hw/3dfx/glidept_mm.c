@@ -172,8 +172,8 @@ static void guest_memory_write(hwaddr vaddr, void *buf, int len)
 
 static void vgLfbFlush(GlidePTState *s)
 {
-    uint32_t stride = (s->lfbDev->writeMode & 0x04)? 0x1000:0x800;
-    uint32_t xwidth = (s->lfbDev->writeMode & 0x04)? (s->lfb_w << 2):(s->lfb_w << 1);
+    uint32_t stride = ((s->lfbDev->writeMode & 0x0EU) == 0x04)? 0x1000:0x800;
+    uint32_t xwidth = ((s->lfbDev->writeMode & 0x0EU) == 0x04)? (s->lfb_w << 2):(s->lfb_w << 1);
     uint8_t *gLfb = ((s->FEnum == FEnum_grLfbUnlock) && (s->arg[1] & 0xFEU))? (s->glfb_ptr + (s->lfb_h * 0x800)):s->glfb_ptr;
     uint8_t *hLfb = s->lfbDev->lfbPtr[1];
     if (hLfb == 0)
@@ -732,7 +732,7 @@ static void processFRet(GlidePTState *s)
                 if (s->lfbDev->grLock) {
                     if (s->lfb_dirty & 0x01U) {
                         s->lfb_dirty = 0;
-                        if ((s->lfbDev->writeMode & 0x04) || (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU))) { }
+                        if (((s->lfbDev->writeMode & 0x0EU) == 0x04) || (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU))) { }
                         else {
                             wrReadRegion(s->lfbDev->grBuffer, 0, 0, s->lfb_w, s->lfb_h, 0x800, (uintptr_t)gLfb);
                         }
