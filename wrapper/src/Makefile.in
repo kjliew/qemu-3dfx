@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Werror -O3 -fomit-frame-pointer
-LDFLAGS=
+LDFLAGS=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 SRCDIR=../src
 TARGET1=glide.dll
 TARGET2=glide2x.dll
@@ -19,7 +19,8 @@ kdrvcpy:
 	make -C ../ovl
 
 $(TARGET2): $(C_OBJS) glidedll.o
-	@echo "  CFLAGS $(CFLAGS)"
+	@echo "  CFLAGS  $(CFLAGS)"
+	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
 	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
@@ -28,14 +29,16 @@ $(TARGET2): $(C_OBJS) glidedll.o
 	dlltool -U -d lib$(@:dll=def) -l lib$@.a
 
 $(TARGET1): $(C_OBJS) gl211dll.o
-	@echo "  CFLAGS $(CFLAGS)"
+	@echo "  CFLAGS  $(CFLAGS)"
+	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
 	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 
 $(TARGET3): $(C_OBJS) gl301dll.o
-	@echo "  CFLAGS $(CFLAGS)"
+	@echo "  CFLAGS  $(CFLAGS)"
+	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
 	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
