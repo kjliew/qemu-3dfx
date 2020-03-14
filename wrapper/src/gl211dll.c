@@ -134,9 +134,8 @@ static INLINE void fifoAddData(int nArg, uint32_t argData, int cbData)
     uint32_t numData = (cbData & 0x03)? ((cbData >> 2) + 1):(cbData >> 2);
 
     j = mdata[0];
-    for (i = 0; i < numData; i++)
-        mdata[j++] = data[i];
-    mdata[0] = j;
+    memcpy(&mdata[j], data, (numData << 2));
+    mdata[0] = (j + numData);
     if (nArg)
         pt[nArg] = argData;
 }
@@ -148,8 +147,7 @@ static INLINE void fifoOutData(int offs, uint32_t darg, int cbData)
     uint32_t *dst = (uint32_t *)darg;
     uint32_t numData = (cbData & 0x03)? ((cbData >> 2) + 1):(cbData >> 2);
 
-    for (i = 0; i < numData; i++)
-        dst[i] = src[i];
+    memcpy(dst, src, (numData << 2));
 }
 
 uint32_t PT_CALL grTexTextureMemRequired(uint32_t arg0, uint32_t arg1);
@@ -384,9 +382,9 @@ void PT_CALL grFogMode(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogMode, 1);
 }
 void PT_CALL grFogTable(uint32_t arg0) {
-    uint32_t n = 64;
-    fifoAddData(0, (uint32_t)&n, ALIGNED(sizeof(uint32_t)));
-    fifoAddData(0, arg0, ALIGNED(n * sizeof(uint8_t)));
+    uint32_t n[2]; n[0] = 64;
+    fifoAddData(0, (uint32_t)n, ALIGNED(sizeof(uint32_t)));
+    fifoAddData(0, arg0, ALIGNED(n[0] * sizeof(uint8_t)));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogTable, 1);
 }
@@ -646,7 +644,9 @@ void PT_CALL grTexSource(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t a
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexSource, 4);
 }
 uint32_t PT_CALL grTexTextureMemRequired(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(SIZE_GRTEXINFO));
+    uint8_t texInfo[ALIGNED(SIZE_GRTEXINFO)];
+    memcpy(texInfo, (uint8_t *)arg1, ALIGNED(SIZE_GRTEXINFO));
+    fifoAddData(0, (uint32_t)texInfo, ALIGNED(SIZE_GRTEXINFO));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grTexTextureMemRequired;
     return *pt0;
