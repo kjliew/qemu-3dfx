@@ -1,27 +1,32 @@
-QEMU 3Dfx Glide Pass-through
-Copyright (c) 2018-2019
+QEMU MESA GL/3Dfx Glide Pass-through
+Copyright (c) 2018-2020
 by KJ Liew <liewkj@yahoo.com>
 
 Content
 -------
-qemu-0/hw/3dfx          - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
-wrapper                 - wrappers for supported guest OS/environment. (DOS/Windows/DJGPP/Linux)
-00-qemu410-3dfx.patch   - Patch for QEMU version 4.xx
-00-qemu311-3dfx.patch   - Patch for QEMU version 3.xx
-99-3dfx.patch           - Patch for QEMU version 1.6.x to 2.12.1 (deprecated)
-99-oldqemu.patch        - Addition patch for QEMU version < 2.10 (deprecated)
+qemu-0/hw/3dfx              - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
+qemu-1/hw/mesa              - Overlay for QEMU source tree to add MESA GL pass-through device model
+wrapper                     - Glide wrappers for supported guest OS/environment. (DOS/Windows/DJGPP/Linux)
+wrapqgl                     - MESA GL wrapper for supported guest OS/environment. (Windows)
+00-qemu410-3dfx.patch       - Patch for QEMU version 4.xx (Glide only)
+00-qemu311-3dfx.patch       - Patch for QEMU version 3.xx (Glide only)
+01-qemu411-mesa.patch       - Patch for QEMU version 4.xx (MESA only)
+10-qemu411-mesa-glide.patch - Patch for QEMU version 4.xx (MESA & Glide)
+99-3dfx.patch               - Patch for QEMU version 1.6.x to 2.12.1 (deprecated)
+99-oldqemu.patch            - Addition patch for QEMU version < 2.10 (deprecated)
 
 Simple guide to apply the patch:
+(using 10-qemu411-mesa-glide.patch)
 
 $ mkdir myqemu && cd myqemu
 $ git clone https://github.com/kjliew/qemu-3dfx.git
 $ cd qemu-3dfx
-$ wget https://download.qemu.org/qemu-4.1.0.tar.xz
-$ tar xf qemu-4.1.0.tar.xz
-$ cd qemu-4.1.0
-$ rsync -r ../qemu-0/hw ./
-$ patch -p0 -i ../00-qemu410-3dfx.patch
+$ wget https://download.qemu.org/qemu-4.1.1.tar.xz
+$ tar xf qemu-4.1.1.tar.xz
+$ cd qemu-4.1.1
+$ rsync -r ../qemu-0/hw/3dfx ./hw/
+$ rsync -r ../qemu-1/hw/mesa ./hw/
+$ patch -p0 -i ../10-qemu411-mesa-glide.patch
 $ mkdir ../build && cd ../build
-$ ../qemu-4.1.0/configure && make
-
+$ ../qemu-4.1.1/configure && make
 

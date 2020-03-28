@@ -1,0 +1,39 @@
+QEMU_SRC_DIR=../../qemu-1
+CC=gcc
+CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -Werror -O3 -fomit-frame-pointer
+LDFLAGS=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
+LDFLAGS=
+SRCDIR=../src
+TARGET=opengl32.dll
+PEXPORTS=pexports
+
+C_OBJS:=\
+    fxlib9x.o \
+    fxlibnt.o \
+
+
+all: $(TARGET)
+
+$(TARGET): $(C_OBJS) szdata.o wrapgl32.o
+	@echo "  CFLAGS  $(CFLAGS)"
+	@echo "  LDFLAGS $(LDFLAGS)"
+	@echo "  LD  $@"
+	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
+	@$(PEXPORTS) $@ | grep -e ^LIB -e ^EXP -e ^gl -e ^[mw]g[dl] | sed "s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/" | sed "s/^mgl/wgl/;s/^wgd//" > $(@:dll=def)
+	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
+#	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
+#	dlltool -U -d lib$(@:dll=def) -l lib$@.a
+
+%.o: $(SRCDIR)/%.c
+	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi
+	@echo "  CC  $@"
+	@$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	@rm -f *.o *.def
+	@-if [ -f $(TARGET) ]; then strip --strip-unneeded $(TARGET); fi
+	@-if [ -f $(TARGET) ]; then strings $(TARGET) | grep Build; fi
+
+distclean: clean
+	@rm -f $(TARGET)
+
