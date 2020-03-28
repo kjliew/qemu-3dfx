@@ -1,6 +1,7 @@
+QEMU_SRC_DIR=../../qemu-0
 CROSS=i686-pc-msdosdjgpp
 CC=$(CROSS)-gcc
-CFLAGS=-Werror -O3 -fomit-frame-pointer
+CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -Werror -O3 -fomit-frame-pointer
 DXEGEN=dxe3gen
 
 TARGET2=glide2x.dxe

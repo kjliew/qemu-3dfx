@@ -1,7 +1,8 @@
 WATCOM_PATH=/opt/watcom11/bin
 WCC=$(WATCOM_PATH)/wcc386
 WLD=$(WATCOM_PATH)/wlink
-INCLUDES=-I..\src
+QEMU_SRC_DIR=..\..\qemu-0
+INCLUDES=-I$(QEMU_SRC_DIR)\hw\3dfx -I..\src
 
 all: glide2x.ovl
 
