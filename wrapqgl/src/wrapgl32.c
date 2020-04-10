@@ -418,9 +418,14 @@ uint32_t PT_CALL glAreTexturesResident(uint32_t arg0, uint32_t arg1, uint32_t ar
         fifoOutData(0, arg2, (arg0 * sizeof(uint32_t)));
     return ret;
 }
-void PT_CALL glAreTexturesResidentEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+uint32_t PT_CALL glAreTexturesResidentEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    uint32_t ret;
+    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glAreTexturesResidentEXT;
+    if (ret == 0)
+        fifoOutData(0, arg2, (arg0 * sizeof(uint32_t)));
+    return ret;
 }
 void PT_CALL glArrayElement(uint32_t arg0) {
     PrepVertexArray(arg0, arg0, 0);
@@ -2168,8 +2173,9 @@ void PT_CALL glDeleteTextures(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteTextures, 2);
 }
 void PT_CALL glDeleteTexturesEXT(uint32_t arg0, uint32_t arg1) {
+    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteTexturesEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteTexturesEXT, 2);
 }
 void PT_CALL glDeleteTransformFeedbacks(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -3245,6 +3251,7 @@ void PT_CALL glGenTextures(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glGenTexturesEXT(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGenTexturesEXT;
+    fifoOutData(0, arg1, (arg0 * sizeof(uint32_t)));
 }
 void PT_CALL glGenTransformFeedbacks(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -5643,9 +5650,12 @@ uint32_t PT_CALL glIsTexture(uint32_t arg0) {
     ret = *pt0;
     return ret;
 }
-void PT_CALL glIsTextureEXT(uint32_t arg0) {
+uint32_t PT_CALL glIsTextureEXT(uint32_t arg0) {
+    uint32_t ret;
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glIsTextureEXT;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glIsTextureHandleResidentARB(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -7642,8 +7652,10 @@ void PT_CALL glPrioritizeTextures(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPrioritizeTextures, 3);
 }
 void PT_CALL glPrioritizeTexturesEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg1, ALIGNED(arg0*sizeof(int)));
+    fifoAddData(0, arg2, ALIGNED(arg0*sizeof(float)));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glPrioritizeTexturesEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPrioritizeTexturesEXT, 3);
 }
 void PT_CALL glPrioritizeTexturesxOES(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 

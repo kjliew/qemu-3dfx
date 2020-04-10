@@ -180,7 +180,9 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
 
     switch(FEnum) {
         case FEnum_glAreTexturesResident:
+        case FEnum_glAreTexturesResidentEXT:
         case FEnum_glPrioritizeTextures:
+        case FEnum_glPrioritizeTexturesEXT:
             usfp.fpa0p2 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa0p2)(arg[0], parg[1], parg[2]);
             GLDONE();
@@ -242,6 +244,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glDeleteBuffersARB:
         case FEnum_glDeleteProgramsARB:
         case FEnum_glDeleteTextures:
+        case FEnum_glDeleteTexturesEXT:
         case FEnum_glEdgeFlagPointer:
         case FEnum_glFogfv:
         case FEnum_glFogiv:
@@ -249,6 +252,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGenBuffersARB:
         case FEnum_glGenProgramsARB:
         case FEnum_glGenTextures:
+        case FEnum_glGenTexturesEXT:
         case FEnum_glGetBooleanv:
         case FEnum_glGetClipPlane:
         case FEnum_glGetDoublev:

@@ -342,11 +342,13 @@ static void processArgs(MesaPTState *s)
 
     switch (s->FEnum) {
         case FEnum_glAreTexturesResident:
+        case FEnum_glAreTexturesResidentEXT:
             s->datacb = ALIGNED(s->arg[0] * sizeof(uint32_t));
             s->parg[1] = VAL(s->hshm);
             s->parg[2] = VAL(outshm);
             break;
         case FEnum_glPrioritizeTextures:
+        case FEnum_glPrioritizeTexturesEXT:
             s->datacb = ALIGNED(s->arg[0] * sizeof(int)) + ALIGNED(s->arg[0] * sizeof(float));
             s->parg[1] = VAL(s->hshm);
             s->parg[2] = VAL(PTR(s->hshm, ALIGNED(s->arg[0] * sizeof(int))));
@@ -666,6 +668,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glDeleteBuffersARB:
         case FEnum_glDeleteProgramsARB:
         case FEnum_glDeleteTextures:
+        case FEnum_glDeleteTexturesEXT:
             s->datacb = ALIGNED(s->arg[0] * sizeof(uint32_t));
             s->parg[1] = VAL(s->hshm);
             break;
@@ -727,10 +730,11 @@ static void processArgs(MesaPTState *s)
             s->elemMax = (s->arg[2] > s->elemMax)? s->arg[2]:s->elemMax;
             PushVertexArray(s, PTR(s->hshm, s->datacb), s->arg[1], s->arg[2]);
             break;
-        case FEnum_glGenProgramsARB:
-        case FEnum_glGenTextures:
         case FEnum_glGenBuffers:
         case FEnum_glGenBuffersARB:
+        case FEnum_glGenProgramsARB:
+        case FEnum_glGenTextures:
+        case FEnum_glGenTexturesEXT:
         case FEnum_glGetClipPlane:
         case FEnum_glSelectBuffer:
             s->parg[1] = VAL(outshm);
@@ -1476,9 +1480,7 @@ static void mesapt_realize(DeviceState *dev, Error **errp)
 
 static void mesapt_finalize(Object *obj)
 {
-    MesaPTState *s = MESAPT(obj);
-    if (s->mglContext)
-        FiniMesaGL();
+    //MesaPTState *s = MESAPT(obj);
 }
 
 static void mesapt_class_init(ObjectClass *klass, void *data)
