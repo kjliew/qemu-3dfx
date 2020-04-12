@@ -674,8 +674,8 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDrawArrays:
         case FEnum_glDrawArraysEXT:
-            s->elemMax = ((s->arg[2] - 1) > s->elemMax)? (s->arg[2] - 1):s->elemMax;
-            PushVertexArray(s, s->hshm, s->arg[1], s->arg[2] - 1);
+            s->elemMax = ((s->arg[1] + s->arg[2] - 1) > s->elemMax)? (s->arg[1] + s->arg[2] - 1):s->elemMax;
+            PushVertexArray(s, s->hshm, s->arg[1], s->arg[1] + s->arg[2] - 1);
             break;
         case FEnum_glDrawElements:
             s->datacb = ALIGNED(s->arg[1] * szgldata(0, s->arg[2]));
@@ -830,8 +830,8 @@ static void processArgs(MesaPTState *s)
             s->parg[0] = VAL(s->hshm);
             break;
         case FEnum_glLockArraysEXT:
-            //DPRINTF("LockArraysEXT() %04x %04x", s->arg[0], s->arg[1] - 1);
-            PushVertexArray(s, s->hshm, s->arg[0], s->arg[1] - 1);
+            //DPRINTF("LockArraysEXT() %04x %04x", s->arg[0], s->arg[1]);
+            PushVertexArray(s, s->hshm, s->arg[0], s->arg[0] + s->arg[1] - 1);
             break;
         case FEnum_glProgramEnvParameter4dvARB:
         case FEnum_glProgramLocalParameter4dvARB:
@@ -1366,6 +1366,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         s->extnYear = GetGLExtYear();
                         s->extnLength = GetGLExtLength();
                         s->szVertCache = GetVertCacheMB() << 19;
+                        if (s->KickFrame)
+                            MGLKickFrameProc(s->KickFrame);
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
                     }
                     else {

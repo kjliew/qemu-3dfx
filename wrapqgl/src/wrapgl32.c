@@ -2322,14 +2322,14 @@ void PT_CALL glDispatchComputeIndirect(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDispatchComputeIndirect;
 }
 void PT_CALL glDrawArrays(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    PrepVertexArray(arg1, arg2 - 1, 0);
-    PushVertexArray(arg1, arg2 - 1);
+    PrepVertexArray(arg1, arg1 + arg2 - 1, 0);
+    PushVertexArray(arg1, arg1 + arg2 - 1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArrays, 3);
 }
 void PT_CALL glDrawArraysEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    PrepVertexArray(arg1, arg2 - 1, 0);
-    PushVertexArray(arg1, arg2 - 1);
+    PrepVertexArray(arg1, arg1 + arg2 - 1, 0);
+    PushVertexArray(arg1, arg1 + arg2 - 1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArraysEXT, 3);
 }
@@ -5859,8 +5859,8 @@ void PT_CALL glLoadTransposeMatrixxOES(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glLoadTransposeMatrixxOES;
 }
 void PT_CALL glLockArraysEXT(uint32_t arg0, uint32_t arg1) {
-    PrepVertexArray(arg0, arg1 - 1, 0);
-    PushVertexArray(arg0, arg1 - 1);
+    PrepVertexArray(arg0, arg0 + arg1 - 1, 0);
+    PushVertexArray(arg0, arg0 + arg1 - 1);
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glLockArraysEXT, 2);
 }
@@ -15828,6 +15828,8 @@ BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *
 {
     uint32_t ret;
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
+    if (currGLRC)
+        mglDeleteContext(MESAGL_MAGIC);
     xppfd[0] = format;
     memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFE4 >> 2] = MESAGL_MAGIC;
@@ -15902,10 +15904,8 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         case DLL_PROCESS_DETACH:
             UnhookWindowsHookEx(hHook);
             DPRINTF("MesaGL Fini %x", currGLRC);
-            if (currGLRC) {
-                mglMakeCurrent(0, 0);
+            if (currGLRC)
                 mglDeleteContext(MESAGL_MAGIC);
-            }
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | MESAVER;
 #ifdef DEBUG_MGSTUB
             fclose(logfp);
