@@ -19,7 +19,7 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	@$(PEXPORTS) $@ | grep -e ^LIB -e ^EXP -e ^gl -e ^[mw]g[dl] | sed "s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/" | sed "s/^mgl/wgl/;s/^wgd//" > $(@:dll=def)
+	@$(PEXPORTS) $@ | grep -e ^LIB -e ^EXP -e ^gl -e ^[mw]g[dl] | grep -v -e "\.lto_priv" -e "\.part" | sed "s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/" | sed "s/^mgl/wgl/;s/^wgd//" > $(@:dll=def)
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 #	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
 #	dlltool -U -d lib$(@:dll=def) -l lib$@.a

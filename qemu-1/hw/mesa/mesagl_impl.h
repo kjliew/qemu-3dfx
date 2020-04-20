@@ -32,6 +32,8 @@ int ExtFuncIsValid(char *);
 int wrMapOrderPoints(uint32_t);
 int wrTexTextureWxD(uint32_t, uint32_t, int);
 int wrGetParamIa1p2(uint32_t, uint32_t, uint32_t);
+void wrFillBufObj(uint32_t, void *);
+void wrFlushBufObj(int, uint32_t, const void *, void *);
 const char *getGLFuncStr(int);
 void doMesaFunc(int, uint32_t *, uintptr_t *, uintptr_t *);
 uint16_t GetGLExtYear(void);

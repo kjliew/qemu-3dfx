@@ -70,7 +70,10 @@ typedef struct MesaPTState
     uint32_t elemMax;
     int szVertCache;
     int texUnit;
+    int arrayBuf;
+    int elemArryBuf;
     void *BufObj;
+    int BufAcc;
     int KickFrame;
     PERFSTAT perfs;
 
@@ -193,8 +196,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
             DPRINTF(" *WARN* Color Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
     }
     if (s->EdgeFlag.enable && s->EdgeFlag.ptr) {
-        cbElem = (s->EdgeFlag.stride)? s->EdgeFlag.stride:sizeof(int);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(sizeof(int));
+        cbElem = (s->EdgeFlag.stride)? s->EdgeFlag.stride:s->EdgeFlag.size*szgldata(0,s->EdgeFlag.type);
+        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->EdgeFlag.size*szgldata(0,s->EdgeFlag.type));
         ovfl = (n > (s->szVertCache >> 1))? 1:0;
         memcpy(s->EdgeFlag.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
         s->datacb += n;
@@ -203,8 +206,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
             DPRINTF(" *WARN* EdgeFlag Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
     }
     if (s->Index.enable && s->Index.ptr) {
-        cbElem = (s->Index.stride)? s->Index.stride:szgldata(0,s->Index.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(szgldata(0,s->Index.type));
+        cbElem = (s->Index.stride)? s->Index.stride:s->Index.size*szgldata(0,s->Index.type);
+        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->Index.size*szgldata(0,s->Index.type));
         ovfl = (n > (s->szVertCache >> 1))? 1:0;
         memcpy(s->Index.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
         s->datacb += n;
@@ -213,8 +216,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
             DPRINTF(" *WARN* Index Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
     }
     if (s->Normal.enable && s->Normal.ptr) {
-        cbElem = (s->Normal.stride)? s->Normal.stride:3*szgldata(0,s->Normal.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(3*szgldata(0,s->Normal.type));
+        cbElem = (s->Normal.stride)? s->Normal.stride:s->Normal.size*szgldata(0,s->Normal.type);
+        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->Normal.size*szgldata(0,s->Normal.type));
         ovfl = (n > (s->szVertCache >> 1))? 1:0;
         memcpy(s->Normal.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
         s->datacb += n;
@@ -255,8 +258,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
             DPRINTF(" *WARN* SecondaryColor Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
     }
     if (s->FogCoord.enable && s->FogCoord.ptr) {
-        cbElem = (s->FogCoord.stride)? s->FogCoord.stride:szgldata(0,s->FogCoord.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(szgldata(0,s->FogCoord.type));
+        cbElem = (s->FogCoord.stride)? s->FogCoord.stride:s->FogCoord.size*szgldata(0,s->FogCoord.type);
+        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->FogCoord.size*szgldata(0,s->FogCoord.type));
         ovfl = (n > (s->szVertCache >> 1))? 1:0;
         memcpy(s->FogCoord.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
         s->datacb += n;
@@ -302,6 +305,8 @@ static void InitClientStates(MesaPTState *s)
     memset(s->GenAttrib, 0, sizeof(vtxarry_t[2]));
     s->elemMax = 0;
     s->texUnit = 0;
+    s->arrayBuf = 0;
+    s->elemArryBuf = 0;
 }
 
 static uint64_t mesapt_read(void *opaque, hwaddr addr, unsigned size)
@@ -375,65 +380,75 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glColorPointer:
         case FEnum_glColorPointerEXT:
-            vtxarry_init(&s->Color, s->arg[0], s->arg[1], s->arg[2],
-                LookupVertex((s->FEnum == FEnum_glColorPointer)? s->arg[3]:s->arg[4], s->szVertCache));
+            vtxarry_init(&s->Color, s->arg[0], s->arg[1], s->arg[2], (s->arrayBuf == 0)?
+                LookupVertex((s->FEnum == FEnum_glColorPointer)? s->arg[3]:s->arg[4], s->szVertCache):
+                (void *)(uintptr_t)((s->FEnum == FEnum_glColorPointer)? s->arg[3]:s->arg[4]));
             s->parg[3] = VAL(s->Color.ptr);
             s->parg[0] = VAL(s->Color.ptr);
             break;
         case FEnum_glEdgeFlagPointer:
         case FEnum_glEdgeFlagPointerEXT:
-            vtxarry_init(&s->EdgeFlag, 0, 0, s->arg[0],
-                LookupVertex((s->FEnum == FEnum_glEdgeFlagPointer)? s->arg[1]:s->arg[2], s->szVertCache));
+            vtxarry_init(&s->EdgeFlag, 1, GL_BYTE, s->arg[0], (s->arrayBuf == 0)?
+                LookupVertex((s->FEnum == FEnum_glEdgeFlagPointer)? s->arg[1]:s->arg[2], s->szVertCache):
+                (void *)(uintptr_t)((s->FEnum == FEnum_glEdgeFlagPointer)? s->arg[1]:s->arg[2]));
             s->parg[1] = VAL(s->EdgeFlag.ptr);
             s->parg[2] = VAL(s->EdgeFlag.ptr);
             break;
         case FEnum_glIndexPointer:
         case FEnum_glIndexPointerEXT:
-            vtxarry_init(&s->Index, 0, s->arg[0], s->arg[1],
-                LookupVertex((s->FEnum == FEnum_glIndexPointer)? s->arg[2]:s->arg[3], s->szVertCache));
+            vtxarry_init(&s->Index, 1, s->arg[0], s->arg[1], (s->arrayBuf == 0)?
+                LookupVertex((s->FEnum == FEnum_glIndexPointer)? s->arg[2]:s->arg[3], s->szVertCache):
+                (void *)(uintptr_t)((s->FEnum == FEnum_glIndexPointer)? s->arg[2]:s->arg[3]));
             s->parg[2] = VAL(s->Index.ptr);
             s->parg[3] = VAL(s->Index.ptr);
             break;
         case FEnum_glNormalPointer:
         case FEnum_glNormalPointerEXT:
-            vtxarry_init(&s->Normal, 0, s->arg[0], s->arg[1],
-                LookupVertex((s->FEnum == FEnum_glNormalPointer)? s->arg[2]:s->arg[3], s->szVertCache));
+            vtxarry_init(&s->Normal, 3, s->arg[0], s->arg[1], (s->arrayBuf == 0)?
+                LookupVertex((s->FEnum == FEnum_glNormalPointer)? s->arg[2]:s->arg[3], s->szVertCache):
+                (void *)(uintptr_t)((s->FEnum == FEnum_glNormalPointer)? s->arg[2]:s->arg[3]));
             s->parg[2] = VAL(s->Normal.ptr);
             s->parg[3] = VAL(s->Normal.ptr);
             break;
         case FEnum_glTexCoordPointer:
         case FEnum_glTexCoordPointerEXT:
-            vtxarry_init(&s->TexCoord[s->texUnit], s->arg[0], s->arg[1], s->arg[2],
-                LookupVertex((s->FEnum == FEnum_glTexCoordPointer)? s->arg[3]:s->arg[4], s->szVertCache));
+            vtxarry_init(&s->TexCoord[s->texUnit], s->arg[0], s->arg[1], s->arg[2], (s->arrayBuf == 0)?
+                LookupVertex((s->FEnum == FEnum_glTexCoordPointer)? s->arg[3]:s->arg[4], s->szVertCache):
+                (void *)(uintptr_t)((s->FEnum == FEnum_glTexCoordPointer)? s->arg[3]:s->arg[4]));
             s->parg[3] = VAL(s->TexCoord[s->texUnit].ptr);
             s->parg[0] = VAL(s->TexCoord[s->texUnit].ptr);
             break;
         case FEnum_glVertexPointer:
         case FEnum_glVertexPointerEXT:
-            vtxarry_init(&s->Vertex, s->arg[0], s->arg[1], s->arg[2],
-                LookupVertex((s->FEnum == FEnum_glVertexPointer)? s->arg[3]:s->arg[4], s->szVertCache));
+            vtxarry_init(&s->Vertex, s->arg[0], s->arg[1], s->arg[2], (s->arrayBuf == 0)?
+                LookupVertex((s->FEnum == FEnum_glVertexPointer)? s->arg[3]:s->arg[4], s->szVertCache):
+                (void *)(uintptr_t)((s->FEnum == FEnum_glVertexPointer)? s->arg[3]:s->arg[4]));
             s->parg[3] = VAL(s->Vertex.ptr);
             s->parg[0] = VAL(s->Vertex.ptr);
             break;
         case FEnum_glSecondaryColorPointer:
         case FEnum_glSecondaryColorPointerEXT:
-            vtxarry_init(&s->SecondaryColor, s->arg[0], s->arg[1], s->arg[2], LookupVertex(s->arg[3], s->szVertCache));
+            vtxarry_init(&s->SecondaryColor, s->arg[0], s->arg[1], s->arg[2], (s->arrayBuf == 0)?
+                LookupVertex(s->arg[3], s->szVertCache):(void *)(uintptr_t)s->arg[3]);
             s->parg[3] = VAL(s->SecondaryColor.ptr);
             break;
         case FEnum_glFogCoordPointer:
         case FEnum_glFogCoordPointerEXT:
-            vtxarry_init(&s->FogCoord, 0, s->arg[0], s->arg[1], LookupVertex(s->arg[2], s->szVertCache));
+            vtxarry_init(&s->FogCoord, 1, s->arg[0], s->arg[1], (s->arrayBuf == 0)?
+                LookupVertex(s->arg[2], s->szVertCache):(void *)(uintptr_t)s->arg[2]);
             s->parg[2] = VAL(s->FogCoord.ptr);
             break;
         case FEnum_glWeightPointerARB:
-            vtxarry_init(&s->Weight, s->arg[0], s->arg[1], s->arg[2], LookupVertex(s->arg[3], s->szVertCache));
+            vtxarry_init(&s->Weight, s->arg[0], s->arg[1], s->arg[2], (s->arrayBuf == 0)?
+                LookupVertex(s->arg[3], s->szVertCache):(void *)(uintptr_t)s->arg[3]);
             s->parg[3] = VAL(s->Weight.ptr);
             break;
         case FEnum_glVertexAttribPointer:
         case FEnum_glVertexAttribPointerARB:
             {
                 vtxarry_t *arry = vattr2arry(s, s->arg[0]);
-                vtxarry_init(arry, s->arg[1], s->arg[2], s->arg[4], LookupVertex(s->arg[5], s->szVertCache));
+                vtxarry_init(arry, s->arg[1], s->arg[2], s->arg[4], (s->arrayBuf == 0)?
+                        LookupVertex(s->arg[5], s->szVertCache):(void *)(uintptr_t)s->arg[5]);
                 s->parg[1] = VAL(arry->ptr);
             }
             break;
@@ -526,6 +541,7 @@ static void processArgs(MesaPTState *s)
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
             break;
+        case FEnum_glEdgeFlagv:
         case FEnum_glEvalCoord1fv:
         case FEnum_glFogCoorddv:
         case FEnum_glFogCoorddvEXT:
@@ -594,7 +610,6 @@ static void processArgs(MesaPTState *s)
         case FEnum_glRasterPos4iv:
         case FEnum_glTexCoord4fv:
         case FEnum_glTexCoord4iv:
-        case FEnum_glEdgeFlagv:
         case FEnum_glVertex4fv:
         case FEnum_glVertex4iv:
         case FEnum_glMultiTexCoord4fv:
@@ -666,7 +681,11 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
+        case FEnum_glDeleteFramebuffers:
+        case FEnum_glDeleteFramebuffersEXT:
         case FEnum_glDeleteProgramsARB:
+        case FEnum_glDeleteRenderbuffers:
+        case FEnum_glDeleteRenderbuffersEXT:
         case FEnum_glDeleteTextures:
         case FEnum_glDeleteTexturesEXT:
             s->datacb = ALIGNED(s->arg[0] * sizeof(uint32_t));
@@ -675,12 +694,14 @@ static void processArgs(MesaPTState *s)
         case FEnum_glDrawArrays:
         case FEnum_glDrawArraysEXT:
             s->elemMax = ((s->arg[1] + s->arg[2] - 1) > s->elemMax)? (s->arg[1] + s->arg[2] - 1):s->elemMax;
-            PushVertexArray(s, s->hshm, s->arg[1], s->arg[1] + s->arg[2] - 1);
+            if (s->arrayBuf == 0)
+                PushVertexArray(s, s->hshm, s->arg[1], s->arg[1] + s->arg[2] - 1);
             break;
         case FEnum_glDrawElements:
-            s->datacb = ALIGNED(s->arg[1] * szgldata(0, s->arg[2]));
-            s->parg[3] = VAL(s->hshm);
-            do {
+            s->parg[3] = s->arg[3];
+            if (s->elemArryBuf == 0) {
+                s->datacb = ALIGNED(s->arg[1] * szgldata(0, s->arg[2]));
+                s->parg[3] = VAL(s->hshm);
                 int start, end = 0;
                 for (int i = 0; i < s->arg[1]; i++) {
                     if (szgldata(0, s->arg[2]) == 1) {
@@ -713,8 +734,9 @@ static void processArgs(MesaPTState *s)
                 }
                 //DPRINTF("DrawElements() %04x %04x", start, end);
                 s->elemMax = (end > s->elemMax)? end:s->elemMax;
-                PushVertexArray(s, PTR(s->hshm, s->datacb), start, end);
-            } while(0);
+                if (s->arrayBuf == 0)
+                    PushVertexArray(s, PTR(s->hshm, s->datacb), start, end);
+            }
             break;
         case FEnum_glDrawPixels:
         case FEnum_glPolygonStipple:
@@ -725,14 +747,22 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDrawRangeElements:
         case FEnum_glDrawRangeElementsEXT:
-            s->datacb = ALIGNED(s->arg[3] * szgldata(0, s->arg[4]));
-            s->parg[1] = VAL(s->hshm);
-            s->elemMax = (s->arg[2] > s->elemMax)? s->arg[2]:s->elemMax;
-            PushVertexArray(s, PTR(s->hshm, s->datacb), s->arg[1], s->arg[2]);
+            s->parg[1] = s->arg[5];
+            if (s->elemArryBuf == 0) {
+                s->datacb = ALIGNED(s->arg[3] * szgldata(0, s->arg[4]));
+                s->parg[1] = VAL(s->hshm);
+                s->elemMax = (s->arg[2] > s->elemMax)? s->arg[2]:s->elemMax;
+                if (s->arrayBuf == 0)
+                    PushVertexArray(s, PTR(s->hshm, s->datacb), s->arg[1], s->arg[2]);
+            }
             break;
         case FEnum_glGenBuffers:
         case FEnum_glGenBuffersARB:
+        case FEnum_glGenFramebuffers:
+        case FEnum_glGenFramebuffersEXT:
         case FEnum_glGenProgramsARB:
+        case FEnum_glGenRenderbuffers:
+        case FEnum_glGenRenderbuffersEXT:
         case FEnum_glGenTextures:
         case FEnum_glGenTexturesEXT:
         case FEnum_glGetClipPlane:
@@ -769,6 +799,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetLightiv:
         case FEnum_glGetMaterialfv:
         case FEnum_glGetMaterialiv:
+        case FEnum_glGetProgramiv:
+        case FEnum_glGetShaderiv:
         case FEnum_glGetTexEnvfv:
         case FEnum_glGetTexEnviv:
         case FEnum_glGetTexGendv:
@@ -937,12 +969,15 @@ static void processArgs(MesaPTState *s)
             s->parg[1] = s->arg[1];
             s->parg[2] = (s->arg[2])? VAL(s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->arg[1])):0;
             break;
+        case FEnum_glMapBuffer:
+        case FEnum_glMapBufferARB:
+            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE));
+            break;
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
-            if (s->BufObj) {
-                uint32_t szBuf = wrGetParamIa1p2((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
-                    s->arg[0], GL_BUFFER_SIZE_ARB);
-                memcpy(s->BufObj, s->fbtm_ptr + (MGLFBT_SIZE - szBuf), szBuf);
+            if (s->BufObj && (s->BufAcc != GL_READ_ONLY)) {
+                wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
+                    s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE), s->BufObj);
                 s->BufObj = 0;
             }
             break;
@@ -1050,32 +1085,185 @@ static void processArgs(MesaPTState *s)
                 ALIGNED(szglname(s->arg[0])*s->arg[3]*s->arg[4]*s->arg[7]*s->arg[8]*sizeof(float));
             s->parg[1] = VAL(s->hshm);
             break;
+        case FEnum_glBindAttribLocation:
+        case FEnum_glBindAttribLocationARB:
+            s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
+            s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glGetAttribLocation:
+        case FEnum_glGetAttribLocationARB:
+        case FEnum_glGetUniformLocation:
+        case FEnum_glGetUniformLocationARB:
+            s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
+            s->parg[1] = VAL(s->hshm);
+            break;
+        case FEnum_glShaderSource:
+        case FEnum_glShaderSourceARB:
+            {
+                char **str;
+                int offs = 0, *len = (int *)(s->hshm);
+                if (s->arg[3]) {
+                    for (int i = 0; i < s->arg[1]; i++)
+                        offs += ALIGNED(len[i]) + ALIGNED(1);
+                    str = (char **)PTR(s->hshm, offs + ALIGNED(s->arg[1]*sizeof(int)));
+                    str[0] = (char *)PTR(s->hshm, ALIGNED(s->arg[1]*sizeof(int)));
+                    for (int i = 1; i < s->arg[1]; i++)
+                        str[i] = str[i-1] + ALIGNED(len[i-1]) + ALIGNED(1);
+                    /* for (int i = 0; i < s->arg[1]; i++)
+                        DPRINTF("\n%s", str[i]); */
+                    s->datacb = ALIGNED(s->arg[1]*sizeof(int)) + offs;
+                    s->parg[3] = VAL(len);
+                }
+                else {
+                    str = (char **)PTR(s->hshm, ALIGNED((strlen((char *)s->hshm) + 1)));
+                    str[0] = (char *)s->hshm;
+                    //DPRINTF("ShaderSource [ %d ]\n%s", (uint32_t)strlen(str[0]), str[0]);
+                    s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
+                    s->parg[3] = 0;
+                }
+                s->parg[2] = VAL(str);
+            }
+            break;
+        case FEnum_glUniform1fv:
+        case FEnum_glUniform1fvARB:
+        case FEnum_glUniform1iv:
+        case FEnum_glUniform1ivARB:
+        case FEnum_glUniform1uiv:
+        case FEnum_glUniform1uivEXT:
+            s->datacb = ALIGNED(s->arg[1]*sizeof(uint32_t));
+            s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glUniform2fv:
+        case FEnum_glUniform2fvARB:
+        case FEnum_glUniform2iv:
+        case FEnum_glUniform2ivARB:
+        case FEnum_glUniform2uiv:
+        case FEnum_glUniform2uivEXT:
+            s->datacb = ALIGNED(2*s->arg[1]*sizeof(uint32_t));
+            s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glUniform3fv:
+        case FEnum_glUniform3fvARB:
+        case FEnum_glUniform3iv:
+        case FEnum_glUniform3ivARB:
+        case FEnum_glUniform3uiv:
+        case FEnum_glUniform3uivEXT:
+            s->datacb = ALIGNED(3*s->arg[1]*sizeof(uint32_t));
+            s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glUniform4fv:
+        case FEnum_glUniform4fvARB:
+        case FEnum_glUniform4iv:
+        case FEnum_glUniform4ivARB:
+        case FEnum_glUniform4uiv:
+        case FEnum_glUniform4uivEXT:
+        case FEnum_glUniformMatrix2fv:
+        case FEnum_glUniformMatrix2fvARB:
+            s->datacb = ALIGNED(4*s->arg[1]*sizeof(uint32_t));
+            s->parg[2] = VAL(s->hshm);
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix2x3fv:
+        case FEnum_glUniformMatrix3x2fv:
+            s->datacb = ALIGNED(6*s->arg[1]*sizeof(uint32_t));
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix2x4fv:
+        case FEnum_glUniformMatrix4x2fv:
+            s->datacb = ALIGNED(8*s->arg[1]*sizeof(uint32_t));
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix3fv:
+        case FEnum_glUniformMatrix3fvARB:
+            s->datacb = ALIGNED(9*s->arg[1]*sizeof(uint32_t));
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix3x4fv:
+        case FEnum_glUniformMatrix4x3fv:
+            s->datacb = ALIGNED(12*s->arg[1]*sizeof(uint32_t));
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix4fv:
+        case FEnum_glUniformMatrix4fvARB:
+            s->datacb = ALIGNED(16*s->arg[1]*sizeof(uint32_t));
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniform1dv:
+            s->datacb = s->arg[1]*sizeof(double);
+            s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glUniform2dv:
+            s->datacb = 2*s->arg[1]*sizeof(double);
+            s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glUniform3dv:
+            s->datacb = 3*s->arg[1]*sizeof(double);
+            s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glUniform4dv:
+        case FEnum_glUniformMatrix2dv:
+            s->datacb = 4*s->arg[1]*sizeof(double);
+            s->parg[2] = VAL(s->hshm);
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix2x3dv:
+        case FEnum_glUniformMatrix3x2dv:
+            s->datacb = 6*s->arg[1]*sizeof(double);
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix2x4dv:
+        case FEnum_glUniformMatrix4x2dv:
+            s->datacb = 8*s->arg[1]*sizeof(double);
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix3dv:
+            s->datacb = 9*s->arg[1]*sizeof(double);
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix3x4dv:
+        case FEnum_glUniformMatrix4x3dv:
+            s->datacb = 12*s->arg[1]*sizeof(double);
+            s->parg[3] = VAL(s->hshm);
+            break;
+        case FEnum_glUniformMatrix4dv:
+            s->datacb = 16*s->arg[1]*sizeof(double);
+            s->parg[3] = VAL(s->hshm);
+            break;
         default:
             break;
     }
 
     switch (s->FEnum)
     {
+        case FEnum_glBufferData:
+        case FEnum_glBufferDataARB:
+        case FEnum_glBufferSubData:
+        case FEnum_glBufferSubDataARB:
+        case FEnum_glGetBufferSubData:
+        case FEnum_glGetBufferSubDataARB:
+            break;
+        case FEnum_glDrawElements:
+            if (s->elemArryBuf) break;
         case FEnum_glColorPointer:
         case FEnum_glColorPointerEXT:
         case FEnum_glEdgeFlagPointer:
         case FEnum_glEdgeFlagPointerEXT:
-        case FEnum_glIndexPointer:
-        case FEnum_glIndexPointerEXT:
-        case FEnum_glNormalPointer:
-        case FEnum_glNormalPointerEXT:
-        case FEnum_glTexCoordPointer:
-        case FEnum_glTexCoordPointerEXT:
-        case FEnum_glVertexPointer:
-        case FEnum_glVertexPointerEXT:
-        case FEnum_glSecondaryColorPointer:
-        case FEnum_glSecondaryColorPointerEXT:
         case FEnum_glFogCoordPointer:
         case FEnum_glFogCoordPointerEXT:
-        case FEnum_glWeightPointerARB:
+        case FEnum_glIndexPointer:
+        case FEnum_glIndexPointerEXT:
+        case FEnum_glInterleavedArrays:
+        case FEnum_glNormalPointer:
+        case FEnum_glNormalPointerEXT:
+        case FEnum_glSecondaryColorPointer:
+        case FEnum_glSecondaryColorPointerEXT:
+        case FEnum_glTexCoordPointer:
+        case FEnum_glTexCoordPointerEXT:
         case FEnum_glVertexAttribPointer:
         case FEnum_glVertexAttribPointerARB:
-        case FEnum_glInterleavedArrays:
+        case FEnum_glVertexPointer:
+        case FEnum_glVertexPointerEXT:
+        case FEnum_glWeightPointerARB:
             break;
 
         default:
@@ -1092,30 +1280,49 @@ static void processFRet(MesaPTState *s)
     uint8_t *outshm = s->fifo_ptr + (MGLSHM_SIZE - (3*TARGET_PAGE_SIZE));
 
     switch (s->FEnum) {
+        case FEnum_glBufferData:
+        case FEnum_glBufferDataARB:
+        case FEnum_glBufferSubData:
+        case FEnum_glBufferSubDataARB:
+        case FEnum_glGetBufferSubData:
+        case FEnum_glGetBufferSubDataARB:
+        case FEnum_glDrawElements:
         case FEnum_glColorPointer:
         case FEnum_glColorPointerEXT:
         case FEnum_glEdgeFlagPointer:
         case FEnum_glEdgeFlagPointerEXT:
-        case FEnum_glIndexPointer:
-        case FEnum_glIndexPointerEXT:
-        case FEnum_glNormalPointer:
-        case FEnum_glNormalPointerEXT:
-        case FEnum_glTexCoordPointer:
-        case FEnum_glTexCoordPointerEXT:
-        case FEnum_glVertexPointer:
-        case FEnum_glVertexPointerEXT:
-        case FEnum_glSecondaryColorPointer:
-        case FEnum_glSecondaryColorPointerEXT:
         case FEnum_glFogCoordPointer:
         case FEnum_glFogCoordPointerEXT:
-        case FEnum_glWeightPointerARB:
+        case FEnum_glIndexPointer:
+        case FEnum_glIndexPointerEXT:
+        case FEnum_glInterleavedArrays:
+        case FEnum_glNormalPointer:
+        case FEnum_glNormalPointerEXT:
+        case FEnum_glSecondaryColorPointer:
+        case FEnum_glSecondaryColorPointerEXT:
+        case FEnum_glTexCoordPointer:
+        case FEnum_glTexCoordPointerEXT:
         case FEnum_glVertexAttribPointer:
         case FEnum_glVertexAttribPointerARB:
-        case FEnum_glInterleavedArrays:
+        case FEnum_glVertexPointer:
+        case FEnum_glVertexPointerEXT:
+        case FEnum_glWeightPointerARB:
             s->parg[0] &= ~(sizeof(uintptr_t) - 1);
             s->parg[1] &= ~(sizeof(uintptr_t) - 1);
             s->parg[2] &= ~(sizeof(uintptr_t) - 1);
             s->parg[3] &= ~(sizeof(uintptr_t) - 1);
+            break;
+        case FEnum_glBindBuffer:
+        case FEnum_glBindBufferARB:
+            s->arrayBuf = (s->arg[0] == GL_ARRAY_BUFFER)? s->arg[1]:s->arrayBuf;
+            s->elemArryBuf = (s->arg[0] == GL_ELEMENT_ARRAY_BUFFER)? s->arg[1]:s->elemArryBuf;
+            break;
+        case FEnum_glDeleteBuffers:
+        case FEnum_glDeleteBuffersARB:
+            for (int i = 0; i < s->arg[0]; i++) {
+                s->arrayBuf = (((uint32_t *)s->hshm)[i] == s->arrayBuf)? 0:s->arrayBuf;
+                s->elemArryBuf = (((uint32_t *)s->hshm)[i] == s->elemArryBuf)? 0:s->elemArryBuf;
+            }
             break;
         case FEnum_glClientActiveTextureARB:
             s->texUnit = ((s->arg[0] & 0xFFF0U) == GL_TEXTURE0_ARB)? (s->arg[0] & 0x0FU):0;
@@ -1138,9 +1345,9 @@ static void processFRet(MesaPTState *s)
             break;
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
-            if (s->BufObj) {
+            if (s->BufObj)
                 DPRINTF("  *WARN* GL buffer object contention, target %04x", s->arg[0]);
-            }
+            s->BufAcc = s->arg[1];
             s->BufObj = (void *)(s->FRet);
             s->FRet = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
                 s->arg[0], GL_BUFFER_SIZE);
@@ -1173,6 +1380,15 @@ static void processFRet(MesaPTState *s)
                 fprintf(stderr, "%08X ", *(uint32_t *)PTR(v, i*sizeof(uint32_t)));
             }
             fprintf(stderr, "\n");
+            break;
+        case FEnum_glGetAttribLocation:
+        case FEnum_glGetAttribLocationARB:
+        case FEnum_glGetUniformLocation:
+        case FEnum_glGetUniformLocationARB:
+            if (-1 != (uint32_t)s->FRet) {
+                DPRINTF("%sLocation %s %d", ((s->FEnum == FEnum_glGetAttribLocation) || (s->FEnum == FEnum_glGetAttribLocationARB))?
+                        "Attrib":"Uniform", (char *)s->hshm, (uint32_t)s->FRet);
+            }
             break;
 #endif
         case FEnum_glGetString:

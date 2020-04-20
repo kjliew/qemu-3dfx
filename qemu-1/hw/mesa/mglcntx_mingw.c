@@ -376,7 +376,7 @@ void MGLFuncHandler(const char *name)
         if (fp) {
             uint32_t ret;
             ret =  fp(argsp[0]);
-            DPRINTF("wglSwapIntervalEXT(%u) ret %u", argsp[0], ret);
+            DPRINTF("wglSwapIntervalEXT(%u) ret %u                      ", argsp[0], ret);
             argsp[0] = ret;
             return;
         }
@@ -387,7 +387,7 @@ void MGLFuncHandler(const char *name)
         if (fp) {
             uint32_t ret;
             ret = fp();
-            DPRINTF("wglGetSwapIntervalEXT() ret %u", ret);
+            DPRINTF("wglGetSwapIntervalEXT() ret %u                     ", ret);
             argsp[0] = ret;
             return;
         }
