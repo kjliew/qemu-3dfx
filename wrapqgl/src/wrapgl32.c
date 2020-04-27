@@ -73,22 +73,19 @@ static INLINE void fifoAddEntry(uint32_t *pt, int FEnum, int numArgs)
 
 static INLINE void fifoAddData(int nArg, uint32_t argData, int cbData)
 {
-    int i, j;
     uint32_t *data = (uint32_t *)argData;
     uint32_t numData = (cbData & 0x03)? ((cbData >> 2) + 1):(cbData >> 2);
 
-    j = mdata[0];
+    int j = mdata[0];
     /* if ((j + numData) >= MAX_DATA)
         DPRINTF("FIFO AddData overbound %06x curr %06x chunk %06x", (j + numData), j, numData); */
+    mdata[0] = ((j + numData) & 0x01)? (j + numData + 1):(j + numData);
+    pt[nArg] = (nArg)? argData:pt[nArg];
     memcpy(&mdata[j], data, (numData << 2));
-    mdata[0] = (j + numData);
-    if (nArg)
-        pt[nArg] = argData;
 }
 
 static INLINE void fifoOutData(int offs, uint32_t darg, int cbData)
 {
-    int i;
     uint32_t *src = &mfifo[(MGLSHM_SIZE - (3*PAGE_SIZE) + offs) >> 2];
     uint32_t *dst = (uint32_t *)darg;
     uint32_t numData = (cbData & 0x03)? ((cbData >> 2) + 1):(cbData >> 2);
@@ -202,53 +199,55 @@ static vtxarry_t *vattr2arry(int attr)
 }
 static void PrepVertexArray(int start, int end, int sizei)
 {
-    int n = sizei, cbElem;
+    int i, n = sizei, cbElem;
     if (Interleaved.enable && Interleaved.ptr) {
         cbElem = (Interleaved.stride)? Interleaved.stride:Interleaved.size;
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(Interleaved.size);
+        n += ALIGNED((cbElem*(end - start) + Interleaved.size));
     }
-    if (Color.enable && Color.ptr) {
-        cbElem = (Color.stride)? Color.stride:Color.size*szgldata(0, Color.type);
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(Color.size*szgldata(0, Color.type));
-    }
-    if (EdgeFlag.enable && EdgeFlag.ptr) {
-        cbElem = (EdgeFlag.stride)? EdgeFlag.stride:sizeof(int);
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(sizeof(int));
-    }
-    if (Index.enable && Index.ptr) {
-        cbElem = (Index.stride)? Index.stride:szgldata(0, Index.type);
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(szgldata(0, Index.type));
-    }
-    if (Normal.enable && Normal.ptr) {
-        cbElem = (Normal.stride)? Normal.stride:3*szgldata(0, Normal.type);
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(3*szgldata(0, Normal.type));
-    }
-    for (int i = 0; i < MAX_TEXUNIT; i++) {
-        if (TexCoord[i].enable && TexCoord[i].ptr) {
-            cbElem = (TexCoord[i].stride)? TexCoord[i].stride:TexCoord[i].size*szgldata(0, TexCoord[i].type);
-            n += ALIGNED(cbElem*(end - start)) + ALIGNED(TexCoord[i].size*szgldata(0, TexCoord[i].type));
+    else {
+        if (Color.enable && Color.ptr) {
+            cbElem = (Color.stride)? Color.stride:Color.size*szgldata(0, Color.type);
+            n += ALIGNED((cbElem*(end - start) + (Color.size*szgldata(0, Color.type))));
         }
-    }
-    if (Vertex.enable && Vertex.ptr) {
-        cbElem = (Vertex.stride)? Vertex.stride:Vertex.size*szgldata(0, Vertex.type);
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(Vertex.size*szgldata(0, Vertex.type));
-    }
-    if (SecondaryColor.enable && SecondaryColor.ptr) {
-        cbElem = (SecondaryColor.stride)? SecondaryColor.stride:SecondaryColor.size*szgldata(0, SecondaryColor.type);
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(SecondaryColor.size*szgldata(0, SecondaryColor.type));
-    }
-    if (FogCoord.enable && FogCoord.ptr) {
-        cbElem = (FogCoord.stride)? FogCoord.stride:szgldata(0, FogCoord.type);
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(szgldata(0, FogCoord.type));
-    }
-    if (Weight.enable && Weight.ptr) {
-        cbElem = (Weight.stride)? Weight.stride:Weight.size*szgldata(0, Weight.type);
-        n += ALIGNED(cbElem*(end - start)) + ALIGNED(Weight.size*szgldata(0, Weight.type));
-    }
-    for (int i = 0; i < 2; i++) {
-        if (GenAttrib[i].enable && GenAttrib[i].ptr) {
-            cbElem = (GenAttrib[i].stride)? GenAttrib[i].stride:GenAttrib[i].size*szgldata(0, GenAttrib[i].type);
-            n += ALIGNED(cbElem*(end - start)) + ALIGNED(GenAttrib[i].size*szgldata(0, GenAttrib[i].type));
+        if (EdgeFlag.enable && EdgeFlag.ptr) {
+            cbElem = (EdgeFlag.stride)? EdgeFlag.stride:EdgeFlag.size*szgldata(0, EdgeFlag.type);
+            n += ALIGNED((cbElem*(end - start) + (EdgeFlag.size*szgldata(0, EdgeFlag.type))));
+        }
+        if (Index.enable && Index.ptr) {
+            cbElem = (Index.stride)? Index.stride:Index.size*szgldata(0, Index.type);
+            n += ALIGNED((cbElem*(end - start) + (Index.size*szgldata(0, Index.type))));
+        }
+        if (Normal.enable && Normal.ptr) {
+            cbElem = (Normal.stride)? Normal.stride:Normal.size*szgldata(0, Normal.type);
+            n += ALIGNED((cbElem*(end - start) + (Normal.size*szgldata(0, Normal.type))));
+        }
+        for (i = 0; i < MAX_TEXUNIT; i++) {
+            if (TexCoord[i].enable && TexCoord[i].ptr) {
+                cbElem = (TexCoord[i].stride)? TexCoord[i].stride:TexCoord[i].size*szgldata(0, TexCoord[i].type);
+                n += ALIGNED((cbElem*(end - start) + (TexCoord[i].size*szgldata(0, TexCoord[i].type))));
+            }
+        }
+        if (Vertex.enable && Vertex.ptr) {
+            cbElem = (Vertex.stride)? Vertex.stride:Vertex.size*szgldata(0, Vertex.type);
+            n += ALIGNED((cbElem*(end - start) + (Vertex.size*szgldata(0, Vertex.type))));
+        }
+        if (SecondaryColor.enable && SecondaryColor.ptr) {
+            cbElem = (SecondaryColor.stride)? SecondaryColor.stride:SecondaryColor.size*szgldata(0, SecondaryColor.type);
+            n += ALIGNED((cbElem*(end - start) + (SecondaryColor.size*szgldata(0, SecondaryColor.type))));
+        }
+        if (FogCoord.enable && FogCoord.ptr) {
+            cbElem = (FogCoord.stride)? FogCoord.stride:FogCoord.size*szgldata(0, FogCoord.type);
+            n += ALIGNED((cbElem*(end - start) + (FogCoord.size*szgldata(0, FogCoord.type))));
+        }
+        if (Weight.enable && Weight.ptr) {
+            cbElem = (Weight.stride)? Weight.stride:Weight.size*szgldata(0, Weight.type);
+            n += ALIGNED((cbElem*(end - start) + (Weight.size*szgldata(0, Weight.type))));
+        }
+        for (i = 0; i < 2; i++) {
+            if (GenAttrib[i].enable && GenAttrib[i].ptr) {
+                cbElem = (GenAttrib[i].stride)? GenAttrib[i].stride:GenAttrib[i].size*szgldata(0, GenAttrib[i].type);
+                n += ALIGNED((cbElem*(end - start) + (GenAttrib[i].size*szgldata(0, GenAttrib[i].type))));
+            }
         }
     }
     n >>= 2;
@@ -259,55 +258,56 @@ static void PrepVertexArray(int start, int end, int sizei)
 }
 static void PushVertexArray(int start, int end) 
 {
-    int cbElem;
+    int i, cbElem;
     if (Interleaved.enable && Interleaved.ptr) {
         cbElem = (Interleaved.stride)? Interleaved.stride:Interleaved.size;
-        fifoAddData(0, (uint32_t)(Interleaved.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(Interleaved.size));
+        fifoAddData(0, (uint32_t)(Interleaved.ptr+(start*cbElem)), (cbElem*(end - start) + Interleaved.size));
         Interleaved.enable = 0;
-        return;
     }
-    if (Color.enable && Color.ptr) {
-        cbElem = (Color.stride)? Color.stride:Color.size*szgldata(0, Color.type);
-        fifoAddData(0, (uint32_t)(Color.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(Color.size*szgldata(0, Color.type)));
-    }
-    if (EdgeFlag.enable && EdgeFlag.ptr) {
-        cbElem = (EdgeFlag.stride)? EdgeFlag.stride:EdgeFlag.size*szgldata(0, EdgeFlag.type);
-        fifoAddData(0, (uint32_t)(EdgeFlag.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(EdgeFlag.size*szgldata(0, EdgeFlag.type)));
-    }
-    if (Index.enable && Index.ptr) {
-        cbElem = (Index.stride)? Index.stride:Index.size*szgldata(0, Index.type);
-        fifoAddData(0, (uint32_t)(Index.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(Index.size*szgldata(0, Index.type)));
-    }
-    if (Normal.enable && Normal.ptr) {
-        cbElem = (Normal.stride)? Normal.stride:Normal.size*szgldata(0, Normal.type);
-        fifoAddData(0, (uint32_t)(Normal.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(Normal.size*szgldata(0, Normal.type)));
-    }
-    for (int i = 0; i < MAX_TEXUNIT; i++) {
-        if (TexCoord[i].enable && TexCoord[i].ptr) {
-            cbElem = (TexCoord[i].stride)? TexCoord[i].stride:TexCoord[i].size*szgldata(0, TexCoord[i].type);
-            fifoAddData(0, (uint32_t)(TexCoord[i].ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(TexCoord[i].size*szgldata(0, TexCoord[i].type)));
+    else {
+        if (Color.enable && Color.ptr) {
+            cbElem = (Color.stride)? Color.stride:Color.size*szgldata(0, Color.type);
+            fifoAddData(0, (uint32_t)(Color.ptr+(start*cbElem)), (cbElem*(end - start) + (Color.size*szgldata(0, Color.type))));
         }
-    }
-    if (Vertex.enable && Vertex.ptr) {
-        cbElem = (Vertex.stride)? Vertex.stride:Vertex.size*szgldata(0, Vertex.type);
-        fifoAddData(0, (uint32_t)(Vertex.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(Vertex.size*szgldata(0, Vertex.type)));
-    }
-    if (SecondaryColor.enable && SecondaryColor.ptr) {
-        cbElem = (SecondaryColor.stride)? SecondaryColor.stride:SecondaryColor.size*szgldata(0, SecondaryColor.type);
-        fifoAddData(0, (uint32_t)(SecondaryColor.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(SecondaryColor.size*szgldata(0, SecondaryColor.type)));
-    }
-    if (FogCoord.enable && FogCoord.ptr) {
-        cbElem = (FogCoord.stride)? FogCoord.stride:FogCoord.size*szgldata(0, FogCoord.type);
-        fifoAddData(0, (uint32_t)(FogCoord.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(FogCoord.size*szgldata(0, FogCoord.type)));
-    }
-    if (Weight.enable && Weight.ptr) {
-        cbElem = (Weight.stride)? Weight.stride:Weight.size*szgldata(0, Weight.type);
-        fifoAddData(0, (uint32_t)(Weight.ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(Weight.size*szgldata(0, Weight.type)));
-    }
-    for (int i = 0; i < 2; i++) {
-        if (GenAttrib[i].enable && GenAttrib[i].ptr) {
-            cbElem = (GenAttrib[i].stride)? GenAttrib[i].stride:GenAttrib[i].size*szgldata(0, GenAttrib[i].type);
-            fifoAddData(0, (uint32_t)(GenAttrib[i].ptr+(start*cbElem)), ALIGNED(cbElem*(end - start)) + ALIGNED(GenAttrib[i].size*szgldata(0, GenAttrib[i].type)));
+        if (EdgeFlag.enable && EdgeFlag.ptr) {
+            cbElem = (EdgeFlag.stride)? EdgeFlag.stride:EdgeFlag.size*szgldata(0, EdgeFlag.type);
+            fifoAddData(0, (uint32_t)(EdgeFlag.ptr+(start*cbElem)), (cbElem*(end - start) + (EdgeFlag.size*szgldata(0, EdgeFlag.type))));
+        }
+        if (Index.enable && Index.ptr) {
+            cbElem = (Index.stride)? Index.stride:Index.size*szgldata(0, Index.type);
+            fifoAddData(0, (uint32_t)(Index.ptr+(start*cbElem)), (cbElem*(end - start) + (Index.size*szgldata(0, Index.type))));
+        }
+        if (Normal.enable && Normal.ptr) {
+            cbElem = (Normal.stride)? Normal.stride:Normal.size*szgldata(0, Normal.type);
+            fifoAddData(0, (uint32_t)(Normal.ptr+(start*cbElem)), (cbElem*(end - start) + (Normal.size*szgldata(0, Normal.type))));
+        }
+        for (i = 0; i < MAX_TEXUNIT; i++) {
+            if (TexCoord[i].enable && TexCoord[i].ptr) {
+                cbElem = (TexCoord[i].stride)? TexCoord[i].stride:TexCoord[i].size*szgldata(0, TexCoord[i].type);
+                fifoAddData(0, (uint32_t)(TexCoord[i].ptr+(start*cbElem)), (cbElem*(end - start) + (TexCoord[i].size*szgldata(0, TexCoord[i].type))));
+            }
+        }
+        if (Vertex.enable && Vertex.ptr) {
+            cbElem = (Vertex.stride)? Vertex.stride:Vertex.size*szgldata(0, Vertex.type);
+            fifoAddData(0, (uint32_t)(Vertex.ptr+(start*cbElem)), (cbElem*(end - start) + (Vertex.size*szgldata(0, Vertex.type))));
+        }
+        if (SecondaryColor.enable && SecondaryColor.ptr) {
+            cbElem = (SecondaryColor.stride)? SecondaryColor.stride:SecondaryColor.size*szgldata(0, SecondaryColor.type);
+            fifoAddData(0, (uint32_t)(SecondaryColor.ptr+(start*cbElem)), (cbElem*(end - start) + (SecondaryColor.size*szgldata(0, SecondaryColor.type))));
+        }
+        if (FogCoord.enable && FogCoord.ptr) {
+            cbElem = (FogCoord.stride)? FogCoord.stride:FogCoord.size*szgldata(0, FogCoord.type);
+            fifoAddData(0, (uint32_t)(FogCoord.ptr+(start*cbElem)), (cbElem*(end - start) + (FogCoord.size*szgldata(0, FogCoord.type))));
+        }
+        if (Weight.enable && Weight.ptr) {
+            cbElem = (Weight.stride)? Weight.stride:Weight.size*szgldata(0, Weight.type);
+            fifoAddData(0, (uint32_t)(Weight.ptr+(start*cbElem)), (cbElem*(end - start) + (Weight.size*szgldata(0, Weight.type))));
+        }
+        for (i = 0; i < 2; i++) {
+            if (GenAttrib[i].enable && GenAttrib[i].ptr) {
+                cbElem = (GenAttrib[i].stride)? GenAttrib[i].stride:GenAttrib[i].size*szgldata(0, GenAttrib[i].type);
+                fifoAddData(0, (uint32_t)(GenAttrib[i].ptr+(start*cbElem)), (cbElem*(end - start) + (GenAttrib[i].size*szgldata(0, GenAttrib[i].type))));
+            }
         }
     }
     //DPRINTF("PushVertexArray() %04x %04x", start, end);
@@ -427,6 +427,7 @@ uint32_t PT_CALL glAreTexturesResidentEXT(uint32_t arg0, uint32_t arg1, uint32_t
     fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glAreTexturesResidentEXT;
+    ret = *pt0;
     if (ret == 0)
         fifoOutData(0, arg2, (arg0 * sizeof(uint32_t)));
     return ret;
@@ -10059,7 +10060,6 @@ void PT_CALL glTexParameteri(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glTexParameteriv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     fifoAddData(0, arg2, ALIGNED(szglname(arg1)*sizeof(int)));
-    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glTexParameteriv, 3);
 }
@@ -15543,6 +15543,7 @@ static uint32_t getExtNameEntry(char *name)
 #define WGL_FUNCP(a) \
     uint32_t *funcp = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2]; \
     uint32_t *argsp = funcp + (ALIGNED(sizeof(a)) >> 2); \
+    (void)argsp; \
     memcpy(funcp, a, sizeof(a))
 
 static uint32_t PT_CALL wglSwapIntervalEXT (uint32_t arg0)

@@ -172,121 +172,133 @@ static vtxarry_t *vattr2arry(MesaPTState *s, int attr)
 static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end)
 {
     uint8_t *varry_ptr = (uint8_t *)pshm;
-    int cbElem, n, ovfl;
+    int i, cbElem, n, ovfl;
     if (s->Interleaved.enable && s->Interleaved.ptr) {
         cbElem = (s->Interleaved.stride)? s->Interleaved.stride:s->Interleaved.size;
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->Interleaved.size);
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->Interleaved.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
+        n = (cbElem*(end - start) + s->Interleaved.size);
+        n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+        ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+        memcpy(s->Interleaved.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+        varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+        s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
         if (ovfl)
             DPRINTF(" *WARN* Interleaved Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
         s->Interleaved.enable = 0;
-        return;
     }
-    if (s->Color.enable && s->Color.ptr) {
-        cbElem = (s->Color.stride)? s->Color.stride:s->Color.size*szgldata(0,s->Color.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->Color.size*szgldata(0,s->Color.type));
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->Color.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
-        if (ovfl)
-            DPRINTF(" *WARN* Color Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
-    }
-    if (s->EdgeFlag.enable && s->EdgeFlag.ptr) {
-        cbElem = (s->EdgeFlag.stride)? s->EdgeFlag.stride:s->EdgeFlag.size*szgldata(0,s->EdgeFlag.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->EdgeFlag.size*szgldata(0,s->EdgeFlag.type));
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->EdgeFlag.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
-        if (ovfl)
-            DPRINTF(" *WARN* EdgeFlag Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
-    }
-    if (s->Index.enable && s->Index.ptr) {
-        cbElem = (s->Index.stride)? s->Index.stride:s->Index.size*szgldata(0,s->Index.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->Index.size*szgldata(0,s->Index.type));
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->Index.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
-        if (ovfl)
-            DPRINTF(" *WARN* Index Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
-    }
-    if (s->Normal.enable && s->Normal.ptr) {
-        cbElem = (s->Normal.stride)? s->Normal.stride:s->Normal.size*szgldata(0,s->Normal.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->Normal.size*szgldata(0,s->Normal.type));
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->Normal.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
-        if (ovfl)
-            DPRINTF(" *WARN* Normal Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
-    }
-    for (int i = 0; i < MAX_TEXUNIT; i++) {
-        if (s->TexCoord[i].enable && s->TexCoord[i].ptr) {
-            cbElem = (s->TexCoord[i].stride)? s->TexCoord[i].stride:s->TexCoord[i].size*szgldata(0,s->TexCoord[i].type);
-            n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->TexCoord[i].size*szgldata(0,s->TexCoord[i].type));
-            ovfl = (n > (s->szVertCache >> 1))? 1:0;
-            memcpy(s->TexCoord[i].ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-            s->datacb += n;
-            varry_ptr += n;
+    else {
+        if (s->Color.enable && s->Color.ptr) {
+            cbElem = (s->Color.stride)? s->Color.stride:s->Color.size*szgldata(0,s->Color.type);
+            n = (cbElem*(end - start) + (s->Color.size*szgldata(0,s->Color.type)));
+            n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+            ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+            memcpy(s->Color.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+            varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
             if (ovfl)
-                DPRINTF(" *WARN* TexCoord%d Array overflowed, cbElem %04x maxElem %04x", i, cbElem, s->elemMax);
+                DPRINTF(" *WARN* Color Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
         }
-    }
-    if (s->Vertex.enable && s->Vertex.ptr) {
-        cbElem = (s->Vertex.stride)? s->Vertex.stride:s->Vertex.size*szgldata(0,s->Vertex.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->Vertex.size*szgldata(0,s->Vertex.type));
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->Vertex.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
-        if (ovfl)
-            DPRINTF(" *WARN* Vertex Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
-    }
-    if (s->SecondaryColor.enable && s->SecondaryColor.ptr) {
-        cbElem = (s->SecondaryColor.stride)? s->SecondaryColor.stride:s->SecondaryColor.size*szgldata(0,s->SecondaryColor.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->SecondaryColor.size*szgldata(0,s->SecondaryColor.type));
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->SecondaryColor.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
-        if (ovfl)
-            DPRINTF(" *WARN* SecondaryColor Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
-    }
-    if (s->FogCoord.enable && s->FogCoord.ptr) {
-        cbElem = (s->FogCoord.stride)? s->FogCoord.stride:s->FogCoord.size*szgldata(0,s->FogCoord.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->FogCoord.size*szgldata(0,s->FogCoord.type));
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->FogCoord.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
-        if (ovfl)
-            DPRINTF(" *WARN* FogCoord Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
-    }
-    if (s->Weight.enable && s->Weight.ptr) {
-        cbElem = (s->Weight.stride)? s->Weight.stride:s->Weight.size*szgldata(0,s->Weight.type);
-        n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->Weight.size*szgldata(0,s->Weight.type));
-        ovfl = (n > (s->szVertCache >> 1))? 1:0;
-        memcpy(s->Weight.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-        s->datacb += n;
-        varry_ptr += n;
-        if (ovfl)
-            DPRINTF(" *WARN* Weight Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
-    }
-    for (int i = 0; i < 2; i++) {
-        if (s->GenAttrib[i].enable && s->GenAttrib[i].ptr) {
-            cbElem = (s->GenAttrib[i].stride)? s->GenAttrib[i].stride:s->GenAttrib[i].size*szgldata(0,s->GenAttrib[i].type);
-            n = ALIGNED(cbElem*(end - start)) + ALIGNED(s->GenAttrib[i].size*szgldata(0,s->GenAttrib[i].type));
-            ovfl = (n > (s->szVertCache >> 1))? 1:0;
-            memcpy(s->GenAttrib[i].ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):n));
-            s->datacb += n;
-            varry_ptr += n;
+        if (s->EdgeFlag.enable && s->EdgeFlag.ptr) {
+            cbElem = (s->EdgeFlag.stride)? s->EdgeFlag.stride:s->EdgeFlag.size*szgldata(0,s->EdgeFlag.type);
+            n = (cbElem*(end - start) + (s->EdgeFlag.size*szgldata(0,s->EdgeFlag.type)));
+            n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+            ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+            memcpy(s->EdgeFlag.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+            varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
             if (ovfl)
-                DPRINTF(" *WARN* GenAttrib%d Array overflowed, cbElem %04x maxElem %04x", i, cbElem, s->elemMax);
+                DPRINTF(" *WARN* EdgeFlag Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
+        }
+        if (s->Index.enable && s->Index.ptr) {
+            cbElem = (s->Index.stride)? s->Index.stride:s->Index.size*szgldata(0,s->Index.type);
+            n = (cbElem*(end - start) + (s->Index.size*szgldata(0,s->Index.type)));
+            n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+            ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+            memcpy(s->Index.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+            varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            if (ovfl)
+                DPRINTF(" *WARN* Index Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
+        }
+        if (s->Normal.enable && s->Normal.ptr) {
+            cbElem = (s->Normal.stride)? s->Normal.stride:s->Normal.size*szgldata(0,s->Normal.type);
+            n = (cbElem*(end - start) + (s->Normal.size*szgldata(0,s->Normal.type)));
+            n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+            ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+            memcpy(s->Normal.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+            varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            if (ovfl)
+                DPRINTF(" *WARN* Normal Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
+        }
+        for (i = 0; i < MAX_TEXUNIT; i++) {
+            if (s->TexCoord[i].enable && s->TexCoord[i].ptr) {
+                cbElem = (s->TexCoord[i].stride)? s->TexCoord[i].stride:s->TexCoord[i].size*szgldata(0,s->TexCoord[i].type);
+                n = (cbElem*(end - start) + (s->TexCoord[i].size*szgldata(0,s->TexCoord[i].type)));
+                n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+                ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+                memcpy(s->TexCoord[i].ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+                varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+                s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
+                if (ovfl)
+                    DPRINTF(" *WARN* TexCoord%d Array overflowed, cbElem %04x maxElem %04x", i, cbElem, s->elemMax);
+            }
+        }
+        if (s->Vertex.enable && s->Vertex.ptr) {
+            cbElem = (s->Vertex.stride)? s->Vertex.stride:s->Vertex.size*szgldata(0,s->Vertex.type);
+            n = (cbElem*(end - start) + (s->Vertex.size*szgldata(0,s->Vertex.type)));
+            n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+            ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+            memcpy(s->Vertex.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+            varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            if (ovfl)
+                DPRINTF(" *WARN* Vertex Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
+        }
+        if (s->SecondaryColor.enable && s->SecondaryColor.ptr) {
+            cbElem = (s->SecondaryColor.stride)? s->SecondaryColor.stride:s->SecondaryColor.size*szgldata(0,s->SecondaryColor.type);
+            n = (cbElem*(end - start) + (s->SecondaryColor.size*szgldata(0,s->SecondaryColor.type)));
+            n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+            ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+            memcpy(s->SecondaryColor.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+            varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            if (ovfl)
+                DPRINTF(" *WARN* SecondaryColor Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
+        }
+        if (s->FogCoord.enable && s->FogCoord.ptr) {
+            cbElem = (s->FogCoord.stride)? s->FogCoord.stride:s->FogCoord.size*szgldata(0,s->FogCoord.type);
+            n = (cbElem*(end - start) + (s->FogCoord.size*szgldata(0,s->FogCoord.type)));
+            n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+            ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+            memcpy(s->FogCoord.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+            varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            if (ovfl)
+                DPRINTF(" *WARN* FogCoord Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
+        }
+        if (s->Weight.enable && s->Weight.ptr) {
+            cbElem = (s->Weight.stride)? s->Weight.stride:s->Weight.size*szgldata(0,s->Weight.type);
+            n = (cbElem*(end - start) + (s->Weight.size*szgldata(0,s->Weight.type)));
+            n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+            ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+            memcpy(s->Weight.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+            varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
+            if (ovfl)
+                DPRINTF(" *WARN* Weight Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
+        }
+        for (i = 0; i < 2; i++) {
+            if (s->GenAttrib[i].enable && s->GenAttrib[i].ptr) {
+                cbElem = (s->GenAttrib[i].stride)? s->GenAttrib[i].stride:s->GenAttrib[i].size*szgldata(0,s->GenAttrib[i].type);
+                n = (cbElem*(end - start) + (s->GenAttrib[i].size*szgldata(0,s->GenAttrib[i].type)));
+                n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
+                ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
+                memcpy(s->GenAttrib[i].ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
+                varry_ptr += (n & 0x01)? ((n + 1) << 2):(n << 2);
+                s->datacb += (n & 0x01)? ((n + 1) << 2):(n << 2);
+                if (ovfl)
+                    DPRINTF(" *WARN* GenAttrib%d Array overflowed, cbElem %04x maxElem %04x", i, cbElem, s->elemMax);
+            }
         }
     }
 }
@@ -1534,9 +1546,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             do {
                 uint32_t *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
                 uint32_t numData = (s->datacb & 0x03)? ((s->datacb >> 2) + 1):(s->datacb >> 2);
-                dataptr[0] -= numData;
-                if (dataptr[0] > (ALIGNED(1) >> 2))
-                    DPRINTF("WARN: FIFO data leak 0x%02x %d", s->FEnum, dataptr[0]);
+                if ((dataptr[0] - numData) > (ALIGNED(1) >> 2))
+                    DPRINTF("WARN: FIFO data leak 0x%02x %06x %06x", s->FEnum, dataptr[0], numData);
                 dataptr[0] = ALIGNED(1) >> 2;
             } while (0);
         }

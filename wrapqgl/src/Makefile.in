@@ -1,6 +1,6 @@
 QEMU_SRC_DIR=../../qemu-1
 CC=gcc
-CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -Werror -O2 -flto -fomit-frame-pointer
+CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -Wall -Werror -O3 -flto -fomit-frame-pointer
 LDFLAGS=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 LDFLAGS+=
 SRCDIR=../src
@@ -32,7 +32,7 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o
 clean:
 	@rm -f *.o *.def
 	@-if [ -f $(TARGET) ]; then strip --strip-unneeded $(TARGET); fi
-	@-if [ -f $(TARGET) ]; then strings $(TARGET) | grep Build; fi
+	@-if [ -f $(TARGET) ]; then strings $(TARGET) | grep Build; ls -hs $(TARGET); fi
 
 distclean: clean
 	@rm -f $(TARGET)
