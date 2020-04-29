@@ -450,6 +450,7 @@ static void processArgs(MesaPTState *s)
                 LookupVertex(s->arg[2], s->szVertCache):(void *)(uintptr_t)s->arg[2]);
             s->parg[2] = VAL(s->FogCoord.ptr);
             break;
+        case FEnum_glVertexWeightPointerEXT:
         case FEnum_glWeightPointerARB:
             vtxarry_init(&s->Weight, s->arg[0], s->arg[1], s->arg[2], (s->arrayBuf == 0)?
                 LookupVertex(s->arg[3], s->szVertCache):(void *)(uintptr_t)s->arg[3]);
@@ -566,7 +567,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMultiTexCoord1iv:
         case FEnum_glMultiTexCoord1ivARB:
         case FEnum_glVertexAttrib1fv:
-        case FEnum_glVertexAttrib1fvARB:            
+        case FEnum_glVertexAttrib1fvARB:
+        case FEnum_glVertexWeightfvEXT:
             s->datacb = ALIGNED(sizeof(uint32_t));
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
@@ -1275,6 +1277,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glVertexAttribPointerARB:
         case FEnum_glVertexPointer:
         case FEnum_glVertexPointerEXT:
+        case FEnum_glVertexWeightPointerEXT:
         case FEnum_glWeightPointerARB:
             break;
 
@@ -1318,6 +1321,7 @@ static void processFRet(MesaPTState *s)
         case FEnum_glVertexAttribPointerARB:
         case FEnum_glVertexPointer:
         case FEnum_glVertexPointerEXT:
+        case FEnum_glVertexWeightPointerEXT:
         case FEnum_glWeightPointerARB:
             s->parg[0] &= ~(sizeof(uintptr_t) - 1);
             s->parg[1] &= ~(sizeof(uintptr_t) - 1);
@@ -1386,12 +1390,15 @@ static void processFRet(MesaPTState *s)
             }
             break;
         case FEnum_glGetTexLevelParameteriv:
-            fprintf(stderr, "mgl_trace: GetTexLevelParameteriv() %x %x %04x ( %04x ): ", s->arg[0], s->arg[1], s->arg[2], *(int *)outshm);
-            for (int i = 0; i < *(int *)outshm; i++) {
-                void *v = outshm + ALIGNED(sizeof(int));
-                fprintf(stderr, "%08X ", *(uint32_t *)PTR(v, i*sizeof(uint32_t)));
+            if ((s->logpname[s->arg[2] >> 3] & (1 << (s->arg[2] % 8))) == 0) {
+                s->logpname[s->arg[2] >> 3] |= (1 << (s->arg[2] % 8));
+                fprintf(stderr, "mgl_trace: GetTexLevelParameteriv() %x %x %04x ( %04x ): ", s->arg[0], s->arg[1], s->arg[2], *(int *)outshm);
+                for (int i = 0; i < *(int *)outshm; i++) {
+                    void *v = outshm + ALIGNED(sizeof(int));
+                    fprintf(stderr, "%08X ", *(uint32_t *)PTR(v, i*sizeof(uint32_t)));
+                }
+                fprintf(stderr, "\n");
             }
-            fprintf(stderr, "\n");
             break;
         case FEnum_glGetAttribLocation:
         case FEnum_glGetAttribLocationARB:
@@ -1412,11 +1419,9 @@ static void processFRet(MesaPTState *s)
                     DPRINTF("%s [ %u ]", (char *)outshm, (uint32_t)len);
                 }
                 else {
-                    char *tmpstr, *stok, *xbuf = (char *)outshm, xLen[8], xYear[8];
+                    char *tmpstr, *stok, *xbuf = (char *)outshm;
                     tmpstr = g_new0(char, len);
                     strncpy(tmpstr, (char *)s->FRet, len);
-                    snprintf(xLen, 8, "%u", (uint32_t)s->extnLength);
-                    snprintf(xYear, 8, "%d", s->extnYear);
                     //DPRINTF("Host GL Extensions:\n%s", tmpstr);
                     stok = strtok(tmpstr, " ");
                     while (stok) {
@@ -1440,8 +1445,6 @@ static void processFRet(MesaPTState *s)
                     xbuf += sizeof("WGL_EXT_swap_control");
                     *xbuf = '\0';
                     g_free(tmpstr);
-                    DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
-                            (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
                 }
             }
             break;
@@ -1583,6 +1586,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFF8:
                 do {
+                    char xYear[8], xLen[8];
                     uint32_t *ptVer = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
                     if (s->mglContext && !s->mglCntxCurrent) {
                         DPRINTF("wglMakeCurrent cntx %d curr %d", s->mglContext, s->mglCntxCurrent);
@@ -1593,9 +1597,13 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         s->extnYear = GetGLExtYear();
                         s->extnLength = GetGLExtLength();
                         s->szVertCache = GetVertCacheMB() << 19;
+                        snprintf(xLen, 8, "%u", (uint32_t)s->extnLength);
+                        snprintf(xYear, 8, "%d", s->extnYear);
+                        DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
+                        DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
+                                (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
                         if (s->KickFrame)
                             MGLKickFrameProc(s->KickFrame);
-                        DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
                     }
                     else {
                         //DPRINTF("wglMakeCurrent cntx %d curr %d %x", s->mglContext, s->mglCntxCurrent, ptVer[0]);
@@ -1649,7 +1657,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 do {
                     uint8_t *name = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
                     s->procRet = (ExtFuncIsValid((char *)name))? MESAGL_MAGIC:0;
-                    DPRINTF("  query_ext: %s -- %s", name, (s->procRet)? "OK":"Missing");
+                    if (s->procRet == 0)
+                        DPRINTF("  query_ext: %s -- %s", name, (s->procRet)? "OK":"Missing");
                 } while (0);
                 break;
             case 0xFDC:

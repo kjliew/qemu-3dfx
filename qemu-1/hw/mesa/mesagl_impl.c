@@ -120,7 +120,7 @@ void wrFillBufObj(uint32_t target, void *dst)
             src = wrMap(target, GL_READ_ONLY);
             if (src) {
                 uint32_t szBuf = wrGetParamIa1p2(FEnum_glGetBufferParameteriv, target, GL_BUFFER_SIZE);
-                memcpy((dst - szBuf) , src, szBuf);
+                memcpy((dst - ALIGNED(szBuf)) , src, szBuf);
                 wrUnmap(target);
             }
             break;
@@ -130,7 +130,7 @@ void wrFillBufObj(uint32_t target, void *dst)
 void wrFlushBufObj(int FEnum, uint32_t target, const void *src, void *dst)
 {
     uint32_t szBuf = wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE);
-    memcpy(dst, (src - szBuf), szBuf);
+    memcpy(dst, (src - ALIGNED(szBuf)), szBuf);
 }
 
 const char *getGLFuncStr(int FEnum)
@@ -261,6 +261,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glUniformMatrix4x3dv:
         case FEnum_glUniformMatrix4x3fv:
         case FEnum_glVertexPointer:
+        case FEnum_glVertexWeightPointerEXT:
         case FEnum_glWeightPointerARB:
             usfp.fpa2p3 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa2p3)(arg[0], arg[1], arg[2], parg[3]);
@@ -474,20 +475,20 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glRasterPos4iv:
         case FEnum_glRasterPos4sv:
         case FEnum_glSecondaryColor3bv:
-        case FEnum_glSecondaryColor3dv:
-        case FEnum_glSecondaryColor3fv:
-        case FEnum_glSecondaryColor3iv:
-        case FEnum_glSecondaryColor3sv:
-        case FEnum_glSecondaryColor3ubv:
-        case FEnum_glSecondaryColor3uiv:
-        case FEnum_glSecondaryColor3usv:
         case FEnum_glSecondaryColor3bvEXT:
+        case FEnum_glSecondaryColor3dv:
         case FEnum_glSecondaryColor3dvEXT:
+        case FEnum_glSecondaryColor3fv:
         case FEnum_glSecondaryColor3fvEXT:
+        case FEnum_glSecondaryColor3iv:
         case FEnum_glSecondaryColor3ivEXT:
+        case FEnum_glSecondaryColor3sv:
         case FEnum_glSecondaryColor3svEXT:
+        case FEnum_glSecondaryColor3ubv:
         case FEnum_glSecondaryColor3ubvEXT:
+        case FEnum_glSecondaryColor3uiv:
         case FEnum_glSecondaryColor3uivEXT:
+        case FEnum_glSecondaryColor3usv:
         case FEnum_glSecondaryColor3usvEXT:
         case FEnum_glTexCoord2dv:
         case FEnum_glTexCoord2fv:
@@ -513,6 +514,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glVertex4fv:
         case FEnum_glVertex4iv:
         case FEnum_glVertex4sv:
+        case FEnum_glVertexWeightfvEXT:
             usfp.fpp0 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpp0)(parg[0]);
             GLDONE();
@@ -1233,7 +1235,7 @@ static int cfg_createWnd;
 static int cfg_kickFrame;
 static void conf_MGLOptions(void)
 {
-    cfg_xYear = 2002;
+    cfg_xYear = 2003;
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
     cfg_createWnd = 0;

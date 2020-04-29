@@ -105,12 +105,15 @@ static char vendstr[64];
 static char rendstr[64];
 static char vernstr[64];
 static char extnstr[3*PAGE_SIZE];
-static vtxarry_t Color, EdgeFlag, Index, Normal, TexCoord[MAX_TEXUNIT], Vertex,
-                 Interleaved, SecondaryColor, FogCoord, Weight, GenAttrib[2];
-static int texUnit;
+static struct {
+    vtxarry_t Color, EdgeFlag, Index, Normal, TexCoord[MAX_TEXUNIT], Vertex,
+              SecondaryColor, FogCoord, Weight, GenAttrib[2];
+    int texUnit;
+    int arrayBuf;
+    int elemArryBuf;
+} vtxArry;
+static vtxarry_t Interleaved;
 static int pixUnpackBuf;
-static int arrayBuf;
-static int elemArryBuf;
 static void vtxarry_init(vtxarry_t *varry, int size, int type, int stride, void *ptr)
 {
     varry->size = size;
@@ -124,37 +127,37 @@ static void vtxarry_state(uint32_t arg0, int st)
 #define GENERIC_ATTRIB7 0x07
     switch(arg0) {
         case GL_COLOR_ARRAY:
-            Color.enable = st;
+            vtxArry.Color.enable = st;
             break;
         case GL_EDGE_FLAG_ARRAY:
-            EdgeFlag.enable = st;
+            vtxArry.EdgeFlag.enable = st;
             break;
         case GL_INDEX_ARRAY:
-            Index.enable = st;
+            vtxArry.Index.enable = st;
             break;
         case GL_NORMAL_ARRAY:
-            Normal.enable = st;
+            vtxArry.Normal.enable = st;
             break;
         case GL_TEXTURE_COORD_ARRAY:
-            TexCoord[texUnit].enable = st;
+            vtxArry.TexCoord[vtxArry.texUnit].enable = st;
             break;
         case GL_VERTEX_ARRAY:
-            Vertex.enable = st;
+            vtxArry.Vertex.enable = st;
             break;
         case GL_SECONDARY_COLOR_ARRAY:
-            SecondaryColor.enable = st;
+            vtxArry.SecondaryColor.enable = st;
             break;
         case GL_FOG_COORDINATE_ARRAY:
-            FogCoord.enable = st;
+            vtxArry.FogCoord.enable = st;
             break;
         case GL_WEIGHT_ARRAY_ARB:
-            Weight.enable = st;
+            vtxArry.Weight.enable = st;
             break;
         case GENERIC_ATTRIB6:
-            GenAttrib[0].enable = st;
+            vtxArry.GenAttrib[0].enable = st;
             break;
         case GENERIC_ATTRIB7:
-            GenAttrib[1].enable = st;
+            vtxArry.GenAttrib[1].enable = st;
             break;
         default:
             break;
@@ -173,7 +176,7 @@ static uint32_t vattr2arry_state(int attr)
     };
     uint32_t st = st_arry[attr & 0x07U];
     if (attr & 0x08U) {
-        texUnit = attr & 0x07U;
+        vtxArry.texUnit = attr & 0x07U;
         st = GL_TEXTURE_COORD_ARRAY;
     }
     return st;
@@ -181,19 +184,19 @@ static uint32_t vattr2arry_state(int attr)
 static vtxarry_t *vattr2arry(int attr)
 {
     static vtxarry_t *attr2arry[] = {
-        &Vertex,
-        &Weight,
-        &Normal,
-        &Color,
-        &SecondaryColor,
-        &FogCoord,
-        &GenAttrib[0],
-        &GenAttrib[1],
+        &vtxArry.Vertex,
+        &vtxArry.Weight,
+        &vtxArry.Normal,
+        &vtxArry.Color,
+        &vtxArry.SecondaryColor,
+        &vtxArry.FogCoord,
+        &vtxArry.GenAttrib[0],
+        &vtxArry.GenAttrib[1],
     };
     vtxarry_t *arry = attr2arry[attr & 0x07U];
     if (attr & 0x08U) {
         int i = (attr & 0x07U);
-        arry = &TexCoord[i];
+        arry = &vtxArry.TexCoord[i];
     }
     return arry;
 }
@@ -205,48 +208,48 @@ static void PrepVertexArray(int start, int end, int sizei)
         n += ALIGNED((cbElem*(end - start) + Interleaved.size));
     }
     else {
-        if (Color.enable && Color.ptr) {
-            cbElem = (Color.stride)? Color.stride:Color.size*szgldata(0, Color.type);
-            n += ALIGNED((cbElem*(end - start) + (Color.size*szgldata(0, Color.type))));
+        if (vtxArry.Color.enable && vtxArry.Color.ptr) {
+            cbElem = (vtxArry.Color.stride)? vtxArry.Color.stride:vtxArry.Color.size*szgldata(0, vtxArry.Color.type);
+            n += ALIGNED((cbElem*(end - start) + (vtxArry.Color.size*szgldata(0, vtxArry.Color.type))));
         }
-        if (EdgeFlag.enable && EdgeFlag.ptr) {
-            cbElem = (EdgeFlag.stride)? EdgeFlag.stride:EdgeFlag.size*szgldata(0, EdgeFlag.type);
-            n += ALIGNED((cbElem*(end - start) + (EdgeFlag.size*szgldata(0, EdgeFlag.type))));
+        if (vtxArry.EdgeFlag.enable && vtxArry.EdgeFlag.ptr) {
+            cbElem = (vtxArry.EdgeFlag.stride)? vtxArry.EdgeFlag.stride:vtxArry.EdgeFlag.size*szgldata(0, vtxArry.EdgeFlag.type);
+            n += ALIGNED((cbElem*(end - start) + (vtxArry.EdgeFlag.size*szgldata(0, vtxArry.EdgeFlag.type))));
         }
-        if (Index.enable && Index.ptr) {
-            cbElem = (Index.stride)? Index.stride:Index.size*szgldata(0, Index.type);
-            n += ALIGNED((cbElem*(end - start) + (Index.size*szgldata(0, Index.type))));
+        if (vtxArry.Index.enable && vtxArry.Index.ptr) {
+            cbElem = (vtxArry.Index.stride)? vtxArry.Index.stride:vtxArry.Index.size*szgldata(0, vtxArry.Index.type);
+            n += ALIGNED((cbElem*(end - start) + (vtxArry.Index.size*szgldata(0, vtxArry.Index.type))));
         }
-        if (Normal.enable && Normal.ptr) {
-            cbElem = (Normal.stride)? Normal.stride:Normal.size*szgldata(0, Normal.type);
-            n += ALIGNED((cbElem*(end - start) + (Normal.size*szgldata(0, Normal.type))));
+        if (vtxArry.Normal.enable && vtxArry.Normal.ptr) {
+            cbElem = (vtxArry.Normal.stride)? vtxArry.Normal.stride:vtxArry.Normal.size*szgldata(0, vtxArry.Normal.type);
+            n += ALIGNED((cbElem*(end - start) + (vtxArry.Normal.size*szgldata(0, vtxArry.Normal.type))));
         }
         for (i = 0; i < MAX_TEXUNIT; i++) {
-            if (TexCoord[i].enable && TexCoord[i].ptr) {
-                cbElem = (TexCoord[i].stride)? TexCoord[i].stride:TexCoord[i].size*szgldata(0, TexCoord[i].type);
-                n += ALIGNED((cbElem*(end - start) + (TexCoord[i].size*szgldata(0, TexCoord[i].type))));
+            if (vtxArry.TexCoord[i].enable && vtxArry.TexCoord[i].ptr) {
+                cbElem = (vtxArry.TexCoord[i].stride)? vtxArry.TexCoord[i].stride:vtxArry.TexCoord[i].size*szgldata(0, vtxArry.TexCoord[i].type);
+                n += ALIGNED((cbElem*(end - start) + (vtxArry.TexCoord[i].size*szgldata(0, vtxArry.TexCoord[i].type))));
             }
         }
-        if (Vertex.enable && Vertex.ptr) {
-            cbElem = (Vertex.stride)? Vertex.stride:Vertex.size*szgldata(0, Vertex.type);
-            n += ALIGNED((cbElem*(end - start) + (Vertex.size*szgldata(0, Vertex.type))));
+        if (vtxArry.Vertex.enable && vtxArry.Vertex.ptr) {
+            cbElem = (vtxArry.Vertex.stride)? vtxArry.Vertex.stride:vtxArry.Vertex.size*szgldata(0, vtxArry.Vertex.type);
+            n += ALIGNED((cbElem*(end - start) + (vtxArry.Vertex.size*szgldata(0, vtxArry.Vertex.type))));
         }
-        if (SecondaryColor.enable && SecondaryColor.ptr) {
-            cbElem = (SecondaryColor.stride)? SecondaryColor.stride:SecondaryColor.size*szgldata(0, SecondaryColor.type);
-            n += ALIGNED((cbElem*(end - start) + (SecondaryColor.size*szgldata(0, SecondaryColor.type))));
+        if (vtxArry.SecondaryColor.enable && vtxArry.SecondaryColor.ptr) {
+            cbElem = (vtxArry.SecondaryColor.stride)? vtxArry.SecondaryColor.stride:vtxArry.SecondaryColor.size*szgldata(0, vtxArry.SecondaryColor.type);
+            n += ALIGNED((cbElem*(end - start) + (vtxArry.SecondaryColor.size*szgldata(0, vtxArry.SecondaryColor.type))));
         }
-        if (FogCoord.enable && FogCoord.ptr) {
-            cbElem = (FogCoord.stride)? FogCoord.stride:FogCoord.size*szgldata(0, FogCoord.type);
-            n += ALIGNED((cbElem*(end - start) + (FogCoord.size*szgldata(0, FogCoord.type))));
+        if (vtxArry.FogCoord.enable && vtxArry.FogCoord.ptr) {
+            cbElem = (vtxArry.FogCoord.stride)? vtxArry.FogCoord.stride:vtxArry.FogCoord.size*szgldata(0, vtxArry.FogCoord.type);
+            n += ALIGNED((cbElem*(end - start) + (vtxArry.FogCoord.size*szgldata(0, vtxArry.FogCoord.type))));
         }
-        if (Weight.enable && Weight.ptr) {
-            cbElem = (Weight.stride)? Weight.stride:Weight.size*szgldata(0, Weight.type);
-            n += ALIGNED((cbElem*(end - start) + (Weight.size*szgldata(0, Weight.type))));
+        if (vtxArry.Weight.enable && vtxArry.Weight.ptr) {
+            cbElem = (vtxArry.Weight.stride)? vtxArry.Weight.stride:vtxArry.Weight.size*szgldata(0, vtxArry.Weight.type);
+            n += ALIGNED((cbElem*(end - start) + (vtxArry.Weight.size*szgldata(0, vtxArry.Weight.type))));
         }
         for (i = 0; i < 2; i++) {
-            if (GenAttrib[i].enable && GenAttrib[i].ptr) {
-                cbElem = (GenAttrib[i].stride)? GenAttrib[i].stride:GenAttrib[i].size*szgldata(0, GenAttrib[i].type);
-                n += ALIGNED((cbElem*(end - start) + (GenAttrib[i].size*szgldata(0, GenAttrib[i].type))));
+            if (vtxArry.GenAttrib[i].enable && vtxArry.GenAttrib[i].ptr) {
+                cbElem = (vtxArry.GenAttrib[i].stride)? vtxArry.GenAttrib[i].stride:vtxArry.GenAttrib[i].size*szgldata(0, vtxArry.GenAttrib[i].type);
+                n += ALIGNED((cbElem*(end - start) + (vtxArry.GenAttrib[i].size*szgldata(0, vtxArry.GenAttrib[i].type))));
             }
         }
     }
@@ -265,48 +268,48 @@ static void PushVertexArray(int start, int end)
         Interleaved.enable = 0;
     }
     else {
-        if (Color.enable && Color.ptr) {
-            cbElem = (Color.stride)? Color.stride:Color.size*szgldata(0, Color.type);
-            fifoAddData(0, (uint32_t)(Color.ptr+(start*cbElem)), (cbElem*(end - start) + (Color.size*szgldata(0, Color.type))));
+        if (vtxArry.Color.enable && vtxArry.Color.ptr) {
+            cbElem = (vtxArry.Color.stride)? vtxArry.Color.stride:vtxArry.Color.size*szgldata(0, vtxArry.Color.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Color.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Color.size*szgldata(0, vtxArry.Color.type))));
         }
-        if (EdgeFlag.enable && EdgeFlag.ptr) {
-            cbElem = (EdgeFlag.stride)? EdgeFlag.stride:EdgeFlag.size*szgldata(0, EdgeFlag.type);
-            fifoAddData(0, (uint32_t)(EdgeFlag.ptr+(start*cbElem)), (cbElem*(end - start) + (EdgeFlag.size*szgldata(0, EdgeFlag.type))));
+        if (vtxArry.EdgeFlag.enable && vtxArry.EdgeFlag.ptr) {
+            cbElem = (vtxArry.EdgeFlag.stride)? vtxArry.EdgeFlag.stride:vtxArry.EdgeFlag.size*szgldata(0, vtxArry.EdgeFlag.type);
+            fifoAddData(0, (uint32_t)(vtxArry.EdgeFlag.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.EdgeFlag.size*szgldata(0, vtxArry.EdgeFlag.type))));
         }
-        if (Index.enable && Index.ptr) {
-            cbElem = (Index.stride)? Index.stride:Index.size*szgldata(0, Index.type);
-            fifoAddData(0, (uint32_t)(Index.ptr+(start*cbElem)), (cbElem*(end - start) + (Index.size*szgldata(0, Index.type))));
+        if (vtxArry.Index.enable && vtxArry.Index.ptr) {
+            cbElem = (vtxArry.Index.stride)? vtxArry.Index.stride:vtxArry.Index.size*szgldata(0, vtxArry.Index.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Index.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Index.size*szgldata(0, vtxArry.Index.type))));
         }
-        if (Normal.enable && Normal.ptr) {
-            cbElem = (Normal.stride)? Normal.stride:Normal.size*szgldata(0, Normal.type);
-            fifoAddData(0, (uint32_t)(Normal.ptr+(start*cbElem)), (cbElem*(end - start) + (Normal.size*szgldata(0, Normal.type))));
+        if (vtxArry.Normal.enable && vtxArry.Normal.ptr) {
+            cbElem = (vtxArry.Normal.stride)? vtxArry.Normal.stride:vtxArry.Normal.size*szgldata(0, vtxArry.Normal.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Normal.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Normal.size*szgldata(0, vtxArry.Normal.type))));
         }
         for (i = 0; i < MAX_TEXUNIT; i++) {
-            if (TexCoord[i].enable && TexCoord[i].ptr) {
-                cbElem = (TexCoord[i].stride)? TexCoord[i].stride:TexCoord[i].size*szgldata(0, TexCoord[i].type);
-                fifoAddData(0, (uint32_t)(TexCoord[i].ptr+(start*cbElem)), (cbElem*(end - start) + (TexCoord[i].size*szgldata(0, TexCoord[i].type))));
+            if (vtxArry.TexCoord[i].enable && vtxArry.TexCoord[i].ptr) {
+                cbElem = (vtxArry.TexCoord[i].stride)? vtxArry.TexCoord[i].stride:vtxArry.TexCoord[i].size*szgldata(0, vtxArry.TexCoord[i].type);
+                fifoAddData(0, (uint32_t)(vtxArry.TexCoord[i].ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.TexCoord[i].size*szgldata(0, vtxArry.TexCoord[i].type))));
             }
         }
-        if (Vertex.enable && Vertex.ptr) {
-            cbElem = (Vertex.stride)? Vertex.stride:Vertex.size*szgldata(0, Vertex.type);
-            fifoAddData(0, (uint32_t)(Vertex.ptr+(start*cbElem)), (cbElem*(end - start) + (Vertex.size*szgldata(0, Vertex.type))));
+        if (vtxArry.Vertex.enable && vtxArry.Vertex.ptr) {
+            cbElem = (vtxArry.Vertex.stride)? vtxArry.Vertex.stride:vtxArry.Vertex.size*szgldata(0, vtxArry.Vertex.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Vertex.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Vertex.size*szgldata(0, vtxArry.Vertex.type))));
         }
-        if (SecondaryColor.enable && SecondaryColor.ptr) {
-            cbElem = (SecondaryColor.stride)? SecondaryColor.stride:SecondaryColor.size*szgldata(0, SecondaryColor.type);
-            fifoAddData(0, (uint32_t)(SecondaryColor.ptr+(start*cbElem)), (cbElem*(end - start) + (SecondaryColor.size*szgldata(0, SecondaryColor.type))));
+        if (vtxArry.SecondaryColor.enable && vtxArry.SecondaryColor.ptr) {
+            cbElem = (vtxArry.SecondaryColor.stride)? vtxArry.SecondaryColor.stride:vtxArry.SecondaryColor.size*szgldata(0, vtxArry.SecondaryColor.type);
+            fifoAddData(0, (uint32_t)(vtxArry.SecondaryColor.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.SecondaryColor.size*szgldata(0, vtxArry.SecondaryColor.type))));
         }
-        if (FogCoord.enable && FogCoord.ptr) {
-            cbElem = (FogCoord.stride)? FogCoord.stride:FogCoord.size*szgldata(0, FogCoord.type);
-            fifoAddData(0, (uint32_t)(FogCoord.ptr+(start*cbElem)), (cbElem*(end - start) + (FogCoord.size*szgldata(0, FogCoord.type))));
+        if (vtxArry.FogCoord.enable && vtxArry.FogCoord.ptr) {
+            cbElem = (vtxArry.FogCoord.stride)? vtxArry.FogCoord.stride:vtxArry.FogCoord.size*szgldata(0, vtxArry.FogCoord.type);
+            fifoAddData(0, (uint32_t)(vtxArry.FogCoord.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.FogCoord.size*szgldata(0, vtxArry.FogCoord.type))));
         }
-        if (Weight.enable && Weight.ptr) {
-            cbElem = (Weight.stride)? Weight.stride:Weight.size*szgldata(0, Weight.type);
-            fifoAddData(0, (uint32_t)(Weight.ptr+(start*cbElem)), (cbElem*(end - start) + (Weight.size*szgldata(0, Weight.type))));
+        if (vtxArry.Weight.enable && vtxArry.Weight.ptr) {
+            cbElem = (vtxArry.Weight.stride)? vtxArry.Weight.stride:vtxArry.Weight.size*szgldata(0, vtxArry.Weight.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Weight.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Weight.size*szgldata(0, vtxArry.Weight.type))));
         }
         for (i = 0; i < 2; i++) {
-            if (GenAttrib[i].enable && GenAttrib[i].ptr) {
-                cbElem = (GenAttrib[i].stride)? GenAttrib[i].stride:GenAttrib[i].size*szgldata(0, GenAttrib[i].type);
-                fifoAddData(0, (uint32_t)(GenAttrib[i].ptr+(start*cbElem)), (cbElem*(end - start) + (GenAttrib[i].size*szgldata(0, GenAttrib[i].type))));
+            if (vtxArry.GenAttrib[i].enable && vtxArry.GenAttrib[i].ptr) {
+                cbElem = (vtxArry.GenAttrib[i].stride)? vtxArry.GenAttrib[i].stride:vtxArry.GenAttrib[i].size*szgldata(0, vtxArry.GenAttrib[i].type);
+                fifoAddData(0, (uint32_t)(vtxArry.GenAttrib[i].ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.GenAttrib[i].size*szgldata(0, vtxArry.GenAttrib[i].type))));
             }
         }
     }
@@ -314,21 +317,9 @@ static void PushVertexArray(int start, int end)
 }
 static void InitClientStates(void) 
 {
-    memset(&Color, 0, sizeof(vtxarry_t));
-    memset(&EdgeFlag, 0, sizeof(vtxarry_t));
-    memset(&Index, 0, sizeof(vtxarry_t));
-    memset(&Normal, 0, sizeof(vtxarry_t));
-    memset(&Vertex, 0, sizeof(vtxarry_t));
+    memset(&vtxArry, 0, sizeof(vtxArry));
     memset(&Interleaved, 0, sizeof(vtxarry_t));
-    memset(&SecondaryColor, 0, sizeof(vtxarry_t));
-    memset(&FogCoord, 0, sizeof(vtxarry_t));
-    memset(&Weight, 0, sizeof(vtxarry_t));
-    memset(TexCoord, 0, sizeof(vtxarry_t[MAX_TEXUNIT]));
-    memset(GenAttrib, 0, sizeof(vtxarry_t[2]));
-    texUnit = 0;
     pixUnpackBuf = 0;
-    arrayBuf = 0;
-    elemArryBuf = 0;
 }
 
 #define FIFO_EN 1
@@ -538,15 +529,15 @@ void PT_CALL glBindBuffer(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindBuffer, 2);
     pixUnpackBuf = (arg0 == GL_PIXEL_UNPACK_BUFFER)? arg1:pixUnpackBuf;
-    arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:arrayBuf;
-    elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:elemArryBuf;
+    vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
+    vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
 }
 void PT_CALL glBindBufferARB(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindBufferARB, 2);
     pixUnpackBuf = (arg0 == GL_PIXEL_UNPACK_BUFFER)? arg1:pixUnpackBuf;
-    arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:arrayBuf;
-    elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:elemArryBuf;
+    vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
+    vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
 }
 void PT_CALL glBindBufferBase(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -1121,12 +1112,12 @@ void PT_CALL glClearTexSubImage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
 void PT_CALL glClientActiveTexture(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClientActiveTexture, 1);
-    texUnit = ((arg0 & 0xFFF0U) == GL_TEXTURE0_ARB)? (arg0 & 0x0FU):0;
+    vtxArry.texUnit = ((arg0 & 0xFFF0U) == GL_TEXTURE0_ARB)? (arg0 & 0x0FU):0;
 }
 void PT_CALL glClientActiveTextureARB(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClientActiveTextureARB, 1);
-    texUnit = ((arg0 & 0xFFF0U) == GL_TEXTURE0_ARB)? (arg0 & 0x0FU):0;
+    vtxArry.texUnit = ((arg0 & 0xFFF0U) == GL_TEXTURE0_ARB)? (arg0 & 0x0FU):0;
 }
 void PT_CALL glClientActiveVertexStreamATI(uint32_t arg0) {
     pt[1] = arg0; 
@@ -1416,12 +1407,12 @@ void PT_CALL glColorP4uiv(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glColorPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glColorPointer, 4);
-    vtxarry_init(&Color, arg0, arg1, arg2, (void *)arg3);
+    vtxarry_init(&vtxArry.Color, arg0, arg1, arg2, (void *)arg3);
 }
 void PT_CALL glColorPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glColorPointerEXT, 5);
-    vtxarry_init(&Color, arg0, arg1, arg2, (void *)arg4);
+    vtxarry_init(&vtxArry.Color, arg0, arg1, arg2, (void *)arg4);
 }
 void PT_CALL glColorPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -2065,8 +2056,8 @@ void PT_CALL glDeleteBuffers(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteBuffers, 2);
     for (int i = 0; i < arg0; i++) {
         pixUnpackBuf = (((uint32_t *)arg1)[i] == pixUnpackBuf)? 0:pixUnpackBuf;
-        arrayBuf = (((uint32_t *)arg1)[i] == arrayBuf)? 0:arrayBuf;
-        elemArryBuf = (((uint32_t *)arg1)[i] == elemArryBuf)? 0:elemArryBuf;
+        vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
+        vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
     }
 }
 void PT_CALL glDeleteBuffersARB(uint32_t arg0, uint32_t arg1) {
@@ -2075,8 +2066,8 @@ void PT_CALL glDeleteBuffersARB(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteBuffersARB, 2);
     for (int i = 0; i < arg0; i++) {
         pixUnpackBuf = (((uint32_t *)arg1)[i] == pixUnpackBuf)? 0:pixUnpackBuf;
-        arrayBuf = (((uint32_t *)arg1)[i] == arrayBuf)? 0:arrayBuf;
-        elemArryBuf = (((uint32_t *)arg1)[i] == elemArryBuf)? 0:elemArryBuf;
+        vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
+        vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
     }
 }
 void PT_CALL glDeleteCommandListsNV(uint32_t arg0, uint32_t arg1) {
@@ -2355,7 +2346,7 @@ void PT_CALL glDispatchComputeIndirect(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDispatchComputeIndirect;
 }
 void PT_CALL glDrawArrays(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    if (arrayBuf == 0) {
+    if (vtxArry.arrayBuf == 0) {
         PrepVertexArray(arg1, arg1 + arg2 - 1, 0);
         PushVertexArray(arg1, arg1 + arg2 - 1);
     }
@@ -2363,7 +2354,7 @@ void PT_CALL glDrawArrays(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArrays, 3);
 }
 void PT_CALL glDrawArraysEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    if (arrayBuf == 0) {
+    if (vtxArry.arrayBuf == 0) {
         PrepVertexArray(arg1, arg1 + arg2 - 1, 0);
         PushVertexArray(arg1, arg1 + arg2 - 1);
     }
@@ -2432,7 +2423,7 @@ void PT_CALL glDrawElementArrayATI(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glDrawElements(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     int start, end;
-    if (elemArryBuf == 0) {
+    if (vtxArry.elemArryBuf == 0) {
         end = 0;
         for (int i = 0; i < arg1; i++) {
             if (szgldata(0, arg2) == 1) {
@@ -2465,7 +2456,7 @@ void PT_CALL glDrawElements(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_
         }
         PrepVertexArray(start, end, ALIGNED(arg1 * szgldata(0, arg2)));
         fifoAddData(0, arg3, ALIGNED(arg1 * szgldata(0, arg2)));
-        if (arrayBuf == 0)
+        if (vtxArry.arrayBuf == 0)
             PushVertexArray(start, end);
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -2529,10 +2520,10 @@ void PT_CALL glDrawRangeElementArrayATI(uint32_t arg0, uint32_t arg1, uint32_t a
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawRangeElementArrayATI;
 }
 void PT_CALL glDrawRangeElements(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
-    if (elemArryBuf == 0) {
+    if (vtxArry.elemArryBuf == 0) {
         PrepVertexArray(arg1, arg2, ALIGNED(arg3 * szgldata(0, arg4)));
         fifoAddData(0, arg5, ALIGNED(arg3 * szgldata(0, arg4)));
-        if (arrayBuf == 0)
+        if (vtxArry.arrayBuf == 0)
             PushVertexArray(arg1, arg2);
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
@@ -2543,10 +2534,10 @@ void PT_CALL glDrawRangeElementsBaseVertex(uint32_t arg0, uint32_t arg1, uint32_
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawRangeElementsBaseVertex;
 }
 void PT_CALL glDrawRangeElementsEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
-    if (elemArryBuf == 0) {
+    if (vtxArry.elemArryBuf == 0) {
         PrepVertexArray(arg1, arg2, ALIGNED(arg3 * szgldata(0, arg4)));
         fifoAddData(0, arg5, ALIGNED(arg3 * szgldata(0, arg4)));
-        if (arrayBuf == 0)
+        if (vtxArry.arrayBuf == 0)
             PushVertexArray(arg1, arg2);
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
@@ -2599,12 +2590,12 @@ void PT_CALL glEdgeFlagFormatNV(uint32_t arg0) {
 void PT_CALL glEdgeFlagPointer(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEdgeFlagPointer, 2);
-    vtxarry_init(&EdgeFlag, 1, GL_BYTE, arg0, (void *)arg1);
+    vtxarry_init(&vtxArry.EdgeFlag, 1, GL_BYTE, arg0, (void *)arg1);
 }
 void PT_CALL glEdgeFlagPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEdgeFlagPointerEXT, 3);
-    vtxarry_init(&EdgeFlag, 1, GL_BYTE, arg0, (void *)arg2);
+    vtxarry_init(&vtxArry.EdgeFlag, 1, GL_BYTE, arg0, (void *)arg2);
 }
 void PT_CALL glEdgeFlagPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -2919,12 +2910,12 @@ void PT_CALL glFogCoordFormatNV(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glFogCoordPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordPointer;
-    vtxarry_init(&FogCoord, 1, arg0, arg1, (void *)arg2);
+    vtxarry_init(&vtxArry.FogCoord, 1, arg0, arg1, (void *)arg2);
 }
 void PT_CALL glFogCoordPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordPointerEXT;
-    vtxarry_init(&FogCoord, 1, arg0, arg1, (void *)arg2);
+    vtxarry_init(&vtxArry.FogCoord, 1, arg0, arg1, (void *)arg2);
 }
 void PT_CALL glFogCoordPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -3565,12 +3556,12 @@ void PT_CALL glGetCompressedMultiTexImageEXT(uint32_t arg0, uint32_t arg1, uint3
 void PT_CALL glGetCompressedTexImage(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCompressedTexImage;
-    memcpy((unsigned char *)arg2, &fbtm[ALIGNED(0) >> 2], fbtm[0]);
+    memcpy((unsigned char *)arg2, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
 }
 void PT_CALL glGetCompressedTexImageARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCompressedTexImageARB;
-    memcpy((unsigned char *)arg2, &fbtm[ALIGNED(0) >> 2], fbtm[0]);
+    memcpy((unsigned char *)arg2, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
 }
 void PT_CALL glGetCompressedTextureImage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -4708,7 +4699,7 @@ void PT_CALL glGetTexGenxvOES(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 void PT_CALL glGetTexImage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetTexImage;
-    memcpy((unsigned char *)arg4, &fbtm[ALIGNED(0) >> 2], fbtm[0]);
+    memcpy((unsigned char *)arg4, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
 }
 void PT_CALL glGetTexLevelParameterfv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     uint32_t n;
@@ -5409,12 +5400,12 @@ void PT_CALL glIndexMaterialEXT(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glIndexPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glIndexPointer, 3);
-    vtxarry_init(&Index, 1, arg0, arg1, (void *)arg2);
+    vtxarry_init(&vtxArry.Index, 1, arg0, arg1, (void *)arg2);
 }
 void PT_CALL glIndexPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glIndexPointerEXT, 4);
-    vtxarry_init(&Index, 1, arg0, arg1, (void *)arg3);
+    vtxarry_init(&vtxArry.Index, 1, arg0, arg1, (void *)arg3);
 }
 void PT_CALL glIndexPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -6027,14 +6018,14 @@ void * PT_CALL glMapBuffer(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBuffer;
     szBuf = *pt0;
-    return (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    return (void *)&fbtm[(MGLFBT_SIZE - ALIGNED(szBuf)) >> 2];
 }
 void * PT_CALL glMapBufferARB(uint32_t arg0, uint32_t arg1) {
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferARB;
     szBuf = *pt0;
-    return (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    return (void *)&fbtm[(MGLFBT_SIZE - ALIGNED(szBuf)) >> 2];
 }
 void PT_CALL glMapBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -7276,12 +7267,12 @@ void PT_CALL glNormalP3uiv(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glNormalPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glNormalPointer, 3);
-    vtxarry_init(&Normal, 3, arg0, arg1, (void *)arg2);
+    vtxarry_init(&vtxArry.Normal, 3, arg0, arg1, (void *)arg2);
 }
 void PT_CALL glNormalPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glNormalPointerEXT, 4);
-    vtxarry_init(&Normal, 3, arg0, arg1, (void *)arg3);
+    vtxarry_init(&vtxArry.Normal, 3, arg0, arg1, (void *)arg3);
 }
 void PT_CALL glNormalPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -9181,12 +9172,12 @@ void PT_CALL glSecondaryColorP3uiv(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glSecondaryColorPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glSecondaryColorPointer, 4);
-    vtxarry_init(&SecondaryColor, arg0, arg1, arg2, (void *)arg3);
+    vtxarry_init(&vtxArry.SecondaryColor, arg0, arg1, arg2, (void *)arg3);
 }
 void PT_CALL glSecondaryColorPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glSecondaryColorPointerEXT, 4);
-    vtxarry_init(&SecondaryColor, arg0, arg1, arg2, (void *)arg3);
+    vtxarry_init(&vtxArry.SecondaryColor, arg0, arg1, arg2, (void *)arg3);
 }
 void PT_CALL glSecondaryColorPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -9884,12 +9875,12 @@ void PT_CALL glTexCoordP4uiv(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glTexCoordPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glTexCoordPointer, 4);
-    vtxarry_init(&TexCoord[texUnit], arg0, arg1, arg2, (void *)arg3);
+    vtxarry_init(&vtxArry.TexCoord[vtxArry.texUnit], arg0, arg1, arg2, (void *)arg3);
 }
 void PT_CALL glTexCoordPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glTexCoordPointerEXT, 5);
-    vtxarry_init(&TexCoord[texUnit], arg0, arg1, arg2, (void *)arg4);
+    vtxarry_init(&vtxArry.TexCoord[vtxArry.texUnit], arg0, arg1, arg2, (void *)arg4);
 }
 void PT_CALL glTexCoordPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -10983,9 +10974,12 @@ uint32_t PT_CALL glUnmapBuffer(uint32_t arg0) {
     ret = *pt0;
     return ret;
 }
-void PT_CALL glUnmapBufferARB(uint32_t arg0) {
+uint32_t PT_CALL glUnmapBufferARB(uint32_t arg0) {
+    uint32_t ret;
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glUnmapBufferARB;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glUnmapNamedBuffer(uint32_t arg0) {
     pt[1] = arg0; 
@@ -12406,12 +12400,12 @@ void PT_CALL glVertexP4uiv(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glVertexPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexPointer, 4);
-    vtxarry_init(&Vertex, arg0, arg1, arg2, (void *)arg3);
+    vtxarry_init(&vtxArry.Vertex, arg0, arg1, arg2, (void *)arg3);
 }
 void PT_CALL glVertexPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexPointerEXT, 5);
-    vtxarry_init(&Vertex, arg0, arg1, arg2, (void *)arg4);
+    vtxarry_init(&vtxArry.Vertex, arg0, arg1, arg2, (void *)arg4);
 }
 void PT_CALL glVertexPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -12551,15 +12545,17 @@ void PT_CALL glVertexStream4svATI(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glVertexWeightPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glVertexWeightPointerEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexWeightPointerEXT, 4);
+    vtxarry_init(&vtxArry.Weight, arg0, arg1, arg2, (void *)arg3);
 }
 void PT_CALL glVertexWeightfEXT(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glVertexWeightfEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexWeightfEXT, 1);
 }
 void PT_CALL glVertexWeightfvEXT(uint32_t arg0) {
+    fifoAddData(0, arg0, ALIGNED(sizeof(float)));
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glVertexWeightfvEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexWeightfvEXT, 1);
 }
 void PT_CALL glVertexWeighthNV(uint32_t arg0) {
     pt[1] = arg0; 
@@ -12628,7 +12624,7 @@ void PT_CALL glWeightPathsNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
 void PT_CALL glWeightPointerARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glWeightPointerARB, 4);
-    vtxarry_init(&Weight, arg0, arg1, arg2, (void *)arg3);
+    vtxarry_init(&vtxArry.Weight, arg0, arg1, arg2, (void *)arg3);
 }
 void PT_CALL glWeightbvARB(uint32_t arg0, uint32_t arg1) {
     fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(char)));
