@@ -2509,7 +2509,7 @@ void PT_CALL glDrawMeshTasksNV(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glDrawPixels(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     fifoAddData(0, arg4, ALIGNED((arg0 * arg1 * szgldata(arg2, arg3))));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawPixels;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawPixels, 5);
 }
 void PT_CALL glDrawRangeElementArrayAPPLE(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -2909,12 +2909,12 @@ void PT_CALL glFogCoordFormatNV(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glFogCoordPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordPointer;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoordPointer, 3);
     vtxarry_init(&vtxArry.FogCoord, 1, arg0, arg1, (void *)arg2);
 }
 void PT_CALL glFogCoordPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordPointerEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoordPointerEXT, 3);
     vtxarry_init(&vtxArry.FogCoord, 1, arg0, arg1, (void *)arg2);
 }
 void PT_CALL glFogCoordPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
@@ -2923,39 +2923,39 @@ void PT_CALL glFogCoordPointerListIBM(uint32_t arg0, uint32_t arg1, uint32_t arg
 }
 void PT_CALL glFogCoordd(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordd;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoordd, 2);
 }
 void PT_CALL glFogCoorddEXT(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoorddEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoorddEXT, 2);
 }
 void PT_CALL glFogCoorddv(uint32_t arg0) {
     fifoAddData(0, arg0, sizeof(double));
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoorddv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoorddv, 1);
 }
 void PT_CALL glFogCoorddvEXT(uint32_t arg0) {
     fifoAddData(0, arg0, sizeof(double));
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoorddvEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoorddvEXT, 1);
 }
 void PT_CALL glFogCoordf(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordf;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoordf, 1);
 }
 void PT_CALL glFogCoordfEXT(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordfEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoordfEXT, 1);
 }
 void PT_CALL glFogCoordfv(uint32_t arg0) {
     fifoAddData(0, arg0, ALIGNED(sizeof(float)));
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordfv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoordfv, 1);
 }
 void PT_CALL glFogCoordfvEXT(uint32_t arg0) {
     fifoAddData(0, arg0, ALIGNED(sizeof(float)));
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFogCoordfvEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFogCoordfvEXT, 1);
 }
 void PT_CALL glFogCoordhNV(uint32_t arg0) {
     pt[1] = arg0; 

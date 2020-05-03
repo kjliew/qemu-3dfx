@@ -1257,6 +1257,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetBufferSubDataARB:
             break;
         case FEnum_glDrawElements:
+        case FEnum_glDrawRangeElements:
+        case FEnum_glDrawRangeElementsEXT:
             if (s->elemArryBuf) break;
         case FEnum_glColorPointer:
         case FEnum_glColorPointerEXT:
@@ -1299,9 +1301,12 @@ static void processFRet(MesaPTState *s)
         case FEnum_glBufferDataARB:
         case FEnum_glBufferSubData:
         case FEnum_glBufferSubDataARB:
+        case FEnum_glDrawElements:
+        case FEnum_glDrawRangeElements:
+        case FEnum_glDrawRangeElementsEXT:
         case FEnum_glGetBufferSubData:
         case FEnum_glGetBufferSubDataARB:
-        case FEnum_glDrawElements:
+            /* break; */
         case FEnum_glColorPointer:
         case FEnum_glColorPointerEXT:
         case FEnum_glEdgeFlagPointer:
