@@ -25,6 +25,7 @@
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "hw/sysbus.h"
+#include "exec/address-spaces.h"
 
 #include "glide2x_impl.h"
 #include "gllstbuf.h"

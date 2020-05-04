@@ -1,6 +1,6 @@
 diff -ru ../orig/qemu-4.1.1/configure ./configure
 --- ../orig/qemu-4.1.1/configure	2019-11-14 10:06:20.000000000 -0800
-+++ ./configure	2020-03-27 19:13:08.316052416 -0700
++++ ./configure	2020-05-03 18:41:47.275079767 -0700
 @@ -871,6 +871,8 @@
    # won't work when we're compiling with gcc as a C compiler.
    QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
@@ -21,12 +21,14 @@ diff -ru ../orig/qemu-4.1.1/configure ./configure
  ;;
 diff -ru ../orig/qemu-4.1.1/hw/i386/pc.c ./hw/i386/pc.c
 --- ../orig/qemu-4.1.1/hw/i386/pc.c	2019-11-14 10:06:20.000000000 -0800
-+++ ./hw/i386/pc.c	2020-03-27 19:15:36.579252312 -0700
-@@ -2155,6 +2155,26 @@
-     for (i = 0; i < IOAPIC_NUM_PINS; i++) {
-         gsi_state->ioapic_irq[i] = qdev_get_gpio_in(dev, i);
-     }
++++ ./hw/i386/pc.c	2020-05-03 18:38:51.708571111 -0700
+@@ -2113,6 +2113,28 @@
+ 
+     /* Super I/O */
+     pc_superio_init(isa_bus, create_fdctrl, no_vmport);
++    /* Glide pass-through */
 +    glidept_mm_init();
++    /* MESA pass-through */
 +    mesapt_mm_init();
 +}
 +
@@ -48,10 +50,10 @@ diff -ru ../orig/qemu-4.1.1/hw/i386/pc.c ./hw/i386/pc.c
 +    sysbus_mmio_map(SYS_BUS_DEVICE(mesapt_dev), 0, MESAPT_MM_BASE);
  }
  
- static void pc_memory_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
+ void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
 diff -ru ../orig/qemu-4.1.1/hw/Makefile.objs ./hw/Makefile.objs
 --- ../orig/qemu-4.1.1/hw/Makefile.objs	2019-11-14 10:06:20.000000000 -0800
-+++ ./hw/Makefile.objs	2020-03-27 19:11:30.196140724 -0700
++++ ./hw/Makefile.objs	2020-05-03 18:38:51.711904441 -0700
 @@ -9,6 +9,7 @@
  devices-dirs-y += char/
  devices-dirs-y += cpu/
@@ -70,7 +72,7 @@ diff -ru ../orig/qemu-4.1.1/hw/Makefile.objs ./hw/Makefile.objs
  devices-dirs-y += rdma/
 diff -ru ../orig/qemu-4.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
 --- ../orig/qemu-4.1.1/include/hw/i386/pc.h	2019-11-14 10:06:20.000000000 -0800
-+++ ./include/hw/i386/pc.h	2020-03-27 19:11:30.196140724 -0700
++++ ./include/hw/i386/pc.h	2020-05-03 18:38:51.711904441 -0700
 @@ -173,6 +173,16 @@
  
  void gsi_handler(void *opaque, int n, int level);
@@ -90,7 +92,7 @@ diff -ru ../orig/qemu-4.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
  typedef uint32_t (VMPortReadFunc)(void *opaque, uint32_t address);
 diff -ru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
 --- ../orig/qemu-4.1.1/include/ui/console.h	2019-11-14 10:06:20.000000000 -0800
-+++ ./include/ui/console.h	2020-03-27 19:11:30.196140724 -0700
++++ ./include/ui/console.h	2020-05-03 18:38:51.711904441 -0700
 @@ -453,4 +453,20 @@
  /* input.c */
  int index_from_key(const char *key, size_t key_length);
@@ -114,14 +116,14 @@ diff -ru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
  #endif
 diff -ru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
 --- ../orig/qemu-4.1.1/ui/console.c	2019-11-14 10:06:21.000000000 -0800
-+++ ./ui/console.c	2020-03-27 19:14:23.179318372 -0700
++++ ./ui/console.c	2020-05-03 18:42:56.371684247 -0700
 @@ -259,8 +259,22 @@
      ds->have_text = have_text;
  }
  
 +static int glide_enabled = 0;
 +int is_glide_enabled(void) { return glide_enabled; }
-+void glide_enabled_set(void)   { glide_enabled = 1; }
++void glide_enabled_set(void) { glide_enabled = 1; }
 +void glide_enabled_reset(void) { glide_enabled = 0; }
 +
 +static int mesa_enabled = 0;
@@ -140,7 +142,7 @@ diff -ru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
      }
 diff -ru ../orig/qemu-4.1.1/ui/sdl2-2d.c ./ui/sdl2-2d.c
 --- ../orig/qemu-4.1.1/ui/sdl2-2d.c	2019-11-14 10:06:21.000000000 -0800
-+++ ./ui/sdl2-2d.c	2020-03-27 19:11:30.199474054 -0700
++++ ./ui/sdl2-2d.c	2020-05-03 18:38:51.711904441 -0700
 @@ -38,6 +38,12 @@
      size_t surface_data_offset;
      assert(!scon->opengl);
@@ -156,7 +158,7 @@ diff -ru ../orig/qemu-4.1.1/ui/sdl2-2d.c ./ui/sdl2-2d.c
      }
 diff -ru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-4.1.1/ui/sdl2.c	2019-11-14 10:06:21.000000000 -0800
-+++ ./ui/sdl2.c	2020-03-27 19:11:30.199474054 -0700
++++ ./ui/sdl2.c	2020-05-03 18:38:51.715237771 -0700
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */

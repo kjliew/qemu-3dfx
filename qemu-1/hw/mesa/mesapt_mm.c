@@ -25,6 +25,7 @@
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "hw/sysbus.h"
+#include "exec/address-spaces.h"
 
 #include "mesagl_impl.h"
 
