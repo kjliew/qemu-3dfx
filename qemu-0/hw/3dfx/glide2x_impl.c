@@ -309,14 +309,26 @@ const char *wrGetString(uint32_t a0)
     return (*fpra0)(a0);
 }
 
+const char *getGRFuncStr(int FEnum)
+{
+    if (tblGlide2x[FEnum].impl == 0) {
+        tblGlide2x[FEnum].impl = 1;
+        return tblGlide2x[FEnum].sym;
+    }
+    return 0;
+}
+
 void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int emu211)
 {
     static int glidePostInit = 0;
     int numArgs = getNumArgs(tblGlide2x[FEnum].sym);
 
-    if (tblGlide2x[FEnum].impl == 0) {
-	DPRINTF("%s ( 0x%x ), numArgs = %d\n", tblGlide2x[FEnum].sym, FEnum, numArgs);
-    }
+#ifdef DEBUG_GLIDE2X
+    const char *fstr = getGRFuncStr(FEnum);
+    if (fstr)
+        DPRINTF("%s ( 0x%x ), numArgs = %d\n", tblGlide2x[FEnum].sym, FEnum, numArgs);
+#endif
+
     if (glidePostInit == 0) {
 	switch (FEnum) {
 	    case FEnum_grSstControl:
@@ -764,11 +776,10 @@ void fini_glide2x(void)
 #endif
     }
     hDll = 0;
-    for (int i = 0; i < FEnum_zzG2xFuncEnum_max; i++)
+    for (int i = 0; i < FEnum_zzG2xFuncEnum_max; i++) {
+        tblGlide2x[i].impl = 0;
 	tblGlide2x[i].ptr = 0;
-
-    tblGlide2x[FEnum_grChromaRangeModeExt].ptr = 0;
-    tblGlide2x[FEnum_grChromaRangeExt].ptr = 0;
+    }
 }
 
 int init_glide2x(const char *dllname)

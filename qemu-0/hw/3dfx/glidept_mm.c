@@ -821,11 +821,16 @@ static void processFifo(GlidePTState *s)
     int FEnum = s->FEnum, i = FIRST_FIFO, j = ALIGNED(1) >> 2;
 
     if (fifoptr[0] - FIRST_FIFO) {
+#define DEBUG_FIFO 0
+#if DEBUG_FIFO
+        const char *fstr = getGRFuncStr(s->FEnum);
+        if (fstr)
+            DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x\n", fstr, fifoptr[0], dataptr[0]);
+#endif
         while (i < fifoptr[0]) {
             int numArgs, numData;
             s->FEnum = fifoptr[i++];
             numArgs = GRFEnumArgsCnt(s->FEnum);
-#define DEBUG_FIFO 0
 #if DEBUG_FIFO
             if (i == (FIRST_FIFO + 1))
                 DPRINTF("FIFO { [%02X] fifo %04x data %04x\n%02X ", FEnum, fifoptr[0], dataptr[0], s->FEnum);

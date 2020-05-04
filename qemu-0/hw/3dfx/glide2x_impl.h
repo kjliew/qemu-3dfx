@@ -112,6 +112,7 @@ uint32_t wrReadRegion(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3
 uint32_t wrWriteRegion(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uintptr_t arg7);
 uintptr_t wrGetProcAddress(uintptr_t);
 const char *wrGetString(uint32_t);
+const char *getGRFuncStr(int);
 
 #ifndef CONSOLE_H
 void glide_enabled_set(void);
