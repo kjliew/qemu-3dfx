@@ -60,6 +60,7 @@ static int cfg_createWnd = 0;
 static int cfg_scaleX = 0;
 static int cfg_lfbHandler = 0;
 static int cfg_lfbNoAux = 0;
+static int cfg_lfbLockDirty = 0;
 static int cfg_lfbWriteMerge = 0;
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
@@ -131,6 +132,7 @@ static int scaledRes(int w, float r)
 }
 
 int glide_lfbmerge(void) { return cfg_lfbWriteMerge; }
+int glide_lfbdirty(void) { return cfg_lfbLockDirty; }
 int glide_lfbnoaux(void) { return cfg_lfbNoAux; }
 int glide_lfbmode(void) { return cfg_lfbHandler; }
 void glide_winres(const int res, uint32_t *w, uint32_t *h)
@@ -194,17 +196,26 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_scaleX = 0;
     cfg_lfbHandler = 0;
     cfg_lfbNoAux = 0;
+    cfg_lfbLockDirty = 0;
     cfg_lfbWriteMerge = 0;
 
     FILE *fp = fopen(GLIDECFG, "r");
     if (fp != NULL) {
         char line[32];
+        int i, c;
         while (fgets(line, 32, fp)) {
-	    sscanf(line, "CreateWindow,%d", &cfg_createWnd);
-	    sscanf(line, "ScaleWidth,%d", &cfg_scaleX);
-            sscanf(line, "LfbHandler,%d", &cfg_lfbHandler);
-            sscanf(line, "LfbNoAux,%d", &cfg_lfbNoAux);
-            sscanf(line, "LfbWriteMerge,%d", &cfg_lfbWriteMerge);
+            i = sscanf(line, "CreateWindow,%d", &c);
+            cfg_createWnd = ((i == 1) && c)? 1:cfg_createWnd;
+            i = sscanf(line, "ScaleWidth,%d", &c);
+            cfg_scaleX = ((i == 1) && c)? c:cfg_scaleX;
+            i = sscanf(line, "LfbHandler,%d", &c);
+            cfg_lfbHandler = ((i == 1) && c)? 1:cfg_lfbHandler;
+            i = sscanf(line, "LfbNoAux,%d", &c);
+            cfg_lfbNoAux = ((i == 1) && c)? 1:cfg_lfbNoAux;
+            i = sscanf(line, "LfbLockDirty,%d", &c);
+            cfg_lfbLockDirty = ((i == 1) && c)? 1:cfg_lfbLockDirty;
+            i = sscanf(line, "LfbWriteMerge,%d", &c);
+            cfg_lfbWriteMerge = ((i == 1) && c)? 1:cfg_lfbWriteMerge;
 	}
         fclose(fp);
     }

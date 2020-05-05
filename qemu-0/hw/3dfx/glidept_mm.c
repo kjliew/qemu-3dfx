@@ -347,7 +347,7 @@ static void processArgs(GlidePTState *s)
                 hLfb->size = sizeof(wrLfbInfo);
             } while(0);
 	    s->parg[1] = VAL(PTR(outshm, ALIGNED(sizeof(wrgLfbInfo))));
-            s->lfb_dirty = (s->lfbDev->grBuffer == s->arg[1])? s->lfb_dirty:1;
+            s->lfb_dirty = (s->lfbDev->grBuffer == s->arg[1])? (s->lfb_dirty | glide_lfbdirty()):0x01U;
             s->arg[1] = (s->lfb_noaux && (s->arg[1] & 0xFEU))? (s->arg[1] | 0x80U):s->arg[1];
 	    break;
         case FEnum_grLfbUnlock:
@@ -641,7 +641,8 @@ static void processFRet(GlidePTState *s)
                     s->lfb_dirty = 1;
                     glide_winres(s->arg[1], &s->lfb_w, &s->lfb_h);
                 }
-                DPRINTF("LFB mode is %s%s%s\n", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
+                DPRINTF("LFB mode is %s%s%s%s\n", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
+                        (glide_lfbdirty())? ", LfbLockDirty":"",
                         (s->lfb_noaux)? ", LfbNoAux":"", (s->lfb_merge)? ", LfbWriteMerge":"");
 	    }
 	    else
@@ -741,16 +742,14 @@ static void processFRet(GlidePTState *s)
                     }
                 }
                 else {
-                    if (s->lfb_dirty & 0x01U) {
-                        uint8_t *hLfb = s->lfbDev->lfbPtr[0];
+                    uint8_t *hLfb = s->lfbDev->lfbPtr[0];
+                    if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) { }
+                    else if (s->lfb_dirty & 0x01U) {
                         s->lfb_dirty = 0;
-                        if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) { }
-                        else {
-                            for (int y = 0; y < s->lfb_h; y++) {
-                                memcpy(gLfb, hLfb, (s->lfb_w << 1));
-                                hLfb += s->lfbDev->stride[0];
-                                gLfb += 0x800;
-                            }
+                        for (int y = 0; y < s->lfb_h; y++) {
+                            memcpy(gLfb, hLfb, (s->lfb_w << 1));
+                            hLfb += s->lfbDev->stride[0];
+                            gLfb += 0x800;
                         }
                     }
                 }
