@@ -448,6 +448,7 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
 	case FEnum_grTexDownloadTable:
 	case FEnum_grGet:
         case FEnum_grDrawVertexArray:
+        case FEnum_guTexDownloadMipMapLevel:
             sfp.fpra1p2 = tblGlide2x[FEnum].ptr;
             *ret = (*(sfp.fpra1p2))(arg[0], arg[1], parg[2]);
             numArgs = -1;

@@ -198,7 +198,8 @@ static uint32_t guTexSize(const uint32_t mmid, const int lodLevel)
             texInfo.aspect = guTex[i].aspect;
             texInfo.format = guTex[i].format;
             oddEven = guTex[i].oddEven;
-            if (lodLevel < 0x08) {
+            if ((lodLevel < 0x00) || (lodLevel > 0x08)) { }
+            else {
                 texInfo.small = lodLevel;
                 texInfo.large = lodLevel;
             }
@@ -898,9 +899,14 @@ void PT_CALL guTexDownloadMipMap(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_guTexDownloadMipMap, 4);
 }
 void PT_CALL guTexDownloadMipMapLevel(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    void **src = (void **)arg2;
+    uint8_t pad[ALIGNED(1)];
     uint32_t texBytes  = guTexSize(arg0, arg1);
-    if (texBytes)
-        fifoAddData(0, arg2, ALIGNED(texBytes));
+    if (texBytes) {
+        fifoAddData(0, (uint32_t)(*src), ALIGNED(texBytes));
+        fifoAddData(0, (uint32_t)pad, ALIGNED(1));
+        *src = (void *)(((uint32_t)*src) + texBytes);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = texBytes;
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_guTexDownloadMipMapLevel, 4);
 }

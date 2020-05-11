@@ -425,11 +425,14 @@ static void processArgs(GlidePTState *s)
             }
             break;
         case FEnum_guTexDownloadMipMapLevel:
-            if (s->arg[3])
+            if (s->arg[3]) {
                 s->datacb = ALIGNED(s->arg[3]);
+                s->datacb += ALIGNED(1);
+            }
             else
                 DPRINTF("Invalid mmid %x\n", s->arg[0]);
-            s->parg[2] = VAL(s->hshm);
+            *(uintptr_t *)PTR(s->hshm, ALIGNED(s->arg[3])) = VAL(s->hshm);
+            s->parg[2] = VAL(PTR(s->hshm, ALIGNED(s->arg[3])));
             break;
 
 	case FEnum_grDrawPolygon:
