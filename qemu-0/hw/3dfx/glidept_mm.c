@@ -392,7 +392,6 @@ static void processArgs(GlidePTState *s)
             s->datacb = sizeof(char[64]);
 	    info3df = (wr3dfInfo *)PTR(outshm, ALIGNED(SIZE_GU3DFINFO));
             if (s->FEnum == FEnum_gu3dfGetInfo) {
-                s->reg[1] = 0;
                 info3df->data = 0;
                 info3df->mem_required = 0;
                 if (s->fbuf && s->flen) {
@@ -406,7 +405,6 @@ static void processArgs(GlidePTState *s)
                 }
             }
             if (info3df->mem_required) {
-                s->reg[1] = 1;
                 info3df->data = s->fbuf;
                 s->fbuf = 0;
             }
@@ -767,14 +765,14 @@ static void processFRet(GlidePTState *s)
 
 	case FEnum_gu3dfGetInfo:
         case FEnum_gu3dfLoad:
-            if (s->FRet == 0)
-                break;
-            memcpy(outshm, info3df->header, SIZE_GU3DFHEADER);
-            ((wrg3dfInfo *)outshm)->mem_required = info3df->mem_required;
-            DPRINTF("%s texFile %s, mem_rq = %-8x\n", (s->reg[1])? "Load":"Info", (uint8_t *)(s->hshm), 
-		    ((wrg3dfInfo *)outshm)->mem_required);
-            if (texTableValid(((wr3dfHeader *)info3df->header)->format))
-                memcpy(PTR(outshm, SIZE_GU3DFHEADER), info3df->table, SIZE_GUTEXTABLE);
+            if (s->FRet) {
+                memcpy(outshm, info3df->header, SIZE_GU3DFHEADER);
+                ((wrg3dfInfo *)outshm)->mem_required = info3df->mem_required;
+                if (texTableValid(((wr3dfHeader *)info3df->header)->format))
+                    memcpy(PTR(outshm, SIZE_GU3DFHEADER), info3df->table, SIZE_GUTEXTABLE);
+                DPRINTF("%s texFile %s, mem_rq = %-8x\n", (s->FEnum == FEnum_gu3dfLoad)? "Load":"Info", (uint8_t *)(s->hshm),
+                        ((wrg3dfInfo *)outshm)->mem_required);
+            }
             break;
 
         case FEnum_grGet:
@@ -872,7 +870,7 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 	case 0xfb0:
             s->fbuf = s->fifo_ptr + (GRSHM_SIZE - val);
             s->flen = ((uint32_t *)s->fbuf)[0];
-            s->fbuf += ALIGNED(sizeof(uint32_t));
+            s->fbuf += ALIGNED(1);
 	    break;
 
 	case 0xfbc:

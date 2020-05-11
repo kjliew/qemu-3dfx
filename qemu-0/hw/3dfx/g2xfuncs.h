@@ -200,13 +200,13 @@ typedef enum {
 #define GLIDE_LFB_BASE	0xfb000000
 #define GLIDE_FIFO_BASE 0xfb500000
 
-#define MAX_FIFO                                0x10000
-#define MAX_DATA                                (((3072 - 64 - 256) * 1024) >> 2)
-#define FIRST_FIFO                              24
+#define ALIGNED(x)                              ((x%8)?(((x>>3)+1)<<3):x)
 #define SHLFB_SIZE                              0x300000
 #define GRSHM_SIZE                              0x300000
 #define GRLFB_SIZE                              0x200000
-#define ALIGNED(x)                              ((x%8)?(((x>>3)+1)<<3):x)
+#define FIRST_FIFO                              24
+#define MAX_FIFO                                0x10000
+#define MAX_DATA                                ((GRSHM_SIZE - (4*MAX_FIFO) - (64*1024)) >> 2)
 #define G3_LOD_TRANSLATE(lod)                       (0x8-lod)
 #define G3_ASPECT_TRANSLATE(aspect)                 (0x3-(aspect))
 #define GR_FOG_TABLE_ENTRIES            0x04

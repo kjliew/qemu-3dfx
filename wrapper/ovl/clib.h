@@ -6,6 +6,16 @@ typedef unsigned uint32_t;
 typedef unsigned long FxU32;
 typedef int FxBool;
 
+void _dxe_putc(int c)
+{
+    __asm
+    {
+        mov dx, 0x3F8;
+        mov eax, c;
+        out dx, al;
+    }
+}
+
 static unsigned getDosPSPSeg(void)
 {
     unsigned segPSP;
@@ -46,10 +56,28 @@ static int strncmp(const char *s1, const char *s2, unsigned n)
     return (0);
 }
 
+static int strnlen(const char *s, unsigned n)
+{
+    int i;
+    if (n == 0)
+        return (0);
+    for (i = 0; i < n; i++) {
+        if (s[i] == 0)
+            break;
+    }
+    return i;
+}
+
 static char *basename(const char *name)
 {
+    int i = 0;
     char *p = (char *)name;
-    return p;
+    while (name[i++]);
+    for (--i; i > 0; i--) {
+        if ((name[i] == '/') || (name[i] == '\\'))
+            break;
+    }
+    return (i)? (p + i + 1):p;
 }
 
 static int open(const char *path)

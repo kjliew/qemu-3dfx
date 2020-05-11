@@ -128,20 +128,17 @@ static INLINE void fifoAddEntry(uint32_t *pt, int FEnum, int numArgs)
 
 static INLINE void fifoAddData(int nArg, uint32_t argData, int cbData)
 {
-    int i, j;
     uint32_t *data = (uint32_t *)argData;
     uint32_t numData = (cbData & 0x03)? ((cbData >> 2) + 1):(cbData >> 2);
 
-    j = mdata[0];
-    memcpy(&mdata[j], data, (numData << 2));
+    int j = mdata[0];
     mdata[0] = (j + numData);
-    if (nArg)
-        pt[nArg] = argData;
+    pt[nArg] = (nArg)? argData:pt[nArg];
+    memcpy(&mdata[j], data, (numData << 2));
 }
 
 static INLINE void fifoOutData(int offs, uint32_t darg, int cbData)
 {
-    int i;
     uint32_t *src = &mfifo[(GRSHM_SIZE - PAGE_SIZE + offs) >> 2];
     uint32_t *dst = (uint32_t *)darg;
     uint32_t numData = (cbData & 0x03)? ((cbData >> 2) + 1):(cbData >> 2);
@@ -159,8 +156,9 @@ static char g3ext_str[192] = " ";
 static char g3hw_str[16]   = "Voodoo2";
 static char g3ver_str[32]  = "3.01";
 
+#define FIFO_EN 1
 #define FIFO_GRFUNC(_func,_nargs) \
-    if (((mfifo[0] + (_nargs + 1)) < MAX_FIFO) && (mdata[0] < MAX_DATA))  \
+    if (FIFO_EN && ((mfifo[0] + (_nargs + 1)) < MAX_FIFO) && (mdata[0] < MAX_DATA))  \
         fifoAddEntry(&pt[1], _func, _nargs); \
     else *pt0 = _func \
 
@@ -194,7 +192,7 @@ void PT_CALL grAlphaTestReferenceValue(uint32_t arg0) {
 }
 void PT_CALL grBufferClear(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grBufferClear;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grBufferClear, 3);
 }
 void PT_CALL grBufferSwap(uint32_t arg0) {
     pt[1] = arg0; 
@@ -371,7 +369,7 @@ uint32_t PT_CALL grLfbWriteRegion(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
 }
 void PT_CALL grRenderBuffer(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grRenderBuffer;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grRenderBuffer, 1);
 }
 void PT_CALL grSplash(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -551,8 +549,8 @@ uint32_t PT_CALL gu3dfGetInfo(uint32_t arg0, uint32_t arg1) {
     if (fd == -1)
 	return 0;
     len = fsize(fd);
-    if (len > MAX_3DF)
-        len = MAX_3DF;
+    if (len > (MAX_3DF - ALIGNED(1)))
+        len = (MAX_3DF - ALIGNED(1));
     read(fd, &m3df[ALIGNED(1) >> 2], len);
     close(fd);
     m3df[0] = len;
