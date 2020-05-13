@@ -75,6 +75,7 @@ typedef struct MesaPTState
     int elemArryBuf;
     void *BufObj;
     int BufAcc;
+    uint32_t BufRange;
     int KickFrame;
     PERFSTAT perfs;
 
@@ -703,6 +704,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glDeleteRenderbuffersEXT:
         case FEnum_glDeleteTextures:
         case FEnum_glDeleteTexturesEXT:
+        case FEnum_glDeleteVertexArrays:
             s->datacb = ALIGNED(s->arg[0] * sizeof(uint32_t));
             s->parg[1] = VAL(s->hshm);
             break;
@@ -780,6 +782,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGenRenderbuffersEXT:
         case FEnum_glGenTextures:
         case FEnum_glGenTexturesEXT:
+        case FEnum_glGenVertexArrays:
         case FEnum_glGetClipPlane:
         case FEnum_glSelectBuffer:
             s->parg[1] = VAL(outshm);
@@ -971,10 +974,12 @@ static void processArgs(MesaPTState *s)
                 s->parg[2] = (s->arg[6])? bmpPtr:0;
             }
             break;
-        case FEnum_glGetBufferSubData:
-        case FEnum_glGetBufferSubDataARB:
         case FEnum_glBufferSubData:
         case FEnum_glBufferSubDataARB:
+        case FEnum_glGetBufferSubData:
+        case FEnum_glGetBufferSubDataARB:
+        case FEnum_glNamedBufferSubData:
+        case FEnum_glNamedBufferSubDataEXT:
             s->parg[1] = s->arg[1];
             s->parg[2] = s->arg[2];
             s->parg[3] = VAL(s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->arg[2]));
@@ -984,15 +989,20 @@ static void processArgs(MesaPTState *s)
             s->parg[1] = s->arg[1];
             s->parg[2] = (s->arg[2])? VAL(s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->arg[1])):0;
             break;
+        case FEnum_glMapBufferRange:
+            s->parg[1] = s->arg[1];
+            s->parg[2] = s->arg[2];
+            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE), s->arg[1], s->arg[2]);
+            break;
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
-            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE));
+            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE), 0, 0);
             break;
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
             if (s->BufObj && (s->BufAcc != GL_READ_ONLY)) {
                 wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
-                    s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE), s->BufObj);
+                    s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE), s->BufObj, s->BufRange);
                 s->BufObj = 0;
             }
             break;
@@ -1256,6 +1266,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glBufferSubDataARB:
         case FEnum_glGetBufferSubData:
         case FEnum_glGetBufferSubDataARB:
+        case FEnum_glNamedBufferSubData:
+        case FEnum_glNamedBufferSubDataEXT:
             break;
         case FEnum_glDrawElements:
         case FEnum_glDrawRangeElements:
@@ -1302,6 +1314,8 @@ static void processFRet(MesaPTState *s)
         case FEnum_glBufferDataARB:
         case FEnum_glBufferSubData:
         case FEnum_glBufferSubDataARB:
+        case FEnum_glNamedBufferSubData:
+        case FEnum_glNamedBufferSubDataEXT:
         case FEnum_glDrawElements:
         case FEnum_glDrawRangeElements:
         case FEnum_glDrawRangeElementsEXT:
@@ -1367,12 +1381,21 @@ static void processFRet(MesaPTState *s)
             break;
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
+        case FEnum_glMapBufferRange:
             if (s->BufObj)
                 DPRINTF("  *WARN* GL buffer object contention, target %04x", s->arg[0]);
-            s->BufAcc = s->arg[1];
             s->BufObj = (void *)(s->FRet);
-            s->FRet = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
-                s->arg[0], GL_BUFFER_SIZE);
+            if (s->FEnum == FEnum_glMapBufferRange) {
+                s->BufAcc = (s->arg[3] & GL_MAP_WRITE_BIT)? GL_READ_WRITE:0;
+                s->BufRange = s->arg[2];
+                s->FRet = s->arg[2];
+            }
+            else {
+                s->BufAcc = s->arg[1];
+                s->BufRange = 0;
+                s->FRet = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
+                    s->arg[0], GL_BUFFER_SIZE);
+            }
             break;
 #define MGL_TRACE 0
 #if defined(MGL_TRACE) && MGL_TRACE

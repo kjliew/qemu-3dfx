@@ -105,9 +105,10 @@ int wrGetParamIa1p2(uint32_t FEnum, uint32_t arg0, uint32_t arg1)
     return ret;
 }
 
-void wrFillBufObj(uint32_t target, void *dst)
+void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
 {
     void *src;
+    void *(__stdcall *wrMapRange)(uint32_t arg0, uintptr_t arg1, uintptr_t arg2, uint32_t arg3);
     void *(__stdcall *wrMap)(uint32_t arg0, uint32_t arg1);
     uint32_t (__stdcall *wrUnmap)(uint32_t arg0);
 
@@ -115,11 +116,12 @@ void wrFillBufObj(uint32_t target, void *dst)
         case GL_PIXEL_UNPACK_BUFFER:
             break;
         default:
+            wrMapRange = tblMesaGL[FEnum_glMapBufferRange].ptr;
             wrMap = tblMesaGL[FEnum_glMapBuffer].ptr;
             wrUnmap = tblMesaGL[FEnum_glUnmapBuffer].ptr;
-            src = wrMap(target, GL_READ_ONLY);
+            src = (range == 0)? wrMap(target, GL_READ_ONLY):wrMapRange(target, offset, range, GL_MAP_READ_BIT);
             if (src) {
-                uint32_t szBuf = wrGetParamIa1p2(FEnum_glGetBufferParameteriv, target, GL_BUFFER_SIZE);
+                uint32_t szBuf = (range == 0)? wrGetParamIa1p2(FEnum_glGetBufferParameteriv, target, GL_BUFFER_SIZE):range;
                 memcpy((dst - ALIGNED(szBuf)) , src, szBuf);
                 wrUnmap(target);
             }
@@ -127,9 +129,9 @@ void wrFillBufObj(uint32_t target, void *dst)
     }
 }
 
-void wrFlushBufObj(int FEnum, uint32_t target, const void *src, void *dst)
+void wrFlushBufObj(int FEnum, uint32_t target, const void *src, void *dst, uint32_t range)
 {
-    uint32_t szBuf = wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE);
+    uint32_t szBuf = (range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):range;
     memcpy(dst, (src - ALIGNED(szBuf)), szBuf);
 }
 
@@ -161,6 +163,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
     typedef union {
         uintptr_t (__stdcall *rpfpa0)(uint32_t);
         uintptr_t (__stdcall *rpfpa1)(uint32_t, uint32_t);
+        uintptr_t (__stdcall *rpfpa0p2a3)(uint32_t, uintptr_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpp0)(uintptr_t);
         uint32_t (__stdcall *fpp1)(uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa0p1)(uint32_t, uintptr_t);
@@ -224,6 +227,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glBufferSubDataARB:
         case FEnum_glGetBufferSubData:
         case FEnum_glGetBufferSubDataARB:
+        case FEnum_glNamedBufferSubData:
+        case FEnum_glNamedBufferSubDataEXT:
             usfp.fpa0p3 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa0p3)(arg[0], parg[1], parg[2], parg[3]);
             GLDONE();
@@ -295,6 +300,10 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.rpfpa1 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.rpfpa1)(arg[0], arg[1]);
             GLDONE();
+        case FEnum_glMapBufferRange:
+            usfp.rpfpa0p2a3 = tblMesaGL[FEnum].ptr;
+            *ret = (*usfp.rpfpa0p2a3)(arg[0], parg[1], parg[2], arg[3]);
+            GLDONE();
         case FEnum_glClipPlane:
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
@@ -305,6 +314,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glDeleteRenderbuffersEXT:
         case FEnum_glDeleteTextures:
         case FEnum_glDeleteTexturesEXT:
+        case FEnum_glDeleteVertexArrays:
         case FEnum_glEdgeFlagPointer:
         case FEnum_glFogfv:
         case FEnum_glFogiv:
@@ -317,6 +327,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGenRenderbuffersEXT:
         case FEnum_glGenTextures:
         case FEnum_glGenTexturesEXT:
+        case FEnum_glGenVertexArrays:
         case FEnum_glGetAttribLocation:
         case FEnum_glGetAttribLocationARB:
         case FEnum_glGetBooleanv:
