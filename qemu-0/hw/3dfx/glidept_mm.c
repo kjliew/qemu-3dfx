@@ -641,6 +641,7 @@ static void processFRet(GlidePTState *s)
                 if (s->lfb_real == 0) {
                     s->lfb_dirty = 1;
                     glide_winres(s->arg[1], &s->lfb_w, &s->lfb_h);
+                    memset(s->glfb_ptr + (s->lfb_h * 0x800), 0, (s->lfb_h * 0x800));
                 }
                 DPRINTF("LFB mode is %s%s%s%s\n", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
                         (glide_lfbdirty())? ", LfbLockDirty":"",
