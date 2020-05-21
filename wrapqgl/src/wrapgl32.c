@@ -99,6 +99,7 @@ static INLINE void fifoOutData(int offs, uint32_t darg, int cbData)
     if (x) ptm[0x0FCU >> 2] = MESAGL_MAGIC
 static HWND GLwnd;
 static HHOOK hHook;
+static int currPixFmt;
 static uint32_t currGLRC;
 static uint32_t currPB[MAX_PBUFFER];
 static char vendstr[64];
@@ -15992,7 +15993,7 @@ int WINAPI wgdDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXE
 
 int WINAPI wglGetPixelFormat(HDC hdc)
 {
-    return wglDescribePixelFormat(hdc, 1, 0, 0);
+    return (currPixFmt == 0)? 0:wglDescribePixelFormat(hdc, 1, 0, 0);
 }
 int WINAPI wgdGetPixelFormat(HDC hdc) { return wglGetPixelFormat(hdc); }
 
@@ -16006,6 +16007,7 @@ BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *
     memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFE4 >> 2] = MESAGL_MAGIC;
     ret = (ptm[0xFE4 >> 2] == MESAGL_MAGIC)? TRUE:FALSE;
+    currPixFmt = (ret)? format:0;
     return ret;
 }
 BOOL WINAPI wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
@@ -16070,6 +16072,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 		DPRINTF("Error - MesaGL init failed 0x%08x", HostRet);
 		return FALSE;
 	    }
+            currPixFmt = 0;
             currGLRC = 0;
             hHook = SetWindowsHookEx(WH_CALLWNDPROC, (HOOKPROC)CallWndProc, NULL, GetCurrentThreadId());
             break;
