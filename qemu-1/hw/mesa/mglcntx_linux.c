@@ -64,6 +64,56 @@ typedef struct tagPIXELFORMATDESCRIPTOR {
   DWORD dwDamageMask;
 } PIXELFORMATDESCRIPTOR, *PPIXELFORMATDESCRIPTOR, *LPPIXELFORMATDESCRIPTOR;
 
+#define WGL_NUMBER_PIXEL_FORMATS_ARB            0x2000
+#define WGL_DRAW_TO_WINDOW_ARB                  0x2001
+#define WGL_DRAW_TO_BITMAP_ARB                  0x2002
+#define WGL_ACCELERATION_ARB                    0x2003
+#define WGL_NEED_PALETTE_ARB                    0x2004
+#define WGL_NEED_SYSTEM_PALETTE_ARB             0x2005
+#define WGL_SWAP_LAYER_BUFFERS_ARB              0x2006
+#define WGL_SWAP_METHOD_ARB                     0x2007
+#define WGL_NUMBER_OVERLAYS_ARB                 0x2008
+#define WGL_NUMBER_UNDERLAYS_ARB                0x2009
+#define WGL_TRANSPARENT_ARB                     0x200A
+#define WGL_TRANSPARENT_RED_VALUE_ARB           0x2037
+#define WGL_TRANSPARENT_GREEN_VALUE_ARB         0x2038
+#define WGL_TRANSPARENT_BLUE_VALUE_ARB          0x2039
+#define WGL_TRANSPARENT_ALPHA_VALUE_ARB         0x203A
+#define WGL_TRANSPARENT_INDEX_VALUE_ARB         0x203B
+#define WGL_SHARE_DEPTH_ARB                     0x200C
+#define WGL_SHARE_STENCIL_ARB                   0x200D
+#define WGL_SHARE_ACCUM_ARB                     0x200E
+#define WGL_SUPPORT_GDI_ARB                     0x200F
+#define WGL_SUPPORT_OPENGL_ARB                  0x2010
+#define WGL_DOUBLE_BUFFER_ARB                   0x2011
+#define WGL_STEREO_ARB                          0x2012
+#define WGL_PIXEL_TYPE_ARB                      0x2013
+#define WGL_COLOR_BITS_ARB                      0x2014
+#define WGL_RED_BITS_ARB                        0x2015
+#define WGL_RED_SHIFT_ARB                       0x2016
+#define WGL_GREEN_BITS_ARB                      0x2017
+#define WGL_GREEN_SHIFT_ARB                     0x2018
+#define WGL_BLUE_BITS_ARB                       0x2019
+#define WGL_BLUE_SHIFT_ARB                      0x201A
+#define WGL_ALPHA_BITS_ARB                      0x201B
+#define WGL_ALPHA_SHIFT_ARB                     0x201C
+#define WGL_ACCUM_BITS_ARB                      0x201D
+#define WGL_ACCUM_RED_BITS_ARB                  0x201E
+#define WGL_ACCUM_GREEN_BITS_ARB                0x201F
+#define WGL_ACCUM_BLUE_BITS_ARB                 0x2020
+#define WGL_ACCUM_ALPHA_BITS_ARB                0x2021
+#define WGL_DEPTH_BITS_ARB                      0x2022
+#define WGL_STENCIL_BITS_ARB                    0x2023
+#define WGL_AUX_BUFFERS_ARB                     0x2024
+#define WGL_NO_ACCELERATION_ARB                 0x2025
+#define WGL_GENERIC_ACCELERATION_ARB            0x2026
+#define WGL_FULL_ACCELERATION_ARB               0x2027
+#define WGL_SWAP_EXCHANGE_ARB                   0x2028
+#define WGL_SWAP_COPY_ARB                       0x2029
+#define WGL_SWAP_UNDEFINED_ARB                  0x202A
+#define WGL_TYPE_RGBA_ARB                       0x202B
+#define WGL_TYPE_COLORINDEX_ARB                 0x202C
+
 typedef struct tagFakePBuffer {
     int width;
     int height;
@@ -78,6 +128,29 @@ static const PIXELFORMATDESCRIPTOR pfd = {
     .cRedShift = 16, .cGreenShift = 8, .cBlueShift = 0, .cAlphaShift = 24,
     .cDepthBits = 24,
     .cStencilBits = 8,
+    .cAuxBuffers = 1,
+};
+static const int iAttribs[] = {
+    WGL_NUMBER_PIXEL_FORMATS_ARB, 1,
+    WGL_DRAW_TO_WINDOW_ARB, 1,
+    WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+    WGL_SWAP_METHOD_ARB, WGL_SWAP_EXCHANGE_ARB,
+    WGL_SUPPORT_OPENGL_ARB, 1,
+    WGL_DOUBLE_BUFFER_ARB, 1,
+    WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+    WGL_COLOR_BITS_ARB, pfd.cColorBits,
+    WGL_RED_BITS_ARB, pfd.cRedBits,
+    WGL_RED_SHIFT_ARB, pfd.cRedShift,
+    WGL_GREEN_BITS_ARB, pfd.cGreenBits,
+    WGL_GREEN_SHIFT_ARB, pfd.cGreenShift,
+    WGL_BLUE_BITS_ARB, pfd.cBlueBits,
+    WGL_BLUE_SHIFT_ARB, pfd.cBlueShift,
+    WGL_ALPHA_BITS_ARB, pfd.cAlphaBits,
+    WGL_ALPHA_SHIFT_ARB, pfd.cAlphaShift,
+    WGL_DEPTH_BITS_ARB, pfd.cDepthBits,
+    WGL_STENCIL_BITS_ARB, pfd.cStencilBits,
+    WGL_AUX_BUFFERS_ARB, pfd.cAuxBuffers,
+    0,0
 };
 static Display     *dpy;
 static Window       win;
@@ -97,7 +170,9 @@ void *MesaGLGetProc(const char *proc)
     return (void *)glXGetProcAddress((const GLubyte *)proc);
 }
 
-void MGLTmpContext(void) { }
+void MGLTmpContext(void)
+{
+}
 
 void MGLDeleteContext(void)
 {
@@ -230,13 +305,12 @@ void MGLActivateHandler(int i)
     }
 }
 
-static int CheckAttribArray(const int *attrib, const int attr)
+static int LookupAttribArray(const int *attrib, const int attr)
 {
     int ret = 0;
     for (int i = 0; (attrib[i] && attrib[i+1]); i+=2) {
-        if ((attrib[i] == attr) &&
-            (attrib[i+1] == 1)) {
-            ret = 1;
+        if (attrib[i] == attr) {
+            ret = attrib[i+1];
             break;
         }
     }
@@ -297,10 +371,28 @@ void MGLFuncHandler(const char *name)
         strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
         return;
     }
+    FUNCP_HANDLER("wglGetPixelFormatAttribivARB") {
+        const int *ia = (const int *)&argsp[4], n = argsp[2];
+        int pi[64];
+        for (int i = 0; i < n; i++)
+            pi[i] = LookupAttribArray(iAttribs, ia[i]);
+        memcpy(&argsp[2], pi, n*sizeof(int));
+        argsp[0] = 1;
+        return;
+    }
+    FUNCP_HANDLER("wglGetPixelFormatAttribfvARB") {
+        const int *ia = (const int *)&argsp[4], n = argsp[2];
+        float pf[64];
+        for (int i = 0; i < n; i++)
+            pf[i] = (float)LookupAttribArray(iAttribs, ia[i]);
+        memcpy(&argsp[2], pf, n*sizeof(float));
+        argsp[0] = 1;
+        return;
+    }
     FUNCP_HANDLER("wglChoosePixelFormatARB") {
 #define WGL_DRAW_TO_PBUFFER_ARB 0x202D
         const int *ia = (const int *)argsp;
-        if (CheckAttribArray(ia, WGL_DRAW_TO_PBUFFER_ARB)) {
+        if (LookupAttribArray(ia, WGL_DRAW_TO_PBUFFER_ARB)) {
             argsp[1] = 0x02;
         }
         else {

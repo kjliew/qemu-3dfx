@@ -330,13 +330,12 @@ void MGLActivateHandler(int i)
     }
 }
 
-static int CheckAttribArray(const int *attrib, const int attr)
+static int LookupAttribArray(const int *attrib, const int attr)
 {
     int ret = 0;
     for (int i = 0; (attrib[i] && attrib[i+1]); i+=2) {
-        if ((attrib[i] == attr) &&
-            (attrib[i+1] == 1)) {
-            ret = 1;
+        if (attrib[i] == attr) {
+            ret = attrib[i+1];
             break;
         }
     }
@@ -433,7 +432,7 @@ void MGLFuncHandler(const char *name)
     FUNCP_HANDLER("wglChoosePixelFormatARB") {
         if (pFnChoosePixelFormatARB) {
             const int *ia = (const int *)argsp;
-            if (CheckAttribArray(ia, WGL_DRAW_TO_PBUFFER_ARB)) {
+            if (LookupAttribArray(ia, WGL_DRAW_TO_PBUFFER_ARB)) {
                 int piFormats[64]; UINT nNumFormats;
                 float fa[] = {0,0};
                 pFnChoosePixelFormatARB(hDC, ia, fa, 64, piFormats, &nNumFormats);

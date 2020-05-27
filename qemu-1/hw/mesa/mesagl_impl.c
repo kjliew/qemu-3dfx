@@ -173,6 +173,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         uint32_t (__stdcall *fpa1p3)(uint32_t, uint32_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa0p2a3)(uint32_t, uintptr_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa2p3)(uint32_t, uint32_t, uint32_t, uintptr_t);
+        uint32_t (__stdcall *fpa2p3a4)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa3p4)(uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t);
         uint32_t (__stdcall *fpa4p5)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t);
         uint32_t (__stdcall *fpa5p6)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t);
@@ -271,8 +272,13 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa2p3 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa2p3)(arg[0], arg[1], arg[2], parg[3]);
             GLDONE();
+        case FEnum_glDrawElementsBaseVertex:
+            usfp.fpa2p3a4 = tblMesaGL[FEnum].ptr;
+            *ret = (*usfp.fpa2p3a4)(arg[0], arg[1], arg[2], parg[3], arg[4]);
+            GLDONE();
         case FEnum_glColorPointerEXT:
         case FEnum_glDrawPixels:
+        case FEnum_glGetInternalformativ:
         case FEnum_glGetTexImage:
         case FEnum_glTexCoordPointerEXT:
         case FEnum_glVertexPointerEXT:
@@ -310,11 +316,16 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glDeleteFramebuffers:
         case FEnum_glDeleteFramebuffersEXT:
         case FEnum_glDeleteProgramsARB:
+        case FEnum_glDeleteQueries:
+        case FEnum_glDeleteQueriesARB:
         case FEnum_glDeleteRenderbuffers:
         case FEnum_glDeleteRenderbuffersEXT:
+        case FEnum_glDeleteSamplers:
         case FEnum_glDeleteTextures:
         case FEnum_glDeleteTexturesEXT:
         case FEnum_glDeleteVertexArrays:
+        case FEnum_glDrawBuffers:
+        case FEnum_glDrawBuffersARB:
         case FEnum_glEdgeFlagPointer:
         case FEnum_glFogfv:
         case FEnum_glFogiv:
@@ -323,8 +334,11 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGenFramebuffers:
         case FEnum_glGenFramebuffersEXT:
         case FEnum_glGenProgramsARB:
+        case FEnum_glGenQueries:
+        case FEnum_glGenQueriesARB:
         case FEnum_glGenRenderbuffers:
         case FEnum_glGenRenderbuffersEXT:
+        case FEnum_glGenSamplers:
         case FEnum_glGenTextures:
         case FEnum_glGenTexturesEXT:
         case FEnum_glGenVertexArrays:
@@ -565,6 +579,13 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetMaterialfv:
         case FEnum_glGetMaterialiv:
         case FEnum_glGetProgramiv:
+        case FEnum_glGetProgramivARB:
+        case FEnum_glGetQueryiv:
+        case FEnum_glGetQueryivARB:
+        case FEnum_glGetQueryObjectiv:
+        case FEnum_glGetQueryObjectivARB:
+        case FEnum_glGetQueryObjectuiv:
+        case FEnum_glGetQueryObjectuivARB:
         case FEnum_glGetShaderiv:
         case FEnum_glGetTexEnvfv:
         case FEnum_glGetTexEnviv:
@@ -587,6 +608,10 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glProgramEnvParameter4fvARB:
         case FEnum_glProgramLocalParameter4dvARB:
         case FEnum_glProgramLocalParameter4fvARB:
+        case FEnum_glSamplerParameterIiv:
+        case FEnum_glSamplerParameterIuiv:
+        case FEnum_glSamplerParameterfv:
+        case FEnum_glSamplerParameteriv:
         case FEnum_glTexEnvfv:
         case FEnum_glTexEnviv:
         case FEnum_glTexGendv:
@@ -662,6 +687,13 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glTexSubImage3DEXT:
             usfp.fpa9p10 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa9p10)(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8], arg[9], parg[2]);
+            GLDONE();
+        case FEnum_glDebugMessageCallback:
+        case FEnum_glDebugMessageCallbackARB:
+        case FEnum_glDebugMessageControl:
+        case FEnum_glDebugMessageControlARB:
+        case FEnum_glDebugMessageInsert:
+        case FEnum_glDebugMessageInsertARB:
             GLDONE();
 
         /* GLFuncs with float args */
@@ -884,6 +916,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             GLDONE();
         case FEnum_glLightf:
         case FEnum_glMaterialf:
+        case FEnum_glSamplerParameterf:
         case FEnum_glTexEnvf:
         case FEnum_glTexGenf:
         case FEnum_glTexParameterf:
@@ -1295,10 +1328,14 @@ void FiniMesaGL(void)
 #endif
     }
     hDll = 0;
-    for (int i = 0 ; i < FEnum_zzMGLFuncEnum_max; i++) {
-        tblMesaGL[i].impl = 0;
+    for (int i = 0 ; i < FEnum_zzMGLFuncEnum_max; i++)
         tblMesaGL[i].ptr = 0;
-    }
+}
+
+void ImplMesaGLReset(void)
+{
+    for (int i = 0 ; i < FEnum_zzMGLFuncEnum_max; i++)
+        tblMesaGL[i].impl = 0;
 }
 
 int InitMesaGL(void)
