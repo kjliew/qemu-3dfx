@@ -117,7 +117,8 @@ static struct {
     int elemArryBuf;
 } vtxArry;
 static vtxarry_t Interleaved;
-static int pixUnpackBuf;
+static int pixPackBuf, pixUnpackBuf;
+static int szPackRow, szUnpackRow;
 static void vtxarry_init(vtxarry_t *varry, int size, int type, int stride, void *ptr)
 {
     varry->size = size;
@@ -323,7 +324,8 @@ static void InitClientStates(void)
 {
     memset(&vtxArry, 0, sizeof(vtxArry));
     memset(&Interleaved, 0, sizeof(vtxarry_t));
-    pixUnpackBuf = 0;
+    pixPackBuf = 0; pixUnpackBuf = 0;
+    szPackRow = 0; szUnpackRow = 0;
 }
 
 #define FIFO_EN 1
@@ -532,6 +534,7 @@ void PT_CALL glBindAttribLocationARB(uint32_t arg0, uint32_t arg1, uint32_t arg2
 void PT_CALL glBindBuffer(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindBuffer, 2);
+    pixPackBuf = (arg0 == GL_PIXEL_PACK_BUFFER)? arg1:pixPackBuf;
     pixUnpackBuf = (arg0 == GL_PIXEL_UNPACK_BUFFER)? arg1:pixUnpackBuf;
     vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
     vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
@@ -539,6 +542,7 @@ void PT_CALL glBindBuffer(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glBindBufferARB(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindBufferARB, 2);
+    pixPackBuf = (arg0 == GL_PIXEL_PACK_BUFFER)? arg1:pixPackBuf;
     pixUnpackBuf = (arg0 == GL_PIXEL_UNPACK_BUFFER)? arg1:pixUnpackBuf;
     vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
     vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
@@ -772,9 +776,9 @@ void PT_CALL glBinormalPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBinormalPointerEXT;
 }
 void PT_CALL glBitmap(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
-    if (arg6) {
-        uint32_t szBmp = (arg0 * arg1);
-        uint32_t *bmpPtr = &fbtm[(MGLFBT_SIZE - szBmp) >> 2];
+    if (arg6 && (pixUnpackBuf == 0)) {
+        uint32_t szBmp = ((szUnpackRow == 0)? arg0:szUnpackRow) * arg1;
+        uint32_t *bmpPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szBmp)) >> 2];
         memcpy(bmpPtr, (char *)arg6, szBmp);
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
@@ -1541,86 +1545,110 @@ void PT_CALL glCompressedMultiTexSubImage3DEXT(uint32_t arg0, uint32_t arg1, uin
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedMultiTexSubImage3DEXT;
 }
 void PT_CALL glCompressedTexImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg5)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg6, arg5);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg5)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg6, arg5);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexImage1D;
 }
 void PT_CALL glCompressedTexImage1DARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg5)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg6, arg5);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg5)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg6, arg5);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexImage1DARB;
 }
 void PT_CALL glCompressedTexImage2D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg6)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg7, arg6);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg6)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg7, arg6);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexImage2D;
 }
 void PT_CALL glCompressedTexImage2DARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg6)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg7, arg6);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg6)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg7, arg6);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexImage2DARB;
 }
 void PT_CALL glCompressedTexImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg7)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg8, arg7);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg7)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg8, arg7);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexImage3D;
 }
 void PT_CALL glCompressedTexImage3DARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg7)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg8, arg7);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg7)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg8, arg7);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexImage3DARB;
 }
 void PT_CALL glCompressedTexSubImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg5)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg6, arg5);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg5)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg6, arg5);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexSubImage1D;
 }
 void PT_CALL glCompressedTexSubImage1DARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg5)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg6, arg5);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg5)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg6, arg5);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexSubImage1DARB;
 }
 void PT_CALL glCompressedTexSubImage2D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg7)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg8, arg7);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg7)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg8, arg7);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexSubImage2D;
 }
 void PT_CALL glCompressedTexSubImage2DARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg7)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg8, arg7);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg7)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg8, arg7);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexSubImage2DARB;
 }
 void PT_CALL glCompressedTexSubImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg9)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg10, arg9);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg9)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg10, arg9);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexSubImage3D;
 }
 void PT_CALL glCompressedTexSubImage3DARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10) {
-    uint32_t *texPtr;
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg9)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg10, arg9);
+    if (pixUnpackBuf == 0) {
+        uint32_t *texPtr;
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(arg9)) >> 2];
+        memcpy(texPtr, (unsigned char *)arg10, arg9);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCompressedTexSubImage3DARB;
 }
@@ -2059,6 +2087,7 @@ void PT_CALL glDeleteBuffers(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteBuffers, 2);
     for (int i = 0; i < arg0; i++) {
+        pixPackBuf = (((uint32_t *)arg1)[i] == pixPackBuf)? 0:pixPackBuf;
         pixUnpackBuf = (((uint32_t *)arg1)[i] == pixUnpackBuf)? 0:pixUnpackBuf;
         vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
         vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
@@ -2069,6 +2098,7 @@ void PT_CALL glDeleteBuffersARB(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteBuffersARB, 2);
     for (int i = 0; i < arg0; i++) {
+        pixPackBuf = (((uint32_t *)arg1)[i] == pixPackBuf)? 0:pixPackBuf;
         pixUnpackBuf = (((uint32_t *)arg1)[i] == pixUnpackBuf)? 0:pixUnpackBuf;
         vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
         vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
@@ -2519,7 +2549,11 @@ void PT_CALL glDrawMeshTasksNV(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawMeshTasksNV;
 }
 void PT_CALL glDrawPixels(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
-    fifoAddData(0, arg4, ALIGNED((arg0 * arg1 * szgldata(arg2, arg3))));
+    if (pixUnpackBuf == 0) {
+        uint32_t szPix;
+        szPix = ((szUnpackRow == 0)? arg0:szUnpackRow) * arg1 * szgldata(arg2, arg3);
+        fifoAddData(0, arg4, ALIGNED(szPix));
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawPixels, 5);
 }
@@ -3572,12 +3606,14 @@ void PT_CALL glGetCompressedMultiTexImageEXT(uint32_t arg0, uint32_t arg1, uint3
 void PT_CALL glGetCompressedTexImage(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCompressedTexImage;
-    memcpy((unsigned char *)arg2, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
+    if (pixPackBuf == 0)
+        memcpy((unsigned char *)arg2, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
 }
 void PT_CALL glGetCompressedTexImageARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCompressedTexImageARB;
-    memcpy((unsigned char *)arg2, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
+    if (pixPackBuf == 0)
+        memcpy((unsigned char *)arg2, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
 }
 void PT_CALL glGetCompressedTextureImage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -4734,7 +4770,8 @@ void PT_CALL glGetTexGenxvOES(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 void PT_CALL glGetTexImage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetTexImage;
-    memcpy((unsigned char *)arg4, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
+    if (pixPackBuf == 0)
+        memcpy((unsigned char *)arg4, &fbtm[ALIGNED(1) >> 2], fbtm[0]);
 }
 void PT_CALL glGetTexLevelParameterfv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     uint32_t n;
@@ -7555,6 +7592,8 @@ void PT_CALL glPixelStoref(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glPixelStorei(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPixelStorei, 2);
+    szPackRow = (arg0 == GL_PACK_ROW_LENGTH)? arg1:szPackRow;
+    szUnpackRow = (arg0 == GL_UNPACK_ROW_LENGTH)? arg1:szUnpackRow;
 }
 void PT_CALL glPixelStorex(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -7717,7 +7756,11 @@ void PT_CALL glPolygonOffsetxOES(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glPolygonOffsetxOES;
 }
 void PT_CALL glPolygonStipple(uint32_t arg0) {
-    fifoAddData(0, arg0, (32*32));
+    if (pixUnpackBuf == 0) {
+        uint32_t szPix;
+        szPix = ((szUnpackRow == 0)? 32:szUnpackRow)*32;
+        fifoAddData(0, arg0, ALIGNED(szPix));
+    }
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPolygonStipple, 1);
 }
@@ -8719,7 +8762,11 @@ void PT_CALL glReadInstrumentsSGIX(uint32_t arg0) {
 void PT_CALL glReadPixels(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glReadPixels;
-    memcpy((unsigned char *)arg6, fbtm, (arg2 * arg3 * szgldata(arg4, arg5)));
+    if (pixPackBuf == 0) {
+        uint32_t szPix;
+        szPix = ((szPackRow == 0)? arg2:szPackRow) * arg3 * szgldata(arg4, arg5);
+        memcpy((unsigned char *)arg6, fbtm, szPix);
+    }
 }
 void PT_CALL glReadnPixels(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; 
@@ -10176,58 +10223,64 @@ void PT_CALL glTexStorageSparseAMD(uint32_t arg0, uint32_t arg1, uint32_t arg2, 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexStorageSparseAMD;
 }
 void PT_CALL glTexSubImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
-    uint32_t szTex, *texPtr;
-    szTex = arg3 * szgldata(arg4, arg5);
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
-    if (pixUnpackBuf == 0)
+    if (pixUnpackBuf == 0) {
+        uint32_t szTex, *texPtr;
+        szTex = ((szUnpackRow == 0)? arg3:szUnpackRow) * szgldata(arg4, arg5);
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg6, szTex);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexSubImage1D;
 }
 void PT_CALL glTexSubImage1DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
-    uint32_t szTex, *texPtr;
-    szTex = arg3 * szgldata(arg4, arg5);
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
-    if (pixUnpackBuf == 0)
+    if (pixUnpackBuf == 0) {
+        uint32_t szTex, *texPtr;
+        szTex = ((szUnpackRow == 0)? arg3:szUnpackRow) * szgldata(arg4, arg5);
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg6, szTex);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexSubImage1DEXT;
 }
 void PT_CALL glTexSubImage2D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
-    uint32_t szTex, *texPtr;
-    szTex = arg4 * arg5 * szgldata(arg6, arg7);
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
-    //DPRINTF("TexSubImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
-    if (pixUnpackBuf == 0)
+    if (pixUnpackBuf == 0) {
+        uint32_t szTex, *texPtr;
+        szTex = ((szUnpackRow == 0)? arg4:szUnpackRow) * arg5 * szgldata(arg6, arg7);
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
+        //DPRINTF("TexSubImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
         memcpy(texPtr, (unsigned char *)arg8, szTex);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexSubImage2D;
 }
 void PT_CALL glTexSubImage2DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
-    uint32_t szTex, *texPtr;
-    szTex = arg4 * arg5 * szgldata(arg6, arg7);
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
-    //DPRINTF("TexSubImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
-    if (pixUnpackBuf == 0)
+    if (pixUnpackBuf == 0) {
+        uint32_t szTex, *texPtr;
+        szTex = ((szUnpackRow == 0)? arg4:szUnpackRow) * arg5 * szgldata(arg6, arg7);
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
+        //DPRINTF("TexSubImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
         memcpy(texPtr, (unsigned char *)arg8, szTex);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexSubImage2DEXT;
 }
 void PT_CALL glTexSubImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10) {
-    uint32_t szTex, *texPtr;
-    szTex = arg5 * arg6 * arg7 * szgldata(arg8, arg9);
-    if (pixUnpackBuf == 0)
+    if (pixUnpackBuf == 0) {
+        uint32_t szTex, *texPtr;
+        szTex = ((szUnpackRow == 0)? arg5:szUnpackRow) * arg6 * arg7 * szgldata(arg8, arg9);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
-    memcpy(texPtr, (unsigned char *)arg10, szTex);
+        memcpy(texPtr, (unsigned char *)arg10, szTex);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexSubImage3D;
 }
 void PT_CALL glTexSubImage3DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10) {
-    uint32_t szTex, *texPtr;
-    szTex = arg5 * arg6 * arg7 * szgldata(arg8, arg9);
-    texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
-    if (pixUnpackBuf == 0)
+    if (pixUnpackBuf == 0) {
+        uint32_t szTex, *texPtr;
+        szTex = ((szUnpackRow == 0)? arg5:szUnpackRow) * arg6 * arg7 * szgldata(arg8, arg9);
+        texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg10, szTex);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexSubImage3DEXT;
 }

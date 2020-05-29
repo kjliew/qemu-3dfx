@@ -71,6 +71,8 @@ typedef struct MesaPTState
     uint32_t elemMax;
     int szVertCache;
     int texUnit;
+    int pixPackBuf, pixUnpackBuf;
+    int szPackRow, szUnpackRow;
     int arrayBuf;
     int elemArryBuf;
     void *BufObj;
@@ -321,6 +323,8 @@ static void InitClientStates(MesaPTState *s)
     s->texUnit = 0;
     s->arrayBuf = 0;
     s->elemArryBuf = 0;
+    s->pixPackBuf = 0; s->pixUnpackBuf = 0;
+    s->szPackRow = 0; s->szUnpackRow = 0;
 }
 
 static uint64_t mesapt_read(void *opaque, hwaddr addr, unsigned size)
@@ -351,6 +355,86 @@ static uint64_t mesapt_read(void *opaque, hwaddr addr, unsigned size)
     }
 
     return val;
+}
+
+static int PArgsShouldAligned(MesaPTState *s)
+{
+
+    switch (s->FEnum)
+    {
+        case FEnum_glGetCompressedTexImage:
+        case FEnum_glGetCompressedTexImageARB:
+        case FEnum_glGetTexImage:
+        case FEnum_glReadPixels:
+            if (s->pixPackBuf) return 0;
+            break;
+        case FEnum_glBitmap:
+        case FEnum_glCompressedTexImage1D:
+        case FEnum_glCompressedTexImage1DARB:
+        case FEnum_glCompressedTexImage2D:
+        case FEnum_glCompressedTexImage2DARB:
+        case FEnum_glCompressedTexImage3D:
+        case FEnum_glCompressedTexImage3DARB:
+        case FEnum_glCompressedTexSubImage1D:
+        case FEnum_glCompressedTexSubImage1DARB:
+        case FEnum_glCompressedTexSubImage2D:
+        case FEnum_glCompressedTexSubImage2DARB:
+        case FEnum_glCompressedTexSubImage3D:
+        case FEnum_glCompressedTexSubImage3DARB:
+        case FEnum_glDrawPixels:
+        case FEnum_glPolygonStipple:
+        case FEnum_glTexImage1D:
+        case FEnum_glTexImage2D:
+        case FEnum_glTexImage3D:
+        case FEnum_glTexImage3DEXT:
+        case FEnum_glTexSubImage1D:
+        case FEnum_glTexSubImage1DEXT:
+        case FEnum_glTexSubImage2D:
+        case FEnum_glTexSubImage2DEXT:
+        case FEnum_glTexSubImage3D:
+        case FEnum_glTexSubImage3DEXT:
+            if (s->pixUnpackBuf) return 0;
+            break;
+        case FEnum_glDrawElements:
+        case FEnum_glDrawElementsBaseVertex:
+        case FEnum_glDrawRangeElements:
+        case FEnum_glDrawRangeElementsEXT:
+            if (s->elemArryBuf) return 0;
+            break;
+        case FEnum_glBufferData:
+        case FEnum_glBufferDataARB:
+        case FEnum_glBufferSubData:
+        case FEnum_glBufferSubDataARB:
+        case FEnum_glGetBufferSubData:
+        case FEnum_glGetBufferSubDataARB:
+        case FEnum_glMapBufferRange:
+        case FEnum_glNamedBufferSubData:
+        case FEnum_glNamedBufferSubDataEXT:
+            /* return 0; */
+        case FEnum_glColorPointer:
+        case FEnum_glColorPointerEXT:
+        case FEnum_glEdgeFlagPointer:
+        case FEnum_glEdgeFlagPointerEXT:
+        case FEnum_glFogCoordPointer:
+        case FEnum_glFogCoordPointerEXT:
+        case FEnum_glIndexPointer:
+        case FEnum_glIndexPointerEXT:
+        case FEnum_glInterleavedArrays:
+        case FEnum_glNormalPointer:
+        case FEnum_glNormalPointerEXT:
+        case FEnum_glSecondaryColorPointer:
+        case FEnum_glSecondaryColorPointerEXT:
+        case FEnum_glTexCoordPointer:
+        case FEnum_glTexCoordPointerEXT:
+        case FEnum_glVertexAttribPointer:
+        case FEnum_glVertexAttribPointerARB:
+        case FEnum_glVertexPointer:
+        case FEnum_glVertexPointerEXT:
+        case FEnum_glVertexWeightPointerEXT:
+        case FEnum_glWeightPointerARB:
+            return 0;
+    }
+    return 1;
 }
 
 #define PTR(x,y) (((uint8_t *)x)+y)
@@ -769,10 +853,13 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDrawPixels:
         case FEnum_glPolygonStipple:
-            s->datacb = (s->FEnum == FEnum_glDrawPixels)?
-                ALIGNED(s->arg[0] * s->arg[1] * szgldata(s->arg[2], s->arg[3])):
-                (32 * 32);
-            s->parg[0] = VAL(s->hshm);
+            s->parg[0] = (s->FEnum == FEnum_glDrawPixels)? s->arg[4]:s->arg[0];
+            if (s->pixUnpackBuf == 0) {
+                s->datacb = (s->FEnum == FEnum_glDrawPixels)?
+                    ALIGNED(((s->szUnpackRow == 0)? s->arg[0]:s->szUnpackRow) * s->arg[1] * szgldata(s->arg[2], s->arg[3])):
+                    ALIGNED(((s->szUnpackRow == 0)? 32:s->szUnpackRow) * 32);
+                s->parg[0] = VAL(s->hshm);
+            }
             break;
         case FEnum_glDrawRangeElements:
         case FEnum_glDrawRangeElementsEXT:
@@ -929,7 +1016,7 @@ static void processArgs(MesaPTState *s)
             //DPRINTF("Program size 0x%04x\n%s", s->arg[2], (unsigned char *)s->hshm);
             break;
         case FEnum_glReadPixels:
-            s->parg[2] = VAL(s->fbtm_ptr);
+            s->parg[2] = (s->pixPackBuf == 0)? VAL(s->fbtm_ptr):s->arg[6];
             break;
         case FEnum_glRectdv:
             s->datacb = 2*sizeof(double);
@@ -997,9 +1084,10 @@ static void processArgs(MesaPTState *s)
             s->parg[1] = VAL(s->hshm);
             break;
         case FEnum_glBitmap:
-            {
-                uint32_t szBmp = s->arg[0] * s->arg[1];
-                uintptr_t bmpPtr = ((uintptr_t)s->fbtm_ptr) + (MGLFBT_SIZE - szBmp);
+            s->parg[2] = s->arg[6];
+            if (s->pixUnpackBuf == 0) {
+                uint32_t szBmp = ((s->szUnpackRow == 0)? s->arg[0]:s->szUnpackRow) * s->arg[1];
+                uintptr_t bmpPtr = ((uintptr_t)s->fbtm_ptr) + (MGLFBT_SIZE - ALIGNED(szBmp));
                 s->parg[2] = (s->arg[6])? bmpPtr:0;
             }
             break;
@@ -1036,7 +1124,8 @@ static void processArgs(MesaPTState *s)
             }
             break;
         case FEnum_glGetTexImage:
-            {
+            s->parg[0] = s->arg[4];
+            if (s->pixPackBuf == 0) {
                 uint32_t szTex, *texPtr;
                 szTex = wrTexTextureWxD(s->arg[0], s->arg[1], 0)*szgldata(s->arg[2], s->arg[3]);
                 texPtr = (uint32_t *)s->fbtm_ptr;
@@ -1047,11 +1136,13 @@ static void processArgs(MesaPTState *s)
         case FEnum_glTexImage1D:
         case FEnum_glTexSubImage1D:
         case FEnum_glTexSubImage1DEXT:
-            {
+            s->parg[3] = s->arg[7];
+            s->parg[2] = s->arg[6];
+            if (s->pixUnpackBuf == 0) {
                 uint32_t szTex, *texPtr;
                 szTex = (s->FEnum == FEnum_glTexImage1D)?
-                    (s->arg[3] * szgldata(s->arg[5], s->arg[6])):
-                    (s->arg[3] * szgldata(s->arg[4], s->arg[5]));
+                    (((s->szUnpackRow == 0)? s->arg[3]:s->szUnpackRow) * szgldata(s->arg[5], s->arg[6])):
+                    (((s->szUnpackRow == 0)? s->arg[3]:s->szUnpackRow) * szgldata(s->arg[4], s->arg[5]));
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[3] = (s->arg[7])? VAL(texPtr):0;
                 s->parg[2] = (s->arg[6])? VAL(texPtr):0;
@@ -1060,11 +1151,12 @@ static void processArgs(MesaPTState *s)
         case FEnum_glTexImage2D:
         case FEnum_glTexSubImage2D:
         case FEnum_glTexSubImage2DEXT:
-            {
+            s->parg[0] = s->arg[8];
+            if (s->pixUnpackBuf == 0) {
                 uint32_t szTex, *texPtr;
                 szTex = (s->FEnum == FEnum_glTexImage2D)?
-                    (s->arg[3] * s->arg[4] * szgldata(s->arg[6], s->arg[7])):
-                    (s->arg[4] * s->arg[5] * szgldata(s->arg[6], s->arg[7]));
+                    (((s->szUnpackRow == 0)? s->arg[3]:s->szUnpackRow) * s->arg[4] * szgldata(s->arg[6], s->arg[7])):
+                    (((s->szUnpackRow == 0)? s->arg[4]:s->szUnpackRow) * s->arg[5] * szgldata(s->arg[6], s->arg[7]));
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[0] = (s->arg[8])? VAL(texPtr):0;
                 //DPRINTF("Tex*Image2D() %x,%x,%x,%x,%x,%x,%x,%x,%08x",s->arg[0],s->arg[1],s->arg[2],s->arg[3],s->arg[4],s->arg[5],s->arg[6],s->arg[7],szTex);
@@ -1072,16 +1164,18 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glTexImage3D:
         case FEnum_glTexImage3DEXT:
-            {
+            s->parg[1] = s->arg[9];
+            if (s->pixUnpackBuf == 0) {
                 uint32_t szTex, *texPtr;
                 szTex = s->arg[3] * s->arg[4] * s->arg[5] * szgldata(s->arg[7], s->arg[8]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
-                s->parg[1] = VAL(texPtr);
+                s->parg[1] = (s->arg[9])? VAL(texPtr):0;
             }
             break;
         case FEnum_glGetCompressedTexImage:
         case FEnum_glGetCompressedTexImageARB:
-            {
+            s->parg[2] = s->arg[2];
+            if (s->pixPackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)s->fbtm_ptr;
                 texPtr[0] = wrTexTextureWxD(s->arg[0], s->arg[1], 1);
@@ -1092,7 +1186,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glCompressedTexImage1DARB:
         case FEnum_glCompressedTexSubImage1D:
         case FEnum_glCompressedTexSubImage1DARB:
-            {
+            s->parg[2] = s->arg[6];
+            if (s->pixUnpackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(s->arg[5])));
                 s->parg[2] = VAL(texPtr);
@@ -1100,7 +1195,8 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glCompressedTexImage2D:
         case FEnum_glCompressedTexImage2DARB:
-            {
+            s->parg[3] = s->arg[7];
+            if (s->pixUnpackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(s->arg[6])));
                 s->parg[3] = VAL(texPtr);
@@ -1110,7 +1206,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glCompressedTexImage3DARB:
         case FEnum_glCompressedTexSubImage2D:
         case FEnum_glCompressedTexSubImage2DARB:
-            {
+            s->parg[0] = s->arg[8];
+            if (s->pixUnpackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(s->arg[7])));
                 s->parg[0] = VAL(texPtr);
@@ -1118,7 +1215,8 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glCompressedTexSubImage3D:
         case FEnum_glCompressedTexSubImage3DARB:
-            {
+            s->parg[2] = s->arg[10];
+            if (s->pixUnpackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(s->arg[9])));
                 s->parg[2] = VAL(texPtr);
@@ -1299,53 +1397,11 @@ static void processArgs(MesaPTState *s)
         default:
             break;
     }
-
-    switch (s->FEnum)
-    {
-        case FEnum_glBufferData:
-        case FEnum_glBufferDataARB:
-        case FEnum_glBufferSubData:
-        case FEnum_glBufferSubDataARB:
-        case FEnum_glGetBufferSubData:
-        case FEnum_glGetBufferSubDataARB:
-        case FEnum_glMapBufferRange:
-        case FEnum_glNamedBufferSubData:
-        case FEnum_glNamedBufferSubDataEXT:
-            break;
-        case FEnum_glDrawElements:
-        case FEnum_glDrawElementsBaseVertex:
-        case FEnum_glDrawRangeElements:
-        case FEnum_glDrawRangeElementsEXT:
-            if (s->elemArryBuf) break;
-        case FEnum_glColorPointer:
-        case FEnum_glColorPointerEXT:
-        case FEnum_glEdgeFlagPointer:
-        case FEnum_glEdgeFlagPointerEXT:
-        case FEnum_glFogCoordPointer:
-        case FEnum_glFogCoordPointerEXT:
-        case FEnum_glIndexPointer:
-        case FEnum_glIndexPointerEXT:
-        case FEnum_glInterleavedArrays:
-        case FEnum_glNormalPointer:
-        case FEnum_glNormalPointerEXT:
-        case FEnum_glSecondaryColorPointer:
-        case FEnum_glSecondaryColorPointerEXT:
-        case FEnum_glTexCoordPointer:
-        case FEnum_glTexCoordPointerEXT:
-        case FEnum_glVertexAttribPointer:
-        case FEnum_glVertexAttribPointerARB:
-        case FEnum_glVertexPointer:
-        case FEnum_glVertexPointerEXT:
-        case FEnum_glVertexWeightPointerEXT:
-        case FEnum_glWeightPointerARB:
-            break;
-
-        default:
-            for (int i = 0; i < 4; i++) {
-                if (s->parg[i] & (sizeof(uintptr_t) - 1))
-                    DPRINTF("WARN: FEnum 0x%02X Unaligned parg[%d]\n", s->FEnum, i);
-            }
-            break;
+    if (PArgsShouldAligned(s)) {
+        for (int i = 0; i < 4; i++) {
+            if (s->parg[i] & (sizeof(uintptr_t) - 1))
+                DPRINTF("WARN: FEnum 0x%02X Unaligned parg[%d]\n", s->FEnum, i);
+        }
     }
 }
 
@@ -1353,54 +1409,26 @@ static void processFRet(MesaPTState *s)
 {
     uint8_t *outshm = s->fifo_ptr + (MGLSHM_SIZE - (3*TARGET_PAGE_SIZE));
 
+    if (PArgsShouldAligned(s) == 0) {
+        s->parg[0] &= ~(sizeof(uintptr_t) - 1);
+        s->parg[1] &= ~(sizeof(uintptr_t) - 1);
+        s->parg[2] &= ~(sizeof(uintptr_t) - 1);
+        s->parg[3] &= ~(sizeof(uintptr_t) - 1);
+    }
+
     switch (s->FEnum) {
-        case FEnum_glBufferData:
-        case FEnum_glBufferDataARB:
-        case FEnum_glBufferSubData:
-        case FEnum_glBufferSubDataARB:
-        case FEnum_glNamedBufferSubData:
-        case FEnum_glNamedBufferSubDataEXT:
-        case FEnum_glDrawElements:
-        case FEnum_glDrawElementsBaseVertex:
-        case FEnum_glDrawRangeElements:
-        case FEnum_glDrawRangeElementsEXT:
-        case FEnum_glGetBufferSubData:
-        case FEnum_glGetBufferSubDataARB:
-            /* break; */
-        case FEnum_glColorPointer:
-        case FEnum_glColorPointerEXT:
-        case FEnum_glEdgeFlagPointer:
-        case FEnum_glEdgeFlagPointerEXT:
-        case FEnum_glFogCoordPointer:
-        case FEnum_glFogCoordPointerEXT:
-        case FEnum_glIndexPointer:
-        case FEnum_glIndexPointerEXT:
-        case FEnum_glInterleavedArrays:
-        case FEnum_glNormalPointer:
-        case FEnum_glNormalPointerEXT:
-        case FEnum_glSecondaryColorPointer:
-        case FEnum_glSecondaryColorPointerEXT:
-        case FEnum_glTexCoordPointer:
-        case FEnum_glTexCoordPointerEXT:
-        case FEnum_glVertexAttribPointer:
-        case FEnum_glVertexAttribPointerARB:
-        case FEnum_glVertexPointer:
-        case FEnum_glVertexPointerEXT:
-        case FEnum_glVertexWeightPointerEXT:
-        case FEnum_glWeightPointerARB:
-            s->parg[0] &= ~(sizeof(uintptr_t) - 1);
-            s->parg[1] &= ~(sizeof(uintptr_t) - 1);
-            s->parg[2] &= ~(sizeof(uintptr_t) - 1);
-            s->parg[3] &= ~(sizeof(uintptr_t) - 1);
-            break;
         case FEnum_glBindBuffer:
         case FEnum_glBindBufferARB:
+            s->pixPackBuf = (s->arg[0] == GL_PIXEL_PACK_BUFFER)? s->arg[1]:s->pixPackBuf;
+            s->pixUnpackBuf = (s->arg[0] == GL_PIXEL_UNPACK_BUFFER)? s->arg[1]:s->pixUnpackBuf;
             s->arrayBuf = (s->arg[0] == GL_ARRAY_BUFFER)? s->arg[1]:s->arrayBuf;
             s->elemArryBuf = (s->arg[0] == GL_ELEMENT_ARRAY_BUFFER)? s->arg[1]:s->elemArryBuf;
             break;
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
             for (int i = 0; i < s->arg[0]; i++) {
+                s->pixPackBuf = (((uint32_t *)s->hshm)[i] == s->pixPackBuf)? 0:s->pixPackBuf;
+                s->pixUnpackBuf = (((uint32_t *)s->hshm)[i] == s->pixUnpackBuf)? 0:s->pixUnpackBuf;
                 s->arrayBuf = (((uint32_t *)s->hshm)[i] == s->arrayBuf)? 0:s->arrayBuf;
                 s->elemArryBuf = (((uint32_t *)s->hshm)[i] == s->elemArryBuf)? 0:s->elemArryBuf;
             }
@@ -1441,8 +1469,6 @@ static void processFRet(MesaPTState *s)
             s->BufObj = (void *)(s->FRet);
             s->BufAcc = 0;
             if (s->FEnum == FEnum_glMapBufferRange) {
-                s->parg[1] &= ~(sizeof(uintptr_t) - 1);
-                s->parg[2] &= ~(sizeof(uintptr_t) - 1);
                 s->BufAcc = s->arg[3];
                 s->BufRange = s->arg[2];
                 s->FRet = s->arg[2];
@@ -1455,6 +1481,11 @@ static void processFRet(MesaPTState *s)
                 s->FRet = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
                     s->arg[0], GL_BUFFER_SIZE);
             }
+            break;
+        case FEnum_glPixelStorei:
+            s->szPackRow = (s->arg[0] == GL_PACK_ROW_LENGTH)? s->arg[1]:s->szPackRow;
+            s->szUnpackRow = (s->arg[0] == GL_UNPACK_ROW_LENGTH)? s->arg[1]:s->szUnpackRow;
+            //DPRINTF("PixelStorei %x %x", s->arg[0], s->arg[1]);
             break;
 #define MGL_TRACE 0
 #if defined(MGL_TRACE) && MGL_TRACE
