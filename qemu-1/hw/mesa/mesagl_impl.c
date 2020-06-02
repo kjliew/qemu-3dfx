@@ -129,10 +129,10 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
     }
 }
 
-void wrFlushBufObj(int FEnum, uint32_t target, const void *src, void *dst, uint32_t range)
+void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t bufo)
 {
-    uint32_t szBuf = (range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):range;
-    memcpy(dst, (src - ALIGNED(szBuf)), szBuf);
+    uint32_t szBuf = (bufo.range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo.range;
+    memcpy(bufo.hptr + bufo.offst, (bufo.shmep - ALIGNED(bufo.mapsz) + bufo.offst), szBuf);
 }
 
 const char *getGLFuncStr(int FEnum)
@@ -219,6 +219,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
     switch(FEnum) {
         case FEnum_glAreTexturesResident:
         case FEnum_glAreTexturesResidentEXT:
+        case FEnum_glFlushMappedBufferRange:
+        case FEnum_glFlushMappedNamedBufferRange:
         case FEnum_glPrioritizeTextures:
         case FEnum_glPrioritizeTexturesEXT:
             usfp.fpa0p2 = tblMesaGL[FEnum].ptr;
@@ -1283,7 +1285,7 @@ static void conf_MGLOptions(void)
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
     cfg_createWnd = 0;
-    cfg_kickFrame = 0;
+    cfg_kickFrame = 4;
     FILE *fp = fopen(MESAGLCFG, "r");
     if (fp != NULL) {
         char line[32];
@@ -1295,8 +1297,10 @@ static void conf_MGLOptions(void)
             cfg_xLength = (i == 1)? n:cfg_xLength;
             i = sscanf(line, "VertexCacheMB,%d", &v);
             cfg_vertCacheMB = (i == 1)? v:cfg_vertCacheMB;
+#if defined(CONFIG_WIN32) && CONFIG_WIN32
             i = sscanf(line, "CreateWindow,%d", &w);
             cfg_createWnd = (i == 1)? w:cfg_createWnd;
+#endif
             i = sscanf(line, "KickFrameCount,%d", &k);
             cfg_kickFrame = (i == 1)? k:cfg_kickFrame;
         }

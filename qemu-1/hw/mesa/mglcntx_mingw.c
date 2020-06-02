@@ -200,7 +200,7 @@ int MGLMakeCurrent(uint32_t cntxRC)
     if (cntxRC == MESAGL_MAGIC) {
         pFnMakeCurrent(hDC, hRC);
         InitMesaGLExt();
-        if (!GetCreateWindow())
+        if (!GetCreateWindow() && !GetKickFrame())
             mesa_enabled_set();
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
@@ -217,8 +217,6 @@ int MGLSwapBuffers(void)
 void MGLKickFrameProc(int k)
 {
     if (!GetCreateWindow()) {
-        if (k == GetKickFrame())
-            mesa_enabled_reset();
         if (k == 1)
             mesa_enabled_set();
         DPRINTF(">>>>>>>> frame (%d) <<<<<<<<", k);

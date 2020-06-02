@@ -75,9 +75,8 @@ typedef struct MesaPTState
     int szPackRow, szUnpackRow;
     int arrayBuf;
     int elemArryBuf;
-    void *BufObj;
-    int BufAcc;
-    uint32_t BufRange;
+    mapbufo_t BufObj[2];
+    uint32_t szUsedBuf;;
     int KickFrame;
     PERFSTAT perfs;
 
@@ -405,6 +404,8 @@ static int PArgsShouldAligned(MesaPTState *s)
         case FEnum_glBufferDataARB:
         case FEnum_glBufferSubData:
         case FEnum_glBufferSubDataARB:
+        case FEnum_glFlushMappedBufferRange:
+        case FEnum_glFlushMappedNamedBufferRange:
         case FEnum_glGetBufferSubData:
         case FEnum_glGetBufferSubDataARB:
         case FEnum_glMapBufferRange:
@@ -1013,7 +1014,12 @@ static void processArgs(MesaPTState *s)
         case FEnum_glProgramStringARB:
             s->datacb = ALIGNED(s->arg[2]);
             s->parg[3] = VAL(s->hshm);
-            //DPRINTF("Program size 0x%04x\n%s", s->arg[2], (unsigned char *)s->hshm);
+            if (0) {
+                char *prog = g_malloc0(s->arg[2] + 1);
+                memcpy(prog, s->hshm, s->arg[2]);
+                DPRINTF("ProgramString [ %d ]\n%s", s->arg[2], prog);
+                g_free(prog);
+            }
             break;
         case FEnum_glReadPixels:
             s->parg[2] = (s->pixPackBuf == 0)? VAL(s->fbtm_ptr):s->arg[6];
@@ -1106,22 +1112,35 @@ static void processArgs(MesaPTState *s)
             s->parg[1] = s->arg[1];
             s->parg[2] = (s->arg[2])? VAL(s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->arg[1])):0;
             break;
+        case FEnum_glFlushMappedBufferRange:
+        case FEnum_glFlushMappedNamedBufferRange:
         case FEnum_glMapBufferRange:
             s->parg[1] = s->arg[1];
             s->parg[2] = s->arg[2];
-            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE), s->arg[1], s->arg[2]);
+            if (s->FEnum == FEnum_glMapBufferRange) {
+                wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->szUsedBuf)), s->arg[1], s->arg[2]);
+                //DPRINTF("MapBufferRange %x %x %x %x sz %x", s->arg[0], s->arg[1], s->arg[2], s->arg[3], s->szUsedBuf);
+            }
+            else {
+                s->BufObj[(s->arg[0] & 0x01U)].offst = s->arg[1];
+                s->BufObj[(s->arg[0] & 0x01U)].range = s->arg[2];
+                //DPRINTF("FlushMappedBufferRange %x %x %x", s->arg[0], s->arg[1], s->arg[2]);
+            }
             break;
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
-            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE), 0, 0);
+            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->szUsedBuf)), 0, 0);
             break;
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
-            if (s->BufObj && (s->BufAcc & GL_MAP_WRITE_BIT)) {
+            if (s->BufObj[(s->arg[0] & 0x01U)].hptr &&
+                (s->BufObj[(s->arg[0] & 0x01U)].acc & GL_MAP_WRITE_BIT)) {
                 wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
-                    s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE), s->BufObj, s->BufRange);
-                s->BufObj = 0;
+                    s->arg[0], s->BufObj[(s->arg[0] & 0x01U)]);
+                s->BufObj[(s->arg[0] & 0x01U)].hptr = 0;
+                s->szUsedBuf -= s->BufObj[(s->arg[0] & 0x01U)].mapsz;
             }
+            //DPRINTF("UnmapBuffer %x %x", s->arg[0], s->szUsedBuf);
             break;
         case FEnum_glGetTexImage:
             s->parg[0] = s->arg[4];
@@ -1261,8 +1280,11 @@ static void processArgs(MesaPTState *s)
                     str[0] = (char *)PTR(s->hshm, ALIGNED(s->arg[1]*sizeof(int)));
                     for (i = 1; i < s->arg[1]; i++)
                         str[i] = str[i-1] + ALIGNED(len[i-1]) + ALIGNED(1);
-                    /* for (i = 0; i < s->arg[1]; i++)
-                        DPRINTF("\n%s", str[i]); */
+                    if (0) {
+                        DPRINTF("ShaderSource");
+                        for (i = 0; i < s->arg[1]; i++)
+                            fprintf(stderr, "%s", str[i]);
+                    }
                     s->datacb = ALIGNED(s->arg[1]*sizeof(int)) + offs;
                     s->parg[3] = VAL(len);
                 }
@@ -1283,8 +1305,11 @@ static void processArgs(MesaPTState *s)
                         send += offs;
                         str[i] = send;
                     }
-                    /* for (i = 0; i < s->arg[1]; i++)
-                        DPRINTF("\n%s", str[i]); */
+                    if (0) {
+                        DPRINTF("ShaderSource");
+                        for (i = 0; i < s->arg[1]; i++)
+                            fprintf(stderr, "%s", str[i]);
+                    }
                 }
                 s->parg[2] = VAL(str);
             }
@@ -1462,25 +1487,29 @@ static void processFRet(MesaPTState *s)
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
         case FEnum_glMapBufferRange:
-            if (s->BufObj) {
+            if (s->BufObj[(s->arg[0] & 0x01U)].hptr) {
                 DPRINTF("  *WARN* GL buffer object contention, target %04x access %04x",
                     s->arg[0], ((s->FEnum == FEnum_glMapBufferRange)? s->arg[3]:s->arg[1]));
             }
-            s->BufObj = (void *)(s->FRet);
-            s->BufAcc = 0;
+            s->BufObj[(s->arg[0] & 0x01U)].hptr = (void *)(s->FRet);
+            s->BufObj[(s->arg[0] & 0x01U)].shmep = s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->szUsedBuf);
+            s->BufObj[(s->arg[0] & 0x01U)].offst = 0;
+            s->BufObj[(s->arg[0] & 0x01U)].range = 0;
+            s->BufObj[(s->arg[0] & 0x01U)].acc = 0;
             if (s->FEnum == FEnum_glMapBufferRange) {
-                s->BufAcc = s->arg[3];
-                s->BufRange = s->arg[2];
-                s->FRet = s->arg[2];
+                s->BufObj[(s->arg[0] & 0x01U)].acc = s->arg[3];
+                s->BufObj[(s->arg[0] & 0x01U)].mapsz = s->arg[2];
+                s->szUsedBuf += s->arg[2];
             }
             else {
-                s->BufAcc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
-                s->BufAcc |= (s->arg[1] == GL_WRITE_ONLY)? GL_MAP_WRITE_BIT:0;
-                s->BufAcc |= (s->arg[1] == GL_READ_WRITE)? (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT):0;
-                s->BufRange = 0;
-                s->FRet = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
+                s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
+                s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_WRITE_ONLY)? GL_MAP_WRITE_BIT:0;
+                s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_READ_WRITE)? (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT):0;
+                s->BufObj[(s->arg[0] & 0x01U)].mapsz = 0;
+                s->szUsedBuf += wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
                     s->arg[0], GL_BUFFER_SIZE);
             }
+            s->FRet = s->szUsedBuf;
             break;
         case FEnum_glPixelStorei:
             s->szPackRow = (s->arg[0] == GL_PACK_ROW_LENGTH)? s->arg[1]:s->szPackRow;
@@ -1594,7 +1623,7 @@ static void processFifo(MesaPTState *s)
 #define DEBUG_FIFO 0
 #if DEBUG_FIFO
         const char *fstr = getGLFuncStr(s->FEnum);
-        if (fstr)
+        if ((s->KickFrame == 0) && fstr)
             DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifoptr[0], dataptr[0]);
         if (dataptr[0] >= MAX_DATA) {
             DPRINTF("  *WARN* Data bound overlapped 0x%02x dataptr %06X", s->FEnum, dataptr[0]);
@@ -1695,7 +1724,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         DPRINTF("wglCreateContext cntx %d curr %d", s->mglContext, s->mglCntxCurrent);
                         s->mglContext = MGLCreateContext(cntxRC[0])? 0:1;
                         s->fifoMax = 0; s->dataMax = 0;
-                        s->BufObj = 0;
+                        s->szUsedBuf = 0;
+                        memset(s->BufObj, 0, sizeof(mapbufo_t[2]));
                         InitClientStates(s);
                         ImplMesaGLReset();
                     }
@@ -1791,7 +1821,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xFD8:
                 do {
                     int *i = (int *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
-                    MGLActivateHandler(i[0]);
+                    if (s->KickFrame == 0)
+                        MGLActivateHandler(i[0]);
                 } while(0);
             default:
                 break;

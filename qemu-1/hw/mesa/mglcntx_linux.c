@@ -212,7 +212,8 @@ int MGLMakeCurrent(uint32_t cntxRC)
     if (cntxRC == MESAGL_MAGIC) {
         glXMakeContextCurrent(dpy, win, win, ctx);
         InitMesaGLExt();
-        mesa_enabled_set();
+        if (!GetCreateWindow() && !GetKickFrame())
+            mesa_enabled_set();
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         glXMakeContextCurrent(dpy, PBDC[i], PBDC[i], PBRC[i]);
@@ -228,11 +229,11 @@ int MGLSwapBuffers(void)
 
 void MGLKickFrameProc(int k)
 {
-    if (k == GetKickFrame())
-        mesa_enabled_reset();
-    if (k == 1)
-        mesa_enabled_set();
-    DPRINTF(">>>>>>>> frame (%d) <<<<<<<<", k);
+    if (!GetCreateWindow()) {
+        if (k == 1)
+            mesa_enabled_set();
+        DPRINTF(">>>>>>>> frame (%d) <<<<<<<<", k);
+    }
 }
 
 static int MGLPresetPixelFormat(void)
