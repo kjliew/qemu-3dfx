@@ -104,6 +104,7 @@ BOOL  (WINAPI *pFnShareLists)(HGLRC, HGLRC);
 PROC  (WINAPI *pFnGetProcAddress)(LPCSTR);
 BOOL  (WINAPI *pFnChoosePixelFormatARB)(HDC, const int *, const float *, UINT, int *, UINT *);
 const char * (WINAPI *pFnGetExtensionsStringARB)(HDC);
+HGLRC (WINAPI *pFnCreateContextAttribsARB)(HDC, HGLRC, const int *);
 
 void SetMesaFuncPtr(void *p)
 {
@@ -144,6 +145,8 @@ void MGLTmpContext(void)
         MesaGLGetProc("wglChoosePixelFormatARB");
     pFnGetExtensionsStringARB =  (const char * (WINAPI *)(HDC))
         MesaGLGetProc("wglGetExtensionsStringARB");
+    pFnCreateContextAttribsARB = (HGLRC (WINAPI *)(HDC, HGLRC, const int *))
+        MesaGLGetProc("wglCreateContextAttribsARB");
 
     pFnMakeCurrent(NULL, NULL);
     pFnDeleteContext(tmpGL);
@@ -395,9 +398,29 @@ void MGLFuncHandler(const char *name)
             const char *tmp = "WGL_EXT_swap_control "
                 "WGL_EXT_extensions_string " "WGL_ARB_extensions_string "
                 "WGL_ARB_pixel_format " "WGL_ARB_pbuffer "
+                "WGL_ARB_create_context " "WGL_ARB_create_context_profile "
                 "WGL_ARB_render_texture";
             strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
             //DPRINTF("WGL extensions\nHost: %s [ %d ]\nGuest: %s [ %d ]", str, (uint32_t)strlen(str), name, (uint32_t)strlen(name));
+            return;
+        }
+    }
+    FUNCP_HANDLER("wglCreateContextAttribsARB") {
+        if (pFnCreateContextAttribsARB) {
+            uint32_t ret;
+            if (hRC) {
+                pFnMakeCurrent(NULL, NULL);
+                pFnDeleteContext(hRC);
+            }
+            if (argsp[0] == 0) {
+                hRC = pFnCreateContextAttribsARB(hDC, 0, (const int *)&argsp[2]);
+                ret = (hRC)? 1:0;
+            }
+            else {
+                DPRINTF("  *WARN* Shared HGLRC %08x not supported", argsp[0]);
+                ret = 0;
+            }
+            argsp[0] = ret;
             return;
         }
     }
@@ -411,7 +434,7 @@ void MGLFuncHandler(const char *name)
             if (ret)
                 memcpy(&argsp[2], pf, n*sizeof(float));
             argsp[0] = ret;
-        return;
+            return;
         }
     }
     FUNCP_HANDLER("wglGetPixelFormatAttribivARB") {

@@ -547,7 +547,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glVertexAttribPointerARB:
             {
                 vtxarry_t *arry = vattr2arry(s, s->arg[0]);
-                vtxarry_init(arry, s->arg[1], s->arg[2], s->arg[4], (s->arrayBuf == 0)?
+                vtxarry_init(arry, (s->arg[1] == GL_BGRA)? 4:s->arg[1], s->arg[2], s->arg[4], (s->arrayBuf == 0)?
                         LookupVertex(s->arg[5], s->szVertCache):(void *)(uintptr_t)s->arg[5]);
                 s->parg[1] = VAL(arry->ptr);
             }
@@ -1499,16 +1499,15 @@ static void processFRet(MesaPTState *s)
             if (s->FEnum == FEnum_glMapBufferRange) {
                 s->BufObj[(s->arg[0] & 0x01U)].acc = s->arg[3];
                 s->BufObj[(s->arg[0] & 0x01U)].mapsz = s->arg[2];
-                s->szUsedBuf += s->arg[2];
             }
             else {
                 s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
                 s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_WRITE_ONLY)? GL_MAP_WRITE_BIT:0;
                 s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_READ_WRITE)? (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT):0;
-                s->BufObj[(s->arg[0] & 0x01U)].mapsz = 0;
-                s->szUsedBuf += wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
-                    s->arg[0], GL_BUFFER_SIZE);
+                s->BufObj[(s->arg[0] & 0x01U)].mapsz = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)?
+                    FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB, s->arg[0], GL_BUFFER_SIZE);
             }
+            s->szUsedBuf += s->BufObj[(s->arg[0] & 0x01U)].mapsz;
             s->FRet = s->szUsedBuf;
             break;
         case FEnum_glPixelStorei:
@@ -1666,6 +1665,15 @@ static void processFifo(MesaPTState *s)
     }
 }
 
+static void ContextCreateCommon(MesaPTState *s)
+{
+    s->fifoMax = 0; s->dataMax = 0;
+    s->szUsedBuf = 0;
+    memset(s->BufObj, 0, sizeof(mapbufo_t[2]));
+    InitClientStates(s);
+    ImplMesaGLReset();
+}
+
 static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
 {
     MesaPTState *s = opaque;
@@ -1723,11 +1731,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     if (!s->mglContext) {
                         DPRINTF("wglCreateContext cntx %d curr %d", s->mglContext, s->mglCntxCurrent);
                         s->mglContext = MGLCreateContext(cntxRC[0])? 0:1;
-                        s->fifoMax = 0; s->dataMax = 0;
-                        s->szUsedBuf = 0;
-                        memset(s->BufObj, 0, sizeof(mapbufo_t[2]));
-                        InitClientStates(s);
-                        ImplMesaGLReset();
+                        ContextCreateCommon(s);
                     }
                     else {
                         //DPRINTF("wglCreateContext cntx %d curr %d %x", s->mglContext, s->mglCntxCurrent, cntxRC[0]);
@@ -1816,6 +1820,19 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 do {
                     uint8_t *func = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
                     MGLFuncHandler((const char *)func);
+                    if (strncmp((const char *)func, "wglCreateContextAttribsARB", 64) == 0) {
+                        uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
+                        if (argsp[0]) {
+                            if (s->mglCntxCurrent) {
+                                g_free(s->logpname);
+                                s->mglCntxCurrent = 0;
+                            }
+                            s->mglContext = argsp[0];
+                            ContextCreateCommon(s);
+                        }
+                        DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d",
+                            s->mglContext, s->mglCntxCurrent, argsp[0]);
+                    }
                 } while(0);
                 break;
             case 0xFD8:

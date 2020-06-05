@@ -12398,12 +12398,12 @@ void PT_CALL glVertexAttribParameteriAMD(uint32_t arg0, uint32_t arg1, uint32_t 
 void PT_CALL glVertexAttribPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexAttribPointer, 6);
-    vtxarry_init(vattr2arry(arg0), arg1, arg2, arg4, (void *)arg5);
+    vtxarry_init(vattr2arry(arg0), (arg1 == GL_BGRA)? 4:arg1, arg2, arg4, (void *)arg5);
 }
 void PT_CALL glVertexAttribPointerARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexAttribPointerARB, 6);
-    vtxarry_init(vattr2arry(arg0), arg1, arg2, arg4, (void *)arg5);
+    vtxarry_init(vattr2arry(arg0), (arg1 == GL_BGRA)? 4:arg1, arg2, arg4, (void *)arg5);
 }
 void PT_CALL glVertexAttribPointerNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -15751,7 +15751,7 @@ wglChoosePixelFormatARB (HDC hdc,
 {
   int i, ret;
   WGL_FUNCP("wglChoosePixelFormatARB");
-  for (i = 0; (piAttribIList[i] && piAttribIList[i+1]); i+=2) {
+  for (i = 0; piAttribIList[i]; i+=2) {
       argsp[i] = piAttribIList[i];
       argsp[i+1] = piAttribIList[i+1];
   }
@@ -15764,6 +15764,30 @@ wglChoosePixelFormatARB (HDC hdc,
       DPRINTF("ChoosePixelFormatARB() fmt %02x", *piFormats);
   }
   return ret;
+}
+
+/* WGL_ARB_create_context */
+static HGLRC
+wglCreateContextAttribsARB(HDC hDC,
+                           HGLRC hShareContext,
+                           const int *attribList)
+{
+  int i, ret;
+  WGL_FUNCP("wglCreateContextAttribsARB");
+  argsp[0] = (uint32_t) hShareContext;
+  for (i = 0; attribList[i]; i+=2) {
+      argsp[i+2] = attribList[i];
+      argsp[i+3] = attribList[i+1];
+  }
+  argsp[i+2] = 0; argsp[i+3] = 0;
+  ptm[0xFDC >> 2] = MESAGL_MAGIC;
+  ret = argsp[0];
+  if (ret) {
+      currDC = (uint32_t)hDC;
+      InitClientStates();
+      GLwnd = WindowFromDC(hDC);
+  }
+  return (ret)? (HGLRC)MESAGL_MAGIC:0;
 }
 
 /* WGL_ARB_render_texture */
@@ -15794,7 +15818,7 @@ wglSetPbufferAttribARB (HPBUFFERARB hPbuffer,
   int i;
   WGL_FUNCP("wglSetPbufferAttribARB");
   argsp[0] = (uint32_t)hPbuffer;
-  for (i = 0; (piAttribList[i] && piAttribList[i+1]); i+=2) {
+  for (i = 0; piAttribList[i]; i+=2) {
       argsp[i+2] = piAttribList[i];
       argsp[i+3] = piAttribList[i+1];
   }
@@ -15815,7 +15839,7 @@ wglCreatePbufferARB (HDC hDC,
   int i;
   WGL_FUNCP("wglCreatePbufferARB");
   argsp[0] = iPixelFormat; argsp[1] = iWidth; argsp[2] = iHeight;
-  for (i = 0; (piAttribList[i] && piAttribList[i+1]); i+=2) {
+  for (i = 0; piAttribList[i]; i+=2) {
       argsp[i+4] = piAttribList[i];
       argsp[i+5] = piAttribList[i+1];
   }
@@ -15911,6 +15935,8 @@ uint32_t PT_CALL mglGetProcAddress (uint32_t arg0)
 
 #define FUNC_WGL_EXT(a) \
     if (!memcmp((const void *)arg0, ""#a"", sizeof(""#a""))) fptr = &a
+    /* WGL_ARB_create_context */
+    FUNC_WGL_EXT(wglCreateContextAttribsARB);
     FUNC_WGL_EXT(wglSwapIntervalEXT);
     FUNC_WGL_EXT(wglGetSwapIntervalEXT);
     FUNC_WGL_EXT(wglGetExtensionsStringARB);
@@ -15978,8 +16004,6 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
 
 uint32_t PT_CALL mglDeleteContext (uint32_t arg0)
 {
-    if (currGLRC)
-        mglMakeCurrent(0, 0);
     if (!currGLRC && (arg0 == MESAGL_MAGIC)) {
         for (int i = 0; i < MAX_PBUFFER; i++) {
             if (currPB[i])
@@ -16102,14 +16126,16 @@ BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *
 {
     uint32_t ret;
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
-    if (currGLRC)
+    if (currGLRC) {
+        mglMakeCurrent(0, 0);
         mglDeleteContext(MESAGL_MAGIC);
+    }
     xppfd[0] = format;
     memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFE4 >> 2] = MESAGL_MAGIC;
     ret = (ptm[0xFE4 >> 2] == MESAGL_MAGIC)? TRUE:FALSE;
     currPixFmt = (ret)? format:0;
-    return ret;
+    return (currPixFmt)? TRUE:FALSE;
 }
 BOOL WINAPI wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 { return wglSetPixelFormat(hdc, format, ppfd); }
@@ -16180,8 +16206,10 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         case DLL_PROCESS_DETACH:
             UnhookWindowsHookEx(hHook);
             DPRINTF("MesaGL Fini %x", currGLRC);
-            if (currGLRC)
+            if (currGLRC) {
+                mglMakeCurrent(0, 0);
                 mglDeleteContext(MESAGL_MAGIC);
+            }
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | MESAVER;
 #ifdef DEBUG_MGSTUB
             fclose(logfp);
