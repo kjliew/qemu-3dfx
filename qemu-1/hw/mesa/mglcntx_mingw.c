@@ -93,7 +93,7 @@ static HWND CreateMesaWindow(const char *title, int w, int h, int show)
 
 static HWND hwnd;
 static HDC hDC, hPBDC[MAX_PBUFFER];
-static HGLRC hRC, hPBRC[MAX_PBUFFER];
+static HGLRC hRC[4], hPBRC[MAX_PBUFFER];
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 
 HGLRC (WINAPI *pFnCreateContext)(HDC);
@@ -163,11 +163,12 @@ void MGLTmpContext(void)
     if (GetCreateWindow()) DestroyWindow(hwnd); \
     else mesa_release_window()
 
-void MGLDeleteContext(void)
+void MGLDeleteContext(int level)
 {
+    int n = level & 0x03U;
     pFnMakeCurrent(NULL, NULL);
-    pFnDeleteContext(hRC);
-    hRC = 0;
+    pFnDeleteContext(hRC[n]);
+    hRC[n] = 0;
     if (!GetCreateWindow())
         mesa_enabled_reset();
 }
@@ -191,17 +192,17 @@ int MGLCreateContext(uint32_t gDC)
         ret = (hPBRC[i])? 0:1;
     }
     else {
-        hRC = pFnCreateContext(hDC);
-        ret = (hRC)? 0:1;
+        hRC[0] = pFnCreateContext(hDC);
+        ret = (hRC[0])? 0:1;
     }
     return ret;
 }
 
-int MGLMakeCurrent(uint32_t cntxRC)
+int MGLMakeCurrent(uint32_t cntxRC, int level)
 {
-    uint32_t i = cntxRC & (MAX_PBUFFER - 1);
-    if (cntxRC == MESAGL_MAGIC) {
-        pFnMakeCurrent(hDC, hRC);
+    uint32_t i = cntxRC & (MAX_PBUFFER - 1), n = level & 0x03U;
+    if (cntxRC == (MESAGL_MAGIC - n)) {
+        pFnMakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();
         if (!GetCreateWindow() && !GetKickFrame())
             mesa_enabled_set();
@@ -356,8 +357,8 @@ void MGLFuncHandler(const char *name)
         uint32_t i, ret = 0;
         i = argsp[1] & (MAX_PBUFFER - 1);
         if (((argsp[0] == MESAGL_MAGIC) && (argsp[1] == ((MESAGL_MAGIC & 0xFFFFFFFU) << 4 | i))) &&
-            (hRC && hPBRC[i]))
-            ret = pFnShareLists(hRC, hPBRC[i]);
+            (hRC[0] && hPBRC[i]))
+            ret = pFnShareLists(hRC[0], hPBRC[i]);
         else {
             DPRINTF("  *WARN* ShareLists called with unknown contexts, %x %x", argsp[0], argsp[1]);
         }
@@ -407,18 +408,24 @@ void MGLFuncHandler(const char *name)
     }
     FUNCP_HANDLER("wglCreateContextAttribsARB") {
         if (pFnCreateContextAttribsARB) {
-            uint32_t ret;
-            if (hRC) {
-                pFnMakeCurrent(NULL, NULL);
-                pFnDeleteContext(hRC);
-            }
+            uint32_t i, ret;
+            argsp[1] = argsp[0];
             if (argsp[0] == 0) {
-                hRC = pFnCreateContextAttribsARB(hDC, 0, (const int *)&argsp[2]);
-                ret = (hRC)? 1:0;
+                pFnMakeCurrent(NULL, NULL);
+                for (i = 4; i > 0;) {
+                    if (hRC[--i]) {
+                        pFnDeleteContext(hRC[i]);
+                        hRC[i] = 0;
+                    }
+                }
+                hRC[0] = pFnCreateContextAttribsARB(hDC, 0, (const int *)&argsp[2]);
+                ret = (hRC[0])? 1:0;
             }
             else {
-                DPRINTF("  *WARN* Shared HGLRC %08x not supported", argsp[0]);
-                ret = 0;
+                i = 0;
+                while(hRC[i]) i++;
+                hRC[i] = pFnCreateContextAttribsARB(hDC, hRC[i-1], (const int *)&argsp[2]);
+                ret = (hRC[i])? 1:0;
             }
             argsp[0] = ret;
             return;

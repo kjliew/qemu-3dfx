@@ -1743,10 +1743,11 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 do {
                     char xYear[8], xLen[8];
                     uint32_t *ptVer = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
-                    if (s->mglContext && !s->mglCntxCurrent) {
-                        DPRINTF("wglMakeCurrent cntx %d curr %d", s->mglContext, s->mglCntxCurrent);
+                    int level = ((ptVer[0] & 0xFFFFFFF0U) == (MESAGL_MAGIC & 0xFFFFFFF0U))? (MESAGL_MAGIC - ptVer[0]):0;
+                    if (s->mglContext && !s->mglCntxCurrent && ptVer[0]) {
+                        DPRINTF("wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
                         DPRINTF("======== %s ========", (char *)&ptVer[1]);
-                        s->mglCntxCurrent = MGLMakeCurrent(ptVer[0])? 0:1;
+                        s->mglCntxCurrent = MGLMakeCurrent(ptVer[0], level)? 0:1;
                         s->logpname = g_new0(uint8_t, 0x2000);
                         s->KickFrame = GetKickFrame();
                         s->extnYear = GetGLExtYear();
@@ -1761,22 +1762,24 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                             MGLKickFrameProc(s->KickFrame);
                     }
                     else {
-                        //DPRINTF("wglMakeCurrent cntx %d curr %d %x", s->mglContext, s->mglCntxCurrent, ptVer[0]);
-                        MGLMakeCurrent(ptVer[0]);
+                        //DPRINTF("wglMakeCurrent cntx %d curr %d %x lvl %d", s->mglContext, s->mglCntxCurrent, ptVer[0], level);
+                        MGLMakeCurrent(ptVer[0], level);
                     }
                 } while(0);
                 break;
             case 0xFF4:
-                DPRINTF("wglDeleteContext cntx %d curr %d", s->mglContext, s->mglCntxCurrent);
-                if (s->mglContext && s->mglCntxCurrent) {
+                DPRINTF("wglDeleteContext cntx %d curr %d %x", s->mglContext, s->mglCntxCurrent, (uint32_t)val);
+                if (s->mglContext && s->mglCntxCurrent && (val == MESAGL_MAGIC)) {
                     s->perfs.last();
-                    MGLDeleteContext();
+                    MGLDeleteContext(0);
                     g_free(s->logpname);
+                    s->mglContext = 0;
+                    s->mglCntxCurrent = 0;
                     DPRINTF("VertexArrayStats: elemMax %06x vertexCache %04x", s->elemMax, FreeVertex());
                     DPRINTF("MGLStats: fifo 0x%07x data 0x%07x", s->fifoMax, s->dataMax);
                 }
-                s->mglContext = 0;
-                s->mglCntxCurrent = 0;
+                else
+                    MGLDeleteContext(MESAGL_MAGIC - val);
                 break;
             case 0xFF0:
                 //DPRINTF(">>>>>>>> wglSwapBuffers <<<<<<<<");
@@ -1822,7 +1825,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     MGLFuncHandler((const char *)func);
                     if (strncmp((const char *)func, "wglCreateContextAttribsARB", 64) == 0) {
                         uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
-                        if (argsp[0]) {
+                        if (argsp[0] && (argsp[1] == 0)) {
                             if (s->mglCntxCurrent) {
                                 g_free(s->logpname);
                                 s->mglCntxCurrent = 0;
@@ -1830,8 +1833,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                             s->mglContext = argsp[0];
                             ContextCreateCommon(s);
                         }
-                        DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d",
-                            s->mglContext, s->mglCntxCurrent, argsp[0]);
+                        DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d sh %x",
+                            s->mglContext, s->mglCntxCurrent, argsp[0], argsp[1]);
                     }
                 } while(0);
                 break;

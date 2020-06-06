@@ -1297,8 +1297,8 @@ static void conf_MGLOptions(void)
             cfg_xLength = (i == 1)? n:cfg_xLength;
             i = sscanf(line, "VertexCacheMB,%d", &v);
             cfg_vertCacheMB = (i == 1)? v:cfg_vertCacheMB;
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
             i = sscanf(line, "CreateWindow,%d", &w);
+#if defined(CONFIG_WIN32) && CONFIG_WIN32
             cfg_createWnd = (i == 1)? w:cfg_createWnd;
 #endif
             i = sscanf(line, "KickFrameCount,%d", &k);

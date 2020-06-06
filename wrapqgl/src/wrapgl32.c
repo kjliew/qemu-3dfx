@@ -15767,6 +15767,7 @@ wglChoosePixelFormatARB (HDC hdc,
 }
 
 /* WGL_ARB_create_context */
+static int level;
 static HGLRC
 wglCreateContextAttribsARB(HDC hDC,
                            HGLRC hShareContext,
@@ -15784,10 +15785,12 @@ wglCreateContextAttribsARB(HDC hDC,
   ret = argsp[0];
   if (ret) {
       currDC = (uint32_t)hDC;
+      currGLRC = (hShareContext)? currGLRC:0;
+      level = (hShareContext)? level+1:0;
       InitClientStates();
       GLwnd = WindowFromDC(hDC);
   }
-  return (ret)? (HGLRC)MESAGL_MAGIC:0;
+  return (ret)? (HGLRC)(MESAGL_MAGIC - level):0;
 }
 
 /* WGL_ARB_render_texture */
@@ -15998,13 +16001,15 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
     ptVer[0] = arg1;
     memcpy(&ptVer[1], icdBuild, sizeof(icdBuild));
     ptm[0xFF8 >> 2] = MESAGL_MAGIC;
-    currGLRC = arg1;
+    currGLRC = (level && ((arg1 + level) == MESAGL_MAGIC))? (arg1 + level):arg1;
     return TRUE;
 }
 
 uint32_t PT_CALL mglDeleteContext (uint32_t arg0)
 {
-    if (!currGLRC && (arg0 == MESAGL_MAGIC)) {
+    if (level && ((arg0 + level) == MESAGL_MAGIC))
+        ptm[0xFF4 >> 2] = arg0;
+    else if (!currGLRC && (arg0 == MESAGL_MAGIC)) {
         for (int i = 0; i < MAX_PBUFFER; i++) {
             if (currPB[i])
                 wglDestroyPbufferARB((HPBUFFERARB)currPB[i]);
@@ -16025,7 +16030,7 @@ uint32_t PT_CALL mglGetCurrentDC(void)
 uint32_t PT_CALL mglGetCurrentContext(void)
 {
     //DPRINTF("wglGetCurrentContext() %x", currGLRC);
-    return currGLRC;
+    return ((currGLRC + level) == MESAGL_MAGIC)? (currGLRC - level):currGLRC;
 }
 
 uint32_t PT_CALL mglCopyContext(uint32_t arg0, uint32_t arg1, uint32_t arg2)

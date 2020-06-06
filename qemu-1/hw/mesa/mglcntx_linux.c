@@ -152,10 +152,24 @@ static const int iAttribs[] = {
     WGL_AUX_BUFFERS_ARB, pfd.cAuxBuffers,
     0,0
 };
+static const int attrib[] = {
+    GLX_X_RENDERABLE    , True,
+    GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
+    GLX_RENDER_TYPE     , GLX_RGBA_BIT,
+    GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
+    GLX_RED_SIZE        , 8,
+    GLX_GREEN_SIZE      , 8,
+    GLX_BLUE_SIZE       , 8,
+    GLX_DEPTH_SIZE      , 24,
+    GLX_STENCIL_SIZE    , 8,
+    GLX_DOUBLEBUFFER    , True,
+    None
+};
+
 static Display     *dpy;
 static Window       win;
 static XVisualInfo *xvi;
-static GLXContext   ctx;
+static GLXContext   ctx[4];
 
 HPBUFFERARB hPbuffer[MAX_PBUFFER];
 static GLXPbuffer PBDC[MAX_PBUFFER];
@@ -174,11 +188,12 @@ void MGLTmpContext(void)
 {
 }
 
-void MGLDeleteContext(void)
+void MGLDeleteContext(int level)
 {
+    int n = level & 0x03U;
     glXMakeContextCurrent(dpy, None, None, NULL);
-    glXDestroyContext(dpy, ctx);
-    ctx = 0;
+    glXDestroyContext(dpy, ctx[n]);
+    ctx[n] = 0;
     mesa_enabled_reset();
 }
 
@@ -197,20 +212,22 @@ void MGLWndRelease(void)
 int MGLCreateContext(uint32_t gDC)
 {
     int i, ret;
-    i = gDC & (MAX_PBUFFER -1);
-    if (gDC == ((MESAGL_HPBDC & 0xFFFFFFF0U) | i)) { ret = 0; }
-    else { 
-        ctx = glXCreateContext(dpy, xvi, NULL, true);
-        ret = (ctx)? 0:1;
+    i = gDC & (MAX_PBUFFER - 1);
+    if (gDC == ((MESAGL_HPBDC & 0xFFFFFFF0U) | i)) {
+        ret = 0;
+    }
+    else {
+        ctx[0] = glXCreateContext(dpy, xvi, NULL, true);
+        ret = (ctx[0])? 0:1;
     }
     return ret;
 }
 
-int MGLMakeCurrent(uint32_t cntxRC)
+int MGLMakeCurrent(uint32_t cntxRC, int level)
 {
-    uint32_t i = cntxRC & (MAX_PBUFFER - 1);
-    if (cntxRC == MESAGL_MAGIC) {
-        glXMakeContextCurrent(dpy, win, win, ctx);
+    uint32_t i = cntxRC & (MAX_PBUFFER - 1), n = level & 0x03U;
+    if (cntxRC == (MESAGL_MAGIC - n)) {
+        glXMakeContextCurrent(dpy, win, win, ctx[n]);
         InitMesaGLExt();
         if (!GetCreateWindow() && !GetKickFrame())
             mesa_enabled_set();
@@ -240,20 +257,6 @@ static int MGLPresetPixelFormat(void)
 {
     dpy = XOpenDisplay(NULL);
     win = mesa_prepare_window();
-
-    int attrib[] = {
-      GLX_X_RENDERABLE    , True,
-      GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-      GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-      GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-      GLX_RED_SIZE        , 8,
-      GLX_GREEN_SIZE      , 8,
-      GLX_BLUE_SIZE       , 8,
-      GLX_DEPTH_SIZE      , 24,
-      GLX_STENCIL_SIZE    , 8,
-      GLX_DOUBLEBUFFER    , True,
-      None
-    };
 
     int fbid, fbcnt;
     GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
@@ -368,8 +371,50 @@ void MGLFuncHandler(const char *name)
         const char *tmp = "WGL_EXT_swap_control "
             "WGL_EXT_extensions_string " "WGL_ARB_extensions_string "
             "WGL_ARB_pixel_format " "WGL_ARB_pbuffer "
+            "WGL_ARB_create_context " "WGL_ARB_create_context_profile "
             "WGL_ARB_render_texture";
         strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
+        return;
+    }
+    FUNCP_HANDLER("wglCreateContextAttribsARB") {
+        strncpy(fname, "glXCreateContextAttribsARB", sizeof(fname));
+        GLXContext (*fp)(Display *, GLXFBConfig, GLXContext, Bool, const int *) =
+            (GLXContext (*)(Display *, GLXFBConfig, GLXContext, Bool, const int *)) MesaGLGetProc(fname);
+        if (fp) {
+            uint32_t i, ret;
+            int fbcnt;
+            GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
+            argsp[1] = argsp[0];
+            if (argsp[0] == 0) {
+                glXMakeContextCurrent(dpy, None, None, NULL);
+                for (i = 4; i > 0;) {
+                    if (ctx[--i]) {
+                        glXDestroyContext(dpy, ctx[i]);
+                        ctx[i] = 0;
+                    }
+                }
+                ctx[0] = fp(dpy, fbcnf[0], 0, True, (const int *)&argsp[2]);
+                ret = (ctx[0])? 1:0;
+            }
+            else {
+                i = 0;
+                while (ctx[i]) i++;
+                ctx[i] = fp(dpy, fbcnf[0], ctx[i-1], True, (const int *)&argsp[2]);
+                ret = (ctx[i])? 1:0;
+            }
+            XFree(fbcnf);
+            XFlush(dpy);
+            argsp[0] = ret;
+            return;
+        }
+    }
+    FUNCP_HANDLER("wglGetPixelFormatAttribfvARB") {
+        const int *ia = (const int *)&argsp[4], n = argsp[2];
+        float pf[64];
+        for (int i = 0; i < n; i++)
+            pf[i] = (float)LookupAttribArray(iAttribs, ia[i]);
+        memcpy(&argsp[2], pf, n*sizeof(float));
+        argsp[0] = 1;
         return;
     }
     FUNCP_HANDLER("wglGetPixelFormatAttribivARB") {
@@ -378,15 +423,6 @@ void MGLFuncHandler(const char *name)
         for (int i = 0; i < n; i++)
             pi[i] = LookupAttribArray(iAttribs, ia[i]);
         memcpy(&argsp[2], pi, n*sizeof(int));
-        argsp[0] = 1;
-        return;
-    }
-    FUNCP_HANDLER("wglGetPixelFormatAttribfvARB") {
-        const int *ia = (const int *)&argsp[4], n = argsp[2];
-        float pf[64];
-        for (int i = 0; i < n; i++)
-            pf[i] = (float)LookupAttribArray(iAttribs, ia[i]);
-        memcpy(&argsp[2], pf, n*sizeof(float));
         argsp[0] = 1;
         return;
     }
@@ -437,7 +473,7 @@ void MGLFuncHandler(const char *name)
         };
         GLXFBConfig *pbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), ia, &pbcnt);
         PBDC[i] = glXCreatePbuffer(dpy, pbcnf[0], pa);
-        PBRC[i] = glXCreateNewContext(dpy, pbcnf[0], GLX_RGBA_TYPE, ctx, true);
+        PBRC[i] = glXCreateNewContext(dpy, pbcnf[0], GLX_RGBA_TYPE, ctx[0], true);
         XFree(pbcnf);
         argsp[0] = 1;
         argsp[1] = i;
