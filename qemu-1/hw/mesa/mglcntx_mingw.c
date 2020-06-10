@@ -408,9 +408,10 @@ void MGLFuncHandler(const char *name)
     }
     FUNCP_HANDLER("wglCreateContextAttribsARB") {
         if (pFnCreateContextAttribsARB) {
-            uint32_t i, ret;
-            argsp[1] = argsp[0];
-            if (argsp[0] == 0) {
+            uint32_t i = 0, ret;
+            while(hRC[i]) i++;
+            argsp[1] = (argsp[0])? i:0;
+            if (argsp[1] == 0) {
                 pFnMakeCurrent(NULL, NULL);
                 for (i = 4; i > 0;) {
                     if (hRC[--i]) {
@@ -422,8 +423,6 @@ void MGLFuncHandler(const char *name)
                 ret = (hRC[0])? 1:0;
             }
             else {
-                i = 0;
-                while(hRC[i]) i++;
                 hRC[i] = pFnCreateContextAttribsARB(hDC, hRC[i-1], (const int *)&argsp[2]);
                 ret = (hRC[i])? 1:0;
             }

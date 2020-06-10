@@ -15784,11 +15784,15 @@ wglCreateContextAttribsARB(HDC hDC,
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
   ret = argsp[0];
   if (ret) {
-      currDC = (uint32_t)hDC;
-      currGLRC = (hShareContext)? currGLRC:0;
-      level = (hShareContext)? level+1:0;
-      InitClientStates();
-      GLwnd = WindowFromDC(hDC);
+      if (currGLRC && hShareContext)
+          level++;
+      else {
+          currDC = (uint32_t)hDC;
+          currGLRC = 0;
+          level = 0;
+          InitClientStates();
+          GLwnd = WindowFromDC(hDC);
+      }
   }
   return (ret)? (HGLRC)(MESAGL_MAGIC - level):0;
 }

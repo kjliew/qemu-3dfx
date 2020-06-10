@@ -286,7 +286,7 @@ int MGLSetPixelFormat(int fmt, const void *p)
 
 int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
 {
-    DPRINTF("DescribePixelFormat()");
+    //DPRINTF("DescribePixelFormat()");
     if (xvi == 0)
         MGLPresetPixelFormat();
     memcpy(p, &pfd, sizeof(PIXELFORMATDESCRIPTOR));
@@ -381,11 +381,12 @@ void MGLFuncHandler(const char *name)
         GLXContext (*fp)(Display *, GLXFBConfig, GLXContext, Bool, const int *) =
             (GLXContext (*)(Display *, GLXFBConfig, GLXContext, Bool, const int *)) MesaGLGetProc(fname);
         if (fp) {
-            uint32_t i, ret;
+            uint32_t i = 0, ret;
             int fbcnt;
             GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
-            argsp[1] = argsp[0];
-            if (argsp[0] == 0) {
+            while (ctx[i]) i++;
+            argsp[1] = (argsp[0])? i:0;
+            if (argsp[1] == 0) {
                 glXMakeContextCurrent(dpy, None, None, NULL);
                 for (i = 4; i > 0;) {
                     if (ctx[--i]) {
@@ -397,8 +398,6 @@ void MGLFuncHandler(const char *name)
                 ret = (ctx[0])? 1:0;
             }
             else {
-                i = 0;
-                while (ctx[i]) i++;
                 ctx[i] = fp(dpy, fbcnf[0], ctx[i-1], True, (const int *)&argsp[2]);
                 ret = (ctx[i])? 1:0;
             }

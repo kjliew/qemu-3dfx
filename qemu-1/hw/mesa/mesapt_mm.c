@@ -1679,16 +1679,20 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
     MesaPTState *s = opaque;
 
     if (addr == 0xFBC) {
+        static int DllRef = 0;
         switch (val) {
             case 0xA0320:
                 if (InitMesaGL() == 0) {
                     s->MesaVer = (uint32_t)((val >> 12) & 0xFFU) | ((val & 0xFFFU) << 8);
                     MGLTmpContext();
+                    DllRef++;
                     DPRINTF("DLL loaded");
                 }
                 break;
             case 0xD0320:
                 MGLWndRelease();
+                if (--DllRef)
+                    break;
                 FiniMesaGL();
                 DPRINTF("DLL unloaded");
                 break;
@@ -1768,7 +1772,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 } while(0);
                 break;
             case 0xFF4:
-                DPRINTF("wglDeleteContext cntx %d curr %d %x", s->mglContext, s->mglCntxCurrent, (uint32_t)val);
+                DPRINTF("wglDeleteContext cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, (int)(MESAGL_MAGIC - val));
                 if (s->mglContext && s->mglCntxCurrent && (val == MESAGL_MAGIC)) {
                     s->perfs.last();
                     MGLDeleteContext(0);
@@ -1833,7 +1837,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                             s->mglContext = argsp[0];
                             ContextCreateCommon(s);
                         }
-                        DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d sh %x",
+                        DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d lvl %x",
                             s->mglContext, s->mglCntxCurrent, argsp[0], argsp[1]);
                     }
                 } while(0);
