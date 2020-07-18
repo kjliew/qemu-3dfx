@@ -49,7 +49,6 @@ uint16_t GetGLExtYear(void);
 size_t GetGLExtLength(void);
 int GetVertCacheMB(void);
 int GetCreateWindow(void);
-int GetKickFrame(void);
 void FiniMesaGL(void);
 void ImplMesaGLReset(void);
 int InitMesaGL(void);

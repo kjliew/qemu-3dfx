@@ -87,13 +87,14 @@ int wrTexTextureWxD(uint32_t target, uint32_t level, int compressed)
     int w, h, csize;
     void (__stdcall *fpra2p3)(uint32_t arg0, uint32_t arg1, uint32_t arg2, uintptr_t arg3);
     fpra2p3 = tblMesaGL[FEnum_glGetTexLevelParameteriv].ptr;
-    if (compressed) {
+    if (compressed)
         fpra2p3(target, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, (uintptr_t)&csize);
-        return csize;
+    else {
+        fpra2p3(target, level,  GL_TEXTURE_WIDTH, (uintptr_t)&w);
+        fpra2p3(target, level,  GL_TEXTURE_HEIGHT, (uintptr_t)&h);
+        csize = w * h;
     }
-    fpra2p3(target, level,  GL_TEXTURE_WIDTH, (uintptr_t)&w);
-    fpra2p3(target, level,  GL_TEXTURE_HEIGHT, (uintptr_t)&h);
-    return (w*h);
+    return csize;
 }
 
 int wrGetParamIa1p2(uint32_t FEnum, uint32_t arg0, uint32_t arg1)
@@ -151,8 +152,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
 #ifdef DEBUG_MESAGL
     const char *fstr = getGLFuncStr(FEnum);
     if (fstr) {
-        DPRINTF("                                                  \r"
-                "mgl_trace: %s", tblMesaGL[FEnum].sym);
+        DPRINTF("%-64s", tblMesaGL[FEnum].sym);
     }
 #endif
 
@@ -235,6 +235,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa0p3 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa0p3)(arg[0], parg[1], parg[2], parg[3]);
             GLDONE();
+        case FEnum_glBindFragDataLocationIndexed:
         case FEnum_glColorPointer:
         case FEnum_glDrawElements:
         case FEnum_glGetTexLevelParameterfv:
@@ -391,6 +392,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glPointParameterfvARB:
         case FEnum_glPointParameterfvEXT:
         case FEnum_glPointParameteriv:
+        case FEnum_glScissorIndexedv:
         case FEnum_glSelectBuffer:
         case FEnum_glVertexAttrib1dv:
         case FEnum_glVertexAttrib1dvARB:
@@ -438,6 +440,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glVertexAttrib4uivARB:
         case FEnum_glVertexAttrib4usv:
         case FEnum_glVertexAttrib4usvARB:
+        case FEnum_glViewportIndexedfv:
         case FEnum_glWeightbvARB:
         case FEnum_glWeightdvARB:
         case FEnum_glWeightfvARB:
@@ -564,7 +567,10 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             GLDONE();
         case FEnum_glBindAttribLocation:
         case FEnum_glBindAttribLocationARB:
+        case FEnum_glBindFragDataLocation:
+        case FEnum_glBindFragDataLocationEXT:
         case FEnum_glCallLists:
+        case FEnum_glDepthRangeArrayv:
         case FEnum_glEdgeFlagPointerEXT:
         case FEnum_glFeedbackBuffer:
         case FEnum_glFogCoordPointer:
@@ -582,12 +588,12 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetMaterialiv:
         case FEnum_glGetProgramiv:
         case FEnum_glGetProgramivARB:
-        case FEnum_glGetQueryiv:
-        case FEnum_glGetQueryivARB:
         case FEnum_glGetQueryObjectiv:
         case FEnum_glGetQueryObjectivARB:
         case FEnum_glGetQueryObjectuiv:
         case FEnum_glGetQueryObjectuivARB:
+        case FEnum_glGetQueryiv:
+        case FEnum_glGetQueryivARB:
         case FEnum_glGetShaderiv:
         case FEnum_glGetTexEnvfv:
         case FEnum_glGetTexEnviv:
@@ -614,6 +620,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glSamplerParameterIuiv:
         case FEnum_glSamplerParameterfv:
         case FEnum_glSamplerParameteriv:
+        case FEnum_glScissorArrayv:
         case FEnum_glTexEnvfv:
         case FEnum_glTexEnviv:
         case FEnum_glTexGendv:
@@ -649,6 +656,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glUniform4ivARB:
         case FEnum_glUniform4uiv:
         case FEnum_glUniform4uivEXT:
+        case FEnum_glViewportArrayv:
             usfp.fpa1p2 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa1p2)(arg[0], arg[1], parg[2]);
             GLDONE();
@@ -875,6 +883,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glUniform4fARB:
         case FEnum_glVertexAttrib4f:
         case FEnum_glVertexAttrib4fARB:
+        case FEnum_glViewportIndexedf:
             {
                 float a1, a2, a3, a4;
                 GLARGSF_N(a1,1);
@@ -1278,18 +1287,16 @@ static uint16_t cfg_xYear;
 static size_t cfg_xLength;
 static int cfg_vertCacheMB;
 static int cfg_createWnd;
-static int cfg_kickFrame;
 static void conf_MGLOptions(void)
 {
     cfg_xYear = 2003;
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
     cfg_createWnd = 0;
-    cfg_kickFrame = 4;
     FILE *fp = fopen(MESAGLCFG, "r");
     if (fp != NULL) {
         char line[32];
-        int i, y, n, v, w, k;
+        int i, y, n, v, w;
         while (fgets(line, 32, fp)) {
             i = sscanf(line, "ExtensionsYear,%d", &y);
             cfg_xYear = (i == 1)? y:cfg_xYear;
@@ -1301,8 +1308,6 @@ static void conf_MGLOptions(void)
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
             cfg_createWnd = (i == 1)? w:cfg_createWnd;
 #endif
-            i = sscanf(line, "KickFrameCount,%d", &k);
-            cfg_kickFrame = (i == 1)? k:cfg_kickFrame;
         }
         fclose(fp);
     }
@@ -1312,7 +1317,6 @@ uint16_t GetGLExtYear(void) { return cfg_xYear; }
 size_t GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetCreateWindow(void) { return cfg_createWnd; }
-int GetKickFrame(void) { return cfg_kickFrame; }
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 static HINSTANCE hDll = 0;

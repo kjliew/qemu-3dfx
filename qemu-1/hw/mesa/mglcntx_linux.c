@@ -194,7 +194,7 @@ void MGLDeleteContext(int level)
     glXMakeContextCurrent(dpy, None, None, NULL);
     glXDestroyContext(dpy, ctx[n]);
     ctx[n] = 0;
-    mesa_enabled_reset();
+    MGLActivateHandler(0);
 }
 
 void MGLWndRelease(void)
@@ -229,8 +229,6 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         glXMakeContextCurrent(dpy, win, win, ctx[n]);
         InitMesaGLExt();
-        if (!GetCreateWindow() && !GetKickFrame())
-            mesa_enabled_set();
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         glXMakeContextCurrent(dpy, PBDC[i], PBDC[i], PBRC[i]);
@@ -242,15 +240,6 @@ int MGLSwapBuffers(void)
 {
     glXSwapBuffers(dpy, win);
     return 1;
-}
-
-void MGLKickFrameProc(int k)
-{
-    if (!GetCreateWindow()) {
-        if (k == 1)
-            mesa_enabled_set();
-        DPRINTF(">>>>>>>> frame (%d) <<<<<<<<", k);
-    }
 }
 
 static int MGLPresetPixelFormat(void)
@@ -295,17 +284,20 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
 
 void MGLActivateHandler(int i)
 {
+    static int last = 0;
 #define WA_ACTIVE 1
 #define WA_INACTIVE 0
-    DPRINTF("                                                   \r"
-            "glcntx: wm_activate %d", i);
-    switch (i) {
-        case WA_ACTIVE:
-            mesa_enabled_set();
-            break;
-        case WA_INACTIVE:
-            mesa_enabled_reset();
-            break;
+    if (i != last) {
+        last = i;
+        DPRINTF("wm_activate %d%-32s", i," ");
+        switch (i) {
+            case WA_ACTIVE:
+                mesa_enabled_set();
+                break;
+            case WA_INACTIVE:
+                mesa_enabled_reset();
+                break;
+        }
     }
 }
 

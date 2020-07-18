@@ -588,16 +588,19 @@ void PT_CALL glBindBuffersRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindBuffersRange;
 }
 void PT_CALL glBindFragDataLocation(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, ALIGNED((strlen((char *)arg2) + 1)));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindFragDataLocation;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindFragDataLocation, 3);
 }
 void PT_CALL glBindFragDataLocationEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, ALIGNED((strlen((char *)arg2) + 1)));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindFragDataLocationEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindFragDataLocationEXT, 3);
 }
 void PT_CALL glBindFragDataLocationIndexed(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    fifoAddData(0, arg2, ALIGNED((strlen((char *)arg3) + 1)));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindFragDataLocationIndexed;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindFragDataLocationIndexed, 4);
 }
 void PT_CALL glBindFragmentShaderATI(uint32_t arg0) {
     pt[1] = arg0; 
@@ -2280,8 +2283,9 @@ void PT_CALL glDepthRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDepthRange, 4);
 }
 void PT_CALL glDepthRangeArrayv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, arg1*2*sizeof(double));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDepthRangeArrayv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDepthRangeArrayv, 3);
 }
 void PT_CALL glDepthRangeIndexed(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -9092,8 +9096,9 @@ void PT_CALL glScissor(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glScissor, 4);
 }
 void PT_CALL glScissorArrayv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, ALIGNED(arg1*4*sizeof(int)));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glScissorArrayv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glScissorArrayv, 3);
 }
 void PT_CALL glScissorExclusiveArrayvNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -9105,11 +9110,12 @@ void PT_CALL glScissorExclusiveNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
 }
 void PT_CALL glScissorIndexed(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glScissorIndexed;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glScissorIndexed, 5);
 }
 void PT_CALL glScissorIndexedv(uint32_t arg0, uint32_t arg1) {
+    fifoAddData(0, arg1, ALIGNED(4*sizeof(int)));
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glScissorIndexedv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glScissorIndexedv, 2);
 }
 void PT_CALL glSecondaryColor3b(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -12710,16 +12716,18 @@ void PT_CALL glViewport(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t ar
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glViewport, 4);
 }
 void PT_CALL glViewportArrayv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, ALIGNED(arg1*4*sizeof(int)));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glViewportArrayv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glViewportArrayv, 3);
 }
 void PT_CALL glViewportIndexedf(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glViewportIndexedf;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glViewportIndexedf, 5);
 }
 void PT_CALL glViewportIndexedfv(uint32_t arg0, uint32_t arg1) {
+    fifoAddData(0, arg1, ALIGNED(4*sizeof(float)));
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glViewportIndexedfv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glViewportIndexedfv, 2);
 }
 void PT_CALL glViewportPositionWScaleNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -15701,7 +15709,7 @@ static uint32_t PT_CALL wglGetExtensionsStringEXT(void)
 typedef void *HPBUFFERARB;
 
 /* WGL_ARB_pixel_format */
-static BOOL __stdcall
+static BOOL WINAPI
 wglGetPixelFormatAttribivARB (HDC hdc,
 			      int iPixelFormat,
 			      int iLayerPlane,
@@ -15721,7 +15729,7 @@ wglGetPixelFormatAttribivARB (HDC hdc,
   return ret;
 }
 
-static BOOL __stdcall
+static BOOL WINAPI
 wglGetPixelFormatAttribfvARB (HDC hdc,
 			      int iPixelFormat,
 			      int iLayerPlane,
@@ -15741,7 +15749,7 @@ wglGetPixelFormatAttribfvARB (HDC hdc,
   return ret;
 }
 
-static BOOL __stdcall
+static BOOL WINAPI
 wglChoosePixelFormatARB (HDC hdc,
 			 const int *piAttribIList,
 			 const FLOAT *pfAttribFList,
@@ -15768,7 +15776,7 @@ wglChoosePixelFormatARB (HDC hdc,
 
 /* WGL_ARB_create_context */
 static int level;
-static HGLRC
+static HGLRC WINAPI
 wglCreateContextAttribsARB(HDC hDC,
                            HGLRC hShareContext,
                            const int *attribList)
@@ -15798,7 +15806,7 @@ wglCreateContextAttribsARB(HDC hDC,
 }
 
 /* WGL_ARB_render_texture */
-static BOOL __stdcall
+static BOOL WINAPI
 wglBindTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
 {
   WGL_FUNCP("wglBindTexImageARB");
@@ -15808,7 +15816,7 @@ wglBindTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
   return argsp[0];
 }
 
-static BOOL __stdcall
+static BOOL WINAPI
 wglReleaseTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
 {
   WGL_FUNCP("wglReleaseTexImageARB");
@@ -15818,7 +15826,7 @@ wglReleaseTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
   return argsp[0];
 }
 
-static BOOL __stdcall
+static BOOL WINAPI
 wglSetPbufferAttribARB (HPBUFFERARB hPbuffer,
 			const int *piAttribList)
 {
@@ -15836,7 +15844,7 @@ wglSetPbufferAttribARB (HPBUFFERARB hPbuffer,
 }
 
 /* WGL_ARB_pbuffer */
-static HPBUFFERARB __stdcall
+static HPBUFFERARB WINAPI
 wglCreatePbufferARB (HDC hDC,
 		     int iPixelFormat,
 		     int iWidth,
@@ -15857,7 +15865,7 @@ wglCreatePbufferARB (HDC hDC,
   return (HPBUFFERARB)currPB[argsp[1] & (MAX_PBUFFER - 1)];
 }
 
-static HDC __stdcall
+static HDC WINAPI
 wglGetPbufferDCARB (HPBUFFERARB hPbuffer)
 {
   uint32_t ret = 0;
@@ -15867,7 +15875,7 @@ wglGetPbufferDCARB (HPBUFFERARB hPbuffer)
   return (HDC)ret;
 }
 
-static int __stdcall
+static int WINAPI
 wglReleasePbufferDCARB (HPBUFFERARB hPbuffer, HDC hDC)
 {
   //DPRINTF("ReleasePbufferDCARB %p %p", hPbuffer, hDC);
@@ -15875,7 +15883,7 @@ wglReleasePbufferDCARB (HPBUFFERARB hPbuffer, HDC hDC)
   return (TRUE);
 }
 
-static BOOL __stdcall
+static BOOL WINAPI
 wglDestroyPbufferARB (HPBUFFERARB hPbuffer)
 {
   WGL_FUNCP("wglDestroyPbufferARB");
@@ -15886,7 +15894,7 @@ wglDestroyPbufferARB (HPBUFFERARB hPbuffer)
   return argsp[0];
 }
 
-static BOOL __stdcall
+static BOOL WINAPI
 wglQueryPbufferARB (HPBUFFERARB hPbuffer,
 		    int iAttribute,
 		    int *piValue)

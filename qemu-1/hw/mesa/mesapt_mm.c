@@ -76,8 +76,8 @@ typedef struct MesaPTState
     int arrayBuf;
     int elemArryBuf;
     mapbufo_t BufObj[2];
-    uint32_t szUsedBuf;;
-    int KickFrame;
+    uint32_t szUsedBuf;
+    QEMUTimer *dispTimer;
     PERFSTAT perfs;
 
 } MesaPTState;
@@ -326,6 +326,17 @@ static void InitClientStates(MesaPTState *s)
     s->szPackRow = 0; s->szUnpackRow = 0;
 }
 
+static void dispTimerProc(void *opaque)
+{
+    MGLActivateHandler(0);
+}
+
+static void dispTimerSched(QEMUTimer *ts)
+{
+#define DISP_TIMER_MS 2000
+    timer_mod(ts, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + DISP_TIMER_MS);
+}
+
 static uint64_t mesapt_read(void *opaque, hwaddr addr, unsigned size)
 {
     MesaPTState *s = opaque;
@@ -465,6 +476,11 @@ static void processArgs(MesaPTState *s)
         case FEnum_glCallLists:
             s->datacb = ALIGNED(s->arg[0] * szgldata(0, s->arg[1]));
             s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glScissorIndexedv:
+        case FEnum_glViewportIndexedfv:
+            s->datacb = ALIGNED(4*sizeof(uint32_t));
+            s->parg[1] = VAL(s->hshm);
             break;
         case FEnum_glClipPlane:
             s->datacb = 4*sizeof(double);
@@ -1258,8 +1274,14 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glBindAttribLocation:
         case FEnum_glBindAttribLocationARB:
+        case FEnum_glBindFragDataLocation:
+        case FEnum_glBindFragDataLocationEXT:
             s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
             s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glBindFragDataLocationIndexed:
+            s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
+            s->parg[3] = VAL(s->hshm);
             break;
         case FEnum_glGetAttribLocation:
         case FEnum_glGetAttribLocationARB:
@@ -1341,6 +1363,7 @@ static void processArgs(MesaPTState *s)
             s->datacb = ALIGNED(3*s->arg[1]*sizeof(uint32_t));
             s->parg[2] = VAL(s->hshm);
             break;
+        case FEnum_glScissorArrayv:
         case FEnum_glUniform4fv:
         case FEnum_glUniform4fvARB:
         case FEnum_glUniform4iv:
@@ -1349,6 +1372,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glUniform4uivEXT:
         case FEnum_glUniformMatrix2fv:
         case FEnum_glUniformMatrix2fvARB:
+        case FEnum_glViewportArrayv:
             s->datacb = ALIGNED(4*s->arg[1]*sizeof(uint32_t));
             s->parg[2] = VAL(s->hshm);
             s->parg[3] = VAL(s->hshm);
@@ -1382,6 +1406,7 @@ static void processArgs(MesaPTState *s)
             s->datacb = s->arg[1]*sizeof(double);
             s->parg[2] = VAL(s->hshm);
             break;
+        case FEnum_glDepthRangeArrayv:
         case FEnum_glUniform2dv:
             s->datacb = 2*s->arg[1]*sizeof(double);
             s->parg[2] = VAL(s->hshm);
@@ -1477,12 +1502,10 @@ static void processFRet(MesaPTState *s)
         case FEnum_glEnableVertexAttribArrayARB:
             vtxarry_state(s, vattr2arry_state(s, s->arg[0]), 1);
             break;
+        case FEnum_glFinish:
         case FEnum_glFlush:
-            if (s->KickFrame) {
-                s->KickFrame = 1;
-                MGLKickFrameProc(s->KickFrame);
-                s->KickFrame--;
-            }
+            MGLActivateHandler(1);
+            dispTimerSched(s->dispTimer);
             break;
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
@@ -1622,7 +1645,7 @@ static void processFifo(MesaPTState *s)
 #define DEBUG_FIFO 0
 #if DEBUG_FIFO
         const char *fstr = getGLFuncStr(s->FEnum);
-        if ((s->KickFrame == 0) && fstr)
+        if (fstr)
             DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifoptr[0], dataptr[0]);
         if (dataptr[0] >= MAX_DATA) {
             DPRINTF("  *WARN* Data bound overlapped 0x%02x dataptr %06X", s->FEnum, dataptr[0]);
@@ -1753,7 +1776,6 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         DPRINTF("======== %s ========", (char *)&ptVer[1]);
                         s->mglCntxCurrent = MGLMakeCurrent(ptVer[0], level)? 0:1;
                         s->logpname = g_new0(uint8_t, 0x2000);
-                        s->KickFrame = GetKickFrame();
                         s->extnYear = GetGLExtYear();
                         s->extnLength = GetGLExtLength();
                         s->szVertCache = GetVertCacheMB() << 19;
@@ -1762,8 +1784,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
                         DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
                                 (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
-                        if (s->KickFrame)
-                            MGLKickFrameProc(s->KickFrame);
+                        s->dispTimer = timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0);
                     }
                     else {
                         //DPRINTF("wglMakeCurrent cntx %d curr %d %x lvl %d", s->mglContext, s->mglCntxCurrent, ptVer[0], level);
@@ -1776,6 +1797,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 if (s->mglContext && s->mglCntxCurrent && (val == MESAGL_MAGIC)) {
                     s->perfs.last();
                     MGLDeleteContext(0);
+                    timer_del(s->dispTimer);
+                    timer_free(s->dispTimer);
                     g_free(s->logpname);
                     s->mglContext = 0;
                     s->mglCntxCurrent = 0;
@@ -1790,11 +1813,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 s->perfs.stat();
                 do {
                     uint32_t *swapRet = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - ALIGNED(1)));
-                    if (s->KickFrame) {
-                        MGLKickFrameProc(s->KickFrame);
-                        s->KickFrame--;
-                    }
                     swapRet[0] = MGLSwapBuffers();
+                    dispTimerSched(s->dispTimer);
                 } while(0);
                 break;
             case 0xFEC:
@@ -1845,9 +1865,14 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xFD8:
                 do {
                     int *i = (int *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
-                    if (s->KickFrame == 0)
+                    if (s->mglContext && s->mglCntxCurrent) {
+                        DPRINTF("ActivateHandler %d", i[0]);
                         MGLActivateHandler(i[0]);
+                        if (i[0])
+                            dispTimerSched(s->dispTimer);
+                    }
                 } while(0);
+                break;
             default:
                 break;
         }
