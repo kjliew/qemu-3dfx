@@ -480,7 +480,7 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glScissorIndexedv:
         case FEnum_glViewportIndexedfv:
-            s->datacb = ALIGNED(4*sizeof(uint32_t));
+            s->datacb = 4*sizeof(uint32_t);
             s->parg[1] = VAL(s->hshm);
             break;
         case FEnum_glClipPlane:
@@ -1267,7 +1267,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMap1d:
         case FEnum_glMap1f:
             s->datacb = (s->FEnum == FEnum_glMap1d)?
-                ALIGNED(szglname(s->arg[0])*s->arg[5]*s->arg[6]*sizeof(double)):
+                (szglname(s->arg[0])*s->arg[5]*s->arg[6]*sizeof(double)):
                 ALIGNED(szglname(s->arg[0])*s->arg[3]*s->arg[4]*sizeof(float));
             s->parg[1] = VAL(s->hshm);
             s->parg[3] = VAL(s->hshm);
@@ -1275,7 +1275,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMap2d:
         case FEnum_glMap2f:
             s->datacb = (s->FEnum == FEnum_glMap2d)?
-                ALIGNED(szglname(s->arg[0])*s->arg[5]*s->arg[6]*s->arg[11]*s->arg[12]*sizeof(double)):
+                (szglname(s->arg[0])*s->arg[5]*s->arg[6]*s->arg[11]*s->arg[12]*sizeof(double)):
                 ALIGNED(szglname(s->arg[0])*s->arg[3]*s->arg[4]*s->arg[7]*s->arg[8]*sizeof(float));
             s->parg[1] = VAL(s->hshm);
             break;
@@ -1358,7 +1358,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glUniform2ivARB:
         case FEnum_glUniform2uiv:
         case FEnum_glUniform2uivEXT:
-            s->datacb = ALIGNED(2*s->arg[1]*sizeof(uint32_t));
+            s->datacb = 2*s->arg[1]*sizeof(uint32_t);
             s->parg[2] = VAL(s->hshm);
             break;
         case FEnum_glUniform3fv:
@@ -1380,18 +1380,18 @@ static void processArgs(MesaPTState *s)
         case FEnum_glUniformMatrix2fv:
         case FEnum_glUniformMatrix2fvARB:
         case FEnum_glViewportArrayv:
-            s->datacb = ALIGNED(4*s->arg[1]*sizeof(uint32_t));
+            s->datacb = 4*s->arg[1]*sizeof(uint32_t);
             s->parg[2] = VAL(s->hshm);
             s->parg[3] = VAL(s->hshm);
             break;
         case FEnum_glUniformMatrix2x3fv:
         case FEnum_glUniformMatrix3x2fv:
-            s->datacb = ALIGNED(6*s->arg[1]*sizeof(uint32_t));
+            s->datacb = 6*s->arg[1]*sizeof(uint32_t);
             s->parg[3] = VAL(s->hshm);
             break;
         case FEnum_glUniformMatrix2x4fv:
         case FEnum_glUniformMatrix4x2fv:
-            s->datacb = ALIGNED(8*s->arg[1]*sizeof(uint32_t));
+            s->datacb = 8*s->arg[1]*sizeof(uint32_t);
             s->parg[3] = VAL(s->hshm);
             break;
         case FEnum_glUniformMatrix3fv:
@@ -1401,12 +1401,12 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glUniformMatrix3x4fv:
         case FEnum_glUniformMatrix4x3fv:
-            s->datacb = ALIGNED(12*s->arg[1]*sizeof(uint32_t));
+            s->datacb = 12*s->arg[1]*sizeof(uint32_t);
             s->parg[3] = VAL(s->hshm);
             break;
         case FEnum_glUniformMatrix4fv:
         case FEnum_glUniformMatrix4fvARB:
-            s->datacb = ALIGNED(16*s->arg[1]*sizeof(uint32_t));
+            s->datacb = 16*s->arg[1]*sizeof(uint32_t);
             s->parg[3] = VAL(s->hshm);
             break;
         case FEnum_glUniform1dv:

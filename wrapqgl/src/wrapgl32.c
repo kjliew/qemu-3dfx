@@ -6065,7 +6065,7 @@ void PT_CALL glMakeTextureHandleResidentNV(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMakeTextureHandleResidentNV;
 }
 void PT_CALL glMap1d(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7) {
-    fifoAddData(0, arg7, ALIGNED(szglname(arg0)*arg5*arg6*sizeof(double)));
+    fifoAddData(0, arg7, szglname(arg0)*arg5*arg6*sizeof(double));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glMap1d, 8);
 }
@@ -6079,7 +6079,7 @@ void PT_CALL glMap1xOES(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t ar
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMap1xOES;
 }
 void PT_CALL glMap2d(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10, uint32_t arg11, uint32_t arg12, uint32_t arg13) {
-    fifoAddData(0, arg13, ALIGNED(szglname(arg0)*arg5*arg6*arg11*arg12*sizeof(double)));
+    fifoAddData(0, arg13, szglname(arg0)*arg5*arg6*arg11*arg12*sizeof(double));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; pt[12] = arg11; pt[13] = arg12; pt[14] = arg13; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glMap2d, 14);
 }
@@ -6097,21 +6097,21 @@ void * PT_CALL glMapBuffer(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBuffer;
     szBuf = *pt0;
-    return (void *)&fbtm[(MGLFBT_SIZE - ALIGNED(szBuf)) >> 2];
+    return (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
 }
 void * PT_CALL glMapBufferARB(uint32_t arg0, uint32_t arg1) {
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferARB;
     szBuf = *pt0;
-    return (void *)&fbtm[(MGLFBT_SIZE - ALIGNED(szBuf)) >> 2];
+    return (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
 }
 void * PT_CALL glMapBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferRange;
     szBuf = *pt0;
-    return (void *)&fbtm[(MGLFBT_SIZE - ALIGNED(szBuf)) >> 2];
+    return (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
 }
 void PT_CALL glMapControlPointsNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
@@ -9096,7 +9096,7 @@ void PT_CALL glScissor(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glScissor, 4);
 }
 void PT_CALL glScissorArrayv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(arg1*4*sizeof(int)));
+    fifoAddData(0, arg2, arg1*4*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glScissorArrayv, 3);
 }
@@ -9113,7 +9113,7 @@ void PT_CALL glScissorIndexed(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint3
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glScissorIndexed, 5);
 }
 void PT_CALL glScissorIndexedv(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(4*sizeof(int)));
+    fifoAddData(0, arg1, 4*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glScissorIndexedv, 2);
 }
@@ -10679,12 +10679,12 @@ void PT_CALL glUniform2fARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2fARB, 3);
 }
 void PT_CALL glUniform2fv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(2*arg1*sizeof(float)));
+    fifoAddData(0, arg2, 2*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2fv, 3);
 }
 void PT_CALL glUniform2fvARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(2*arg1*sizeof(float)));
+    fifoAddData(0, arg2, 2*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2fvARB, 3);
 }
@@ -10713,12 +10713,12 @@ void PT_CALL glUniform2iARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2iARB, 3);
 }
 void PT_CALL glUniform2iv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(2*arg1*sizeof(int)));
+    fifoAddData(0, arg2, 2*arg1*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2iv, 3);
 }
 void PT_CALL glUniform2ivARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(2*arg1*sizeof(int)));
+    fifoAddData(0, arg2, 2*arg1*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2ivARB, 3);
 }
@@ -10747,12 +10747,12 @@ void PT_CALL glUniform2uiEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2uiEXT, 3);
 }
 void PT_CALL glUniform2uiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(2*arg1*sizeof(unsigned int)));
+    fifoAddData(0, arg2, 2*arg1*sizeof(unsigned int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2uiv, 3);
 }
 void PT_CALL glUniform2uivEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(2*arg1*sizeof(unsigned int)));
+    fifoAddData(0, arg2, 2*arg1*sizeof(unsigned int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform2uivEXT, 3);
 }
@@ -10856,7 +10856,7 @@ void PT_CALL glUniform4d(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t a
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4d, 9);
 }
 void PT_CALL glUniform4dv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, 4*arg1*sizeof(int));
+    fifoAddData(0, arg2, 4*arg1*sizeof(double));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4dv, 3);
 }
@@ -10869,12 +10869,12 @@ void PT_CALL glUniform4fARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4fARB, 5);
 }
 void PT_CALL glUniform4fv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(4*arg1*sizeof(float)));
+    fifoAddData(0, arg2, 4*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4fv, 3);
 }
 void PT_CALL glUniform4fvARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(4*arg1*sizeof(float)));
+    fifoAddData(0, arg2, 4*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4fvARB, 3);
 }
@@ -10903,12 +10903,12 @@ void PT_CALL glUniform4iARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4iARB, 5);
 }
 void PT_CALL glUniform4iv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(4*arg1*sizeof(int)));
+    fifoAddData(0, arg2, 4*arg1*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4iv, 3);
 }
 void PT_CALL glUniform4ivARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(4*arg1*sizeof(int)));
+    fifoAddData(0, arg2, 4*arg1*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4ivARB, 3);
 }
@@ -10937,12 +10937,12 @@ void PT_CALL glUniform4uiEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4uiEXT, 5);
 }
 void PT_CALL glUniform4uiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(4*arg1*sizeof(unsigned int)));
+    fifoAddData(0, arg2, 4*arg1*sizeof(unsigned int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4uiv, 3);
 }
 void PT_CALL glUniform4uivEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(4*arg1*sizeof(unsigned int)));
+    fifoAddData(0, arg2, 4*arg1*sizeof(unsigned int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniform4uivEXT, 3);
 }
@@ -10976,12 +10976,12 @@ void PT_CALL glUniformMatrix2dv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix2dv, 4);
 }
 void PT_CALL glUniformMatrix2fv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(4*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 4*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix2fv, 4);
 }
 void PT_CALL glUniformMatrix2fvARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(4*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 4*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix2fvARB, 4);
 }
@@ -10991,7 +10991,7 @@ void PT_CALL glUniformMatrix2x3dv(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix2x3dv, 4);
 }
 void PT_CALL glUniformMatrix2x3fv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(6*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 6*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix2x3fv, 4);
 }
@@ -11001,7 +11001,7 @@ void PT_CALL glUniformMatrix2x4dv(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix2x4dv, 4);
 }
 void PT_CALL glUniformMatrix2x4fv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(8*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 8*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix2x4fv, 4);
 }
@@ -11026,7 +11026,7 @@ void PT_CALL glUniformMatrix3x2dv(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix3x2dv, 4);
 }
 void PT_CALL glUniformMatrix3x2fv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(6*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 6*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix3x2fv, 4);
 }
@@ -11036,7 +11036,7 @@ void PT_CALL glUniformMatrix3x4dv(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix3x4dv, 4);
 }
 void PT_CALL glUniformMatrix3x4fv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(12*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 12*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix3x4fv, 4);
 }
@@ -11046,12 +11046,12 @@ void PT_CALL glUniformMatrix4dv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix4dv, 4);
 }
 void PT_CALL glUniformMatrix4fv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(16*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 16*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix4fv, 4);
 }
 void PT_CALL glUniformMatrix4fvARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(16*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 16*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix4fvARB, 4);
 }
@@ -11061,7 +11061,7 @@ void PT_CALL glUniformMatrix4x2dv(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix4x2dv, 4);
 }
 void PT_CALL glUniformMatrix4x2fv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(8*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 8*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix4x2fv, 4);
 }
@@ -11071,7 +11071,7 @@ void PT_CALL glUniformMatrix4x3dv(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix4x3dv, 4);
 }
 void PT_CALL glUniformMatrix4x3fv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(12*arg1*sizeof(float)));
+    fifoAddData(0, arg3, 12*arg1*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformMatrix4x3fv, 4);
 }
@@ -12716,7 +12716,7 @@ void PT_CALL glViewport(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t ar
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glViewport, 4);
 }
 void PT_CALL glViewportArrayv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED(arg1*4*sizeof(int)));
+    fifoAddData(0, arg2, arg1*4*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glViewportArrayv, 3);
 }
@@ -12725,7 +12725,7 @@ void PT_CALL glViewportIndexedf(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glViewportIndexedf, 5);
 }
 void PT_CALL glViewportIndexedfv(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(4*sizeof(float)));
+    fifoAddData(0, arg1, 4*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glViewportIndexedfv, 2);
 }
