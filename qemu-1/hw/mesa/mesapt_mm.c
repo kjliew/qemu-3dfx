@@ -75,7 +75,8 @@ typedef struct MesaPTState
     int szPackRow, szUnpackRow;
     int arrayBuf;
     int elemArryBuf;
-    mapbufo_t BufObj[2];
+    mapbufo_t *BufObj;
+    int BufIdx;
     uint32_t szUsedBuf;
     QEMUTimer *dispTimer;
     PERFSTAT perfs;
@@ -1133,30 +1134,36 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMapBufferRange:
             s->parg[1] = s->arg[1];
             s->parg[2] = s->arg[2];
+            s->BufObj = LookupBufObj(s->BufIdx);
             if (s->FEnum == FEnum_glMapBufferRange) {
-                wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->szUsedBuf)), s->arg[1], s->arg[2]);
-                //DPRINTF("MapBufferRange %x %x %x %x sz %x", s->arg[0], s->arg[1], s->arg[2], s->arg[3], s->szUsedBuf);
+                wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE - s->szUsedBuf), s->arg[1], s->arg[2]);
+                //DPRINTF("MapBufferRange %x %x %x %x idx %x used %x", s->arg[0], s->arg[1], s->arg[2], s->arg[3], s->BufIdx, s->szUsedBuf);
             }
             else {
-                s->BufObj[(s->arg[0] & 0x01U)].offst = s->arg[1];
-                s->BufObj[(s->arg[0] & 0x01U)].range = s->arg[2];
-                //DPRINTF("FlushMappedBufferRange %x %x %x", s->arg[0], s->arg[1], s->arg[2]);
+                s->BufObj->offst = s->arg[1];
+                s->BufObj->range = s->arg[2];
+                //DPRINTF("FlushMappedBufferRange %x %x %x idx %x", s->arg[0], s->arg[1], s->arg[2], s->BufIdx);
             }
             break;
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
-            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->szUsedBuf)), 0, 0);
+            s->BufObj = LookupBufObj(s->BufIdx);
+            wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE - s->szUsedBuf), 0, 0);
             break;
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
-            if (s->BufObj[(s->arg[0] & 0x01U)].hptr &&
-                (s->BufObj[(s->arg[0] & 0x01U)].acc & GL_MAP_WRITE_BIT)) {
+            s->BufObj = LookupBufObj(s->BufIdx);
+            if (s->BufObj->hptr && (s->BufObj->acc & GL_MAP_WRITE_BIT)) {
                 wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
-                    s->arg[0], s->BufObj[(s->arg[0] & 0x01U)]);
-                s->BufObj[(s->arg[0] & 0x01U)].hptr = 0;
-                s->szUsedBuf -= s->BufObj[(s->arg[0] & 0x01U)].mapsz;
+                    s->arg[0], s->BufObj);
+                if (s->szUsedBuf == s->BufObj->mused + ALIGNED(s->BufObj->mapsz))
+                    s->szUsedBuf -= ALIGNED(s->BufObj->mapsz);
             }
-            //DPRINTF("UnmapBuffer %x %x", s->arg[0], s->szUsedBuf);
+            if (s->BufObj->hptr == 0)
+                DPRINTF("  *WARN* UnmapBuffer invalid host ptr %p", s->BufObj->hptr);
+            //DPRINTF("UnmapBuffer %x used %x idx %x", s->arg[0], s->szUsedBuf, s->BufIdx);
+            if (FreeBufObj(s->BufIdx) == 0)
+                s->szUsedBuf = 0;
             break;
         case FEnum_glGetTexImage:
             s->parg[0] = s->arg[4];
@@ -1473,6 +1480,7 @@ static void processFRet(MesaPTState *s)
             s->pixUnpackBuf = (s->arg[0] == GL_PIXEL_UNPACK_BUFFER)? s->arg[1]:s->pixUnpackBuf;
             s->arrayBuf = (s->arg[0] == GL_ARRAY_BUFFER)? s->arg[1]:s->arrayBuf;
             s->elemArryBuf = (s->arg[0] == GL_ELEMENT_ARRAY_BUFFER)? s->arg[1]:s->elemArryBuf;
+            s->BufIdx = s->arg[1];
             break;
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
@@ -1510,28 +1518,30 @@ static void processFRet(MesaPTState *s)
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
         case FEnum_glMapBufferRange:
-            if (s->BufObj[(s->arg[0] & 0x01U)].hptr) {
-                DPRINTF("  *WARN* GL buffer object contention, target %04x access %04x",
-                    s->arg[0], ((s->FEnum == FEnum_glMapBufferRange)? s->arg[3]:s->arg[1]));
+            if (s->BufObj->hptr) {
+                DPRINTF("  *WARN* GL buffer object contention, index %x target %04x access %04x",
+                    s->BufIdx, s->arg[0], ((s->FEnum == FEnum_glMapBufferRange)? s->arg[3]:s->arg[1]));
             }
-            s->BufObj[(s->arg[0] & 0x01U)].hptr = (void *)(s->FRet);
-            s->BufObj[(s->arg[0] & 0x01U)].shmep = s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->szUsedBuf);
-            s->BufObj[(s->arg[0] & 0x01U)].offst = 0;
-            s->BufObj[(s->arg[0] & 0x01U)].range = 0;
-            s->BufObj[(s->arg[0] & 0x01U)].acc = 0;
+            s->BufObj->hptr = (void *)(s->FRet);
+            s->BufObj->mused = s->szUsedBuf;
+            s->BufObj->shmep = s->fbtm_ptr + MGLFBT_SIZE - s->szUsedBuf;
+            s->BufObj->offst = 0;
+            s->BufObj->range = 0;
+            s->BufObj->acc = 0;
             if (s->FEnum == FEnum_glMapBufferRange) {
-                s->BufObj[(s->arg[0] & 0x01U)].acc = s->arg[3];
-                s->BufObj[(s->arg[0] & 0x01U)].mapsz = s->arg[2];
+                s->BufObj->acc = s->arg[3];
+                s->BufObj->mapsz = s->arg[2];
             }
             else {
-                s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
-                s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_WRITE_ONLY)? GL_MAP_WRITE_BIT:0;
-                s->BufObj[(s->arg[0] & 0x01U)].acc |= (s->arg[1] == GL_READ_WRITE)? (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT):0;
-                s->BufObj[(s->arg[0] & 0x01U)].mapsz = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)?
+                s->BufObj->acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
+                s->BufObj->acc |= (s->arg[1] == GL_WRITE_ONLY)? GL_MAP_WRITE_BIT:0;
+                s->BufObj->acc |= (s->arg[1] == GL_READ_WRITE)? (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT):0;
+                s->BufObj->mapsz = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)?
                     FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB, s->arg[0], GL_BUFFER_SIZE);
             }
-            s->szUsedBuf += s->BufObj[(s->arg[0] & 0x01U)].mapsz;
+            s->szUsedBuf += ALIGNED(s->BufObj->mapsz);
             s->FRet = s->szUsedBuf;
+            //DPRINTF("MapBuffer hptr %p shm %p sz %x", s->BufObj->hptr, (s->BufObj->shmep - ALIGNED(s->BufObj->mapsz)), (uint32_t)s->FRet);
             break;
         case FEnum_glPixelStorei:
             s->szPackRow = (s->arg[0] == GL_PACK_ROW_LENGTH)? s->arg[1]:s->szPackRow;
@@ -1692,7 +1702,7 @@ static void ContextCreateCommon(MesaPTState *s)
 {
     s->fifoMax = 0; s->dataMax = 0;
     s->szUsedBuf = 0;
-    memset(s->BufObj, 0, sizeof(mapbufo_t[2]));
+    InitBufObj();
     InitClientStates(s);
     ImplMesaGLReset();
 }

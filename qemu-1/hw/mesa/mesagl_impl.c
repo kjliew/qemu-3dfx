@@ -123,17 +123,17 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
             src = (range == 0)? wrMap(target, GL_READ_ONLY):wrMapRange(target, offset, range, GL_MAP_READ_BIT);
             if (src) {
                 uint32_t szBuf = (range == 0)? wrGetParamIa1p2(FEnum_glGetBufferParameteriv, target, GL_BUFFER_SIZE):range;
-                memcpy((dst - ALIGNED(szBuf)) , src, szBuf);
+                memcpy((dst - ALIGNED(szBuf)), src, szBuf);
                 wrUnmap(target);
             }
             break;
     }
 }
 
-void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t bufo)
+void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t *bufo)
 {
-    uint32_t szBuf = (bufo.range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo.range;
-    memcpy(bufo.hptr + bufo.offst, (bufo.shmep - ALIGNED(bufo.mapsz) + bufo.offst), szBuf);
+    uint32_t szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo->range;
+    memcpy(bufo->hptr + bufo->offst, (bufo->shmep - ALIGNED(bufo->mapsz) + bufo->offst), szBuf);
 }
 
 const char *getGLFuncStr(int FEnum)

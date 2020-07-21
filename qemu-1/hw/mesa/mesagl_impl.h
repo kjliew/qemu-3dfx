@@ -26,15 +26,7 @@
 #include "mglfuncs.h"
 #include "mglcntx.h"
 #include "mglvarry.h"
-
-typedef struct {
-    void *hptr;
-    uint8_t *shmep;
-    uint32_t mapsz;
-    uint32_t offst;
-    uint32_t range;
-    int acc;
-} mapbufo_t;
+#include "mglmapbo.h"
 
 int GLFEnumArgsCnt(int);
 int ExtFuncIsValid(char *);
@@ -42,7 +34,7 @@ int wrMapOrderPoints(uint32_t);
 int wrTexTextureWxD(uint32_t, uint32_t, int);
 int wrGetParamIa1p2(uint32_t, uint32_t, uint32_t);
 void wrFillBufObj(uint32_t, void *, uint32_t, uint32_t);
-void wrFlushBufObj(int, uint32_t, mapbufo_t);
+void wrFlushBufObj(int, uint32_t, mapbufo_t *);
 const char *getGLFuncStr(int);
 void doMesaFunc(int, uint32_t *, uintptr_t *, uintptr_t *);
 uint16_t GetGLExtYear(void);
