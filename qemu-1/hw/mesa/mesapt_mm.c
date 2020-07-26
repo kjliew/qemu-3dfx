@@ -1114,6 +1114,32 @@ static void processArgs(MesaPTState *s)
                 s->parg[2] = (s->arg[6])? bmpPtr:0;
             }
             break;
+        case FEnum_glClearBufferData:
+        case FEnum_glClearNamedBufferData:
+        case FEnum_glClearNamedBufferDataEXT:
+        case FEnum_glClearTexImage:
+            s->parg[0] = 0;
+            if (s->arg[4]) {
+                s->datacb = (s->FEnum == FEnum_glClearTexImage)? ALIGNED(szgldata(s->arg[2], s->arg[3])):ALIGNED(1);
+                s->parg[0] = VAL(s->hshm);
+            }
+            break;
+        case FEnum_glClearBufferSubData:
+        case FEnum_glClearNamedBufferSubData:
+        case FEnum_glClearNamedBufferSubDataEXT:
+            s->parg[2] = 0;
+            if (s->arg[6]) {
+                s->datacb = ALIGNED(1);
+                s->parg[2] = VAL(s->hshm);
+            }
+            break;
+        case FEnum_glClearTexSubImage:
+            s->parg[2] = 0;
+            if (s->arg[10]) {
+                s->datacb = ALIGNED(szgldata(s->arg[8], s->arg[9]));
+                s->parg[2] = VAL(s->hshm);
+            }
+            break;
         case FEnum_glBufferSubData:
         case FEnum_glBufferSubDataARB:
         case FEnum_glGetBufferSubData:
@@ -1531,6 +1557,7 @@ static void processFRet(MesaPTState *s)
             if (s->FEnum == FEnum_glMapBufferRange) {
                 s->BufObj->acc = s->arg[3];
                 s->BufObj->mapsz = s->arg[2];
+                s->BufObj->range = s->arg[2];
             }
             else {
                 s->BufObj->acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
@@ -1797,7 +1824,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         s->dispTimer = timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0);
                     }
                     else {
-                        //DPRINTF("wglMakeCurrent cntx %d curr %d %x lvl %d", s->mglContext, s->mglCntxCurrent, ptVer[0], level);
+                        DPRINTF("wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
                         MGLMakeCurrent(ptVer[0], level);
                     }
                 } while(0);

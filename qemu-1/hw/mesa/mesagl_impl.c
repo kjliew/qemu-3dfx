@@ -279,6 +279,10 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa2p3a4 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa2p3a4)(arg[0], arg[1], arg[2], parg[3], arg[4]);
             GLDONE();
+        case FEnum_glClearBufferData:
+        case FEnum_glClearNamedBufferData:
+        case FEnum_glClearNamedBufferDataEXT:
+        case FEnum_glClearTexImage:
         case FEnum_glColorPointerEXT:
         case FEnum_glDrawPixels:
         case FEnum_glGetInternalformativ:
@@ -555,6 +559,9 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpp1 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpp1)(parg[0], parg[1]);
             GLDONE();
+        case FEnum_glClearBufferSubData:
+        case FEnum_glClearNamedBufferSubData:
+        case FEnum_glClearNamedBufferSubDataEXT:
         case FEnum_glCompressedTexImage1D:
         case FEnum_glCompressedTexImage1DARB:
         case FEnum_glCompressedTexSubImage1D:
@@ -691,6 +698,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa8p9 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa8p9)(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8], parg[1]);
             GLDONE();
+        case FEnum_glClearTexSubImage:
         case FEnum_glCompressedTexSubImage3D:
         case FEnum_glCompressedTexSubImage3DARB:
         case FEnum_glTexSubImage3D:
@@ -1289,7 +1297,7 @@ static int cfg_vertCacheMB;
 static int cfg_createWnd;
 static void conf_MGLOptions(void)
 {
-    cfg_xYear = 2003;
+    cfg_xYear = 2004;
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
     cfg_createWnd = 0;
