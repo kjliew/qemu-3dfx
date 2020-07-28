@@ -191,8 +191,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
     }
     else {
         if (s->Color.enable && s->Color.ptr) {
-            cbElem = (s->Color.stride)? s->Color.stride:s->Color.size*szgldata(0,s->Color.type);
-            n = (cbElem*(end - start) + (s->Color.size*szgldata(0,s->Color.type)));
+            cbElem = (s->Color.stride)? s->Color.stride:szgldata(s->Color.size,s->Color.type);
+            n = cbElem*(end - start) + szgldata(s->Color.size,s->Color.type);
             n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
             ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
             memcpy(s->Color.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -202,8 +202,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
                 DPRINTF(" *WARN* Color Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
         }
         if (s->EdgeFlag.enable && s->EdgeFlag.ptr) {
-            cbElem = (s->EdgeFlag.stride)? s->EdgeFlag.stride:s->EdgeFlag.size*szgldata(0,s->EdgeFlag.type);
-            n = (cbElem*(end - start) + (s->EdgeFlag.size*szgldata(0,s->EdgeFlag.type)));
+            cbElem = (s->EdgeFlag.stride)? s->EdgeFlag.stride:szgldata(s->EdgeFlag.size,s->EdgeFlag.type);
+            n = cbElem*(end - start) + szgldata(s->EdgeFlag.size,s->EdgeFlag.type);
             n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
             ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
             memcpy(s->EdgeFlag.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -213,8 +213,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
                 DPRINTF(" *WARN* EdgeFlag Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
         }
         if (s->Index.enable && s->Index.ptr) {
-            cbElem = (s->Index.stride)? s->Index.stride:s->Index.size*szgldata(0,s->Index.type);
-            n = (cbElem*(end - start) + (s->Index.size*szgldata(0,s->Index.type)));
+            cbElem = (s->Index.stride)? s->Index.stride:szgldata(s->Index.size,s->Index.type);
+            n = cbElem*(end - start) + szgldata(s->Index.size,s->Index.type);
             n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
             ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
             memcpy(s->Index.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -224,8 +224,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
                 DPRINTF(" *WARN* Index Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
         }
         if (s->Normal.enable && s->Normal.ptr) {
-            cbElem = (s->Normal.stride)? s->Normal.stride:s->Normal.size*szgldata(0,s->Normal.type);
-            n = (cbElem*(end - start) + (s->Normal.size*szgldata(0,s->Normal.type)));
+            cbElem = (s->Normal.stride)? s->Normal.stride:szgldata(s->Normal.size,s->Normal.type);
+            n = cbElem*(end - start) + szgldata(s->Normal.size,s->Normal.type);
             n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
             ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
             memcpy(s->Normal.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -236,8 +236,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
         }
         for (i = 0; i < MAX_TEXUNIT; i++) {
             if (s->TexCoord[i].enable && s->TexCoord[i].ptr) {
-                cbElem = (s->TexCoord[i].stride)? s->TexCoord[i].stride:s->TexCoord[i].size*szgldata(0,s->TexCoord[i].type);
-                n = (cbElem*(end - start) + (s->TexCoord[i].size*szgldata(0,s->TexCoord[i].type)));
+                cbElem = (s->TexCoord[i].stride)? s->TexCoord[i].stride:szgldata(s->TexCoord[i].size,s->TexCoord[i].type);
+                n = cbElem*(end - start) + szgldata(s->TexCoord[i].size,s->TexCoord[i].type);
                 n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
                 ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
                 memcpy(s->TexCoord[i].ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -248,8 +248,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
             }
         }
         if (s->Vertex.enable && s->Vertex.ptr) {
-            cbElem = (s->Vertex.stride)? s->Vertex.stride:s->Vertex.size*szgldata(0,s->Vertex.type);
-            n = (cbElem*(end - start) + (s->Vertex.size*szgldata(0,s->Vertex.type)));
+            cbElem = (s->Vertex.stride)? s->Vertex.stride:szgldata(s->Vertex.size,s->Vertex.type);
+            n = cbElem*(end - start) + szgldata(s->Vertex.size,s->Vertex.type);
             n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
             ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
             memcpy(s->Vertex.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -259,8 +259,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
                 DPRINTF(" *WARN* Vertex Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
         }
         if (s->SecondaryColor.enable && s->SecondaryColor.ptr) {
-            cbElem = (s->SecondaryColor.stride)? s->SecondaryColor.stride:s->SecondaryColor.size*szgldata(0,s->SecondaryColor.type);
-            n = (cbElem*(end - start) + (s->SecondaryColor.size*szgldata(0,s->SecondaryColor.type)));
+            cbElem = (s->SecondaryColor.stride)? s->SecondaryColor.stride:szgldata(s->SecondaryColor.size,s->SecondaryColor.type);
+            n = cbElem*(end - start) + szgldata(s->SecondaryColor.size,s->SecondaryColor.type);
             n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
             ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
             memcpy(s->SecondaryColor.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -270,8 +270,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
                 DPRINTF(" *WARN* SecondaryColor Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
         }
         if (s->FogCoord.enable && s->FogCoord.ptr) {
-            cbElem = (s->FogCoord.stride)? s->FogCoord.stride:s->FogCoord.size*szgldata(0,s->FogCoord.type);
-            n = (cbElem*(end - start) + (s->FogCoord.size*szgldata(0,s->FogCoord.type)));
+            cbElem = (s->FogCoord.stride)? s->FogCoord.stride:szgldata(s->FogCoord.size,s->FogCoord.type);
+            n = cbElem*(end - start) + szgldata(s->FogCoord.size,s->FogCoord.type);
             n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
             ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
             memcpy(s->FogCoord.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -281,8 +281,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
                 DPRINTF(" *WARN* FogCoord Array overflowed, cbElem %04x maxElem %04x", cbElem, s->elemMax);
         }
         if (s->Weight.enable && s->Weight.ptr) {
-            cbElem = (s->Weight.stride)? s->Weight.stride:s->Weight.size*szgldata(0,s->Weight.type);
-            n = (cbElem*(end - start) + (s->Weight.size*szgldata(0,s->Weight.type)));
+            cbElem = (s->Weight.stride)? s->Weight.stride:szgldata(s->Weight.size,s->Weight.type);
+            n = cbElem*(end - start) + szgldata(s->Weight.size,s->Weight.type);
             n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
             ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
             memcpy(s->Weight.ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -293,8 +293,8 @@ static void PushVertexArray(MesaPTState *s, const void *pshm, int start, int end
         }
         for (i = 0; i < 2; i++) {
             if (s->GenAttrib[i].enable && s->GenAttrib[i].ptr) {
-                cbElem = (s->GenAttrib[i].stride)? s->GenAttrib[i].stride:s->GenAttrib[i].size*szgldata(0,s->GenAttrib[i].type);
-                n = (cbElem*(end - start) + (s->GenAttrib[i].size*szgldata(0,s->GenAttrib[i].type)));
+                cbElem = (s->GenAttrib[i].stride)? s->GenAttrib[i].stride:szgldata(s->GenAttrib[i].size,s->GenAttrib[i].type);
+                n = cbElem*(end - start) + szgldata(s->GenAttrib[i].size,s->GenAttrib[i].type);
                 n = (n & 0x03)? ((n >> 2) + 1):(n >> 2);
                 ovfl = ((n << 2) > (s->szVertCache >> 1))? 1:0;
                 memcpy(s->GenAttrib[i].ptr + (cbElem*start), varry_ptr, ((ovfl)? (s->szVertCache >> 1):(n << 2)));
@@ -564,7 +564,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glVertexAttribPointerARB:
             {
                 vtxarry_t *arry = vattr2arry(s, s->arg[0]);
-                vtxarry_init(arry, (s->arg[1] == GL_BGRA)? 4:s->arg[1], s->arg[2], s->arg[4], (s->arrayBuf == 0)?
+                vtxarry_init(arry, s->arg[1], s->arg[2], s->arg[4], (s->arrayBuf == 0)?
                         LookupVertex(s->arg[5], s->szVertCache):(void *)(uintptr_t)s->arg[5]);
                 s->parg[1] = VAL(arry->ptr);
             }

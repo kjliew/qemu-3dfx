@@ -214,47 +214,47 @@ static void PrepVertexArray(int start, int end, int sizei)
     }
     else {
         if (vtxArry.Color.enable && vtxArry.Color.ptr) {
-            cbElem = (vtxArry.Color.stride)? vtxArry.Color.stride:vtxArry.Color.size*szgldata(0, vtxArry.Color.type);
-            n += ALIGNED((cbElem*(end - start) + (vtxArry.Color.size*szgldata(0, vtxArry.Color.type))));
+            cbElem = (vtxArry.Color.stride)? vtxArry.Color.stride:szgldata(vtxArry.Color.size, vtxArry.Color.type);
+            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.Color.size, vtxArry.Color.type)));
         }
         if (vtxArry.EdgeFlag.enable && vtxArry.EdgeFlag.ptr) {
-            cbElem = (vtxArry.EdgeFlag.stride)? vtxArry.EdgeFlag.stride:vtxArry.EdgeFlag.size*szgldata(0, vtxArry.EdgeFlag.type);
-            n += ALIGNED((cbElem*(end - start) + (vtxArry.EdgeFlag.size*szgldata(0, vtxArry.EdgeFlag.type))));
+            cbElem = (vtxArry.EdgeFlag.stride)? vtxArry.EdgeFlag.stride:szgldata(vtxArry.EdgeFlag.size, vtxArry.EdgeFlag.type);
+            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.EdgeFlag.size, vtxArry.EdgeFlag.type)));
         }
         if (vtxArry.Index.enable && vtxArry.Index.ptr) {
-            cbElem = (vtxArry.Index.stride)? vtxArry.Index.stride:vtxArry.Index.size*szgldata(0, vtxArry.Index.type);
-            n += ALIGNED((cbElem*(end - start) + (vtxArry.Index.size*szgldata(0, vtxArry.Index.type))));
+            cbElem = (vtxArry.Index.stride)? vtxArry.Index.stride:szgldata(vtxArry.Index.size, vtxArry.Index.type);
+            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.Index.size, vtxArry.Index.type)));
         }
         if (vtxArry.Normal.enable && vtxArry.Normal.ptr) {
-            cbElem = (vtxArry.Normal.stride)? vtxArry.Normal.stride:vtxArry.Normal.size*szgldata(0, vtxArry.Normal.type);
-            n += ALIGNED((cbElem*(end - start) + (vtxArry.Normal.size*szgldata(0, vtxArry.Normal.type))));
+            cbElem = (vtxArry.Normal.stride)? vtxArry.Normal.stride:szgldata(vtxArry.Normal.size, vtxArry.Normal.type);
+            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.Normal.size, vtxArry.Normal.type)));
         }
         for (i = 0; i < MAX_TEXUNIT; i++) {
             if (vtxArry.TexCoord[i].enable && vtxArry.TexCoord[i].ptr) {
-                cbElem = (vtxArry.TexCoord[i].stride)? vtxArry.TexCoord[i].stride:vtxArry.TexCoord[i].size*szgldata(0, vtxArry.TexCoord[i].type);
-                n += ALIGNED((cbElem*(end - start) + (vtxArry.TexCoord[i].size*szgldata(0, vtxArry.TexCoord[i].type))));
+                cbElem = (vtxArry.TexCoord[i].stride)? vtxArry.TexCoord[i].stride:szgldata(vtxArry.TexCoord[i].size, vtxArry.TexCoord[i].type);
+                n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.TexCoord[i].size, vtxArry.TexCoord[i].type)));
             }
         }
         if (vtxArry.Vertex.enable && vtxArry.Vertex.ptr) {
-            cbElem = (vtxArry.Vertex.stride)? vtxArry.Vertex.stride:vtxArry.Vertex.size*szgldata(0, vtxArry.Vertex.type);
-            n += ALIGNED((cbElem*(end - start) + (vtxArry.Vertex.size*szgldata(0, vtxArry.Vertex.type))));
+            cbElem = (vtxArry.Vertex.stride)? vtxArry.Vertex.stride:szgldata(vtxArry.Vertex.size, vtxArry.Vertex.type);
+            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.Vertex.size, vtxArry.Vertex.type)));
         }
         if (vtxArry.SecondaryColor.enable && vtxArry.SecondaryColor.ptr) {
-            cbElem = (vtxArry.SecondaryColor.stride)? vtxArry.SecondaryColor.stride:vtxArry.SecondaryColor.size*szgldata(0, vtxArry.SecondaryColor.type);
-            n += ALIGNED((cbElem*(end - start) + (vtxArry.SecondaryColor.size*szgldata(0, vtxArry.SecondaryColor.type))));
+            cbElem = (vtxArry.SecondaryColor.stride)? vtxArry.SecondaryColor.stride:szgldata(vtxArry.SecondaryColor.size, vtxArry.SecondaryColor.type);
+            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.SecondaryColor.size, vtxArry.SecondaryColor.type)));
         }
         if (vtxArry.FogCoord.enable && vtxArry.FogCoord.ptr) {
-            cbElem = (vtxArry.FogCoord.stride)? vtxArry.FogCoord.stride:vtxArry.FogCoord.size*szgldata(0, vtxArry.FogCoord.type);
-            n += ALIGNED((cbElem*(end - start) + (vtxArry.FogCoord.size*szgldata(0, vtxArry.FogCoord.type))));
+            cbElem = (vtxArry.FogCoord.stride)? vtxArry.FogCoord.stride:szgldata(vtxArry.FogCoord.size, vtxArry.FogCoord.type);
+            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.FogCoord.size, vtxArry.FogCoord.type)));
         }
         if (vtxArry.Weight.enable && vtxArry.Weight.ptr) {
-            cbElem = (vtxArry.Weight.stride)? vtxArry.Weight.stride:vtxArry.Weight.size*szgldata(0, vtxArry.Weight.type);
-            n += ALIGNED((cbElem*(end - start) + (vtxArry.Weight.size*szgldata(0, vtxArry.Weight.type))));
+            cbElem = (vtxArry.Weight.stride)? vtxArry.Weight.stride:szgldata(vtxArry.Weight.size, vtxArry.Weight.type);
+            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.Weight.size, vtxArry.Weight.type)));
         }
         for (i = 0; i < 2; i++) {
             if (vtxArry.GenAttrib[i].enable && vtxArry.GenAttrib[i].ptr) {
-                cbElem = (vtxArry.GenAttrib[i].stride)? vtxArry.GenAttrib[i].stride:vtxArry.GenAttrib[i].size*szgldata(0, vtxArry.GenAttrib[i].type);
-                n += ALIGNED((cbElem*(end - start) + (vtxArry.GenAttrib[i].size*szgldata(0, vtxArry.GenAttrib[i].type))));
+                cbElem = (vtxArry.GenAttrib[i].stride)? vtxArry.GenAttrib[i].stride:szgldata(vtxArry.GenAttrib[i].size, vtxArry.GenAttrib[i].type);
+                n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.GenAttrib[i].size, vtxArry.GenAttrib[i].type)));
             }
         }
     }
@@ -274,47 +274,47 @@ static void PushVertexArray(int start, int end)
     }
     else {
         if (vtxArry.Color.enable && vtxArry.Color.ptr) {
-            cbElem = (vtxArry.Color.stride)? vtxArry.Color.stride:vtxArry.Color.size*szgldata(0, vtxArry.Color.type);
-            fifoAddData(0, (uint32_t)(vtxArry.Color.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Color.size*szgldata(0, vtxArry.Color.type))));
+            cbElem = (vtxArry.Color.stride)? vtxArry.Color.stride:szgldata(vtxArry.Color.size, vtxArry.Color.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Color.ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.Color.size, vtxArry.Color.type)));
         }
         if (vtxArry.EdgeFlag.enable && vtxArry.EdgeFlag.ptr) {
-            cbElem = (vtxArry.EdgeFlag.stride)? vtxArry.EdgeFlag.stride:vtxArry.EdgeFlag.size*szgldata(0, vtxArry.EdgeFlag.type);
-            fifoAddData(0, (uint32_t)(vtxArry.EdgeFlag.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.EdgeFlag.size*szgldata(0, vtxArry.EdgeFlag.type))));
+            cbElem = (vtxArry.EdgeFlag.stride)? vtxArry.EdgeFlag.stride:szgldata(vtxArry.EdgeFlag.size, vtxArry.EdgeFlag.type);
+            fifoAddData(0, (uint32_t)(vtxArry.EdgeFlag.ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.EdgeFlag.size, vtxArry.EdgeFlag.type)));
         }
         if (vtxArry.Index.enable && vtxArry.Index.ptr) {
-            cbElem = (vtxArry.Index.stride)? vtxArry.Index.stride:vtxArry.Index.size*szgldata(0, vtxArry.Index.type);
-            fifoAddData(0, (uint32_t)(vtxArry.Index.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Index.size*szgldata(0, vtxArry.Index.type))));
+            cbElem = (vtxArry.Index.stride)? vtxArry.Index.stride:szgldata(vtxArry.Index.size, vtxArry.Index.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Index.ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.Index.size, vtxArry.Index.type)));
         }
         if (vtxArry.Normal.enable && vtxArry.Normal.ptr) {
-            cbElem = (vtxArry.Normal.stride)? vtxArry.Normal.stride:vtxArry.Normal.size*szgldata(0, vtxArry.Normal.type);
-            fifoAddData(0, (uint32_t)(vtxArry.Normal.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Normal.size*szgldata(0, vtxArry.Normal.type))));
+            cbElem = (vtxArry.Normal.stride)? vtxArry.Normal.stride:szgldata(vtxArry.Normal.size, vtxArry.Normal.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Normal.ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.Normal.size, vtxArry.Normal.type)));
         }
         for (i = 0; i < MAX_TEXUNIT; i++) {
             if (vtxArry.TexCoord[i].enable && vtxArry.TexCoord[i].ptr) {
-                cbElem = (vtxArry.TexCoord[i].stride)? vtxArry.TexCoord[i].stride:vtxArry.TexCoord[i].size*szgldata(0, vtxArry.TexCoord[i].type);
-                fifoAddData(0, (uint32_t)(vtxArry.TexCoord[i].ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.TexCoord[i].size*szgldata(0, vtxArry.TexCoord[i].type))));
+                cbElem = (vtxArry.TexCoord[i].stride)? vtxArry.TexCoord[i].stride:szgldata(vtxArry.TexCoord[i].size, vtxArry.TexCoord[i].type);
+                fifoAddData(0, (uint32_t)(vtxArry.TexCoord[i].ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.TexCoord[i].size, vtxArry.TexCoord[i].type)));
             }
         }
         if (vtxArry.Vertex.enable && vtxArry.Vertex.ptr) {
-            cbElem = (vtxArry.Vertex.stride)? vtxArry.Vertex.stride:vtxArry.Vertex.size*szgldata(0, vtxArry.Vertex.type);
-            fifoAddData(0, (uint32_t)(vtxArry.Vertex.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Vertex.size*szgldata(0, vtxArry.Vertex.type))));
+            cbElem = (vtxArry.Vertex.stride)? vtxArry.Vertex.stride:szgldata(vtxArry.Vertex.size, vtxArry.Vertex.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Vertex.ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.Vertex.size, vtxArry.Vertex.type)));
         }
         if (vtxArry.SecondaryColor.enable && vtxArry.SecondaryColor.ptr) {
-            cbElem = (vtxArry.SecondaryColor.stride)? vtxArry.SecondaryColor.stride:vtxArry.SecondaryColor.size*szgldata(0, vtxArry.SecondaryColor.type);
-            fifoAddData(0, (uint32_t)(vtxArry.SecondaryColor.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.SecondaryColor.size*szgldata(0, vtxArry.SecondaryColor.type))));
+            cbElem = (vtxArry.SecondaryColor.stride)? vtxArry.SecondaryColor.stride:szgldata(vtxArry.SecondaryColor.size, vtxArry.SecondaryColor.type);
+            fifoAddData(0, (uint32_t)(vtxArry.SecondaryColor.ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.SecondaryColor.size, vtxArry.SecondaryColor.type)));
         }
         if (vtxArry.FogCoord.enable && vtxArry.FogCoord.ptr) {
-            cbElem = (vtxArry.FogCoord.stride)? vtxArry.FogCoord.stride:vtxArry.FogCoord.size*szgldata(0, vtxArry.FogCoord.type);
-            fifoAddData(0, (uint32_t)(vtxArry.FogCoord.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.FogCoord.size*szgldata(0, vtxArry.FogCoord.type))));
+            cbElem = (vtxArry.FogCoord.stride)? vtxArry.FogCoord.stride:szgldata(vtxArry.FogCoord.size, vtxArry.FogCoord.type);
+            fifoAddData(0, (uint32_t)(vtxArry.FogCoord.ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.FogCoord.size, vtxArry.FogCoord.type)));
         }
         if (vtxArry.Weight.enable && vtxArry.Weight.ptr) {
-            cbElem = (vtxArry.Weight.stride)? vtxArry.Weight.stride:vtxArry.Weight.size*szgldata(0, vtxArry.Weight.type);
-            fifoAddData(0, (uint32_t)(vtxArry.Weight.ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.Weight.size*szgldata(0, vtxArry.Weight.type))));
+            cbElem = (vtxArry.Weight.stride)? vtxArry.Weight.stride:szgldata(vtxArry.Weight.size, vtxArry.Weight.type);
+            fifoAddData(0, (uint32_t)(vtxArry.Weight.ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.Weight.size, vtxArry.Weight.type)));
         }
         for (i = 0; i < 2; i++) {
             if (vtxArry.GenAttrib[i].enable && vtxArry.GenAttrib[i].ptr) {
-                cbElem = (vtxArry.GenAttrib[i].stride)? vtxArry.GenAttrib[i].stride:vtxArry.GenAttrib[i].size*szgldata(0, vtxArry.GenAttrib[i].type);
-                fifoAddData(0, (uint32_t)(vtxArry.GenAttrib[i].ptr+(start*cbElem)), (cbElem*(end - start) + (vtxArry.GenAttrib[i].size*szgldata(0, vtxArry.GenAttrib[i].type))));
+                cbElem = (vtxArry.GenAttrib[i].stride)? vtxArry.GenAttrib[i].stride:szgldata(vtxArry.GenAttrib[i].size, vtxArry.GenAttrib[i].type);
+                fifoAddData(0, (uint32_t)(vtxArry.GenAttrib[i].ptr+(start*cbElem)), (cbElem*(end - start) + szgldata(vtxArry.GenAttrib[i].size, vtxArry.GenAttrib[i].type)));
             }
         }
     }
@@ -12461,12 +12461,12 @@ void PT_CALL glVertexAttribParameteriAMD(uint32_t arg0, uint32_t arg1, uint32_t 
 void PT_CALL glVertexAttribPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexAttribPointer, 6);
-    vtxarry_init(vattr2arry(arg0), (arg1 == GL_BGRA)? 4:arg1, arg2, arg4, (void *)arg5);
+    vtxarry_init(vattr2arry(arg0), arg1, arg2, arg4, (void *)arg5);
 }
 void PT_CALL glVertexAttribPointerARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexAttribPointerARB, 6);
-    vtxarry_init(vattr2arry(arg0), (arg1 == GL_BGRA)? 4:arg1, arg2, arg4, (void *)arg5);
+    vtxarry_init(vattr2arry(arg0), arg1, arg2, arg4, (void *)arg5);
 }
 void PT_CALL glVertexAttribPointerNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
