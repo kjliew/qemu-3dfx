@@ -1154,9 +1154,12 @@ void PT_CALL glClientAttribDefaultEXT(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glClientAttribDefaultEXT;
 }
-void PT_CALL glClientWaitSync(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+uint32_t PT_CALL glClientWaitSync(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t ret;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glClientWaitSync;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glClipControl(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -2245,7 +2248,7 @@ void PT_CALL glDeleteStatesNV(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glDeleteSync(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteSync;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteSync, 1);
 }
 void PT_CALL glDeleteTextures(uint32_t arg0, uint32_t arg1) {
     fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
@@ -2523,8 +2526,43 @@ void PT_CALL glDrawElements(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElements, 4);
 }
 void PT_CALL glDrawElementsBaseVertex(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
-    if (vtxArry.elemArryBuf == 0)
+    int start, end;
+    if (vtxArry.elemArryBuf == 0) {
+        end = 0;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+        }
+        start = end;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+        }
+        PrepVertexArray((start + arg4), (end + arg4), ALIGNED(arg1 * szgldata(0, arg2)));
         fifoAddData(0, arg3, ALIGNED(arg1 * szgldata(0, arg2)));
+        if (vtxArry.arrayBuf == 0)
+            PushVertexArray((start + arg4), (end + arg4));
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsBaseVertex, 5);
 }
@@ -2897,13 +2935,16 @@ void PT_CALL glFeedbackBufferxOES(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFeedbackBufferxOES;
 }
-void PT_CALL glFenceSync(uint32_t arg0, uint32_t arg1) {
+uint32_t PT_CALL glFenceSync(uint32_t arg0, uint32_t arg1) {
+    uint32_t ret;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFenceSync;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glFinalCombinerInputNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFinalCombinerInputNV;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFinalCombinerInputNV, 4);
 }
 void PT_CALL glFinish(void) {
     
@@ -12759,7 +12800,7 @@ void PT_CALL glWaitSemaphoreEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
 }
 void PT_CALL glWaitSync(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glWaitSync;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glWaitSync, 4);
 }
 void PT_CALL glWaitVkSemaphoreNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 

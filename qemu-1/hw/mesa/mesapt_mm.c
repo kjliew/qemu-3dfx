@@ -817,9 +817,10 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDrawArrays:
         case FEnum_glDrawArraysEXT:
-            s->elemMax = ((s->arg[1] + s->arg[2] - 1) > s->elemMax)? (s->arg[1] + s->arg[2] - 1):s->elemMax;
-            if (s->arrayBuf == 0)
+            if (s->arrayBuf == 0) {
+                s->elemMax = ((s->arg[1] + s->arg[2] - 1) > s->elemMax)? (s->arg[1] + s->arg[2] - 1):s->elemMax;
                 PushVertexArray(s, s->hshm, s->arg[1], s->arg[1] + s->arg[2] - 1);
+            }
             break;
         case FEnum_glDrawElements:
             s->parg[3] = s->arg[3];
@@ -867,6 +868,39 @@ static void processArgs(MesaPTState *s)
             if (s->elemArryBuf == 0) {
                 s->datacb = ALIGNED(s->arg[1] * szgldata(0, s->arg[2]));
                 s->parg[3] = VAL(s->hshm);
+                int start, end = 0;
+                for (int i = 0; i < s->arg[1]; i++) {
+                    if (szgldata(0, s->arg[2]) == 1) {
+                        uint8_t *p = (uint8_t *)s->hshm;
+                        end = (p[i] > end)? p[i]:end;
+                    }
+                    if (szgldata(0, s->arg[2]) == 2) {
+                        uint16_t *p = (uint16_t *)s->hshm;
+                        end = (p[i] > end)? p[i]:end;
+                    }
+                    if (szgldata(0, s->arg[2]) == 4) {
+                        uint32_t *p = s->hshm;
+                        end = (p[i] > end)? p[i]:end;
+                    }
+                }
+                start = end;
+                for (int i = 0; i < s->arg[1]; i++) {
+                    if (szgldata(0, s->arg[2]) == 1) {
+                        uint8_t *p = (uint8_t *)s->hshm;
+                        start = (p[i] < start)? p[i]:start;
+                    }
+                    if (szgldata(0, s->arg[2]) == 2) {
+                        uint16_t *p = (uint16_t *)s->hshm;
+                        start = (p[i] < start)? p[i]:start;
+                    }
+                    if (szgldata(0, s->arg[2]) == 4) {
+                        uint32_t *p = s->hshm;
+                        start = (p[i] < start)? p[i]:start;
+                    }
+                }
+                s->elemMax = ((end + s->arg[4]) > s->elemMax)? (end + s->arg[4]):s->elemMax;
+                if (s->arrayBuf == 0)
+                    PushVertexArray(s, PTR(s->hshm, s->datacb), (start + s->arg[4]), (end + s->arg[4]));
             }
             break;
         case FEnum_glDrawPixels:
@@ -1168,6 +1202,7 @@ static void processArgs(MesaPTState *s)
             else {
                 s->BufObj->offst = s->arg[1];
                 s->BufObj->range = s->arg[2];
+                wrFlushBufObj(FEnum_glGetBufferParameteriv, s->arg[0], s->BufObj);
                 //DPRINTF("FlushMappedBufferRange %x %x %x idx %x", s->arg[0], s->arg[1], s->arg[2], s->BufIdx);
             }
             break;
@@ -1179,7 +1214,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
             s->BufObj = LookupBufObj(s->BufIdx);
-            if (s->BufObj->hptr && (s->BufObj->acc & GL_MAP_WRITE_BIT)) {
+            if (s->BufObj->hptr && (s->BufObj->acc & GL_MAP_WRITE_BIT) &&
+                !(s->BufObj->acc & GL_MAP_FLUSH_EXPLICIT_BIT)) {
                 wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
                     s->arg[0], s->BufObj);
                 if (s->szUsedBuf == s->BufObj->mused + ALIGNED(s->BufObj->mapsz))

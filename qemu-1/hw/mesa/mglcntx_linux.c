@@ -128,7 +128,7 @@ static const PIXELFORMATDESCRIPTOR pfd = {
     .cRedShift = 16, .cGreenShift = 8, .cBlueShift = 0, .cAlphaShift = 24,
     .cDepthBits = 24,
     .cStencilBits = 8,
-    .cAuxBuffers = 1,
+    .cAuxBuffers = 0,
 };
 static const int iAttribs[] = {
     WGL_NUMBER_PIXEL_FORMATS_ARB, 1,
@@ -171,9 +171,10 @@ static Window       win;
 static XVisualInfo *xvi;
 static GLXContext   ctx[4];
 
-HPBUFFERARB hPbuffer[MAX_PBUFFER];
+static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 static GLXPbuffer PBDC[MAX_PBUFFER];
 static GLXContext PBRC[MAX_PBUFFER];
+static int cAuxBuffers;
 
 void SetMesaFuncPtr(void *hDLL)
 {
@@ -251,7 +252,8 @@ static int MGLPresetPixelFormat(void)
     GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
     xvi = glXGetVisualFromFBConfig(dpy, fbcnf[0]);
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_FBCONFIG_ID, &fbid);
-    DPRINTF("FBConfig id 0x%03x visual 0x%03lx", fbid, xvi->visualid);
+    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_AUX_BUFFERS, &cAuxBuffers);
+    DPRINTF("FBConfig id 0x%03x visual 0x%03lx nAux %d", fbid, xvi->visualid, cAuxBuffers);
     XFree(fbcnf);
     XFlush(dpy);
     return 1;
@@ -279,6 +281,7 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
     if (xvi == 0)
         MGLPresetPixelFormat();
     memcpy(p, &pfd, sizeof(PIXELFORMATDESCRIPTOR));
+    ((PIXELFORMATDESCRIPTOR *)p)->cAuxBuffers = cAuxBuffers;
     return 1;
 }
 
@@ -303,13 +306,12 @@ void MGLActivateHandler(int i)
 
 static int LookupAttribArray(const int *attrib, const int attr)
 {
-    int ret = 0;
-    for (int i = 0; (attrib[i] && attrib[i+1]); i+=2) {
-        if (attrib[i] == attr) {
-            ret = attrib[i+1];
+    int i, ret;
+    for (i = 0; (attrib[i] && attrib[i+1]); i+=2) {
+        if (attrib[i] == attr)
             break;
-        }
     }
+    ret = (attr == WGL_AUX_BUFFERS_ARB)? cAuxBuffers:attrib[i+1];
     return ret;
 }
 
