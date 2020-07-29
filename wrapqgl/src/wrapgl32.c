@@ -411,7 +411,7 @@ void PT_CALL glAreProgramsResidentNV(uint32_t arg0, uint32_t arg1, uint32_t arg2
 }
 uint32_t PT_CALL glAreTexturesResident(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     uint32_t ret;
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glAreTexturesResident;
     ret = *pt0;
@@ -421,7 +421,7 @@ uint32_t PT_CALL glAreTexturesResident(uint32_t arg0, uint32_t arg1, uint32_t ar
 }
 uint32_t PT_CALL glAreTexturesResidentEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     uint32_t ret;
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glAreTexturesResidentEXT;
     ret = *pt0;
@@ -966,7 +966,7 @@ void PT_CALL glCallList(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCallList, 1);
 }
 void PT_CALL glCallLists(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(0, arg2, ALIGNED((arg0 * szgldata(0, arg1))));
+    fifoAddData(0, arg2, arg0*szgldata(0, arg1));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCallLists, 3);
 }
@@ -2105,7 +2105,7 @@ void PT_CALL glDeleteAsyncMarkersSGIX(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteAsyncMarkersSGIX;
 }
 void PT_CALL glDeleteBuffers(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteBuffers, 2);
     for (int i = 0; i < arg0; i++) {
@@ -2116,7 +2116,7 @@ void PT_CALL glDeleteBuffers(uint32_t arg0, uint32_t arg1) {
     }
 }
 void PT_CALL glDeleteBuffersARB(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteBuffersARB, 2);
     for (int i = 0; i < arg0; i++) {
@@ -2143,12 +2143,12 @@ void PT_CALL glDeleteFragmentShaderATI(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteFragmentShaderATI;
 }
 void PT_CALL glDeleteFramebuffers(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteFramebuffers, 2);
 }
 void PT_CALL glDeleteFramebuffersEXT(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteFramebuffersEXT, 2);
 }
@@ -2197,7 +2197,7 @@ void PT_CALL glDeleteProgramPipelines(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteProgramPipelines;
 }
 void PT_CALL glDeleteProgramsARB(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(uint32_t)));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteProgramsARB, 2);
 }
@@ -2206,12 +2206,12 @@ void PT_CALL glDeleteProgramsNV(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteProgramsNV;
 }
 void PT_CALL glDeleteQueries(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(uint32_t)));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteQueries, 2);
 }
 void PT_CALL glDeleteQueriesARB(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(uint32_t)));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteQueriesARB, 2);
 }
@@ -2220,17 +2220,17 @@ void PT_CALL glDeleteQueryResourceTagNV(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteQueryResourceTagNV;
 }
 void PT_CALL glDeleteRenderbuffers(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteRenderbuffers, 2);
 }
 void PT_CALL glDeleteRenderbuffersEXT(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteRenderbuffersEXT, 2);
 }
 void PT_CALL glDeleteSamplers(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteSamplers, 2);
 }
@@ -2251,12 +2251,12 @@ void PT_CALL glDeleteSync(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteSync, 1);
 }
 void PT_CALL glDeleteTextures(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteTextures, 2);
 }
 void PT_CALL glDeleteTexturesEXT(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteTexturesEXT, 2);
 }
@@ -2269,7 +2269,7 @@ void PT_CALL glDeleteTransformFeedbacksNV(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteTransformFeedbacksNV;
 }
 void PT_CALL glDeleteVertexArrays(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED((arg0 * sizeof(uint32_t))));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteVertexArrays, 2);
 }
@@ -2447,12 +2447,12 @@ void PT_CALL glDrawBuffer(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawBuffer, 1);
 }
 void PT_CALL glDrawBuffers(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0*sizeof(int)));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawBuffers, 2);
 }
 void PT_CALL glDrawBuffersARB(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0*sizeof(int)));
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawBuffersARB, 2);
 }
