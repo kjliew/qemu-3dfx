@@ -72,7 +72,9 @@ typedef struct MesaPTState
     int szVertCache;
     int texUnit;
     int pixPackBuf, pixUnpackBuf;
-    int szPackRow, szUnpackRow;
+    int szPackWidth, szUnpackWidth;
+    int szPackHeight, szUnpackHeight;
+    int queryBuf;
     int arrayBuf;
     int elemArryBuf;
     mapbufo_t *BufObj;
@@ -323,8 +325,10 @@ static void InitClientStates(MesaPTState *s)
     s->texUnit = 0;
     s->arrayBuf = 0;
     s->elemArryBuf = 0;
+    s->queryBuf = 0;
     s->pixPackBuf = 0; s->pixUnpackBuf = 0;
-    s->szPackRow = 0; s->szUnpackRow = 0;
+    s->szPackWidth = 0; s->szUnpackWidth = 0;
+    s->szPackHeight = 0; s->szUnpackHeight = 0;
 }
 
 static void dispTimerProc(void *opaque)
@@ -908,8 +912,8 @@ static void processArgs(MesaPTState *s)
             s->parg[0] = (s->FEnum == FEnum_glDrawPixels)? s->arg[4]:s->arg[0];
             if (s->pixUnpackBuf == 0) {
                 s->datacb = (s->FEnum == FEnum_glDrawPixels)?
-                    ALIGNED(((s->szUnpackRow == 0)? s->arg[0]:s->szUnpackRow) * s->arg[1] * szgldata(s->arg[2], s->arg[3])):
-                    ALIGNED(((s->szUnpackRow == 0)? 32:s->szUnpackRow) * 32);
+                    ALIGNED(((s->szUnpackWidth == 0)? s->arg[0]:s->szUnpackWidth) * s->arg[1] * szgldata(s->arg[2], s->arg[3])):
+                    ALIGNED(((s->szUnpackWidth == 0)? 32:s->szUnpackWidth) * 32);
                 s->parg[0] = VAL(s->hshm);
             }
             break;
@@ -978,10 +982,6 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetProgramivARB:
         case FEnum_glGetQueryiv:
         case FEnum_glGetQueryivARB:
-        case FEnum_glGetQueryObjectiv:
-        case FEnum_glGetQueryObjectivARB:
-        case FEnum_glGetQueryObjectuiv:
-        case FEnum_glGetQueryObjectuivARB:
         case FEnum_glGetShaderiv:
         case FEnum_glGetTexEnvfv:
         case FEnum_glGetTexEnviv:
@@ -992,6 +992,19 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetTexParameteriv:
             *(int *)outshm = szglname(s->arg[1]);
             s->parg[2] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
+            break;
+        case FEnum_glGetQueryObjecti64v:
+        case FEnum_glGetQueryObjecti64vEXT:
+        case FEnum_glGetQueryObjectiv:
+        case FEnum_glGetQueryObjectivARB:
+        case FEnum_glGetQueryObjectui64v:
+        case FEnum_glGetQueryObjectui64vEXT:
+        case FEnum_glGetQueryObjectuiv:
+        case FEnum_glGetQueryObjectuivARB:
+            if (s->queryBuf == 0) {
+                *(int *)outshm = szglname(s->arg[1]);
+                s->parg[2] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
+            }
             break;
         case FEnum_glGetMapdv:
         case FEnum_glGetMapfv:
@@ -1143,7 +1156,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glBitmap:
             s->parg[2] = s->arg[6];
             if (s->pixUnpackBuf == 0) {
-                uint32_t szBmp = ((s->szUnpackRow == 0)? s->arg[0]:s->szUnpackRow) * s->arg[1];
+                uint32_t szBmp = ((s->szUnpackWidth == 0)? s->arg[0]:s->szUnpackWidth) * s->arg[1];
                 uintptr_t bmpPtr = ((uintptr_t)s->fbtm_ptr) + (MGLFBT_SIZE - ALIGNED(szBmp));
                 s->parg[2] = (s->arg[6])? bmpPtr:0;
             }
@@ -1245,8 +1258,8 @@ static void processArgs(MesaPTState *s)
             if (s->pixUnpackBuf == 0) {
                 uint32_t szTex, *texPtr;
                 szTex = (s->FEnum == FEnum_glTexImage1D)?
-                    (((s->szUnpackRow == 0)? s->arg[3]:s->szUnpackRow) * szgldata(s->arg[5], s->arg[6])):
-                    (((s->szUnpackRow == 0)? s->arg[3]:s->szUnpackRow) * szgldata(s->arg[4], s->arg[5]));
+                    (((s->szUnpackWidth == 0)? s->arg[3]:s->szUnpackWidth) * szgldata(s->arg[5], s->arg[6])):
+                    (((s->szUnpackWidth == 0)? s->arg[3]:s->szUnpackWidth) * szgldata(s->arg[4], s->arg[5]));
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[3] = (s->arg[7])? VAL(texPtr):0;
                 s->parg[2] = (s->arg[6])? VAL(texPtr):0;
@@ -1259,8 +1272,8 @@ static void processArgs(MesaPTState *s)
             if (s->pixUnpackBuf == 0) {
                 uint32_t szTex, *texPtr;
                 szTex = (s->FEnum == FEnum_glTexImage2D)?
-                    (((s->szUnpackRow == 0)? s->arg[3]:s->szUnpackRow) * s->arg[4] * szgldata(s->arg[6], s->arg[7])):
-                    (((s->szUnpackRow == 0)? s->arg[4]:s->szUnpackRow) * s->arg[5] * szgldata(s->arg[6], s->arg[7]));
+                    (((s->szUnpackWidth == 0)? s->arg[3]:s->szUnpackWidth) * s->arg[4] * szgldata(s->arg[6], s->arg[7])):
+                    (((s->szUnpackWidth == 0)? s->arg[4]:s->szUnpackWidth) * s->arg[5] * szgldata(s->arg[6], s->arg[7]));
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[0] = (s->arg[8])? VAL(texPtr):0;
                 //DPRINTF("Tex*Image2D() %x,%x,%x,%x,%x,%x,%x,%x,%08x",s->arg[0],s->arg[1],s->arg[2],s->arg[3],s->arg[4],s->arg[5],s->arg[6],s->arg[7],szTex);
@@ -1271,9 +1284,19 @@ static void processArgs(MesaPTState *s)
             s->parg[1] = s->arg[9];
             if (s->pixUnpackBuf == 0) {
                 uint32_t szTex, *texPtr;
-                szTex = s->arg[3] * s->arg[4] * s->arg[5] * szgldata(s->arg[7], s->arg[8]);
+                szTex = ((s->szUnpackWidth == 0)? s->arg[3]:s->szUnpackWidth) * ((s->szUnpackHeight == 0)? s->arg[4]:s->szUnpackHeight) * s->arg[5] * szgldata(s->arg[7], s->arg[8]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[1] = (s->arg[9])? VAL(texPtr):0;
+            }
+            break;
+        case FEnum_glTexSubImage3D:
+        case FEnum_glTexSubImage3DEXT:
+            s->parg[2] = s->arg[10];
+            if (s->pixUnpackBuf == 0) {
+                uint32_t szTex, *texPtr;
+                szTex = ((s->szUnpackWidth == 0)? s->arg[5]:s->szUnpackWidth) * ((s->szUnpackHeight == 0)? s->arg[6]:s->szUnpackHeight) * s->arg[7] * szgldata(s->arg[8], s->arg[9]);
+                texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
+                s->parg[2] = (s->arg[10])? VAL(texPtr):0;
             }
             break;
         case FEnum_glGetCompressedTexImage:
@@ -1540,6 +1563,7 @@ static void processFRet(MesaPTState *s)
         case FEnum_glBindBufferARB:
             s->pixPackBuf = (s->arg[0] == GL_PIXEL_PACK_BUFFER)? s->arg[1]:s->pixPackBuf;
             s->pixUnpackBuf = (s->arg[0] == GL_PIXEL_UNPACK_BUFFER)? s->arg[1]:s->pixUnpackBuf;
+            s->queryBuf = (s->arg[0] == GL_QUERY_BUFFER)? s->arg[1]:s->queryBuf;
             s->arrayBuf = (s->arg[0] == GL_ARRAY_BUFFER)? s->arg[1]:s->arrayBuf;
             s->elemArryBuf = (s->arg[0] == GL_ELEMENT_ARRAY_BUFFER)? s->arg[1]:s->elemArryBuf;
             s->BufIdx = s->arg[1];
@@ -1549,6 +1573,7 @@ static void processFRet(MesaPTState *s)
             for (int i = 0; i < s->arg[0]; i++) {
                 s->pixPackBuf = (((uint32_t *)s->hshm)[i] == s->pixPackBuf)? 0:s->pixPackBuf;
                 s->pixUnpackBuf = (((uint32_t *)s->hshm)[i] == s->pixUnpackBuf)? 0:s->pixUnpackBuf;
+                s->queryBuf = (((uint32_t *)s->hshm)[i] == s->queryBuf)? 0:s->queryBuf;
                 s->arrayBuf = (((uint32_t *)s->hshm)[i] == s->arrayBuf)? 0:s->arrayBuf;
                 s->elemArryBuf = (((uint32_t *)s->hshm)[i] == s->elemArryBuf)? 0:s->elemArryBuf;
             }
@@ -1607,8 +1632,10 @@ static void processFRet(MesaPTState *s)
             //DPRINTF("MapBuffer hptr %p shm %p sz %x", s->BufObj->hptr, (s->BufObj->shmep - ALIGNED(s->BufObj->mapsz)), (uint32_t)s->FRet);
             break;
         case FEnum_glPixelStorei:
-            s->szPackRow = (s->arg[0] == GL_PACK_ROW_LENGTH)? s->arg[1]:s->szPackRow;
-            s->szUnpackRow = (s->arg[0] == GL_UNPACK_ROW_LENGTH)? s->arg[1]:s->szUnpackRow;
+            s->szPackWidth = (s->arg[0] == GL_PACK_ROW_LENGTH)? s->arg[1]:s->szPackWidth;
+            s->szPackHeight = (s->arg[0] == GL_PACK_IMAGE_HEIGHT)? s->arg[1]:s->szPackHeight;
+            s->szUnpackWidth = (s->arg[0] == GL_UNPACK_ROW_LENGTH)? s->arg[1]:s->szUnpackWidth;
+            s->szUnpackHeight = (s->arg[0] == GL_UNPACK_IMAGE_HEIGHT)? s->arg[1]:s->szUnpackHeight;
             //DPRINTF("PixelStorei %x %x", s->arg[0], s->arg[1]);
             break;
 #define MGL_TRACE 0

@@ -595,8 +595,12 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetMaterialiv:
         case FEnum_glGetProgramiv:
         case FEnum_glGetProgramivARB:
+        case FEnum_glGetQueryObjecti64v:
+        case FEnum_glGetQueryObjecti64vEXT:
         case FEnum_glGetQueryObjectiv:
         case FEnum_glGetQueryObjectivARB:
+        case FEnum_glGetQueryObjectui64v:
+        case FEnum_glGetQueryObjectui64vEXT:
         case FEnum_glGetQueryObjectuiv:
         case FEnum_glGetQueryObjectuivARB:
         case FEnum_glGetQueryiv:

@@ -118,7 +118,9 @@ static struct {
 } vtxArry;
 static vtxarry_t Interleaved;
 static int pixPackBuf, pixUnpackBuf;
-static int szPackRow, szUnpackRow;
+static int szPackWidth, szUnpackWidth;
+static int szPackHeight, szUnpackHeight;
+static int queryBuf;
 static void vtxarry_init(vtxarry_t *varry, int size, int type, int stride, void *ptr)
 {
     varry->size = size;
@@ -325,7 +327,9 @@ static void InitClientStates(void)
     memset(&vtxArry, 0, sizeof(vtxArry));
     memset(&Interleaved, 0, sizeof(vtxarry_t));
     pixPackBuf = 0; pixUnpackBuf = 0;
-    szPackRow = 0; szUnpackRow = 0;
+    szPackWidth = 0; szUnpackWidth = 0;
+    szPackHeight = 0; szUnpackHeight = 0;
+    queryBuf = 0;
 }
 
 #define FIFO_EN 1
@@ -536,6 +540,7 @@ void PT_CALL glBindBuffer(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindBuffer, 2);
     pixPackBuf = (arg0 == GL_PIXEL_PACK_BUFFER)? arg1:pixPackBuf;
     pixUnpackBuf = (arg0 == GL_PIXEL_UNPACK_BUFFER)? arg1:pixUnpackBuf;
+    queryBuf = (arg0 == GL_QUERY_BUFFER)? arg1:queryBuf;
     vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
     vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
 }
@@ -544,6 +549,7 @@ void PT_CALL glBindBufferARB(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindBufferARB, 2);
     pixPackBuf = (arg0 == GL_PIXEL_PACK_BUFFER)? arg1:pixPackBuf;
     pixUnpackBuf = (arg0 == GL_PIXEL_UNPACK_BUFFER)? arg1:pixUnpackBuf;
+    queryBuf = (arg0 == GL_QUERY_BUFFER)? arg1:queryBuf;
     vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
     vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
 }
@@ -780,7 +786,7 @@ void PT_CALL glBinormalPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glBitmap(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     if (arg6 && (pixUnpackBuf == 0)) {
-        uint32_t szBmp = ((szUnpackRow == 0)? arg0:szUnpackRow) * arg1;
+        uint32_t szBmp = ((szUnpackWidth == 0)? arg0:szUnpackWidth) * arg1;
         uint32_t *bmpPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szBmp)) >> 2];
         memcpy(bmpPtr, (char *)arg6, szBmp);
     }
@@ -2111,6 +2117,7 @@ void PT_CALL glDeleteBuffers(uint32_t arg0, uint32_t arg1) {
     for (int i = 0; i < arg0; i++) {
         pixPackBuf = (((uint32_t *)arg1)[i] == pixPackBuf)? 0:pixPackBuf;
         pixUnpackBuf = (((uint32_t *)arg1)[i] == pixUnpackBuf)? 0:pixUnpackBuf;
+        queryBuf = (((uint32_t *)arg1)[i] == queryBuf)? 0:queryBuf;
         vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
         vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
     }
@@ -2122,6 +2129,7 @@ void PT_CALL glDeleteBuffersARB(uint32_t arg0, uint32_t arg1) {
     for (int i = 0; i < arg0; i++) {
         pixPackBuf = (((uint32_t *)arg1)[i] == pixPackBuf)? 0:pixPackBuf;
         pixUnpackBuf = (((uint32_t *)arg1)[i] == pixUnpackBuf)? 0:pixUnpackBuf;
+        queryBuf = (((uint32_t *)arg1)[i] == queryBuf)? 0:queryBuf;
         vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
         vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
     }
@@ -2609,7 +2617,7 @@ void PT_CALL glDrawMeshTasksNV(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glDrawPixels(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     if (pixUnpackBuf == 0) {
         uint32_t szPix;
-        szPix = ((szUnpackRow == 0)? arg0:szUnpackRow) * arg1 * szgldata(arg2, arg3);
+        szPix = ((szUnpackWidth == 0)? arg0:szUnpackWidth) * arg1 * szgldata(arg2, arg3);
         fifoAddData(0, arg4, ALIGNED(szPix));
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -4605,46 +4613,74 @@ void PT_CALL glGetQueryIndexediv(uint32_t arg0, uint32_t arg1, uint32_t arg2, ui
 void PT_CALL glGetQueryObjecti64v(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetQueryObjecti64v;
+    if (queryBuf == 0) {
+        uint32_t n;
+        fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(uint64_t));
+    }
 }
 void PT_CALL glGetQueryObjecti64vEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetQueryObjecti64vEXT;
+    if (queryBuf == 0) {
+        uint32_t n;
+        fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(uint64_t));
+    }
 }
 void PT_CALL glGetQueryObjectiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetQueryObjectiv;
-    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
-    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
+    if (queryBuf == 0) {
+        uint32_t n;
+        fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
+    }
 }
 void PT_CALL glGetQueryObjectivARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetQueryObjectivARB;
-    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
-    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
+    if (queryBuf == 0) {
+        uint32_t n;
+        fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
+    }
 }
 void PT_CALL glGetQueryObjectui64v(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetQueryObjectui64v;
+    if (queryBuf == 0) {
+        uint32_t n;
+        fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(uint64_t));
+    }
 }
 void PT_CALL glGetQueryObjectui64vEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetQueryObjectui64vEXT;
+    if (queryBuf == 0) {
+        uint32_t n;
+        fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(uint64_t));
+    }
 }
 void PT_CALL glGetQueryObjectuiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetQueryObjectuiv;
-    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
-    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
+    if (queryBuf == 0) {
+        uint32_t n;
+        fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
+    }
 }
 void PT_CALL glGetQueryObjectuivARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetQueryObjectuivARB;
-    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
-    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
+    if (queryBuf == 0) {
+        uint32_t n;
+        fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
+    }
 }
 void PT_CALL glGetQueryiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     uint32_t n;
@@ -7653,8 +7689,10 @@ void PT_CALL glPixelStoref(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glPixelStorei(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPixelStorei, 2);
-    szPackRow = (arg0 == GL_PACK_ROW_LENGTH)? arg1:szPackRow;
-    szUnpackRow = (arg0 == GL_UNPACK_ROW_LENGTH)? arg1:szUnpackRow;
+    szPackWidth = (arg0 == GL_PACK_ROW_LENGTH)? arg1:szPackWidth;
+    szPackHeight = (arg0 == GL_PACK_IMAGE_HEIGHT)? arg1:szPackHeight;
+    szUnpackWidth = (arg0 == GL_UNPACK_ROW_LENGTH)? arg1:szUnpackWidth;
+    szUnpackHeight = (arg0 == GL_UNPACK_IMAGE_HEIGHT)? arg1:szUnpackHeight;
 }
 void PT_CALL glPixelStorex(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -7819,7 +7857,7 @@ void PT_CALL glPolygonOffsetxOES(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glPolygonStipple(uint32_t arg0) {
     if (pixUnpackBuf == 0) {
         uint32_t szPix;
-        szPix = ((szUnpackRow == 0)? 32:szUnpackRow)*32;
+        szPix = ((szUnpackWidth == 0)? 32:szUnpackWidth)*32;
         fifoAddData(0, arg0, ALIGNED(szPix));
     }
     pt[1] = arg0; 
@@ -8825,7 +8863,7 @@ void PT_CALL glReadPixels(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glReadPixels;
     if (pixPackBuf == 0) {
         uint32_t szPix;
-        szPix = ((szPackRow == 0)? arg2:szPackRow) * arg3 * szgldata(arg4, arg5);
+        szPix = ((szPackWidth == 0)? arg2:szPackWidth) * arg3 * szgldata(arg4, arg5);
         memcpy((unsigned char *)arg6, fbtm, szPix);
     }
 }
@@ -10133,7 +10171,7 @@ void PT_CALL glTexGenxvOES(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 void PT_CALL glTexImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7) {
     uint32_t szTex, *texPtr;
     if (arg7) {
-        szTex = arg3 * szgldata(arg5, arg6);
+        szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * szgldata(arg5, arg6);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg7, szTex);
     }
@@ -10143,7 +10181,7 @@ void PT_CALL glTexImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t 
 void PT_CALL glTexImage2D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
     uint32_t szTex, *texPtr;
     if (arg8) {
-        szTex = arg3 * arg4 * szgldata(arg6, arg7);
+        szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * arg4 * szgldata(arg6, arg7);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         //DPRINTF("TexImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
         memcpy(texPtr, (unsigned char *)arg8, szTex);
@@ -10162,7 +10200,7 @@ void PT_CALL glTexImage2DMultisampleCoverageNV(uint32_t arg0, uint32_t arg1, uin
 void PT_CALL glTexImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
     uint32_t szTex, *texPtr;
     if (arg9) {
-        szTex = arg3 * arg4 * arg5 * szgldata(arg7, arg8);
+        szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * ((szUnpackHeight == 0)? arg4:szUnpackHeight) * arg5 * szgldata(arg7, arg8);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg9, szTex);
     }
@@ -10172,7 +10210,7 @@ void PT_CALL glTexImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t 
 void PT_CALL glTexImage3DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
     uint32_t szTex, *texPtr;
     if (arg9) {
-        szTex = arg3 * arg4 * arg5 * szgldata(arg7, arg8);
+        szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * ((szUnpackHeight == 0)? arg4:szUnpackHeight) * arg5 * szgldata(arg7, arg8);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg9, szTex);
     }
@@ -10288,7 +10326,7 @@ void PT_CALL glTexStorageSparseAMD(uint32_t arg0, uint32_t arg1, uint32_t arg2, 
 void PT_CALL glTexSubImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     if (pixUnpackBuf == 0) {
         uint32_t szTex, *texPtr;
-        szTex = ((szUnpackRow == 0)? arg3:szUnpackRow) * szgldata(arg4, arg5);
+        szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * szgldata(arg4, arg5);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg6, szTex);
     }
@@ -10298,7 +10336,7 @@ void PT_CALL glTexSubImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
 void PT_CALL glTexSubImage1DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     if (pixUnpackBuf == 0) {
         uint32_t szTex, *texPtr;
-        szTex = ((szUnpackRow == 0)? arg3:szUnpackRow) * szgldata(arg4, arg5);
+        szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * szgldata(arg4, arg5);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg6, szTex);
     }
@@ -10308,7 +10346,7 @@ void PT_CALL glTexSubImage1DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
 void PT_CALL glTexSubImage2D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
     if (pixUnpackBuf == 0) {
         uint32_t szTex, *texPtr;
-        szTex = ((szUnpackRow == 0)? arg4:szUnpackRow) * arg5 * szgldata(arg6, arg7);
+        szTex = ((szUnpackWidth == 0)? arg4:szUnpackWidth) * arg5 * szgldata(arg6, arg7);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         //DPRINTF("TexSubImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
         memcpy(texPtr, (unsigned char *)arg8, szTex);
@@ -10319,7 +10357,7 @@ void PT_CALL glTexSubImage2D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
 void PT_CALL glTexSubImage2DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
     if (pixUnpackBuf == 0) {
         uint32_t szTex, *texPtr;
-        szTex = ((szUnpackRow == 0)? arg4:szUnpackRow) * arg5 * szgldata(arg6, arg7);
+        szTex = ((szUnpackWidth == 0)? arg4:szUnpackWidth) * arg5 * szgldata(arg6, arg7);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         //DPRINTF("TexSubImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
         memcpy(texPtr, (unsigned char *)arg8, szTex);
@@ -10330,7 +10368,7 @@ void PT_CALL glTexSubImage2DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
 void PT_CALL glTexSubImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10) {
     if (pixUnpackBuf == 0) {
         uint32_t szTex, *texPtr;
-        szTex = ((szUnpackRow == 0)? arg5:szUnpackRow) * arg6 * arg7 * szgldata(arg8, arg9);
+        szTex = ((szUnpackWidth == 0)? arg5:szUnpackWidth) * ((szUnpackHeight == 0)? arg6:szUnpackHeight) * arg7 * szgldata(arg8, arg9);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg10, szTex);
     }
@@ -10340,7 +10378,7 @@ void PT_CALL glTexSubImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
 void PT_CALL glTexSubImage3DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10) {
     if (pixUnpackBuf == 0) {
         uint32_t szTex, *texPtr;
-        szTex = ((szUnpackRow == 0)? arg5:szUnpackRow) * arg6 * arg7 * szgldata(arg8, arg9);
+        szTex = ((szUnpackWidth == 0)? arg5:szUnpackWidth) * ((szUnpackHeight == 0)? arg6:szUnpackHeight) * arg7 * szgldata(arg8, arg9);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         memcpy(texPtr, (unsigned char *)arg10, szTex);
     }
