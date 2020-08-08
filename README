@@ -8,9 +8,7 @@ qemu-0/hw/3dfx              - Overlay for QEMU source tree to add 3Dfx Glide pas
 qemu-1/hw/mesa              - Overlay for QEMU source tree to add MESA GL pass-through device model
 wrapper                     - Glide wrappers for supported guest OS/environment. (DOS/Windows/DJGPP/Linux)
 wrapqgl                     - MESA GL wrapper for supported guest OS/environment. (Windows)
-00-qemu410-3dfx.patch       - Patch for QEMU version 4.xx (Glide only)
-00-qemu311-3dfx.patch       - Patch for QEMU version 3.xx (Glide only)
-01-qemu411-mesa.patch       - Patch for QEMU version 4.xx (MESA only)
+00-qemu311-mesa-glide.patch - Patch for QEMU version 3.xx (MESA & Glide)
 10-qemu411-mesa-glide.patch - Patch for QEMU version 4.xx (MESA & Glide)
 99-3dfx.patch               - Patch for QEMU version 1.6.x to 2.12.1 (deprecated)
 99-oldqemu.patch            - Addition patch for QEMU version < 2.10 (deprecated)

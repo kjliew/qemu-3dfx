@@ -1,7 +1,7 @@
-diff -Nru ../orig/qemu-4.1.1/configure ./configure
---- ../orig/qemu-4.1.1/configure	2020-08-08 03:55:59.788923100 -0700
-+++ ./configure	2020-08-08 04:09:51.767163100 -0700
-@@ -871,6 +871,8 @@
+diff -Nru ../orig/qemu-3.1.1.1/configure ./configure
+--- ../orig/qemu-3.1.1.1/configure	2020-08-08 03:36:49.848742700 -0700
++++ ./configure	2020-08-08 03:40:07.034755500 -0700
+@@ -845,6 +845,8 @@
    # won't work when we're compiling with gcc as a C compiler.
    QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
    HOST_VARIANT_DIR="darwin"
@@ -10,19 +10,19 @@ diff -Nru ../orig/qemu-4.1.1/configure ./configure
    supported_os="yes"
  ;;
  SunOS)
-@@ -903,6 +905,8 @@
-   linux_user="yes"
-   kvm="yes"
+@@ -881,6 +883,8 @@
+   vhost_scsi="yes"
+   vhost_vsock="yes"
    QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$PWD/linux-headers $QEMU_INCLUDES"
 +# For MESA/Glide pass-through ##
 +  LIBS="-ldl -lGLX $LIBS"
    supported_os="yes"
    libudev="yes"
  ;;
-diff -Nru ../orig/qemu-4.1.1/hw/i386/pc.c ./hw/i386/pc.c
---- ../orig/qemu-4.1.1/hw/i386/pc.c	2020-08-08 03:56:19.275005300 -0700
-+++ ./hw/i386/pc.c	2020-08-08 04:09:52.384763100 -0700
-@@ -2113,6 +2113,28 @@
+diff -Nru ../orig/qemu-3.1.1.1/hw/i386/pc.c ./hw/i386/pc.c
+--- ../orig/qemu-3.1.1.1/hw/i386/pc.c	2020-08-08 03:37:07.444016500 -0700
++++ ./hw/i386/pc.c	2020-08-08 03:40:07.047936300 -0700
+@@ -1636,6 +1636,28 @@
  
      /* Super I/O */
      pc_superio_init(isa_bus, create_fdctrl, no_vmport);
@@ -51,29 +51,29 @@ diff -Nru ../orig/qemu-4.1.1/hw/i386/pc.c ./hw/i386/pc.c
  }
  
  void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
-diff -Nru ../orig/qemu-4.1.1/hw/Makefile.objs ./hw/Makefile.objs
---- ../orig/qemu-4.1.1/hw/Makefile.objs	2020-08-08 03:56:14.705205400 -0700
-+++ ./hw/Makefile.objs	2020-08-08 04:11:24.119025500 -0700
-@@ -9,6 +9,7 @@
- devices-dirs-y += char/
- devices-dirs-y += cpu/
- devices-dirs-y += display/
-+devices-dirs-y += 3dfx/
- devices-dirs-y += dma/
- devices-dirs-y += gpio/
+diff -Nru ../orig/qemu-3.1.1.1/hw/Makefile.objs ./hw/Makefile.objs
+--- ../orig/qemu-3.1.1.1/hw/Makefile.objs	2020-08-08 03:37:03.726212600 -0700
++++ ./hw/Makefile.objs	2020-08-08 03:40:07.058968500 -0700
+@@ -7,6 +7,7 @@
+ devices-dirs-$(CONFIG_SOFTMMU) += char/
+ devices-dirs-$(CONFIG_SOFTMMU) += cpu/
+ devices-dirs-$(CONFIG_SOFTMMU) += display/
++devices-dirs-$(CONFIG_SOFTMMU) += 3dfx/
+ devices-dirs-$(CONFIG_SOFTMMU) += dma/
+ devices-dirs-$(CONFIG_SOFTMMU) += gpio/
  devices-dirs-$(CONFIG_HYPERV) += hyperv/
-@@ -19,6 +20,7 @@
+@@ -17,6 +18,7 @@
  devices-dirs-$(CONFIG_IPACK) += ipack/
  devices-dirs-$(CONFIG_IPMI) += ipmi/
- devices-dirs-y += isa/
-+devices-dirs-y += mesa/
- devices-dirs-y += misc/
- devices-dirs-y += net/
- devices-dirs-y += rdma/
-diff -Nru ../orig/qemu-4.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
---- ../orig/qemu-4.1.1/include/hw/i386/pc.h	2020-08-08 03:56:31.243545900 -0700
-+++ ./include/hw/i386/pc.h	2020-08-08 04:09:52.418233100 -0700
-@@ -173,6 +173,16 @@
+ devices-dirs-$(CONFIG_SOFTMMU) += isa/
++devices-dirs-$(CONFIG_SOFTMMU) += mesa/
+ devices-dirs-$(CONFIG_SOFTMMU) += misc/
+ devices-dirs-$(CONFIG_SOFTMMU) += net/
+ devices-dirs-$(CONFIG_SOFTMMU) += rdma/
+diff -Nru ../orig/qemu-3.1.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
+--- ../orig/qemu-3.1.1.1/include/hw/i386/pc.h	2020-08-08 03:37:17.442119800 -0700
++++ ./include/hw/i386/pc.h	2020-08-08 03:40:07.068750300 -0700
+@@ -165,6 +165,16 @@
  
  void gsi_handler(void *opaque, int n, int level);
  
@@ -90,10 +90,10 @@ diff -Nru ../orig/qemu-4.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
  /* vmport.c */
  #define TYPE_VMPORT "vmport"
  typedef uint32_t (VMPortReadFunc)(void *opaque, uint32_t address);
-diff -Nru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
---- ../orig/qemu-4.1.1/include/ui/console.h	2020-08-08 03:56:36.630994900 -0700
-+++ ./include/ui/console.h	2020-08-08 04:09:52.429297600 -0700
-@@ -453,4 +453,21 @@
+diff -Nru ../orig/qemu-3.1.1.1/include/ui/console.h ./include/ui/console.h
+--- ../orig/qemu-3.1.1.1/include/ui/console.h	2020-08-08 03:37:21.967432700 -0700
++++ ./include/ui/console.h	2020-08-08 03:40:07.079611600 -0700
+@@ -464,4 +464,21 @@
  /* input.c */
  int index_from_key(const char *key, size_t key_length);
  
@@ -115,10 +115,10 @@ diff -Nru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
 +void mesa_enabled_reset(void);
 +
  #endif
-diff -Nru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
---- ../orig/qemu-4.1.1/ui/console.c	2020-08-08 04:06:37.518405000 -0700
-+++ ./ui/console.c	2020-08-08 04:09:52.442247300 -0700
-@@ -259,8 +259,22 @@
+diff -Nru ../orig/qemu-3.1.1.1/ui/console.c ./ui/console.c
+--- ../orig/qemu-3.1.1.1/ui/console.c	2020-08-08 03:39:29.938803900 -0700
++++ ./ui/console.c	2020-08-08 03:40:07.090711100 -0700
+@@ -258,8 +258,22 @@
      ds->have_text = have_text;
  }
  
@@ -141,9 +141,110 @@ diff -Nru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
      if (!con) {
          con = active_console;
      }
-diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
---- ../orig/qemu-4.1.1/ui/sdl2.c	2020-08-08 04:06:37.785807100 -0700
-+++ ./ui/sdl2.c	2020-08-08 04:10:11.832599900 -0700
+diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
+--- ../orig/qemu-3.1.1.1/ui/sdl.c	2020-08-08 03:39:30.140782000 -0700
++++ ./ui/sdl.c	2020-08-08 03:41:30.728524400 -0700
+@@ -822,6 +822,10 @@
+             break;
+         case SDL_VIDEORESIZE:
+             sdl_scale(ev->resize.w, ev->resize.h);
++            if ((ev->resize.w == gui_saved_width) && (ev->resize.h == gui_saved_height)) {
++                gui_saved_width = 0;
++                gui_saved_height = 0;
++            }
+             graphic_hw_invalidate(NULL);
+             graphic_hw_update(NULL);
+             break;
+@@ -892,6 +896,86 @@
+     SDL_QuitSubSystem(SDL_INIT_VIDEO);
+ }
+ 
++uintptr_t glide_prepare_window(int w, int h)
++{
++    uintptr_t hwndSDL = 0;
++    SDL_SysWMinfo wmi;
++
++    if (!guest_screen)
++        return hwndSDL;
++
++    SDL_VERSION(&wmi.version);
++    if(SDL_GetWMInfo(&wmi)) {
++#if defined(_WIN32)
++	hwndSDL = (uintptr_t)wmi.window;
++#elif defined(SDL_VIDEO_DRIVER_X11)
++	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#endif
++    }
++    gui_saved_width = real_screen->w;
++    gui_saved_height = real_screen->h;
++
++    glide_enabled_set();
++    smp_mb();
++
++    SDL_Event ev1, *ev = &ev1;
++    ev->type = SDL_VIDEORESIZE;
++    ev->resize.w = w;
++    ev->resize.h = h;
++    SDL_PushEvent(ev);
++
++    return hwndSDL;
++}
++
++void glide_release_window(void)
++{
++    glide_enabled_reset();
++    smp_mb();
++    SDL_Event ev1, *ev = &ev1;
++    ev->type = SDL_VIDEORESIZE;
++    ev->resize.w = gui_saved_width;
++    ev->resize.h = gui_saved_height;
++    SDL_PushEvent(ev);
++}
++
++uint32_t glide_window_stat(int activate)
++{
++    int scr_w, scr_h;
++    uint32_t stat;
++    scr_w = real_screen->w;
++    scr_h = real_screen->h;
++    if (activate)
++	stat = (uint32_t)(((scr_h & 0xFFFFU) << 0x10) | scr_w);
++    else
++	stat = (((gui_saved_height & 0xFFFFU) << 0x10) | gui_saved_width)? 1:0;
++    return stat;
++}
++
++int glide_gui_getwidth(void) { return real_screen->w; }
++int glide_gui_fullscreen(void) { return gui_fullscreen; }
++
++uintptr_t mesa_prepare_window(void)
++{
++    uintptr_t hwndSDL = 0;
++    SDL_SysWMinfo wmi;
++
++    if (!guest_screen)
++        return hwndSDL;
++
++    SDL_VERSION(&wmi.version);
++    if(SDL_GetWMInfo(&wmi)) {
++#if defined(_WIN32)
++	hwndSDL = (uintptr_t)wmi.window;
++#elif defined(SDL_VIDEO_DRIVER_X11)
++	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#endif
++    }
++
++    return hwndSDL;
++}
++
++void mesa_release_window(void) { }
++
+ static const DisplayChangeListenerOps dcl_ops = {
+     .dpy_name             = "sdl",
+     .dpy_gfx_update       = sdl_update,
+diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
+--- ../orig/qemu-3.1.1.1/ui/sdl2.c	2020-08-08 03:39:30.179508800 -0700
++++ ./ui/sdl2.c	2020-08-08 03:40:07.113387700 -0700
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
@@ -152,8 +253,8 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +static int gui_saved_height;
  static int gui_saved_grab;
  static int gui_fullscreen;
- static int gui_grab_code = KMOD_LALT | KMOD_LCTRL;
-@@ -528,6 +530,14 @@
+ static int gui_keysym;
+@@ -535,6 +537,14 @@
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_EXPOSED:
@@ -168,7 +269,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
-@@ -712,6 +722,97 @@
+@@ -719,6 +729,97 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
