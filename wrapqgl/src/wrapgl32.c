@@ -16098,7 +16098,7 @@ uint32_t PT_CALL mglCreateContext (uint32_t arg0)
 uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
 {
     static const char icdBuild[] __attribute__((used)) = 
-        "WRAPGL32 Build "__DATE__" "__TIME__;
+        __TIME__" "__DATE__" Build";
     uint32_t *ptVer = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     if (currDC == 0)
         mglCreateContext(arg0);

@@ -1873,7 +1873,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     int level = ((ptVer[0] & 0xFFFFFFF0U) == (MESAGL_MAGIC & 0xFFFFFFF0U))? (MESAGL_MAGIC - ptVer[0]):0;
                     if (s->mglContext && !s->mglCntxCurrent && ptVer[0]) {
                         DPRINTF("wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
-                        DPRINTF("======== %s ========", (char *)&ptVer[1]);
+                        DPRINTF("%s WRAPGL32", (char *)&ptVer[1]);
                         s->mglCntxCurrent = MGLMakeCurrent(ptVer[0], level)? 0:1;
                         s->logpname = g_new0(uint8_t, 0x2000);
                         s->extnYear = GetGLExtYear();
