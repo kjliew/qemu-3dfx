@@ -324,7 +324,7 @@ void PT_CALL grDepthMask(uint32_t arg0) {
 }
 void PT_CALL grDisableAllEffects(void) {
     
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grDisableAllEffects;
+    pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDisableAllEffects, 0);
 }
 void PT_CALL grDitherMode(uint32_t arg0) {
     pt[1] = arg0; 
@@ -402,6 +402,9 @@ void PT_CALL grGlideGetVersion(uint32_t arg0) {
 }
 void PT_CALL grGlideInit(void) {
 
+    uint32_t *ptVer;
+    ptVer = &mfifo[(GRSHM_SIZE - PAGE_SIZE) >> 2];
+    memcpy(ptVer, buildstr, sizeof(buildstr));
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideInit;
     grGlidePresent = 1;
 }

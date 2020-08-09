@@ -11,3 +11,6 @@
 #define SIZE_GUTEXPALETTE 1024
 #define SIZE_GRMIPMAPINFO 196
 #define SIZE_GRRESOLUTION 16
+#ifndef GLIDE2X_IMPL_H
+static const char buildstr[] = __TIME__" "__DATE__" Build";
+#endif

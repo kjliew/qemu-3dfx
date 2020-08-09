@@ -55,13 +55,14 @@ static struct tblGlideResolution tblRes[] = {
   { .w = 0, .h = 0},
 };
 
-static uintptr_t hwnd = 0;
-static int cfg_createWnd = 0;
-static int cfg_scaleX = 0;
-static int cfg_lfbHandler = 0;
-static int cfg_lfbNoAux = 0;
-static int cfg_lfbLockDirty = 0;
-static int cfg_lfbWriteMerge = 0;
+static uintptr_t hwnd;
+static int cfg_createWnd;
+static int cfg_scaleGuiX;
+static int cfg_scaleX;
+static int cfg_lfbHandler;
+static int cfg_lfbNoAux;
+static int cfg_lfbLockDirty;
+static int cfg_lfbWriteMerge;
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 static LONG WINAPI GlideWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -193,6 +194,7 @@ uint32_t init_window(const int res, const char *wndTitle)
     } cvHWnd;
 
     cfg_createWnd = 0;
+    cfg_scaleGuiX = 1;
     cfg_scaleX = 0;
     cfg_lfbHandler = 0;
     cfg_lfbNoAux = 0;
@@ -206,6 +208,8 @@ uint32_t init_window(const int res, const char *wndTitle)
         while (fgets(line, 32, fp)) {
             i = sscanf(line, "CreateWindow,%d", &c);
             cfg_createWnd = ((i == 1) && c)? 1:cfg_createWnd;
+            i = sscanf(line, "ScaleGuiX,%d", &c);
+            cfg_scaleGuiX = ((i == 1) && (c == 0))? 0:cfg_scaleGuiX;
             i = sscanf(line, "ScaleWidth,%d", &c);
             cfg_scaleX = ((i == 1) && c)? c:cfg_scaleX;
             i = sscanf(line, "LfbHandler,%d", &c);
@@ -219,6 +223,10 @@ uint32_t init_window(const int res, const char *wndTitle)
 	}
         fclose(fp);
     }
+
+    int gui_width = glide_gui_getwidth();
+    cfg_scaleGuiX = (cfg_createWnd || cfg_scaleX)? 0:cfg_scaleGuiX;
+    cfg_scaleX = (cfg_scaleGuiX && (gui_width >= 800) && (tblRes[res].w < gui_width))? gui_width:cfg_scaleX;
 
 #define WRAPPER_FLAG_WINDOWED   0x01
 #define WRAPPER_FLAG_QEMU       0x80
@@ -262,7 +270,7 @@ static void profile_dump(void)
     PSTATSFX p = &fxstats;
     if (p->last) {
 	p->last = 0;
-	DPRINTF("%-3u frames in %-4.1f seconds, %-4.1f FPS\r", p->fcount, p->ftime, (p->fcount / p->ftime));
+	DPRINTF("%-4u frames in %-4.1f seconds, %-4.1f FPS\r", p->fcount, p->ftime, (p->fcount / p->ftime));
     }
 }
 
