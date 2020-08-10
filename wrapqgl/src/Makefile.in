@@ -14,7 +14,7 @@ C_OBJS:=\
 
 all: $(TARGET)
 
-$(TARGET): $(C_OBJS) szdata.o wrapgl32.o
+$(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  LD  $@"
@@ -24,6 +24,11 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o
 #	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
 #	dlltool -U -d lib$(@:dll=def) -l lib$@.a
 
+stamp.o:
+	@echo "  REV stamp"
+	@git rev-parse HEAD | sed "s/\(.......\).*/const\ char\ rev_\[\]\ =\ \"\1\-\";/" > /tmp/$(@:o=c)
+	@$(CC) -c -o $@ /tmp/$(@:o=c)
+
 %.o: $(SRCDIR)/%.c
 	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi
 	@echo "  CC  $@"
@@ -32,7 +37,7 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o
 clean:
 	@rm -f *.o *.def
 	@-if [ -f $(TARGET) ]; then strip --strip-unneeded $(TARGET); fi
-	@-if [ -f $(TARGET) ]; then strings $(TARGET) | grep Build; ls -hs $(TARGET); fi
+	@-if [ -f $(TARGET) ]; then strings $(TARGET) | grep "\ build\ "; ls -hs $(TARGET); fi
 
 distclean: clean
 	@rm -f $(TARGET)

@@ -16098,7 +16098,8 @@ uint32_t PT_CALL mglCreateContext (uint32_t arg0)
 uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
 {
     static const char icdBuild[] __attribute__((used)) = 
-        __TIME__" "__DATE__" Build";
+        __TIME__" "__DATE__" build ";
+    extern const char rev_[];
     uint32_t *ptVer = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     if (currDC == 0)
         mglCreateContext(arg0);
@@ -16106,7 +16107,8 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
         DPRINTF("%s", icdBuild);
     //DPRINTF("MakeCurrent %x %x", arg0, arg1);
     ptVer[0] = arg1;
-    memcpy(&ptVer[1], icdBuild, sizeof(icdBuild));
+    memcpy((char *)&ptVer[1], rev_, 8);
+    memcpy(((char *)&ptVer[1] + 8), icdBuild, sizeof(icdBuild));
     ptm[0xFF8 >> 2] = MESAGL_MAGIC;
     currGLRC = (level && ((arg1 + level) == MESAGL_MAGIC))? (arg1 + level):arg1;
     return TRUE;
