@@ -12,5 +12,5 @@
 #define SIZE_GRMIPMAPINFO 196
 #define SIZE_GRRESOLUTION 16
 #ifndef GLIDE2X_IMPL_H
-static const char buildstr[] = __TIME__" "__DATE__" Build";
+static const char buildstr[] = __REV__ __TIME__" "__DATE__" build ";
 #endif

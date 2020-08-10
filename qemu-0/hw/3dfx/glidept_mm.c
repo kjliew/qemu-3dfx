@@ -662,7 +662,7 @@ static void processFRet(GlidePTState *s)
 	case FEnum_grGlideInit:
             s->szGrState = SIZE_GRSTATE;
             s->szVtxLayout = SIZE_GRVERTEX;
-            DPRINTF("%s WRAPFX32\n", (char *)outshm);
+            DPRINTF("%sWRAPFX32\n", (char *)outshm);
             if (s->initDLL == 0x301a0) {
                 init_g3ext();
                 strncpy((char *)outshm, wrGetString(GR_EXTENSION), sizeof(char[192]));

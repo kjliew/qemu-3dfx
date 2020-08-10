@@ -11,7 +11,9 @@ glide2x.ovl: glideovl.obj
 	@if [ -d ../build ]; then cp -v $@ ../build; fi
 
 glideovl.obj: glideovl.c
+	@git rev-parse HEAD | sed "s/\(.......\).*/\#define\ __REV__\ \"\1\-\"/" > stamp.h
 	@$(WCC) $(INCLUDES) -we -6s -ohtx -bd -fpi87 $<
+	@rm stamp.h
 
 clean:
 	@rm -f *.map *.obj *.err *.ovl

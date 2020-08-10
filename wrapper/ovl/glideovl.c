@@ -4,6 +4,7 @@
  *
  */
 
+#include "stamp.h"
 #include "g2xfuncs.h"
 #include "szgrdata.h"
 
