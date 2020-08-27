@@ -36,8 +36,8 @@ diff -Nru ../orig/qemu-3.1.1.1/hw/i386/pc.c ./hw/i386/pc.c
 +{
 +    DeviceState *glidept_dev = NULL;
 +
-+    glidept_dev = qdev_create(NULL, TYPE_GLIDEPT);
-+    qdev_init_nofail(glidept_dev);
++    glidept_dev = qdev_new(TYPE_GLIDEPT);
++    sysbus_realize(SYS_BUS_DEVICE(glidept_dev), &error_fatal);
 +    sysbus_mmio_map(SYS_BUS_DEVICE(glidept_dev), 0, GLIDEPT_MM_BASE);
 +}
 +
@@ -45,8 +45,8 @@ diff -Nru ../orig/qemu-3.1.1.1/hw/i386/pc.c ./hw/i386/pc.c
 +{
 +    DeviceState *mesapt_dev = NULL;
 +
-+    mesapt_dev = qdev_create(NULL, TYPE_MESAPT);
-+    qdev_init_nofail(mesapt_dev);
++    mesapt_dev = qdev_new(TYPE_MESAPT);
++    sysbus_realize(SYS_BUS_DEVICE(mesapt_dev), &error_fatal);
 +    sysbus_mmio_map(SYS_BUS_DEVICE(mesapt_dev), 0, MESAPT_MM_BASE);
  }
  
@@ -73,10 +73,16 @@ diff -Nru ../orig/qemu-3.1.1.1/hw/Makefile.objs ./hw/Makefile.objs
 diff -Nru ../orig/qemu-3.1.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
 --- ../orig/qemu-3.1.1.1/include/hw/i386/pc.h	2020-08-08 03:37:17.442119800 -0700
 +++ ./include/hw/i386/pc.h	2020-08-08 03:40:07.068750300 -0700
-@@ -165,6 +165,16 @@
+@@ -165,6 +165,22 @@
  
  void gsi_handler(void *opaque, int n, int level);
  
++#if (((QEMU_VERSION_MAJOR << 8) | \
++      (QEMU_VERSION_MINOR << 4) | \
++       QEMU_VERSION_MICRO) < 0x510)
++#define qdev_new(x)         qdev_create(NULL,x)
++#define sysbus_realize(x,y) qdev_init_nofail((DeviceState *)x)
++#endif
 +/* GLIDE pass-through */
 +#define TYPE_GLIDEPT "glidept"
 +#define GLIDEPT_MM_BASE 0xfbdff000
@@ -346,7 +352,7 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
 +{
 +    uintptr_t hwndSDL = 0;
 +    SDL_SysWMinfo wmi;
-+    
++
 +    if (!sdl2_console)
 +        return hwndSDL;
 +

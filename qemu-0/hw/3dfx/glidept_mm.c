@@ -1081,8 +1081,8 @@ static void glidept_realize(DeviceState *dev, Error **errp)
     GlidePTState *s = GLIDEPT(dev);
     DeviceState *lfb = NULL;
 
-    lfb = qdev_create(NULL, TYPE_GLIDELFB);
-    qdev_init_nofail(lfb);
+    lfb = qdev_new(TYPE_GLIDELFB);
+    sysbus_realize(SYS_BUS_DEVICE(lfb), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(lfb), 0, GLIDE_LFB_BASE);
 
     s->lfbDev = GLIDELFB(lfb);
