@@ -123,7 +123,7 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
             src = (range == 0)? wrMap(target, GL_READ_ONLY):wrMapRange(target, offset, range, GL_MAP_READ_BIT);
             if (src) {
                 uint32_t szBuf = (range == 0)? wrGetParamIa1p2(FEnum_glGetBufferParameteriv, target, GL_BUFFER_SIZE):range;
-                memcpy((dst - ALIGNED(szBuf)), src, szBuf);
+                memcpy((dst - ALIGNBO(szBuf)), src, szBuf);
                 wrUnmap(target);
             }
             break;
@@ -133,7 +133,7 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
 void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t *bufo)
 {
     uint32_t szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo->range;
-    memcpy(bufo->hptr + bufo->offst, (bufo->shmep - ALIGNED(bufo->mapsz) + bufo->offst), szBuf);
+    memcpy(bufo->hptr + bufo->offst, (bufo->shmep - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
 }
 
 const char *getGLFuncStr(int FEnum)
@@ -576,6 +576,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glBindAttribLocationARB:
         case FEnum_glBindFragDataLocation:
         case FEnum_glBindFragDataLocationEXT:
+        case FEnum_glBindSamplers:
         case FEnum_glCallLists:
         case FEnum_glDepthRangeArrayv:
         case FEnum_glEdgeFlagPointerEXT:
@@ -1295,8 +1296,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
 
 }
 
-static uint16_t cfg_xYear;
-static size_t cfg_xLength;
+static int cfg_xYear;
+static int cfg_xLength;
 static int cfg_vertCacheMB;
 static int cfg_createWnd;
 static void conf_MGLOptions(void)
@@ -1325,8 +1326,8 @@ static void conf_MGLOptions(void)
     }
 }
 
-uint16_t GetGLExtYear(void) { return cfg_xYear; }
-size_t GetGLExtLength(void) { return cfg_xLength; }
+int GetGLExtYear(void) { return cfg_xYear; }
+int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetCreateWindow(void) { return cfg_createWnd; }
 

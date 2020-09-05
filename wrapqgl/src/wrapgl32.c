@@ -115,6 +115,7 @@ static struct {
     int texUnit;
     int arrayBuf;
     int elemArryBuf;
+    int vao;
 } vtxArry;
 static vtxarry_t Interleaved;
 static int pixPackBuf, pixUnpackBuf;
@@ -543,6 +544,10 @@ void PT_CALL glBindBuffer(uint32_t arg0, uint32_t arg1) {
     queryBuf = (arg0 == GL_QUERY_BUFFER)? arg1:queryBuf;
     vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
     vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
+    if (vtxArry.vao) {
+        vtxArry.arrayBuf = vtxArry.vao;
+        vtxArry.elemArryBuf = vtxArry.vao;
+    }
 }
 void PT_CALL glBindBufferARB(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -552,6 +557,10 @@ void PT_CALL glBindBufferARB(uint32_t arg0, uint32_t arg1) {
     queryBuf = (arg0 == GL_QUERY_BUFFER)? arg1:queryBuf;
     vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
     vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
+    if (vtxArry.vao) {
+        vtxArry.arrayBuf = vtxArry.vao;
+        vtxArry.elemArryBuf = vtxArry.vao;
+    }
 }
 void PT_CALL glBindBufferBase(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -673,8 +682,9 @@ void PT_CALL glBindSampler(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindSampler, 2);
 }
 void PT_CALL glBindSamplers(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, arg1*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindSamplers;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindSamplers, 3);
 }
 void PT_CALL glBindShadingRateImageNV(uint32_t arg0) {
     pt[1] = arg0; 
@@ -715,6 +725,9 @@ void PT_CALL glBindTransformFeedbackNV(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glBindVertexArray(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindVertexArray, 1);
+    vtxArry.vao = arg0;
+    vtxArry.arrayBuf = vtxArry.vao;
+    vtxArry.elemArryBuf = vtxArry.vao;
 }
 void PT_CALL glBindVertexArrayAPPLE(uint32_t arg0) {
     pt[1] = arg0; 
@@ -2121,6 +2134,10 @@ void PT_CALL glDeleteBuffers(uint32_t arg0, uint32_t arg1) {
         vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
         vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
     }
+    if (vtxArry.vao) {
+        vtxArry.arrayBuf = vtxArry.vao;
+        vtxArry.elemArryBuf = vtxArry.vao;
+    }
 }
 void PT_CALL glDeleteBuffersARB(uint32_t arg0, uint32_t arg1) {
     fifoAddData(0, arg1, arg0*sizeof(uint32_t));
@@ -2132,6 +2149,10 @@ void PT_CALL glDeleteBuffersARB(uint32_t arg0, uint32_t arg1) {
         queryBuf = (((uint32_t *)arg1)[i] == queryBuf)? 0:queryBuf;
         vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
         vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
+    }
+    if (vtxArry.vao) {
+        vtxArry.arrayBuf = vtxArry.vao;
+        vtxArry.elemArryBuf = vtxArry.vao;
     }
 }
 void PT_CALL glDeleteCommandListsNV(uint32_t arg0, uint32_t arg1) {
@@ -2280,6 +2301,10 @@ void PT_CALL glDeleteVertexArrays(uint32_t arg0, uint32_t arg1) {
     fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteVertexArrays, 2);
+    for (int i = 0; i < arg0; i++)
+        vtxArry.vao = (((uint32_t *)arg1)[i] == vtxArry.vao)? 0:vtxArry.vao;
+    vtxArry.arrayBuf = vtxArry.vao;
+    vtxArry.elemArryBuf = vtxArry.vao;
 }
 void PT_CALL glDeleteVertexArraysAPPLE(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 

@@ -37,7 +37,7 @@ stamp.o:
 clean:
 	@rm -f *.o *.def
 	@-if [ -f $(TARGET) ]; then strip --strip-unneeded $(TARGET); fi
-	@-if [ -f $(TARGET) ]; then strings $(TARGET) | grep "\ build\ "; ls -hs $(TARGET); fi
+	@-if [ -f $(TARGET) ]; then strings $(TARGET) | grep "\ build\ "; sh -c 'ls -l $(TARGET)'; fi
 
 distclean: clean
 	@rm -f $(TARGET)

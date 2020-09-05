@@ -77,6 +77,7 @@ typedef struct MesaPTState
     int queryBuf;
     int arrayBuf;
     int elemArryBuf;
+    int vao;
     mapbufo_t *BufObj;
     int BufIdx;
     uint32_t szUsedBuf;
@@ -324,6 +325,7 @@ static void InitClientStates(MesaPTState *s)
     s->elemMax = 0;
     s->texUnit = 0;
     s->arrayBuf = 0;
+    s->vao = 0;
     s->elemArryBuf = 0;
     s->queryBuf = 0;
     s->pixPackBuf = 0; s->pixUnpackBuf = 0;
@@ -477,6 +479,10 @@ static void processArgs(MesaPTState *s)
         case FEnum_glArrayElementEXT:
             s->elemMax = (s->arg[0] > s->elemMax)? s->arg[0]:s->elemMax;
             PushVertexArray(s, s->hshm, s->arg[0], s->arg[0]);
+            break;
+        case FEnum_glBindSamplers:
+            s->datacb = ALIGNED(s->arg[1] * sizeof(uint32_t));
+            s->parg[2] VAL(s->hshm);
             break;
         case FEnum_glCallLists:
             s->datacb = ALIGNED(s->arg[0] * szgldata(0, s->arg[1]));
@@ -1231,8 +1237,8 @@ static void processArgs(MesaPTState *s)
                 !(s->BufObj->acc & GL_MAP_FLUSH_EXPLICIT_BIT)) {
                 wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
                     s->arg[0], s->BufObj);
-                if (s->szUsedBuf == s->BufObj->mused + ALIGNED(s->BufObj->mapsz))
-                    s->szUsedBuf -= ALIGNED(s->BufObj->mapsz);
+                if (s->szUsedBuf == s->BufObj->mused + ALIGNBO(s->BufObj->mapsz))
+                    s->szUsedBuf -= ALIGNBO(s->BufObj->mapsz);
             }
             if (s->BufObj->hptr == 0)
                 DPRINTF("  *WARN* UnmapBuffer invalid host ptr %p", s->BufObj->hptr);
@@ -1567,6 +1573,10 @@ static void processFRet(MesaPTState *s)
             s->arrayBuf = (s->arg[0] == GL_ARRAY_BUFFER)? s->arg[1]:s->arrayBuf;
             s->elemArryBuf = (s->arg[0] == GL_ELEMENT_ARRAY_BUFFER)? s->arg[1]:s->elemArryBuf;
             s->BufIdx = s->arg[1];
+            if (s->vao) {
+                s->arrayBuf = s->vao;
+                s->elemArryBuf = s->vao;
+            }
             break;
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
@@ -1577,6 +1587,21 @@ static void processFRet(MesaPTState *s)
                 s->arrayBuf = (((uint32_t *)s->hshm)[i] == s->arrayBuf)? 0:s->arrayBuf;
                 s->elemArryBuf = (((uint32_t *)s->hshm)[i] == s->elemArryBuf)? 0:s->elemArryBuf;
             }
+            if (s->vao) {
+                s->arrayBuf = s->vao;
+                s->elemArryBuf = s->vao;
+            }
+            break;
+        case FEnum_glBindVertexArray:
+        case FEnum_glDeleteVertexArrays:
+            if (s->FEnum == FEnum_glBindVertexArray)
+                s->vao = s->arg[0];
+            else {
+                for (int i = 0; i < s->arg[0]; i++)
+                    s->vao = (((uint32_t *)s->hshm)[i] == s->vao)? 0:s->vao;
+            }
+            s->arrayBuf = s->vao;
+            s->elemArryBuf = s->vao;
             break;
         case FEnum_glClientActiveTextureARB:
             s->texUnit = ((s->arg[0] & 0xFFF0U) == GL_TEXTURE0_ARB)? (s->arg[0] & 0x0FU):0;
@@ -1619,6 +1644,7 @@ static void processFRet(MesaPTState *s)
                 s->BufObj->acc = s->arg[3];
                 s->BufObj->mapsz = s->arg[2];
                 s->BufObj->range = s->arg[2];
+                s->BufObj->offst = s->arg[1];
             }
             else {
                 s->BufObj->acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
@@ -1627,7 +1653,7 @@ static void processFRet(MesaPTState *s)
                 s->BufObj->mapsz = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)?
                     FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB, s->arg[0], GL_BUFFER_SIZE);
             }
-            s->szUsedBuf += ALIGNED(s->BufObj->mapsz);
+            s->szUsedBuf += ALIGNBO(s->BufObj->mapsz);
             s->FRet = s->szUsedBuf;
             //DPRINTF("MapBuffer hptr %p shm %p sz %x", s->BufObj->hptr, (s->BufObj->shmep - ALIGNED(s->BufObj->mapsz)), (uint32_t)s->FRet);
             break;
