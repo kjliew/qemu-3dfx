@@ -1,15 +1,6 @@
 diff -Nru ../orig/qemu-4.1.1/configure ./configure
 --- ../orig/qemu-4.1.1/configure	2020-08-08 03:55:59.788923100 -0700
 +++ ./configure	2020-08-08 04:09:51.767163100 -0700
-@@ -871,6 +871,8 @@
-   # won't work when we're compiling with gcc as a C compiler.
-   QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
-   HOST_VARIANT_DIR="darwin"
-+# For MESA/Glide pass-through ##
-+  LIBS="-ldl -lGLX $LIBS"
-   supported_os="yes"
- ;;
- SunOS)
 @@ -903,6 +905,8 @@
    linux_user="yes"
    kvm="yes"
