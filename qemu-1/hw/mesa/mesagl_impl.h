@@ -40,6 +40,7 @@ void doMesaFunc(int, uint32_t *, uintptr_t *, uintptr_t *);
 int GetGLExtYear(void);
 int GetGLExtLength(void);
 int GetVertCacheMB(void);
+int GetDispTimerMS(void);
 int GetCreateWindow(void);
 void FiniMesaGL(void);
 void ImplMesaGLReset(void);

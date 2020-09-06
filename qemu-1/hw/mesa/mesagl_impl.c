@@ -1299,17 +1299,19 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
 static int cfg_xYear;
 static int cfg_xLength;
 static int cfg_vertCacheMB;
+static int cfg_dispTimerMS;
 static int cfg_createWnd;
 static void conf_MGLOptions(void)
 {
     cfg_xYear = 2004;
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
+    cfg_dispTimerMS = 2000;
     cfg_createWnd = 0;
     FILE *fp = fopen(MESAGLCFG, "r");
     if (fp != NULL) {
         char line[32];
-        int i, y, n, v, w;
+        int i, y, n, v, t, w;
         while (fgets(line, 32, fp)) {
             i = sscanf(line, "ExtensionsYear,%d", &y);
             cfg_xYear = (i == 1)? y:cfg_xYear;
@@ -1317,6 +1319,8 @@ static void conf_MGLOptions(void)
             cfg_xLength = (i == 1)? n:cfg_xLength;
             i = sscanf(line, "VertexCacheMB,%d", &v);
             cfg_vertCacheMB = (i == 1)? v:cfg_vertCacheMB;
+            i = sscanf(line, "DispTimerMS,%d", &t);
+            cfg_dispTimerMS = (i == 1)? t:cfg_dispTimerMS;
             i = sscanf(line, "CreateWindow,%d", &w);
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
             cfg_createWnd = (i == 1)? w:cfg_createWnd;
@@ -1329,6 +1333,7 @@ static void conf_MGLOptions(void)
 int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
+int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetCreateWindow(void) { return cfg_createWnd; }
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32

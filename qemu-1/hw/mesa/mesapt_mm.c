@@ -340,8 +340,9 @@ static void dispTimerProc(void *opaque)
 
 static void dispTimerSched(QEMUTimer *ts)
 {
-#define DISP_TIMER_MS 2000
-    timer_mod(ts, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + DISP_TIMER_MS);
+    int timer_ms = GetDispTimerMS();
+    if (timer_ms)
+        timer_mod(ts, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + timer_ms);
 }
 
 static uint64_t mesapt_read(void *opaque, hwaddr addr, unsigned size)
@@ -482,7 +483,7 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glBindSamplers:
             s->datacb = ALIGNED(s->arg[1] * sizeof(uint32_t));
-            s->parg[2] VAL(s->hshm);
+            s->parg[2] = VAL(s->hshm);
             break;
         case FEnum_glCallLists:
             s->datacb = ALIGNED(s->arg[0] * szgldata(0, s->arg[1]));
@@ -1894,7 +1895,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFF8:
                 do {
-                    char xYear[8], xLen[8];
+                    char xYear[8], xLen[8], dispTimer[8];
                     uint32_t *ptVer = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
                     int level = ((ptVer[0] & 0xFFFFFFF0U) == (MESAGL_MAGIC & 0xFFFFFFF0U))? (MESAGL_MAGIC - ptVer[0]):0;
                     if (s->mglContext && !s->mglCntxCurrent && ptVer[0]) {
@@ -1907,7 +1908,9 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         s->szVertCache = GetVertCacheMB() << 19;
                         snprintf(xLen, 8, "%u", (uint32_t)s->extnLength);
                         snprintf(xYear, 8, "%d", s->extnYear);
+                        snprintf(dispTimer, 8, "%dms", GetDispTimerMS());
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
+                        DPRINTF("DispTimerSched %s", GetDispTimerMS()? dispTimer:"disabled");
                         DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
                                 (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
                         s->dispTimer = timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0);
