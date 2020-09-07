@@ -415,7 +415,14 @@ static int PArgsShouldAligned(MesaPTState *s)
             break;
         case FEnum_glDrawElements:
         case FEnum_glDrawElementsBaseVertex:
+        case FEnum_glDrawElementsInstanced:
+        case FEnum_glDrawElementsInstancedARB:
+        case FEnum_glDrawElementsInstancedBaseVertex:
+        case FEnum_glDrawElementsInstancedBaseInstance:
+        case FEnum_glDrawElementsInstancedBaseVertexBaseInstance:
+        case FEnum_glDrawElementsInstancedEXT:
         case FEnum_glDrawRangeElements:
+        case FEnum_glDrawRangeElementsBaseVertex:
         case FEnum_glDrawRangeElementsEXT:
             if (s->elemArryBuf) return 0;
             break;
@@ -833,7 +840,16 @@ static void processArgs(MesaPTState *s)
                 PushVertexArray(s, s->hshm, s->arg[1], s->arg[1] + s->arg[2] - 1);
             }
             break;
+        case FEnum_glDrawArraysIndirect:
+        case FEnum_glDrawElementsIndirect:
+            s->datacb = ALIGNED(((s->FEnum == FEnum_glDrawArraysIndirect)? 4:5) * sizeof(uint32_t));
+            s->parg[1] = VAL(s->hshm);
+            break;
         case FEnum_glDrawElements:
+        case FEnum_glDrawElementsInstanced:
+        case FEnum_glDrawElementsInstancedARB:
+        case FEnum_glDrawElementsInstancedBaseInstance:
+        case FEnum_glDrawElementsInstancedEXT:
             s->parg[3] = s->arg[3];
             if (s->elemArryBuf == 0) {
                 s->datacb = ALIGNED(s->arg[1] * szgldata(0, s->arg[2]));
@@ -875,11 +891,13 @@ static void processArgs(MesaPTState *s)
             }
             break;
         case FEnum_glDrawElementsBaseVertex:
+        case FEnum_glDrawElementsInstancedBaseVertex:
+        case FEnum_glDrawElementsInstancedBaseVertexBaseInstance:
             s->parg[3] = s->arg[3];
             if (s->elemArryBuf == 0) {
                 s->datacb = ALIGNED(s->arg[1] * szgldata(0, s->arg[2]));
                 s->parg[3] = VAL(s->hshm);
-                int start, end = 0;
+                int base, start, end = 0;
                 for (int i = 0; i < s->arg[1]; i++) {
                     if (szgldata(0, s->arg[2]) == 1) {
                         uint8_t *p = (uint8_t *)s->hshm;
@@ -909,9 +927,10 @@ static void processArgs(MesaPTState *s)
                         start = (p[i] < start)? p[i]:start;
                     }
                 }
-                s->elemMax = ((end + s->arg[4]) > s->elemMax)? (end + s->arg[4]):s->elemMax;
+                base = (s->FEnum == FEnum_glDrawElementsBaseVertex)? s->arg[4]:s->arg[5];
+                s->elemMax = ((end + base) > s->elemMax)? (end + base):s->elemMax;
                 if (s->arrayBuf == 0)
-                    PushVertexArray(s, PTR(s->hshm, s->datacb), (start + s->arg[4]), (end + s->arg[4]));
+                    PushVertexArray(s, PTR(s->hshm, s->datacb), (start + base), (end + base));
             }
             break;
         case FEnum_glDrawPixels:
@@ -933,6 +952,17 @@ static void processArgs(MesaPTState *s)
                 s->elemMax = (s->arg[2] > s->elemMax)? s->arg[2]:s->elemMax;
                 if (s->arrayBuf == 0)
                     PushVertexArray(s, PTR(s->hshm, s->datacb), s->arg[1], s->arg[2]);
+            }
+            break;
+        case FEnum_glDrawRangeElementsBaseVertex:
+            s->parg[1] = s->arg[5];
+            if (s->elemArryBuf == 0) {
+                s->datacb = ALIGNED(s->arg[3] * szgldata(0, s->arg[4]));
+                s->parg[1] = VAL(s->hshm);
+                int base = s->arg[6];
+                s->elemMax = ((s->arg[2] + base)> s->elemMax)? (s->arg[2] + base):s->elemMax;
+                if (s->arrayBuf == 0)
+                    PushVertexArray(s, PTR(s->hshm, s->datacb), (s->arg[1] + base), (s->arg[2] + base));
             }
             break;
         case FEnum_glGetInternalformativ:
@@ -1389,6 +1419,11 @@ static void processArgs(MesaPTState *s)
             s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
             s->parg[1] = VAL(s->hshm);
             break;
+        case FEnum_glGetShaderInfoLog:
+            s->arg[1] = (s->arg[1] > (3*TARGET_PAGE_SIZE))? (3*TARGET_PAGE_SIZE):s->arg[1];
+            s->parg[2] = VAL(outshm);
+            s->parg[3] = VAL(PTR(outshm, ALIGNED(sizeof(int))));
+            break;
         case FEnum_glShaderSource:
         case FEnum_glShaderSourceARB:
             {
@@ -1645,7 +1680,6 @@ static void processFRet(MesaPTState *s)
                 s->BufObj->acc = s->arg[3];
                 s->BufObj->mapsz = s->arg[2];
                 s->BufObj->range = s->arg[2];
-                s->BufObj->offst = s->arg[1];
             }
             else {
                 s->BufObj->acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
@@ -1767,13 +1801,16 @@ static void processFifo(MesaPTState *s)
     uint32_t *fifoptr = (uint32_t *)s->fifo_ptr;
     uint32_t *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
     int FEnum = s->FEnum, i = FIRST_FIFO, j = ALIGNED(1) >> 2;
+    struct {
+        uint32_t fifo;
+        uint32_t data;
+    } fifostat = { .fifo = 0, .data = 0 };
 
     if (fifoptr[0] - FIRST_FIFO) {
+        fifostat.fifo = fifoptr[0];
+        fifostat.data = dataptr[0];
 #define DEBUG_FIFO 0
 #if DEBUG_FIFO
-        const char *fstr = getGLFuncStr(s->FEnum);
-        if (fstr)
-            DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifoptr[0], dataptr[0]);
         if (dataptr[0] >= MAX_DATA) {
             DPRINTF("  *WARN* Data bound overlapped 0x%02x dataptr %06X", s->FEnum, dataptr[0]);
         }
@@ -1806,6 +1843,9 @@ static void processFifo(MesaPTState *s)
         fifoptr[0] = FIRST_FIFO;
         s->FEnum = FEnum;
     }
+    const char *fstr = getGLFuncStr(s->FEnum);
+    if (0 && fstr)
+        DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifostat.fifo, fifostat.data);
     s->datacb = 0;
     s->arg = &fifoptr[2];
     s->hshm = &dataptr[j];
@@ -1985,6 +2025,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                             }
                             s->mglContext = argsp[0];
                             ContextCreateCommon(s);
+                            GLExtUncapped();
                         }
                         DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d lvl %x",
                             s->mglContext, s->mglCntxCurrent, argsp[0], argsp[1]);

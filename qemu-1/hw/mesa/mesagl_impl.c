@@ -174,8 +174,11 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         uint32_t (__stdcall *fpa0p2a3)(uint32_t, uintptr_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa2p3)(uint32_t, uint32_t, uint32_t, uintptr_t);
         uint32_t (__stdcall *fpa2p3a4)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t);
+        uint32_t (__stdcall *fpa2p3a5)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t, uint32_t);
+        uint32_t (__stdcall *fpa2p3a6)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t, uint32_t, uint32_t);
         uint32_t (__stdcall *fpa3p4)(uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t);
         uint32_t (__stdcall *fpa4p5)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t);
+        uint32_t (__stdcall *fpa4p5a6)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa5p6)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t);
         uint32_t (__stdcall *fpa6p7)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t);
         uint32_t (__stdcall *fpa7p8)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uintptr_t);
@@ -276,8 +279,20 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             *ret = (*usfp.fpa2p3)(arg[0], arg[1], arg[2], parg[3]);
             GLDONE();
         case FEnum_glDrawElementsBaseVertex:
+        case FEnum_glDrawElementsInstanced:
+        case FEnum_glDrawElementsInstancedARB:
+        case FEnum_glDrawElementsInstancedEXT:
             usfp.fpa2p3a4 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa2p3a4)(arg[0], arg[1], arg[2], parg[3], arg[4]);
+            GLDONE();
+        case FEnum_glDrawElementsInstancedBaseInstance:
+        case FEnum_glDrawElementsInstancedBaseVertex:
+            usfp.fpa2p3a5 = tblMesaGL[FEnum].ptr;
+            *ret = (*usfp.fpa2p3a5)(arg[0], arg[1], arg[2], parg[3], arg[4], arg[5]);
+            GLDONE();
+        case FEnum_glDrawElementsInstancedBaseVertexBaseInstance:
+            usfp.fpa2p3a6 = tblMesaGL[FEnum].ptr;
+            *ret = (*usfp.fpa2p3a6)(arg[0], arg[1], arg[2], parg[3], arg[4], arg[5], arg[6]);
             GLDONE();
         case FEnum_glClearBufferData:
         case FEnum_glClearNamedBufferData:
@@ -302,6 +317,10 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glVertexAttribPointerARB:
             usfp.fpa4p5 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa4p5)(arg[0], arg[1], arg[2], arg[3], arg[4], parg[1]);
+            GLDONE();
+        case FEnum_glDrawRangeElementsBaseVertex:
+            usfp.fpa4p5a6 = tblMesaGL[FEnum].ptr;
+            *ret = (*usfp.fpa4p5a6)(arg[0], arg[1], arg[2], arg[3], arg[4], parg[1], arg[6]);
             GLDONE();
         case FEnum_glGetString:
             usfp.rpfpa0 = tblMesaGL[FEnum].ptr;
@@ -331,6 +350,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glDeleteTextures:
         case FEnum_glDeleteTexturesEXT:
         case FEnum_glDeleteVertexArrays:
+        case FEnum_glDrawArraysIndirect:
         case FEnum_glDrawBuffers:
         case FEnum_glDrawBuffersARB:
         case FEnum_glEdgeFlagPointer:
@@ -579,6 +599,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glBindSamplers:
         case FEnum_glCallLists:
         case FEnum_glDepthRangeArrayv:
+        case FEnum_glDrawElementsIndirect:
         case FEnum_glEdgeFlagPointerEXT:
         case FEnum_glFeedbackBuffer:
         case FEnum_glFogCoordPointer:
@@ -672,6 +693,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa1p2 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa1p2)(arg[0], arg[1], parg[2]);
             GLDONE();
+        case FEnum_glGetShaderInfoLog:
         case FEnum_glShaderSource:
         case FEnum_glShaderSourceARB:
             usfp.fpa1p3 = tblMesaGL[FEnum].ptr;
@@ -1330,6 +1352,7 @@ static void conf_MGLOptions(void)
     }
 }
 
+void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
 int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
@@ -1362,6 +1385,7 @@ void ImplMesaGLReset(void)
 {
     for (int i = 0 ; i < FEnum_zzMGLFuncEnum_max; i++)
         tblMesaGL[i].impl = 0;
+    conf_MGLOptions();
 }
 
 int InitMesaGL(void)
@@ -1395,7 +1419,6 @@ int InitMesaGL(void)
 #endif
     }
     SetMesaFuncPtr(hDll);
-    conf_MGLOptions();
     return 0;
 }
 

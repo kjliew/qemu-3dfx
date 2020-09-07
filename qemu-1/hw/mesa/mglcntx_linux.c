@@ -292,7 +292,7 @@ void MGLActivateHandler(int i)
 #define WA_INACTIVE 0
     if (i != last) {
         last = i;
-        DPRINTF("wm_activate %d%-32s", i," ");
+        //DPRINTF("wm_activate %d%-32s", i," ");
         switch (i) {
             case WA_ACTIVE:
                 mesa_enabled_set();

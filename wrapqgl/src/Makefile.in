@@ -1,7 +1,7 @@
 QEMU_SRC_DIR=../../qemu-1
 CC=gcc
-CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
-LDFLAGS=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
+CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -Wall -Werror -msse2 -Os -flto -fomit-frame-pointer -fdata-sections -ffunction-sections
+LDFLAGS=-Wl,--gc-sections -Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 LDFLAGS+=
 SRCDIR=../src
 TARGET=opengl32.dll

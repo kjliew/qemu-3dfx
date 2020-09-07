@@ -295,7 +295,7 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
     if (sz == sizeof(PIXELFORMATDESCRIPTOR))
         DescribePixelFormat(hDC, curr, sz, ppfd);
     ret = curr;
-    DPRINTF("DescribePixelFormat() fmt %02x curr %02x", fmt, curr);
+    //DPRINTF("DescribePixelFormat() fmt %02x curr %02x", fmt, curr);
     if (fmt != curr)
         ppfd->dwFlags &= ~PFD_SUPPORT_OPENGL;
     else {
@@ -315,7 +315,7 @@ void MGLActivateHandler(int i)
 
     if (i != last) {
         last = i;
-        DPRINTF("wm_activate %d%-32s", i," ");
+        //DPRINTF("wm_activate %d%-32s", i," ");
         switch (i) {
             case WA_ACTIVE:
                 mesa_enabled_set();

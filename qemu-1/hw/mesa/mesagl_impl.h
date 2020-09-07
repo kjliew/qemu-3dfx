@@ -37,6 +37,7 @@ void wrFillBufObj(uint32_t, void *, uint32_t, uint32_t);
 void wrFlushBufObj(int, uint32_t, mapbufo_t *);
 const char *getGLFuncStr(int);
 void doMesaFunc(int, uint32_t *, uintptr_t *, uintptr_t *);
+void GLExtUncapped(void);
 int GetGLExtYear(void);
 int GetGLExtLength(void);
 int GetVertCacheMB(void);

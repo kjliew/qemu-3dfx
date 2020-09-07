@@ -2456,24 +2456,25 @@ void PT_CALL glDrawArraysEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArraysEXT, 3);
 }
 void PT_CALL glDrawArraysIndirect(uint32_t arg0, uint32_t arg1) {
+    fifoAddData(0, arg1, 4*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawArraysIndirect;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArraysIndirect, 2);
 }
 void PT_CALL glDrawArraysInstanced(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawArraysInstanced;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArraysInstanced, 4);
 }
 void PT_CALL glDrawArraysInstancedARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawArraysInstancedARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArraysInstancedARB, 4);
 }
 void PT_CALL glDrawArraysInstancedBaseInstance(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawArraysInstancedBaseInstance;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArraysInstancedBaseInstance, 5);
 }
 void PT_CALL glDrawArraysInstancedEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawArraysInstancedEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArraysInstancedEXT, 4);
 }
 void PT_CALL glDrawBuffer(uint32_t arg0) {
     pt[1] = arg0; 
@@ -2600,32 +2601,255 @@ void PT_CALL glDrawElementsBaseVertex(uint32_t arg0, uint32_t arg1, uint32_t arg
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsBaseVertex, 5);
 }
 void PT_CALL glDrawElementsIndirect(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, 5*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawElementsIndirect;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsIndirect, 3);
 }
 void PT_CALL glDrawElementsInstanced(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
+    int start, end;
+    if (vtxArry.elemArryBuf == 0) {
+        end = 0;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+        }
+        start = end;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+        }
+        PrepVertexArray(start, end, ALIGNED(arg1 * szgldata(0, arg2)));
+        fifoAddData(0, arg3, ALIGNED(arg1 * szgldata(0, arg2)));
+        if (vtxArry.arrayBuf == 0)
+            PushVertexArray(start, end);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawElementsInstanced;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsInstanced, 5);
 }
 void PT_CALL glDrawElementsInstancedARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
+    int start, end;
+    if (vtxArry.elemArryBuf == 0) {
+        end = 0;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+        }
+        start = end;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+        }
+        PrepVertexArray(start, end, ALIGNED(arg1 * szgldata(0, arg2)));
+        fifoAddData(0, arg3, ALIGNED(arg1 * szgldata(0, arg2)));
+        if (vtxArry.arrayBuf == 0)
+            PushVertexArray(start, end);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawElementsInstancedARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsInstancedARB, 5);
 }
 void PT_CALL glDrawElementsInstancedBaseInstance(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
+    int start, end;
+    if (vtxArry.elemArryBuf == 0) {
+        end = 0;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+        }
+        start = end;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+        }
+        PrepVertexArray(start, end, ALIGNED(arg1 * szgldata(0, arg2)));
+        fifoAddData(0, arg3, ALIGNED(arg1 * szgldata(0, arg2)));
+        if (vtxArry.arrayBuf == 0)
+            PushVertexArray(start, end);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawElementsInstancedBaseInstance;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsInstancedBaseInstance, 6);
 }
 void PT_CALL glDrawElementsInstancedBaseVertex(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
+    int start, end;
+    if (vtxArry.elemArryBuf == 0) {
+        end = 0;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+        }
+        start = end;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+        }
+        PrepVertexArray((start + arg5), (end + arg5), ALIGNED(arg1 * szgldata(0, arg2)));
+        fifoAddData(0, arg3, ALIGNED(arg1 * szgldata(0, arg2)));
+        if (vtxArry.arrayBuf == 0)
+            PushVertexArray((start + arg5), (end + arg5));
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawElementsInstancedBaseVertex;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsInstancedBaseVertex, 6);
 }
 void PT_CALL glDrawElementsInstancedBaseVertexBaseInstance(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
+    int start, end;
+    if (vtxArry.elemArryBuf == 0) {
+        end = 0;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+        }
+        start = end;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+        }
+        PrepVertexArray((start + arg5), (end + arg5), ALIGNED(arg1 * szgldata(0, arg2)));
+        fifoAddData(0, arg3, ALIGNED(arg1 * szgldata(0, arg2)));
+        if (vtxArry.arrayBuf == 0)
+            PushVertexArray((start + arg5), (end + arg5));
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawElementsInstancedBaseVertexBaseInstance;
 }
 void PT_CALL glDrawElementsInstancedEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
+    int start, end;
+    if (vtxArry.elemArryBuf == 0) {
+        end = 0;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                end = (p[i] > end)? p[i]:end;
+            }
+        }
+        start = end;
+        for (int i = 0; i < arg1; i++) {
+            if (szgldata(0, arg2) == 1) {
+                uint8_t *p = (uint8_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 2) {
+                uint16_t *p = (uint16_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+            if (szgldata(0, arg2) == 4) {
+                uint32_t *p = (uint32_t *)arg3;
+                start = (p[i] < start)? p[i]:start;
+            }
+        }
+        PrepVertexArray(start, end, ALIGNED(arg1 * szgldata(0, arg2)));
+        fifoAddData(0, arg3, ALIGNED(arg1 * szgldata(0, arg2)));
+        if (vtxArry.arrayBuf == 0)
+            PushVertexArray(start, end);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawElementsInstancedEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsInstancedEXT, 5);
 }
 void PT_CALL glDrawMeshArraysSUN(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -2667,8 +2891,14 @@ void PT_CALL glDrawRangeElements(uint32_t arg0, uint32_t arg1, uint32_t arg2, ui
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawRangeElements, 6);
 }
 void PT_CALL glDrawRangeElementsBaseVertex(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
+    if (vtxArry.elemArryBuf == 0) {
+        PrepVertexArray(arg1 + arg6, arg2 + arg6, ALIGNED(arg3 * szgldata(0, arg4)));
+        fifoAddData(0, arg5, ALIGNED(arg3 * szgldata(0, arg4)));
+        if (vtxArry.arrayBuf == 0)
+            PushVertexArray(arg1 + arg6, arg2 + arg6);
+    }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawRangeElementsBaseVertex;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawRangeElementsBaseVertex, 7);
 }
 void PT_CALL glDrawRangeElementsEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     if (vtxArry.elemArryBuf == 0) {
@@ -4758,8 +4988,12 @@ void PT_CALL glGetSeparableFilterEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetSeparableFilterEXT;
 }
 void PT_CALL glGetShaderInfoLog(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t len;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetShaderInfoLog;
+    fifoOutData(0, (uint32_t)&len, sizeof(uint32_t));
+    len = (len > arg1)? arg1:len;
+    fifoOutData(0, arg3, len);
 }
 void PT_CALL glGetShaderPrecisionFormat(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -8689,7 +8923,7 @@ void PT_CALL glProvokingVertex(uint32_t arg0) {
 }
 void PT_CALL glProvokingVertexEXT(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glProvokingVertexEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glProvokingVertexEXT, 1);
 }
 void PT_CALL glPushAttrib(uint32_t arg0) {
     pt[1] = arg0; 
@@ -8701,7 +8935,7 @@ void PT_CALL glPushClientAttrib(uint32_t arg0) {
 }
 void PT_CALL glPushClientAttribDefaultEXT(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glPushClientAttribDefaultEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPushClientAttribDefaultEXT, 1);
 }
 void PT_CALL glPushDebugGroup(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
