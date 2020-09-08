@@ -136,6 +136,7 @@ struct gl_extensions
    uint32_t EXT_depth_bounds_test;
    uint32_t EXT_disjoint_timer_query;
    uint32_t EXT_draw_buffers2;
+   uint32_t EXT_EGL_image_storage;
    uint32_t EXT_float_blend;
    uint32_t EXT_framebuffer_multisample;
    uint32_t EXT_framebuffer_multisample_blit_scaled;
@@ -167,6 +168,7 @@ struct gl_extensions
    uint32_t EXT_texture_filter_anisotropic;
    uint32_t EXT_texture_integer;
    uint32_t EXT_texture_mirror_clamp;
+   uint32_t EXT_texture_norm16;
    uint32_t EXT_texture_shadow_lod;
    uint32_t EXT_texture_shared_exponent;
    uint32_t EXT_texture_snorm;
@@ -204,9 +206,11 @@ struct gl_extensions
    uint32_t ATI_texture_env_combine3;
    uint32_t ATI_fragment_shader;
    uint32_t GREMEDY_string_marker;
+   uint32_t INTEL_blackhole_render;
    uint32_t INTEL_conservative_rasterization;
    uint32_t INTEL_performance_query;
    uint32_t INTEL_shader_atomic_float_minmax;
+   uint32_t INTEL_shader_integer_functions2;
    uint32_t KHR_blend_equation_advanced;
    uint32_t KHR_blend_equation_advanced_coherent;
    uint32_t KHR_robustness;
@@ -220,8 +224,10 @@ struct gl_extensions
    uint32_t EXT_shader_framebuffer_fetch_non_coherent;
    uint32_t MESA_shader_integer_functions;
    uint32_t MESA_ycbcr_texture;
+   uint32_t NV_alpha_to_coverage_dither_control;
    uint32_t NV_compute_shader_derivatives;
    uint32_t NV_conditional_render;
+   uint32_t NV_copy_image;
    uint32_t NV_fill_rectangle;
    uint32_t NV_fog_distance;
    uint32_t NV_point_sprite;
@@ -235,6 +241,8 @@ struct gl_extensions
    uint32_t NV_conservative_raster_dilate;
    uint32_t NV_conservative_raster_pre_snap_triangles;
    uint32_t NV_conservative_raster_pre_snap;
+   uint32_t NV_viewport_array2;
+   uint32_t NV_viewport_swizzle;
    uint32_t NVX_gpu_memory_info;
    uint32_t TDFX_texture_compression_FXT1;
    uint32_t OES_EGL_image;
