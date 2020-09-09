@@ -464,8 +464,8 @@ static int PArgsShouldAligned(MesaPTState *s)
     return 1;
 }
 
-#define SZFBT_VALID(x) \
-    if (x > MGLFBT_SIZE) { \
+#define SZFBT_VALID(x,p) \
+    if (p && (x > MGLFBT_SIZE)) { \
         DPRINTF("  *WARN* MGLFBT_SIZE overflow 0x%04x, %08x", s->FEnum, x); \
         x = MGLFBT_SIZE; }
 #define PTR(x,y) (((uint8_t *)x)+y)
@@ -492,6 +492,7 @@ static void processArgs(MesaPTState *s)
             s->elemMax = (s->arg[0] > s->elemMax)? s->arg[0]:s->elemMax;
             PushVertexArray(s, s->hshm, s->arg[0], s->arg[0]);
             break;
+        case FEnum_glBindImageTextures:
         case FEnum_glBindSamplers:
             s->datacb = ALIGNED(s->arg[1] * sizeof(uint32_t));
             s->parg[2] = VAL(s->hshm);
@@ -1199,7 +1200,7 @@ static void processArgs(MesaPTState *s)
             if (s->pixUnpackBuf == 0) {
                 uint32_t szBmp, *bmpPtr;
                 szBmp = ((s->szUnpackWidth == 0)? s->arg[0]:s->szUnpackWidth) * s->arg[1];
-                SZFBT_VALID(szBmp);
+                SZFBT_VALID(szBmp, s->arg[6]);
                 bmpPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szBmp)));
                 s->parg[2] = (s->arg[6])? VAL(bmpPtr):0;
             }
@@ -1238,13 +1239,13 @@ static void processArgs(MesaPTState *s)
         case FEnum_glNamedBufferSubDataEXT:
             s->parg[1] = s->arg[1];
             s->parg[2] = s->arg[2];
-            SZFBT_VALID(s->arg[2]);
+            SZFBT_VALID(s->arg[2], s->arg[3]);
             s->parg[3] = VAL(s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->arg[2]));
             break;
         case FEnum_glBufferData:
         case FEnum_glBufferDataARB:
             s->parg[1] = s->arg[1];
-            SZFBT_VALID(s->arg[1]);
+            SZFBT_VALID(s->arg[1], s->arg[2]);
             s->parg[2] = (s->arg[2])? VAL(s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->arg[1])):0;
             break;
         case FEnum_glFlushMappedBufferRange:
@@ -1291,7 +1292,7 @@ static void processArgs(MesaPTState *s)
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)s->fbtm_ptr;
                 texPtr[0] = wrTexTextureWxD(s->arg[0], s->arg[1], 0)*szgldata(s->arg[2], s->arg[3]);
-                SZFBT_VALID(texPtr[0]);
+                SZFBT_VALID(texPtr[0], s->arg[4]);
                 s->parg[0] = VAL(&texPtr[ALIGNED(1) >> 2]);
             }
             break;
@@ -1305,7 +1306,7 @@ static void processArgs(MesaPTState *s)
                 szTex = (s->FEnum == FEnum_glTexImage1D)?
                     (((s->szUnpackWidth == 0)? s->arg[3]:s->szUnpackWidth) * szgldata(s->arg[5], s->arg[6])):
                     (((s->szUnpackWidth == 0)? s->arg[3]:s->szUnpackWidth) * szgldata(s->arg[4], s->arg[5]));
-                SZFBT_VALID(szTex);
+                SZFBT_VALID(szTex, ((s->FEnum == FEnum_glTexImage1D)? s->arg[7]:s->arg[6]));
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[3] = (s->arg[7])? VAL(texPtr):0;
                 s->parg[2] = (s->arg[6])? VAL(texPtr):0;
@@ -1320,7 +1321,7 @@ static void processArgs(MesaPTState *s)
                 szTex = (s->FEnum == FEnum_glTexImage2D)?
                     (((s->szUnpackWidth == 0)? s->arg[3]:s->szUnpackWidth) * s->arg[4] * szgldata(s->arg[6], s->arg[7])):
                     (((s->szUnpackWidth == 0)? s->arg[4]:s->szUnpackWidth) * s->arg[5] * szgldata(s->arg[6], s->arg[7]));
-                SZFBT_VALID(szTex);
+                SZFBT_VALID(szTex, s->arg[8]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[0] = (s->arg[8])? VAL(texPtr):0;
                 //DPRINTF("Tex*Image2D() %x,%x,%x,%x,%x,%x,%x,%x,%08x",s->arg[0],s->arg[1],s->arg[2],s->arg[3],s->arg[4],s->arg[5],s->arg[6],s->arg[7],szTex);
@@ -1332,7 +1333,7 @@ static void processArgs(MesaPTState *s)
             if (s->pixUnpackBuf == 0) {
                 uint32_t szTex, *texPtr;
                 szTex = ((s->szUnpackWidth == 0)? s->arg[3]:s->szUnpackWidth) * ((s->szUnpackHeight == 0)? s->arg[4]:s->szUnpackHeight) * s->arg[5] * szgldata(s->arg[7], s->arg[8]);
-                SZFBT_VALID(szTex);
+                SZFBT_VALID(szTex, s->arg[9]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[1] = (s->arg[9])? VAL(texPtr):0;
             }
@@ -1343,7 +1344,7 @@ static void processArgs(MesaPTState *s)
             if (s->pixUnpackBuf == 0) {
                 uint32_t szTex, *texPtr;
                 szTex = ((s->szUnpackWidth == 0)? s->arg[5]:s->szUnpackWidth) * ((s->szUnpackHeight == 0)? s->arg[6]:s->szUnpackHeight) * s->arg[7] * szgldata(s->arg[8], s->arg[9]);
-                SZFBT_VALID(szTex);
+                SZFBT_VALID(szTex, s->arg[10]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(szTex)));
                 s->parg[2] = (s->arg[10])? VAL(texPtr):0;
             }
@@ -1355,7 +1356,7 @@ static void processArgs(MesaPTState *s)
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)s->fbtm_ptr;
                 texPtr[0] = wrTexTextureWxD(s->arg[0], s->arg[1], 1);
-                SZFBT_VALID(texPtr[0]);
+                SZFBT_VALID(texPtr[0], s->arg[2]);
                 s->parg[2] = VAL(&texPtr[ALIGNED(1) >> 2]);
             }
             break;
@@ -1366,7 +1367,7 @@ static void processArgs(MesaPTState *s)
             s->parg[2] = s->arg[6];
             if (s->pixUnpackBuf == 0) {
                 uint32_t *texPtr;
-                SZFBT_VALID(s->arg[5]);
+                SZFBT_VALID(s->arg[5], s->arg[6]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(s->arg[5])));
                 s->parg[2] = VAL(texPtr);
             }
@@ -1376,7 +1377,7 @@ static void processArgs(MesaPTState *s)
             s->parg[3] = s->arg[7];
             if (s->pixUnpackBuf == 0) {
                 uint32_t *texPtr;
-                SZFBT_VALID(s->arg[6]);
+                SZFBT_VALID(s->arg[6], s->arg[7]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(s->arg[6])));
                 s->parg[3] = VAL(texPtr);
             }
@@ -1388,7 +1389,7 @@ static void processArgs(MesaPTState *s)
             s->parg[0] = s->arg[8];
             if (s->pixUnpackBuf == 0) {
                 uint32_t *texPtr;
-                SZFBT_VALID(s->arg[7]);
+                SZFBT_VALID(s->arg[7], s->arg[8]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(s->arg[7])));
                 s->parg[0] = VAL(texPtr);
             }
@@ -1398,7 +1399,7 @@ static void processArgs(MesaPTState *s)
             s->parg[2] = s->arg[10];
             if (s->pixUnpackBuf == 0) {
                 uint32_t *texPtr;
-                SZFBT_VALID(s->arg[9]);
+                SZFBT_VALID(s->arg[9], s->arg[10]);
                 texPtr = (uint32_t *)(s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(s->arg[9])));
                 s->parg[2] = VAL(texPtr);
             }
@@ -1689,7 +1690,7 @@ static void processFRet(MesaPTState *s)
             }
             s->BufObj->hptr = (void *)(s->FRet);
             s->BufObj->mused = s->szUsedBuf;
-            SZFBT_VALID(s->szUsedBuf);
+            SZFBT_VALID(s->szUsedBuf, s->FRet);
             s->BufObj->shmep = s->fbtm_ptr + MGLFBT_SIZE - s->szUsedBuf;
             s->BufObj->offst = 0;
             s->BufObj->range = 0;

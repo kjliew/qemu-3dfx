@@ -633,15 +633,16 @@ void PT_CALL glBindFramebufferEXT(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glBindImageTexture(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindImageTexture;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindImageTexture, 7);
 }
 void PT_CALL glBindImageTextureEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindImageTextureEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindImageTextureEXT, 7);
 }
 void PT_CALL glBindImageTextures(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, arg1*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindImageTextures;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindImageTextures, 3);
 }
 void PT_CALL glBindLightParameterEXT(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -8101,15 +8102,15 @@ void PT_CALL glPolygonOffset(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glPolygonOffsetClamp(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glPolygonOffsetClamp;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPolygonOffsetClamp, 3);
 }
 void PT_CALL glPolygonOffsetClampEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glPolygonOffsetClampEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPolygonOffsetClampEXT, 3);
 }
 void PT_CALL glPolygonOffsetEXT(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glPolygonOffsetEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPolygonOffsetEXT, 2);
 }
 void PT_CALL glPolygonOffsetxOES(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -10431,7 +10432,7 @@ void PT_CALL glTexGenxvOES(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glTexImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7) {
     uint32_t szTex, *texPtr;
-    if (arg7) {
+    if (arg7 && (pixUnpackBuf == 0)) {
         szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * szgldata(arg5, arg6);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         FBTMMCPY(texPtr, (unsigned char *)arg7, szTex);
@@ -10441,7 +10442,7 @@ void PT_CALL glTexImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t 
 }
 void PT_CALL glTexImage2D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
     uint32_t szTex, *texPtr;
-    if (arg8) {
+    if (arg8 && (pixUnpackBuf == 0)) {
         szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * arg4 * szgldata(arg6, arg7);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         //DPRINTF("TexImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
@@ -10460,7 +10461,7 @@ void PT_CALL glTexImage2DMultisampleCoverageNV(uint32_t arg0, uint32_t arg1, uin
 }
 void PT_CALL glTexImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
     uint32_t szTex, *texPtr;
-    if (arg9) {
+    if (arg9 && (pixUnpackBuf == 0)) {
         szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * ((szUnpackHeight == 0)? arg4:szUnpackHeight) * arg5 * szgldata(arg7, arg8);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         FBTMMCPY(texPtr, (unsigned char *)arg9, szTex);
@@ -10470,7 +10471,7 @@ void PT_CALL glTexImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t 
 }
 void PT_CALL glTexImage3DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
     uint32_t szTex, *texPtr;
-    if (arg9) {
+    if (arg9 && (pixUnpackBuf == 0)) {
         szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * ((szUnpackHeight == 0)? arg4:szUnpackHeight) * arg5 * szgldata(arg7, arg8);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
         FBTMMCPY(texPtr, (unsigned char *)arg9, szTex);

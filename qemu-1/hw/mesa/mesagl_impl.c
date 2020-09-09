@@ -596,6 +596,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glBindAttribLocationARB:
         case FEnum_glBindFragDataLocation:
         case FEnum_glBindFragDataLocationEXT:
+        case FEnum_glBindImageTextures:
         case FEnum_glBindSamplers:
         case FEnum_glCallLists:
         case FEnum_glDepthRangeArrayv:
