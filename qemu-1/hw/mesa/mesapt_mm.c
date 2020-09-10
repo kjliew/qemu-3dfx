@@ -59,7 +59,7 @@ typedef struct MesaPTState
     uintptr_t FRet;
     uint32_t reg[4];
     uintptr_t parg[4];
-    int mglContext, mglCntxCurrent;
+    int mglContext, mglCntxCurrent, mglCntxWGL;
     uint32_t MesaVer;
     uint32_t procRet;
     int pixfmt, pixfmtMax;
@@ -1863,7 +1863,7 @@ static void processFifo(MesaPTState *s)
         s->FEnum = FEnum;
     }
     const char *fstr = getGLFuncStr(s->FEnum);
-    if (0 && fstr)
+    if (FifoTrace() && fstr)
         DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifostat.fifo, fifostat.data);
     s->datacb = 0;
     s->arg = &fifoptr[2];
@@ -1881,6 +1881,8 @@ static void ContextCreateCommon(MesaPTState *s)
     InitBufObj();
     InitClientStates(s);
     ImplMesaGLReset();
+    if (s->mglCntxWGL)
+        GLExtUncapped();
 }
 
 static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
@@ -1989,6 +1991,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     timer_free(s->dispTimer);
                     g_free(s->logpname);
                     s->mglContext = 0;
+                    s->mglCntxWGL = 0;
                     s->mglCntxCurrent = 0;
                     DPRINTF("VertexArrayStats: elemMax %06x vertexCache %04x", s->elemMax, FreeVertex());
                     DPRINTF("MGLStats: fifo 0x%07x data 0x%07x", s->fifoMax, s->dataMax);
@@ -2043,11 +2046,15 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                                 s->mglCntxCurrent = 0;
                             }
                             s->mglContext = argsp[0];
+                            s->mglCntxWGL = argsp[0];
                             ContextCreateCommon(s);
-                            GLExtUncapped();
                         }
                         DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d lvl %x",
                             s->mglContext, s->mglCntxCurrent, argsp[0], argsp[1]);
+                    }
+                    if (strncmp((const char *)func, "wglChoosePixelFormatARB", 64) == 0) {
+                        uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
+                        s->mglCntxWGL = argsp[0];
                     }
                 } while(0);
                 break;

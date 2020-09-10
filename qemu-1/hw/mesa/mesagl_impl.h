@@ -43,6 +43,7 @@ int GetGLExtLength(void);
 int GetVertCacheMB(void);
 int GetDispTimerMS(void);
 int GetCreateWindow(void);
+int FifoTrace(void);
 void FiniMesaGL(void);
 void ImplMesaGLReset(void);
 int InitMesaGL(void);

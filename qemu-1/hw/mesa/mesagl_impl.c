@@ -1324,6 +1324,7 @@ static int cfg_xLength;
 static int cfg_vertCacheMB;
 static int cfg_dispTimerMS;
 static int cfg_createWnd;
+static int cfg_traceFifo;
 static void conf_MGLOptions(void)
 {
     cfg_xYear = 2004;
@@ -1331,23 +1332,26 @@ static void conf_MGLOptions(void)
     cfg_vertCacheMB = 32;
     cfg_dispTimerMS = 2000;
     cfg_createWnd = 0;
+    cfg_traceFifo = 0;
     FILE *fp = fopen(MESAGLCFG, "r");
     if (fp != NULL) {
         char line[32];
-        int i, y, n, v, t, w;
+        int i, v;
         while (fgets(line, 32, fp)) {
-            i = sscanf(line, "ExtensionsYear,%d", &y);
-            cfg_xYear = (i == 1)? y:cfg_xYear;
-            i = sscanf(line, "ExtensionsLength,%d", &n);
-            cfg_xLength = (i == 1)? n:cfg_xLength;
+            i = sscanf(line, "ExtensionsYear,%d", &v);
+            cfg_xYear = (i == 1)? v:cfg_xYear;
+            i = sscanf(line, "ExtensionsLength,%d", &v);
+            cfg_xLength = (i == 1)? v:cfg_xLength;
             i = sscanf(line, "VertexCacheMB,%d", &v);
             cfg_vertCacheMB = (i == 1)? v:cfg_vertCacheMB;
-            i = sscanf(line, "DispTimerMS,%d", &t);
-            cfg_dispTimerMS = (i == 1)? t:cfg_dispTimerMS;
-            i = sscanf(line, "CreateWindow,%d", &w);
+            i = sscanf(line, "DispTimerMS,%d", &v);
+            cfg_dispTimerMS = (i == 1)? v:cfg_dispTimerMS;
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
-            cfg_createWnd = (i == 1)? w:cfg_createWnd;
+            i = sscanf(line, "CreateWindow,%d", &v);
+            cfg_createWnd = (i == 1)? v:cfg_createWnd;
 #endif
+            i = sscanf(line, "FifoTrace,%d", &v);
+            cfg_traceFifo = (i == 1)? v:cfg_traceFifo;
         }
         fclose(fp);
     }
@@ -1359,6 +1363,7 @@ int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetCreateWindow(void) { return cfg_createWnd; }
+int FifoTrace(void) { return cfg_traceFifo; }
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 static HINSTANCE hDll = 0;

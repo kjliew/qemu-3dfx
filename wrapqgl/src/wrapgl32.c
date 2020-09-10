@@ -847,11 +847,11 @@ void PT_CALL glBlendEquationIndexedAMD(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glBlendEquationSeparate(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendEquationSeparate;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendEquationSeparate, 2);
 }
 void PT_CALL glBlendEquationSeparateEXT(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendEquationSeparateEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendEquationSeparateEXT, 2);
 }
 void PT_CALL glBlendEquationSeparateIndexedAMD(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -859,19 +859,19 @@ void PT_CALL glBlendEquationSeparateIndexedAMD(uint32_t arg0, uint32_t arg1, uin
 }
 void PT_CALL glBlendEquationSeparatei(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendEquationSeparatei;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendEquationSeparatei, 3);
 }
 void PT_CALL glBlendEquationSeparateiARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendEquationSeparateiARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendEquationSeparateiARB, 3);
 }
 void PT_CALL glBlendEquationi(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendEquationi;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendEquationi, 2);
 }
 void PT_CALL glBlendEquationiARB(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendEquationiARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendEquationiARB, 2);
 }
 void PT_CALL glBlendFunc(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -899,19 +899,19 @@ void PT_CALL glBlendFuncSeparateIndexedAMD(uint32_t arg0, uint32_t arg1, uint32_
 }
 void PT_CALL glBlendFuncSeparatei(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendFuncSeparatei;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendFuncSeparatei, 5);
 }
 void PT_CALL glBlendFuncSeparateiARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendFuncSeparateiARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendFuncSeparateiARB, 5);
 }
 void PT_CALL glBlendFunci(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendFunci;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendFunci, 3);
 }
 void PT_CALL glBlendFunciARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBlendFunciARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBlendFunciARB, 3);
 }
 void PT_CALL glBlendParameteriNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -2811,7 +2811,7 @@ void PT_CALL glDrawElementsInstancedBaseVertexBaseInstance(uint32_t arg0, uint32
             PushVertexArray((start + arg5), (end + arg5));
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDrawElementsInstancedBaseVertexBaseInstance;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawElementsInstancedBaseVertexBaseInstance, 7);
 }
 void PT_CALL glDrawElementsInstancedEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     int start, end;
