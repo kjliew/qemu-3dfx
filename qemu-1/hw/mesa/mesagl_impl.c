@@ -23,7 +23,7 @@
 
 #include "mesagl_impl.h"
 
-//#define DEBUG_MESAGL
+#define DEBUG_MESAGL
 
 #ifdef DEBUG_MESAGL
 #define DPRINTF(fmt, ...) \
@@ -139,7 +139,7 @@ void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t *bufo)
 const char *getGLFuncStr(int FEnum)
 {
     if (tblMesaGL[FEnum].impl == 0) {
-        tblMesaGL[FEnum].impl = 1;
+        tblMesaGL[FEnum].impl = GLFuncTrace()? (2 - GLFuncTrace()):1;
         return tblMesaGL[FEnum].sym;
     }
     return 0;
@@ -149,12 +149,12 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
 {
     int numArgs = getNumArgs(tblMesaGL[FEnum].sym);
 
-#ifdef DEBUG_MESAGL
-    const char *fstr = getGLFuncStr(FEnum);
-    if (fstr) {
-        DPRINTF("%-64s", tblMesaGL[FEnum].sym);
+    if (GLFuncTrace()) {
+        const char *fstr = getGLFuncStr(FEnum);
+        if (fstr) {
+            DPRINTF("%-64s", tblMesaGL[FEnum].sym);
+        }
     }
-#endif
 
     /* Handle special GL funcs */
 #define GLDONE() \
@@ -1325,6 +1325,7 @@ static int cfg_vertCacheMB;
 static int cfg_dispTimerMS;
 static int cfg_createWnd;
 static int cfg_traceFifo;
+static int cfg_traceFunc;
 static void conf_MGLOptions(void)
 {
     cfg_xYear = 2004;
@@ -1333,6 +1334,7 @@ static void conf_MGLOptions(void)
     cfg_dispTimerMS = 2000;
     cfg_createWnd = 0;
     cfg_traceFifo = 0;
+    cfg_traceFunc = 0;
     FILE *fp = fopen(MESAGLCFG, "r");
     if (fp != NULL) {
         char line[32];
@@ -1351,7 +1353,9 @@ static void conf_MGLOptions(void)
             cfg_createWnd = (i == 1)? v:cfg_createWnd;
 #endif
             i = sscanf(line, "FifoTrace,%d", &v);
-            cfg_traceFifo = (i == 1)? v:cfg_traceFifo;
+            cfg_traceFifo = ((i == 1) && v)? 1:cfg_traceFifo;
+            i = sscanf(line, "FuncTrace,%d", &v);
+            cfg_traceFunc = (i == 1)? (v % 3):cfg_traceFunc;
         }
         fclose(fp);
     }
@@ -1363,7 +1367,8 @@ int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetCreateWindow(void) { return cfg_createWnd; }
-int FifoTrace(void) { return cfg_traceFifo; }
+int GLFifoTrace(void) { return cfg_traceFifo; }
+int GLFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 static HINSTANCE hDll = 0;

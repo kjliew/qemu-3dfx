@@ -23,7 +23,7 @@
 
 #include "glide2x_impl.h"
 
-//#define DEBUG_GLIDE2X
+#define DEBUG_GLIDE2X
 
 #ifdef DEBUG_GLIDE2X
 #define DPRINTF(fmt, ...) \
@@ -312,7 +312,7 @@ const char *wrGetString(uint32_t a0)
 const char *getGRFuncStr(int FEnum)
 {
     if (tblGlide2x[FEnum].impl == 0) {
-        tblGlide2x[FEnum].impl = 1;
+        tblGlide2x[FEnum].impl = GRFuncTrace()? (2 - GRFuncTrace()):1;
         return tblGlide2x[FEnum].sym;
     }
     return 0;
@@ -323,11 +323,11 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
     static int glidePostInit = 0;
     int numArgs = getNumArgs(tblGlide2x[FEnum].sym);
 
-#ifdef DEBUG_GLIDE2X
-    const char *fstr = getGRFuncStr(FEnum);
-    if (fstr)
-        DPRINTF("%s ( 0x%x ), numArgs = %d\n", tblGlide2x[FEnum].sym, FEnum, numArgs);
-#endif
+    if (GRFuncTrace()) {
+        const char *fstr = getGRFuncStr(FEnum);
+        if (fstr)
+            DPRINTF("%-64s\n", tblGlide2x[FEnum].sym);
+    }
 
     if (glidePostInit == 0) {
 	switch (FEnum) {

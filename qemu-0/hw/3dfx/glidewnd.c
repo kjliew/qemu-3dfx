@@ -63,6 +63,8 @@ static int cfg_lfbHandler;
 static int cfg_lfbNoAux;
 static int cfg_lfbLockDirty;
 static int cfg_lfbWriteMerge;
+static int cfg_traceFifo;
+static int cfg_traceFunc;
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 static LONG WINAPI GlideWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -132,6 +134,8 @@ static int scaledRes(int w, float r)
     return i;
 }
 
+int GRFifoTrace(void) { return cfg_traceFifo; }
+int GRFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }
 int glide_lfbmerge(void) { return cfg_lfbWriteMerge; }
 int glide_lfbdirty(void) { return cfg_lfbLockDirty; }
 int glide_lfbnoaux(void) { return cfg_lfbNoAux; }
@@ -184,6 +188,8 @@ void fini_window(void)
 #endif	    
     }
     hwnd = 0;
+    cfg_traceFifo = 0;
+    cfg_traceFunc = 0;
 }
 
 uint32_t init_window(const int res, const char *wndTitle)
@@ -200,6 +206,8 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_lfbNoAux = 0;
     cfg_lfbLockDirty = 0;
     cfg_lfbWriteMerge = 0;
+    cfg_traceFifo = 0;
+    cfg_traceFunc = 0;
 
     FILE *fp = fopen(GLIDECFG, "r");
     if (fp != NULL) {
@@ -220,6 +228,10 @@ uint32_t init_window(const int res, const char *wndTitle)
             cfg_lfbLockDirty = ((i == 1) && c)? 1:cfg_lfbLockDirty;
             i = sscanf(line, "LfbWriteMerge,%d", &c);
             cfg_lfbWriteMerge = ((i == 1) && c)? 1:cfg_lfbWriteMerge;
+            i = sscanf(line, "FifoTrace,%d", &c);
+            cfg_traceFifo = ((i == 1) && c)? 1:cfg_traceFifo;
+            i = sscanf(line, "FuncTrace,%d", &c);
+            cfg_traceFunc = ((i == 1) && c)? (c % 3):cfg_traceFunc;
 	}
         fclose(fp);
     }

@@ -21,6 +21,8 @@
 #ifndef GLIDEWND_H
 #define GLIDEWND_H
 
+int GRFifoTrace(void);
+int GRFuncTrace(void);
 int glide_lfbmerge(void);
 int glide_lfbdirty(void);
 int glide_lfbnoaux(void);

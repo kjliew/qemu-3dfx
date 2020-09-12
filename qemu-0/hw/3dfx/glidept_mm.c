@@ -821,13 +821,19 @@ static void processFifo(GlidePTState *s)
     uint32_t *fifoptr = (uint32_t *)s->fifo_ptr;
     uint32_t *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
     int FEnum = s->FEnum, i = FIRST_FIFO, j = ALIGNED(1) >> 2;
+    struct {
+        uint32_t fifo;
+        uint32_t data;
+    } fifostat = { .fifo = 0, .data = 0 };
 
     if (fifoptr[0] - FIRST_FIFO) {
+        fifostat.fifo = fifoptr[0];
+        fifostat.data = dataptr[0];
 #define DEBUG_FIFO 0
 #if DEBUG_FIFO
-        const char *fstr = getGRFuncStr(s->FEnum);
-        if (fstr)
-            DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x\n", fstr, fifoptr[0], dataptr[0]);
+        if (dataptr[0] >= MAX_DATA) {
+            DPRINTF("  *WARN* Data bound overlapped 0x%02x dataptr %06X\n", s->FEnum, dataptr[0]);
+        }
 #endif
         while (i < fifoptr[0]) {
             int numArgs, numData;
@@ -856,6 +862,11 @@ static void processFifo(GlidePTState *s)
         s->fifoMax = (s->fifoMax < i)? i:s->fifoMax;
         fifoptr[0] = FIRST_FIFO;
         s->FEnum = FEnum;
+    }
+    if (GRFifoTrace()) {
+        const char *fstr = getGRFuncStr(s->FEnum);
+        if (fstr)
+            DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x\n", fstr, fifostat.fifo, fifostat.data);
     }
 
     s->datacb = 0;

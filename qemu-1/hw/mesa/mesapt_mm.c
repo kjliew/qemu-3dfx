@@ -37,8 +37,11 @@
 #ifdef DEBUG_MESAPT
 #define DPRINTF(fmt, ...) \
     do { fprintf(stderr, "mesapt: " fmt "\n" , ## __VA_ARGS__); } while(0)
+#define DPRINTF_COND(cond,fmt, ...) \
+    if (cond) { fprintf(stderr, "mesapt: " fmt "\n" , ## __VA_ARGS__); }
 #else
 #define DPRINTF(fmt, ...)
+#define DPRINTF_COND(cond,fmt, ...)
 #endif
 
 
@@ -1862,9 +1865,10 @@ static void processFifo(MesaPTState *s)
         fifoptr[0] = FIRST_FIFO;
         s->FEnum = FEnum;
     }
-    const char *fstr = getGLFuncStr(s->FEnum);
-    if (FifoTrace() && fstr)
-        DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifostat.fifo, fifostat.data);
+    if (GLFifoTrace()) {
+        const char *fstr = getGLFuncStr(s->FEnum);
+        DPRINTF_COND(fstr, "FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifostat.fifo, fifostat.data);
+    }
     s->datacb = 0;
     s->arg = &fifoptr[2];
     s->hshm = &dataptr[j];
@@ -1920,8 +1924,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             do {
                 uint32_t *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
                 uint32_t numData = (s->datacb & 0x03)? ((s->datacb >> 2) + 1):(s->datacb >> 2);
-                if ((dataptr[0] - numData) > (ALIGNED(1) >> 2))
-                    DPRINTF("WARN: FIFO data leak 0x%02x %06x %06x", s->FEnum, dataptr[0], numData);
+                DPRINTF_COND(((dataptr[0] - numData) > (ALIGNED(1) >> 2)),
+                    "WARN: FIFO data leak 0x%02x %06x %06x", s->FEnum, dataptr[0], numData);
                 dataptr[0] = ALIGNED(1) >> 2;
             } while (0);
         }
@@ -1934,8 +1938,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             processFifo(s);
             do {
                 uint32_t *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
-                if (dataptr[0] > (ALIGNED(1) >> 2))
-                    DPRINTF("WARN: FIFO data leak 0x%02x %d", s->FEnum, dataptr[0]);
+                DPRINTF_COND((dataptr[0] > (ALIGNED(1) >> 2)),
+                    "WARN: FIFO data leak 0x%02x %d", s->FEnum, dataptr[0]);
                 dataptr[0] = ALIGNED(1) >> 2;
             } while (0);
         }
@@ -2030,8 +2034,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 do {
                     uint8_t *name = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
                     s->procRet = (ExtFuncIsValid((char *)name))? MESAGL_MAGIC:0;
-                    if (s->procRet == 0)
-                        DPRINTF("  query_ext: %s -- %s", name, (s->procRet)? "OK":"Missing");
+                    DPRINTF_COND((s->procRet == 0),
+                        "  query_ext: %s -- %s", name, (s->procRet)? "OK":"Missing");
                 } while (0);
                 break;
             case 0xFDC:
