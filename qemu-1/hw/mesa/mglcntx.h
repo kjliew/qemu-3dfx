@@ -31,6 +31,7 @@ int MGLChoosePixelFormat(void);
 int MGLDescribePixelFormat(int, unsigned int, void *);
 int MGLSetPixelFormat(int, const void *);
 void MGLActivateHandler(int);
+int NumPbuffer(void);
 void MGLFuncHandler(const char *);
 void MGLDeleteContext(int);
 int MGLCreateContext(uint32_t);

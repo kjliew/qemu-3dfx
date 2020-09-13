@@ -16341,6 +16341,8 @@ uint32_t PT_CALL mglCreateContext (uint32_t arg0)
 {
     uint32_t i, currRC;
     uint32_t *cntxDC = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
+    if (currPixFmt == 0)
+        return 0;
     i = arg0 & (MAX_PBUFFER - 1);
     cntxDC[0] = arg0;
     ptm[0xFFC >> 2] = MESAGL_MAGIC;
@@ -16363,8 +16365,10 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
         __TIME__" "__DATE__" build ";
     extern const char rev_[];
     uint32_t *ptVer = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
-    if (currDC == 0)
-        mglCreateContext(arg0);
+    if (currDC == 0) {
+        if (mglCreateContext(arg0) == 0)
+            return 0;
+    }
     if (currGLRC == 0)
         DPRINTF("%s", icdBuild);
     //DPRINTF("MakeCurrent %x %x", arg0, arg1);

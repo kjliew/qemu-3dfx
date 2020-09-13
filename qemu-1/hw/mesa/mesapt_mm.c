@@ -1794,8 +1794,8 @@ static void processFRet(MesaPTState *s)
                         //DPRINTF("  %s[ %u ]", stok, (uint32_t)extnLength);
                         stok = strtok(NULL, " ");
                     }
-                    memcpy(xbuf, "WGL_EXT_swap_control", sizeof("WGL_EXT_swap_control"));
-                    xbuf += sizeof("WGL_EXT_swap_control");
+                    memcpy(xbuf, "GL_WIN_swap_hint WGL_EXT_swap_control", sizeof("GL_WIN_swap_hint WGL_EXT_swap_control"));
+                    xbuf += sizeof("GL_WIN_swap_hint WGL_EXT_swap_control");
                     *xbuf = '\0';
                     g_free(tmpstr);
                 }
@@ -1981,7 +1981,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         s->dispTimer = timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0);
                     }
                     else {
-                        DPRINTF("wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
+                        DPRINTF_COND((0 == NumPbuffer()),
+                            "wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
                         MGLMakeCurrent(ptVer[0], level);
                     }
                 } while(0);
@@ -2066,7 +2067,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 do {
                     int *i = (int *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
                     if (s->mglContext && s->mglCntxCurrent) {
-                        DPRINTF("ActivateHandler %d", i[0]);
+                        DPRINTF("ActivateHandler %-32d", i[0]);
                         MGLActivateHandler(i[0]);
                         if (i[0])
                             dispTimerSched(s->dispTimer);

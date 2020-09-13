@@ -304,6 +304,14 @@ void MGLActivateHandler(int i)
     }
 }
 
+int NumPbuffer(void)
+{
+    int i, c;
+    for (i = 0, c = 0; i < MAX_PBUFFER;)
+        if (hPbuffer[i++].width) c++;
+    return c;
+}
+
 static int LookupAttribArray(const int *attrib, const int attr)
 {
     int i, ret;

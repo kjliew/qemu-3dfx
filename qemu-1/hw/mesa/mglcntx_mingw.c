@@ -277,36 +277,35 @@ int MGLChoosePixelFormat(void)
 int MGLSetPixelFormat(int fmt, const void *p)
 {
     const PIXELFORMATDESCRIPTOR *ppfd = (const PIXELFORMATDESCRIPTOR *)p;
-    int ret = 0;
+    int curr, ret;
     GLWINDOW_INIT();
-    ret = SetPixelFormat(hDC, fmt, ppfd);
-    DPRINTF("SetPixelFormat() fmt %02x ret %d", fmt, (ret)? 1:0);
+    curr = GetPixelFormat(hDC);
+    if (curr == 0)
+        curr = MGLPresetPixelFormat();
+    ret = SetPixelFormat(hDC, curr, ppfd);
+    DPRINTF("SetPixelFormat() fmt %02x ret %d", curr, (ret)? 1:0);
     return ret;
 }
 
 int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
 {
     LPPIXELFORMATDESCRIPTOR ppfd = (LPPIXELFORMATDESCRIPTOR)p;
-    int ret, curr;
+    int curr;
     GLWINDOW_INIT();
     curr = GetPixelFormat(hDC);
     if (curr == 0)
         curr = MGLPresetPixelFormat();
-    if (sz == sizeof(PIXELFORMATDESCRIPTOR))
-        DescribePixelFormat(hDC, curr, sz, ppfd);
-    ret = curr;
-    //DPRINTF("DescribePixelFormat() fmt %02x curr %02x", fmt, curr);
-    if (fmt != curr)
-        ppfd->dwFlags &= ~PFD_SUPPORT_OPENGL;
-    else {
-        DPRINTF("DescribePixelFormat()\n"
+    if (sz == sizeof(PIXELFORMATDESCRIPTOR)) {
+        DescribePixelFormat(hDC, curr, sizeof(PIXELFORMATDESCRIPTOR), ppfd);
+        DPRINTF("DescribePixelFormat() dwFlags:%08lx\n"
             "  cColorbits:%02d cDepthBits:%02d cStencilBits:%02d ARGB%d%d%d%d\n"
             "  cAlphaShift:%02d cRedShift:%02d cGreenShift:%02d cBlueShift:%02d",
+            ppfd->dwFlags,
             ppfd->cColorBits, ppfd->cDepthBits, ppfd->cStencilBits,
             ppfd->cRedBits, ppfd->cGreenBits, ppfd->cBlueBits, ppfd->cAlphaBits,
             ppfd->cAlphaShift, ppfd->cRedShift, ppfd->cGreenShift, ppfd->cBlueShift);
     }
-    return ret;
+    return 1;
 }
 
 void MGLActivateHandler(int i)
@@ -325,6 +324,14 @@ void MGLActivateHandler(int i)
                 break;
         }
     }
+}
+
+int NumPbuffer(void)
+{
+    int i, c;
+    for (i = 0, c = 0; i < MAX_PBUFFER;)
+        if (hPbuffer[i++]) c++;
+    return c;
 }
 
 static int LookupAttribArray(const int *attrib, const int attr)
