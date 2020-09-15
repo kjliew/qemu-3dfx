@@ -282,7 +282,7 @@ int MGLSetPixelFormat(int fmt, const void *p)
     curr = GetPixelFormat(hDC);
     if (curr == 0)
         curr = MGLPresetPixelFormat();
-    ret = SetPixelFormat(hDC, curr, ppfd);
+    ret = SetPixelFormat(hDC, curr, (ppfd->nSize)? ppfd:0);
     DPRINTF("SetPixelFormat() fmt %02x ret %d", curr, (ret)? 1:0);
     return ret;
 }

@@ -54,10 +54,12 @@ static int InitMesaPTMMBase(PDRVFUNC pDrv)
 
     if (ptm == 0)
         return 1;
-    mfifo[0] = FIRST_FIFO;
     mdata = &mfifo[MAX_FIFO];
-    mdata[0] = ALIGNED(1) >> 2;
     pt = &mfifo[1];
+    if (mfifo[1] == (uint32_t)(ptm + (0xFC0U >> 2)))
+        return 1;
+    mfifo[0] = FIRST_FIFO;
+    mdata[0] = ALIGNED(1) >> 2;
     pt[0] = (uint32_t)(ptm + (0xFC0U >> 2));
 
     return 0;
@@ -16511,7 +16513,9 @@ BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *
         mglDeleteContext(MESAGL_MAGIC);
     }
     xppfd[0] = format;
-    memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
+    memset(&xppfd[2], 0, sizeof(PIXELFORMATDESCRIPTOR));
+    if (ppfd)
+        memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFE4 >> 2] = MESAGL_MAGIC;
     ret = (ptm[0xFE4 >> 2] == MESAGL_MAGIC)? TRUE:FALSE;
     currPixFmt = (ret)? format:0;
@@ -16541,6 +16545,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         LPVOID lpReserved
         )
 {
+    static int dllRef = 0;
     uint32_t HostRet;
     TCHAR procName[2048];
     OSVERSIONINFO osInfo;
@@ -16561,14 +16566,19 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             if (drv.Init()) {
                 if (InitMesaPTMMBase(&drv)) {
                     drv.Fini();
-                    return FALSE;
+                    dllRef++;
+                    return (ptm)? TRUE:FALSE;
                 }
+                drv.Fini();
             }
-            else
+            else {
+                dllRef++;
                 return FALSE;
+            }
 #ifdef DEBUG_MGSTUB
             logfp = fopen(LOG_NAME, "w");
 #endif
+            hHook = 0;
             memset(procName, 0, sizeof(procName));
             GetModuleFileName(NULL, procName, sizeof(procName) - 1);
             DPRINTF("MesaGL Init ( %s )", procName);
@@ -16584,17 +16594,20 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             hHook = SetWindowsHookEx(WH_CALLWNDPROC, (HOOKPROC)CallWndProc, NULL, GetCurrentThreadId());
             break;
         case DLL_PROCESS_DETACH:
-            UnhookWindowsHookEx(hHook);
+            if (dllRef--)
+                break;
+            if (hHook)
+                UnhookWindowsHookEx(hHook);
             DPRINTF("MesaGL Fini %x", currGLRC);
             if (currGLRC) {
                 mglMakeCurrent(0, 0);
                 mglDeleteContext(MESAGL_MAGIC);
             }
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | MESAVER;
+            mfifo[1] = 0;
 #ifdef DEBUG_MGSTUB
             fclose(logfp);
 #endif
-            drv.Fini();
             break;
     }
 

@@ -1894,20 +1894,16 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
     MesaPTState *s = opaque;
 
     if (addr == 0xFBC) {
-        static int DllRef = 0;
         switch (val) {
             case 0xA0320:
                 if (InitMesaGL() == 0) {
                     s->MesaVer = (uint32_t)((val >> 12) & 0xFFU) | ((val & 0xFFFU) << 8);
                     MGLTmpContext();
-                    DllRef++;
                     DPRINTF("DLL loaded");
                 }
                 break;
             case 0xD0320:
                 MGLWndRelease();
-                if (--DllRef)
-                    break;
                 FiniMesaGL();
                 DPRINTF("DLL unloaded");
                 break;
@@ -2021,14 +2017,15 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
                     int pixfmt = *(int *)ppfd;
                     unsigned int nbytes = *(uint32_t *)PTR(ppfd, sizeof(int));
-                    s->pixfmtMax = MGLDescribePixelFormat(pixfmt, nbytes, ppfd);
+                    s->pixfmtMax = ((uint32_t *)s->fifo_ptr)[1]? MGLDescribePixelFormat(pixfmt, nbytes, ppfd):0;
                 } while(0);
                 break;
             case 0xFE4:
                 do {
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
                     int pixfmt = *(int *)ppfd;
-                    s->procRet = MGLSetPixelFormat(pixfmt, PTR(ppfd, ALIGNED(sizeof(int))))? MESAGL_MAGIC:0;
+                    s->procRet = MGLSetPixelFormat(pixfmt, PTR(ppfd, ALIGNED(sizeof(int))))?
+                        (((uint32_t*)s->fifo_ptr)[1]? MESAGL_MAGIC:0):0;
                 } while(0);
                 break;
             case 0xFE0:
