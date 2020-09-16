@@ -16545,7 +16545,6 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         LPVOID lpReserved
         )
 {
-    static int dllRef = 0;
     uint32_t HostRet;
     TCHAR procName[2048];
     OSVERSIONINFO osInfo;
@@ -16566,13 +16565,14 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             if (drv.Init()) {
                 if (InitMesaPTMMBase(&drv)) {
                     drv.Fini();
-                    dllRef++;
+                    mdata[1]++;
                     return (ptm)? TRUE:FALSE;
                 }
                 drv.Fini();
+                mdata[1] = 1;
             }
             else {
-                dllRef++;
+                mdata[1]++;
                 return FALSE;
             }
 #ifdef DEBUG_MGSTUB
@@ -16594,15 +16594,15 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             hHook = SetWindowsHookEx(WH_CALLWNDPROC, (HOOKPROC)CallWndProc, NULL, GetCurrentThreadId());
             break;
         case DLL_PROCESS_DETACH:
-            if (dllRef--)
+            if (--mdata[1])
                 break;
-            if (hHook)
-                UnhookWindowsHookEx(hHook);
             DPRINTF("MesaGL Fini %x", currGLRC);
             if (currGLRC) {
                 mglMakeCurrent(0, 0);
                 mglDeleteContext(MESAGL_MAGIC);
             }
+            if (hHook)
+                UnhookWindowsHookEx(hHook);
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | MESAVER;
             mfifo[1] = 0;
 #ifdef DEBUG_MGSTUB
