@@ -96,30 +96,33 @@ static HDC hDC, hPBDC[MAX_PBUFFER];
 static HGLRC hRC[4], hPBRC[MAX_PBUFFER];
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 
-HGLRC (WINAPI *pFnCreateContext)(HDC);
-BOOL  (WINAPI *pFnMakeCurrent)(HDC, HGLRC);
-BOOL  (WINAPI *pFnDeleteContext)(HGLRC);
-BOOL  (WINAPI *pFnUseFontBitmapsA)(HDC, DWORD, DWORD, DWORD);
-BOOL  (WINAPI *pFnShareLists)(HGLRC, HGLRC);
-PROC  (WINAPI *pFnGetProcAddress)(LPCSTR);
-BOOL  (WINAPI *pFnChoosePixelFormatARB)(HDC, const int *, const float *, UINT, int *, UINT *);
-const char * (WINAPI *pFnGetExtensionsStringARB)(HDC);
-HGLRC (WINAPI *pFnCreateContextAttribsARB)(HDC, HGLRC, const int *);
+static struct {
+    HGLRC (WINAPI *CreateContext)(HDC);
+    BOOL  (WINAPI *MakeCurrent)(HDC, HGLRC);
+    BOOL  (WINAPI *DeleteContext)(HGLRC);
+    BOOL  (WINAPI *UseFontBitmapsA)(HDC, DWORD, DWORD, DWORD);
+    BOOL  (WINAPI *ShareLists)(HGLRC, HGLRC);
+    PROC  (WINAPI *GetProcAddress)(LPCSTR);
+    /* WGL extensions */
+    BOOL  (WINAPI *ChoosePixelFormatARB)(HDC, const int *, const float *, UINT, int *, UINT *);
+    const char * (WINAPI *GetExtensionsStringARB)(HDC);
+    HGLRC (WINAPI *CreateContextAttribsARB)(HDC, HGLRC, const int *);
+} wglFuncs;
 
 void SetMesaFuncPtr(void *p)
 {
     HINSTANCE hDLL = (HINSTANCE)p;
-    pFnGetProcAddress = (PROC (WINAPI *)(LPCSTR))GetProcAddress(hDLL, "wglGetProcAddress");
-    pFnCreateContext = (HGLRC (WINAPI *)(HDC))GetProcAddress(hDLL, "wglCreateContext");
-    pFnMakeCurrent   = (BOOL (WINAPI *)(HDC, HGLRC))GetProcAddress(hDLL, "wglMakeCurrent");
-    pFnDeleteContext = (BOOL (WINAPI *)(HGLRC))GetProcAddress(hDLL, "wglDeleteContext");
-    pFnUseFontBitmapsA = (BOOL (WINAPI *)(HDC, DWORD, DWORD, DWORD))GetProcAddress(hDLL, "wglUseFontBitmapsA");
-    pFnShareLists = (BOOL (WINAPI *)(HGLRC, HGLRC))GetProcAddress(hDLL, "wglShareLists");
+    wglFuncs.GetProcAddress = (PROC (WINAPI *)(LPCSTR))GetProcAddress(hDLL, "wglGetProcAddress");
+    wglFuncs.CreateContext = (HGLRC (WINAPI *)(HDC))GetProcAddress(hDLL, "wglCreateContext");
+    wglFuncs.MakeCurrent   = (BOOL (WINAPI *)(HDC, HGLRC))GetProcAddress(hDLL, "wglMakeCurrent");
+    wglFuncs.DeleteContext = (BOOL (WINAPI *)(HGLRC))GetProcAddress(hDLL, "wglDeleteContext");
+    wglFuncs.UseFontBitmapsA = (BOOL (WINAPI *)(HDC, DWORD, DWORD, DWORD))GetProcAddress(hDLL, "wglUseFontBitmapsA");
+    wglFuncs.ShareLists = (BOOL (WINAPI *)(HGLRC, HGLRC))GetProcAddress(hDLL, "wglShareLists");
 }
 
 void *MesaGLGetProc(const char *proc)
 {
-    return (void *)pFnGetProcAddress(proc);
+    return (void *)wglFuncs.GetProcAddress(proc);
 }
 
 void MGLTmpContext(void)
@@ -138,18 +141,18 @@ void MGLTmpContext(void)
     pfd.cAlphaBits = 8;
     pfd.cStencilBits = 8;
     SetPixelFormat(tmpDC, ChoosePixelFormat(tmpDC, &pfd), &pfd);
-    HGLRC tmpGL = pFnCreateContext(tmpDC);
-    pFnMakeCurrent(tmpDC, tmpGL);
+    HGLRC tmpGL = wglFuncs.CreateContext(tmpDC);
+    wglFuncs.MakeCurrent(tmpDC, tmpGL);
 
-    pFnChoosePixelFormatARB = (BOOL (WINAPI *)(HDC, const int *, const float *, UINT, int *, UINT *))
+    wglFuncs.ChoosePixelFormatARB = (BOOL (WINAPI *)(HDC, const int *, const float *, UINT, int *, UINT *))
         MesaGLGetProc("wglChoosePixelFormatARB");
-    pFnGetExtensionsStringARB =  (const char * (WINAPI *)(HDC))
+    wglFuncs.GetExtensionsStringARB =  (const char * (WINAPI *)(HDC))
         MesaGLGetProc("wglGetExtensionsStringARB");
-    pFnCreateContextAttribsARB = (HGLRC (WINAPI *)(HDC, HGLRC, const int *))
+    wglFuncs.CreateContextAttribsARB = (HGLRC (WINAPI *)(HDC, HGLRC, const int *))
         MesaGLGetProc("wglCreateContextAttribsARB");
 
-    pFnMakeCurrent(NULL, NULL);
-    pFnDeleteContext(tmpGL);
+    wglFuncs.MakeCurrent(NULL, NULL);
+    wglFuncs.DeleteContext(tmpGL);
     ReleaseDC(tmpWin, tmpDC);
     DestroyWindow(tmpWin);
 }
@@ -166,8 +169,8 @@ void MGLTmpContext(void)
 void MGLDeleteContext(int level)
 {
     int n = level & 0x03U;
-    pFnMakeCurrent(NULL, NULL);
-    pFnDeleteContext(hRC[n]);
+    wglFuncs.MakeCurrent(NULL, NULL);
+    wglFuncs.DeleteContext(hRC[n]);
     hRC[n] = 0;
     if (!GetCreateWindow())
         MGLActivateHandler(0);
@@ -188,11 +191,11 @@ int MGLCreateContext(uint32_t gDC)
     int i, ret;
     i = gDC & (MAX_PBUFFER - 1);
     if (gDC == ((MESAGL_HPBDC & 0xFFFFFFF0U) | i)) {
-        hPBRC[i] = pFnCreateContext(hPBDC[i]);
+        hPBRC[i] = wglFuncs.CreateContext(hPBDC[i]);
         ret = (hPBRC[i])? 0:1;
     }
     else {
-        hRC[0] = pFnCreateContext(hDC);
+        hRC[0] = wglFuncs.CreateContext(hDC);
         ret = (hRC[0])? 0:1;
     }
     return ret;
@@ -202,11 +205,11 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
 {
     uint32_t i = cntxRC & (MAX_PBUFFER - 1), n = level & 0x03U;
     if (cntxRC == (MESAGL_MAGIC - n)) {
-        pFnMakeCurrent(hDC, hRC[n]);
+        wglFuncs.MakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
-        pFnMakeCurrent(hPBDC[i], hPBRC[i]);
+        wglFuncs.MakeCurrent(hPBDC[i], hPBRC[i]);
 
     return 0;
 }
@@ -221,7 +224,7 @@ static int MGLPresetPixelFormat(void)
 {
     int ipixfmt = 0;
 
-    if (pFnChoosePixelFormatARB) {
+    if (wglFuncs.ChoosePixelFormatARB) {
         const int ia[] = {
             WGL_DRAW_TO_WINDOW_ARB, 1,
             WGL_SUPPORT_OPENGL_ARB, 1,
@@ -238,7 +241,7 @@ static int MGLPresetPixelFormat(void)
         };
         const float fa[] = {0, 0};
         int pi[64]; UINT nFmts = 0;
-        BOOL status = pFnChoosePixelFormatARB(hDC, ia, fa, 64, pi, &nFmts);
+        BOOL status = wglFuncs.ChoosePixelFormatARB(hDC, ia, fa, 64, pi, &nFmts);
         if (status && nFmts)
             ipixfmt = (nFmts)? pi[0]:0;
     }
@@ -360,7 +363,7 @@ void MGLFuncHandler(const char *name)
         i = argsp[1] & (MAX_PBUFFER - 1);
         if (((argsp[0] == MESAGL_MAGIC) && (argsp[1] == ((MESAGL_MAGIC & 0xFFFFFFFU) << 4 | i))) &&
             (hRC[0] && hPBRC[i]))
-            ret = pFnShareLists(hRC[0], hPBRC[i]);
+            ret = wglFuncs.ShareLists(hRC[0], hPBRC[i]);
         else {
             DPRINTF("  *WARN* ShareLists called with unknown contexts, %x %x", argsp[0], argsp[1]);
         }
@@ -369,7 +372,7 @@ void MGLFuncHandler(const char *name)
     }
     FUNCP_HANDLER("wglUseFontBitmapsA") {
         uint32_t ret;
-        ret = pFnUseFontBitmapsA(hDC, argsp[1], argsp[2], argsp[3]);
+        ret = wglFuncs.UseFontBitmapsA(hDC, argsp[1], argsp[2], argsp[3]);
         argsp[0] = ret;
         return;
     }
@@ -377,9 +380,10 @@ void MGLFuncHandler(const char *name)
         uint32_t (__stdcall *fp)(uint32_t) =
            (uint32_t (__stdcall *)(uint32_t)) MesaGLGetProc(fname);
         if (fp) {
-            uint32_t ret;
+            uint32_t ret, err;
             ret =  fp(argsp[0]);
-            DPRINTF("wglSwapIntervalEXT(%u) ret %u                      ", argsp[0], ret);
+            err = (ret)? 0:GetLastError();
+            DPRINTF("wglSwapIntervalEXT(%u) %s %-24u", argsp[0], ((ret)? "ret":"err"), ((ret)? ret:err));
             argsp[0] = ret;
             return;
         }
@@ -390,14 +394,14 @@ void MGLFuncHandler(const char *name)
         if (fp) {
             uint32_t ret;
             ret = fp();
-            DPRINTF("wglGetSwapIntervalEXT() ret %u                     ", ret);
+            DPRINTF("wglGetSwapIntervalEXT() ret %-24u", ret);
             argsp[0] = ret;
             return;
         }
     }
     FUNCP_HANDLER("wglGetExtensionsStringARB") {
-        if (1 /* pFnGetExtensionsStringARB */) {
-            //const char *str = pFnGetExtensionsStringARB(hDC);
+        if (1 /* wglFuncs.GetExtensionsStringARB */) {
+            //const char *str = wglFuncs.GetExtensionsStringARB(hDC);
             const char *tmp = "WGL_EXT_swap_control "
                 "WGL_EXT_extensions_string " "WGL_ARB_extensions_string "
                 "WGL_ARB_pixel_format " "WGL_ARB_pbuffer "
@@ -409,23 +413,23 @@ void MGLFuncHandler(const char *name)
         }
     }
     FUNCP_HANDLER("wglCreateContextAttribsARB") {
-        if (pFnCreateContextAttribsARB) {
+        if (wglFuncs.CreateContextAttribsARB) {
             uint32_t i = 0, ret;
             while(hRC[i]) i++;
             argsp[1] = (argsp[0])? i:0;
             if (argsp[1] == 0) {
-                pFnMakeCurrent(NULL, NULL);
+                wglFuncs.MakeCurrent(NULL, NULL);
                 for (i = 4; i > 0;) {
                     if (hRC[--i]) {
-                        pFnDeleteContext(hRC[i]);
+                        wglFuncs.DeleteContext(hRC[i]);
                         hRC[i] = 0;
                     }
                 }
-                hRC[0] = pFnCreateContextAttribsARB(hDC, 0, (const int *)&argsp[2]);
+                hRC[0] = wglFuncs.CreateContextAttribsARB(hDC, 0, (const int *)&argsp[2]);
                 ret = (hRC[0])? 1:0;
             }
             else {
-                hRC[i] = pFnCreateContextAttribsARB(hDC, hRC[i-1], (const int *)&argsp[2]);
+                hRC[i] = wglFuncs.CreateContextAttribsARB(hDC, hRC[i-1], (const int *)&argsp[2]);
                 ret = (hRC[i])? 1:0;
             }
             argsp[0] = ret;
@@ -459,12 +463,12 @@ void MGLFuncHandler(const char *name)
         }
     }
     FUNCP_HANDLER("wglChoosePixelFormatARB") {
-        if (pFnChoosePixelFormatARB) {
+        if (wglFuncs.ChoosePixelFormatARB) {
             const int *ia = (const int *)argsp;
             if (LookupAttribArray(ia, WGL_DRAW_TO_PBUFFER_ARB)) {
                 int piFormats[64]; UINT nNumFormats;
                 float fa[] = {0,0};
-                pFnChoosePixelFormatARB(hDC, ia, fa, 64, piFormats, &nNumFormats);
+                wglFuncs.ChoosePixelFormatARB(hDC, ia, fa, 64, piFormats, &nNumFormats);
                 argsp[1] = (nNumFormats)? piFormats[0]:0;
             }
             else {
@@ -536,7 +540,7 @@ void MGLFuncHandler(const char *name)
         if (fp && fpDC) {
             uint32_t i, ret;
             i = argsp[0] & (MAX_PBUFFER - 1);
-            pFnDeleteContext(hPBRC[i]);
+            wglFuncs.DeleteContext(hPBRC[i]);
             fpDC(hPbuffer[i], hPBDC[i]);
             ret = fp(hPbuffer[i]);
             hPbuffer[i] = 0; hPBDC[i] = 0; hPBRC[i] = 0;
@@ -611,7 +615,7 @@ static void profile_stat(void)
     p->ftime += (curr - p->last) * (1.0f /  NANOSECONDS_PER_SECOND);
     p->last = curr;
 
-    i = (int) p->ftime;
+    i = (GLFifoTrace() || GLFuncTrace())? 0:((int) p->ftime);
     if (i && ((i % 5) == 0))
 	profile_dump();
 }
