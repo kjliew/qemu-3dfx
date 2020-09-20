@@ -82,19 +82,23 @@ int wrMapOrderPoints(uint32_t target)
     return (v[0]*v[1]);
 }
 
-int wrTexTextureWxD(uint32_t target, uint32_t level, int compressed)
+int wrTexSizeTexture(uint32_t target, uint32_t level, int compressed)
 {
-    int w, h, csize;
+    int ret;
     void (__stdcall *fpra2p3)(uint32_t arg0, uint32_t arg1, uint32_t arg2, uintptr_t arg3);
     fpra2p3 = tblMesaGL[FEnum_glGetTexLevelParameteriv].ptr;
-    if (compressed)
-        fpra2p3(target, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, (uintptr_t)&csize);
-    else {
-        fpra2p3(target, level,  GL_TEXTURE_WIDTH, (uintptr_t)&w);
-        fpra2p3(target, level,  GL_TEXTURE_HEIGHT, (uintptr_t)&h);
-        csize = w * h;
+
+    if (compressed == 0) {
+        int w, h, d;
+        fpra2p3(target, level, GL_TEXTURE_WIDTH, (uintptr_t)&w);
+        fpra2p3(target, level, GL_TEXTURE_HEIGHT, (uintptr_t)&h);
+        fpra2p3(target, level, GL_TEXTURE_DEPTH, (uintptr_t)&d);
+        ret = (w * h * d);
     }
-    return csize;
+    else
+        fpra2p3(target, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, (uintptr_t)&ret);
+
+    return ret;
 }
 
 int wrGetParamIa1p2(uint32_t FEnum, uint32_t arg0, uint32_t arg1)

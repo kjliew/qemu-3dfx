@@ -31,7 +31,7 @@
 int GLFEnumArgsCnt(int);
 int ExtFuncIsValid(char *);
 int wrMapOrderPoints(uint32_t);
-int wrTexTextureWxD(uint32_t, uint32_t, int);
+int wrTexSizeTexture(uint32_t, uint32_t, int);
 int wrGetParamIa1p2(uint32_t, uint32_t, uint32_t);
 void wrFillBufObj(uint32_t, void *, uint32_t, uint32_t);
 void wrFlushBufObj(int, uint32_t, mapbufo_t *);

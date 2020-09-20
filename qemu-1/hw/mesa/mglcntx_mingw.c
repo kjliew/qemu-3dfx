@@ -109,6 +109,22 @@ static struct {
     HGLRC (WINAPI *CreateContextAttribsARB)(HDC, HGLRC, const int *);
 } wglFuncs;
 
+static void MesaInitGammaRamp(void)
+{
+    struct {
+        uint16_t r[256];
+        uint16_t g[256];
+        uint16_t b[256];
+    } GammaRamp;
+
+    for (int i = 0; i < 256; i++) {
+        GammaRamp.r[i] = (uint16_t)(((i << 8) | i) & 0xFFFFU);
+        GammaRamp.g[i] = (uint16_t)(((i << 8) | i) & 0xFFFFU);
+        GammaRamp.b[i] = (uint16_t)(((i << 8) | i) & 0xFFFFU);
+    }
+    SetDeviceGammaRamp(hDC, &GammaRamp);
+}
+
 void SetMesaFuncPtr(void *p)
 {
     HINSTANCE hDLL = (HINSTANCE)p;
@@ -179,6 +195,7 @@ void MGLDeleteContext(int level)
 void MGLWndRelease(void)
 {
     if (hwnd) {
+        MesaInitGammaRamp();
         ReleaseDC(hwnd, hDC);
         GLWINDOW_FINI();
         hDC = 0;
@@ -262,6 +279,7 @@ static int MGLPresetPixelFormat(void)
         ipixfmt = ChoosePixelFormat(hDC, &pfd);
     }
 
+    MesaInitGammaRamp();
     return ipixfmt;
 }
 
@@ -402,11 +420,15 @@ void MGLFuncHandler(const char *name)
     FUNCP_HANDLER("wglGetExtensionsStringARB") {
         if (1 /* wglFuncs.GetExtensionsStringARB */) {
             //const char *str = wglFuncs.GetExtensionsStringARB(hDC);
-            const char *tmp = "WGL_EXT_swap_control "
-                "WGL_EXT_extensions_string " "WGL_ARB_extensions_string "
-                "WGL_ARB_pixel_format " "WGL_ARB_pbuffer "
-                "WGL_ARB_create_context " "WGL_ARB_create_context_profile "
-                "WGL_ARB_render_texture";
+            const char *tmp = "WGL_3DFX_gamma_control "
+                "WGL_ARB_create_context "
+                "WGL_ARB_create_context_profile "
+                "WGL_ARB_extensions_string "
+                "WGL_ARB_pbuffer "
+                "WGL_ARB_pixel_format "
+                "WGL_ARB_render_texture "
+                "WGL_EXT_extensions_string "
+                "WGL_EXT_swap_control";
             strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
             //DPRINTF("WGL extensions\nHost: %s [ %d ]\nGuest: %s [ %d ]", str, (uint32_t)strlen(str), name, (uint32_t)strlen(name));
             return;
@@ -558,6 +580,18 @@ void MGLFuncHandler(const char *name)
             argsp[0] = ret;
             return;
         }
+    }
+    FUNCP_HANDLER("wglGetDeviceGammaRamp3DFX") {
+        uint32_t ret;
+        ret = GetDeviceGammaRamp(hDC, &argsp[2]);
+        argsp[0] = ret;
+        return;
+    }
+    FUNCP_HANDLER("wglSetDeviceGammaRamp3DFX") {
+        uint32_t ret;
+        ret = SetDeviceGammaRamp(hDC, &argsp[0]);
+        argsp[0] = ret;
+        return;
     }
 
     DPRINTF("  *WARN* Unhandled GLFunc %s", name);

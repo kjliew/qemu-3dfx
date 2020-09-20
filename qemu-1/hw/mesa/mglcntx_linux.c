@@ -31,6 +31,7 @@
 
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
 #include <GL/glx.h>
+#include <X11/extensions/xf86vmode.h>
 
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
@@ -176,6 +177,54 @@ static GLXPbuffer PBDC[MAX_PBUFFER];
 static GLXContext PBRC[MAX_PBUFFER];
 static int cAuxBuffers;
 
+#define MAX_RAMP_SIZE 0x800
+struct wgamma {
+    uint16_t r[0x100];
+    uint16_t g[0x100];
+    uint16_t b[0x100];
+};
+struct xgamma {
+    uint16_t r[MAX_RAMP_SIZE];
+    uint16_t g[MAX_RAMP_SIZE];
+    uint16_t b[MAX_RAMP_SIZE];
+};
+
+static void MesaInitGammaRamp(void)
+{
+    int rampsz;
+    struct xgamma GammaRamp;
+
+    XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+    switch(rampsz) {
+        case 0x100:
+            for (int i = 0; i < rampsz; i++) {
+                GammaRamp.r[i] = (uint16_t)(((i << 8) | i) & 0xFFFFU);
+                GammaRamp.g[i] = (uint16_t)(((i << 8) | i) & 0xFFFFU);
+                GammaRamp.b[i] = (uint16_t)(((i << 8) | i) & 0xFFFFU);
+            }
+            break;
+        case 0x400:
+            for (int i = 0; i < rampsz; i++) {
+                GammaRamp.r[i] = (uint16_t)(((i << 6) | (((i << 6) & 0xFC00U) >> 10)) & 0xFFFFU);
+                GammaRamp.g[i] = (uint16_t)(((i << 6) | (((i << 6) & 0xFC00U) >> 10)) & 0xFFFFU);
+                GammaRamp.b[i] = (uint16_t)(((i << 6) | (((i << 6) & 0xFC00U) >> 10)) & 0xFFFFU);
+            }
+            break;
+        case 0x800:
+            for (int i = 0; i < rampsz; i++) {
+                GammaRamp.r[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xFC00U) >> 11)) & 0xFFFFU);
+                GammaRamp.g[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xFC00U) >> 11)) & 0xFFFFU);
+                GammaRamp.b[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xFC00U) >> 11)) & 0xFFFFU);
+            }
+            break;
+
+        default:
+            return;
+    }
+    XF86VidModeSetGammaRamp(dpy, DefaultScreen(dpy), rampsz,
+        GammaRamp.r, GammaRamp.g, GammaRamp.b);
+}
+
 void SetMesaFuncPtr(void *hDLL)
 {
 }
@@ -201,6 +250,7 @@ void MGLDeleteContext(int level)
 void MGLWndRelease(void)
 {
     if (win) {
+        MesaInitGammaRamp();
         XFree(xvi);
         XCloseDisplay(dpy);
         mesa_release_window();
@@ -254,6 +304,7 @@ static int MGLPresetPixelFormat(void)
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_FBCONFIG_ID, &fbid);
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_AUX_BUFFERS, &cAuxBuffers);
     DPRINTF("FBConfig id 0x%03x visual 0x%03lx nAux %d", fbid, xvi->visualid, cAuxBuffers);
+    MesaInitGammaRamp();
     XFree(fbcnf);
     XFlush(dpy);
     return 1;
@@ -314,12 +365,13 @@ int NumPbuffer(void)
 
 static int LookupAttribArray(const int *attrib, const int attr)
 {
-    int i, ret;
-    for (i = 0; (attrib[i] && attrib[i+1]); i+=2) {
-        if (attrib[i] == attr)
+    int ret = 0;
+    for (int i = 0; (attrib[i] && attrib[i+1]); i+=2) {
+        if (attrib[i] == attr) {
+            ret = (attr == WGL_AUX_BUFFERS_ARB)? cAuxBuffers:attrib[i+1];
             break;
+        }
     }
-    ret = (attr == WGL_AUX_BUFFERS_ARB)? cAuxBuffers:attrib[i+1];
     return ret;
 }
 
@@ -370,13 +422,21 @@ void MGLFuncHandler(const char *name)
         }
     }
     FUNCP_HANDLER("wglGetExtensionsStringARB") {
-        const char *tmp = "WGL_EXT_swap_control "
-            "WGL_EXT_extensions_string " "WGL_ARB_extensions_string "
-            "WGL_ARB_pixel_format " "WGL_ARB_pbuffer "
-            "WGL_ARB_create_context " "WGL_ARB_create_context_profile "
-            "WGL_ARB_render_texture";
-        strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
-        return;
+        if (1 /* wglFuncs.GetExtensionsStringARB */) {
+            //const char *str = wglFuncs.GetExtensionsStringARB(hDC);
+            const char *tmp = "WGL_3DFX_gamma_control "
+                "WGL_ARB_create_context "
+                "WGL_ARB_create_context_profile "
+                "WGL_ARB_extensions_string "
+                "WGL_ARB_pbuffer "
+                "WGL_ARB_pixel_format "
+                "WGL_ARB_render_texture "
+                "WGL_EXT_extensions_string "
+                "WGL_EXT_swap_control";
+            strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
+            //DPRINTF("WGL extensions\nHost: %s [ %d ]\nGuest: %s [ %d ]", str, (uint32_t)strlen(str), name, (uint32_t)strlen(name));
+            return;
+        }
     }
     FUNCP_HANDLER("wglCreateContextAttribsARB") {
         strncpy(fname, "glXCreateContextAttribsARB", sizeof(fname));
@@ -499,6 +559,97 @@ void MGLFuncHandler(const char *name)
         argsp[1] = (attr == WGL_PBUFFER_WIDTH_ARB)? hPbuffer[i].width:argsp[1];
         argsp[1] = (attr == WGL_PBUFFER_HEIGHT_ARB)? hPbuffer[i].height:argsp[1];
         argsp[0] = (argsp[1] == attr)? 0:1;
+        return;
+    }
+    FUNCP_HANDLER("wglGetDeviceGammaRamp3DFX") {
+        struct xgamma xRamp;
+        struct wgamma *wRamp = (struct wgamma *)&argsp[2];
+        int rampsz;
+        XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+        if (rampsz)
+            XF86VidModeGetGammaRamp(dpy, DefaultScreen(dpy), rampsz,
+                xRamp.r, xRamp.g, xRamp.b);
+        switch (rampsz) {
+            case 0x100:
+                memcpy(wRamp->r, xRamp.r, rampsz);
+                memcpy(wRamp->g, xRamp.g, rampsz);
+                memcpy(wRamp->b, xRamp.b, rampsz);
+                break;
+            case 0x400:
+                for (int i = 0; i < 0x100; i++) {
+                    wRamp->r[i] = xRamp.r[i << 2];
+                    wRamp->g[i] = xRamp.g[i << 2];
+                    wRamp->b[i] = xRamp.b[i << 2];
+                }
+                break;
+            case 0x800:
+                for (int i = 0; i < 0x100; i++) {
+                    wRamp->r[i] = xRamp.r[i << 3];
+                    wRamp->g[i] = xRamp.g[i << 3];
+                    wRamp->b[i] = xRamp.b[i << 3];
+                }
+                break;
+
+            default:
+                argsp[0] = 0;
+                return;
+        }
+        argsp[0] = 1;
+        return;
+    }
+    FUNCP_HANDLER("wglSetDeviceGammaRamp3DFX") {
+        struct xgamma xRamp;
+        struct wgamma *wRamp = (struct wgamma *)&argsp[0];
+        int rampsz;
+        XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+        switch(rampsz) {
+            case 0x100:
+                memcpy(xRamp.r, wRamp->r, rampsz);
+                memcpy(xRamp.g, wRamp->g, rampsz);
+                memcpy(xRamp.b, wRamp->b, rampsz);
+                break;
+            case 0x400:
+                for (int i = 0; (i + 1) < 0x100; i++) {
+                    for (int j = 0; j < 4; j++) {
+                        xRamp.r[(i << 2) + j] = wRamp->r[i] + (j * ((wRamp->r[i + 1] - wRamp->r[i]) >> 2));
+                        xRamp.r[(i << 2) + j] |= (xRamp.r[(i << 2) + j] & 0xFF00U) >> 8;
+                        xRamp.g[(i << 2) + j] = wRamp->g[i] + (j * ((wRamp->g[i + 1] - wRamp->g[i]) >> 2));
+                        xRamp.g[(i << 2) + j] |= (xRamp.g[(i << 2) + j] & 0xFF00U) >> 8;
+                        xRamp.b[(i << 2) + j] = wRamp->b[i] + (j * ((wRamp->b[i + 1] - wRamp->b[i]) >> 2));
+                        xRamp.b[(i << 2) + j] |= (xRamp.b[(i << 2) + j] & 0xFF00U) >> 8;
+                    }
+                }
+                for (int k = (rampsz - 4); k < rampsz; k++) {
+                    xRamp.r[k] = 0xFFFFU;
+                    xRamp.g[k] = 0xFFFFU;
+                    xRamp.b[k] = 0xFFFFU;
+                }
+                break;
+            case 0x800:
+                for (int i = 0; (i + 1) < 0x100; i++) {
+                    for (int j = 0; j < 8; j++) {
+                        xRamp.r[(i << 3) + j] = wRamp->r[i] + (j * ((wRamp->r[i + 1] - wRamp->r[i]) >> 3));
+                        xRamp.r[(i << 3) + j] |= (xRamp.r[(i << 3) + j] & 0xFF00U) >> 8;
+                        xRamp.g[(i << 3) + j] = wRamp->g[i] + (j * ((wRamp->g[i + 1] - wRamp->g[i]) >> 3));
+                        xRamp.g[(i << 3) + j] |= (xRamp.g[(i << 3) + j] & 0xFF00U) >> 8;
+                        xRamp.b[(i << 3) + j] = wRamp->b[i] + (j * ((wRamp->b[i + 1] - wRamp->b[i]) >> 3));
+                        xRamp.b[(i << 3) + j] |= (xRamp.b[(i << 3) + j] & 0xFF00U) >> 8;
+                    }
+                }
+                for (int k = (rampsz - 8); k < rampsz; k++) {
+                    xRamp.r[k] = 0xFFFFU;
+                    xRamp.g[k] = 0xFFFFU;
+                    xRamp.b[k] = 0xFFFFU;
+                }
+                break;
+
+            default:
+                argsp[0] = 0;
+                return;
+        }
+        XF86VidModeSetGammaRamp(dpy, DefaultScreen(dpy), rampsz,
+            xRamp.r, xRamp.g, xRamp.b);
+        argsp[0] = 1;
         return;
     }
 

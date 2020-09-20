@@ -16269,6 +16269,30 @@ wglQueryPbufferARB (HPBUFFERARB hPbuffer,
   return ret;
 }
 
+/* WGL_3DFX_gamma_control */
+static BOOL WINAPI
+wglGetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
+{
+    uint32_t ret;
+    WGL_FUNCP("wglGetDeviceGammaRamp3DFX");
+    ptm[0xFDC >> 2] = MESAGL_MAGIC;
+    ret = argsp[0];
+    if (ret && arrays)
+        memcpy(arrays, &argsp[2], 3*256*sizeof(uint16_t));
+    return ret;
+}
+
+static BOOL WINAPI
+wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
+{
+    uint32_t ret;
+    WGL_FUNCP("wglSetDeviceGammaRamp3DFX");
+    memcpy(&argsp[0], arrays, 3*256*sizeof(uint16_t));
+    ptm[0xFDC >> 2] = MESAGL_MAGIC;
+    ret = argsp[0];
+    return ret;
+}
+
 BOOL WINAPI
 mglDescribeLayerPlane(HDC hdc, int iPixelFormat, int iLayerPlane,
                       UINT nBytes, LPLAYERPLANEDESCRIPTOR ppfd)
@@ -16329,6 +16353,9 @@ uint32_t PT_CALL mglGetProcAddress (uint32_t arg0)
     FUNC_WGL_EXT(wglReleasePbufferDCARB);
     FUNC_WGL_EXT(wglDestroyPbufferARB);
     FUNC_WGL_EXT(wglQueryPbufferARB);
+    /* WGL_3DFX_gamma_control */
+    FUNC_WGL_EXT(wglGetDeviceGammaRamp3DFX);
+    FUNC_WGL_EXT(wglSetDeviceGammaRamp3DFX);
 
     ret = (uint32_t)fptr;
     if (ret == 0) {

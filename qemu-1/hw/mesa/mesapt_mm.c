@@ -1294,7 +1294,7 @@ static void processArgs(MesaPTState *s)
             if (s->pixPackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)s->fbtm_ptr;
-                texPtr[0] = wrTexTextureWxD(s->arg[0], s->arg[1], 0)*szgldata(s->arg[2], s->arg[3]);
+                texPtr[0] = wrTexSizeTexture(s->arg[0], s->arg[1], 0)*szgldata(s->arg[2], s->arg[3]);
                 SZFBT_VALID(texPtr[0], s->arg[4]);
                 s->parg[0] = VAL(&texPtr[ALIGNED(1) >> 2]);
             }
@@ -1358,7 +1358,7 @@ static void processArgs(MesaPTState *s)
             if (s->pixPackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)s->fbtm_ptr;
-                texPtr[0] = wrTexTextureWxD(s->arg[0], s->arg[1], 1);
+                texPtr[0] = wrTexSizeTexture(s->arg[0], s->arg[1], 1);
                 SZFBT_VALID(texPtr[0], s->arg[2]);
                 s->parg[2] = VAL(&texPtr[ALIGNED(1) >> 2]);
             }
@@ -1794,8 +1794,9 @@ static void processFRet(MesaPTState *s)
                         //DPRINTF("  %s[ %u ]", stok, (uint32_t)extnLength);
                         stok = strtok(NULL, " ");
                     }
-                    memcpy(xbuf, "GL_WIN_swap_hint WGL_EXT_swap_control", sizeof("GL_WIN_swap_hint WGL_EXT_swap_control"));
-                    xbuf += sizeof("GL_WIN_swap_hint WGL_EXT_swap_control");
+                    memcpy(xbuf, "GL_WIN_swap_hint WGL_3DFX_gamma_control WGL_EXT_swap_control",
+                            sizeof("GL_WIN_swap_hint WGL_3DFX_gamma_control WGL_EXT_swap_control"));
+                    xbuf += sizeof("GL_WIN_swap_hint WGL_3DFX_gamma_control WGL_EXT_swap_control");
                     *xbuf = '\0';
                     g_free(tmpstr);
                 }
