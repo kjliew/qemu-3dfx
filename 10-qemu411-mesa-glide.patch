@@ -6,7 +6,7 @@ diff -Nru ../orig/qemu-4.1.1/configure ./configure
    kvm="yes"
    QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$PWD/linux-headers $QEMU_INCLUDES"
 +# For MESA/Glide pass-through ##
-+  LIBS="-ldl -lGLX $LIBS"
++  LIBS="-ldl -lXxf86vm -lGLX $LIBS"
    supported_os="yes"
    libudev="yes"
  ;;
