@@ -20,14 +20,17 @@ static FILE *logfp = NULL;
 #define DPRINTF_COND(cond, fmt, ...) \
     if (cond) {fprintf(logfp, "mgstub: " fmt "\n" , ## __VA_ARGS__); }
 #else
-#define DPRINTF(fmt, ...)
-#define DPRINTF_COND(cond, fmt, ...)
+  #ifndef _DPRINT_H
+    #define DPRINTF(fmt, ...)
+    #define DPRINTF_COND(cond, fmt, ...)
+  #endif
 #endif
 
 #define MESAVER 0x320
 #define MESAPT_MM_BASE 0xefffe000
 #define PAGE_SIZE 0x1000
 
+extern const char rev_[];
 static volatile uint32_t *ptm = 0;
 static volatile uint32_t *pt0 = 0;
 static uint32_t *pt = 0;
@@ -16392,7 +16395,6 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
 {
     static const char icdBuild[] __attribute__((used)) = 
         __TIME__" "__DATE__" build ";
-    extern const char rev_[];
     uint32_t *ptVer = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     if (currDC == 0) {
         if (mglCreateContext(arg0) == 0)
@@ -16610,6 +16612,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             GetModuleFileName(NULL, procName, sizeof(procName) - 1);
             DPRINTF("MesaGL Init ( %s )", procName);
 	    DPRINTF("ptm 0x%08x fbtm 0x%08x", (uint32_t)ptm, (uint32_t)fbtm);
+            memcpy(&fbtm[(MGLFBT_SIZE - ALIGNBO(1)) >> 2], rev_, ALIGNED(1));
 	    ptm[(0xFBCU >> 2)] = (0xA0UL << 12) | MESAVER;
 	    HostRet = ptm[(0xFBCU >> 2)];
 	    if (HostRet != ((MESAVER << 8) | 0xa0UL)) {
@@ -16631,6 +16634,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             if (hHook)
                 UnhookWindowsHookEx(hHook);
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | MESAVER;
+            memset(&fbtm[(MGLFBT_SIZE - ALIGNBO(1)) >> 2], 0, ALIGNED(1));
             mfifo[1] = 0;
 #ifdef DEBUG_MGSTUB
             fclose(logfp);

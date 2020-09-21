@@ -1892,21 +1892,26 @@ static void ContextCreateCommon(MesaPTState *s)
 
 static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
 {
+    const char rev_[ALIGNED(1)];
     MesaPTState *s = opaque;
 
     if (addr == 0xFBC) {
         switch (val) {
             case 0xA0320:
-                if (InitMesaGL() == 0) {
+                s->MesaVer = 0;
+                if ((memcmp(s->fbtm_ptr + MGLFBT_SIZE - ALIGNBO(1), rev_, ALIGNED(1)) == 0) &&
+                    (InitMesaGL() == 0)) {
                     s->MesaVer = (uint32_t)((val >> 12) & 0xFFU) | ((val & 0xFFFU) << 8);
                     MGLTmpContext();
                     DPRINTF("DLL loaded");
                 }
                 break;
             case 0xD0320:
-                MGLWndRelease();
+                if (s->MesaVer) {
+                    MGLWndRelease();
+                    DPRINTF("DLL unloaded");
+                }
                 FiniMesaGL();
-                DPRINTF("DLL unloaded");
                 break;
         }
     }
