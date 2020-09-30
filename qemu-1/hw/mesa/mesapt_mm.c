@@ -1283,8 +1283,6 @@ static void processArgs(MesaPTState *s)
                 if (s->szUsedBuf == s->BufObj->mused + ALIGNBO(s->BufObj->mapsz))
                     s->szUsedBuf -= ALIGNBO(s->BufObj->mapsz);
             }
-            if (s->BufObj->hptr == 0)
-                DPRINTF("  *WARN* UnmapBuffer invalid host ptr %p", s->BufObj->hptr);
             //DPRINTF("UnmapBuffer %x used %x idx %x", s->arg[0], s->szUsedBuf, s->BufIdx);
             if (FreeBufObj(s->BufIdx) == 0)
                 s->szUsedBuf = 0;
@@ -1687,10 +1685,9 @@ static void processFRet(MesaPTState *s)
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
         case FEnum_glMapBufferRange:
-            if (s->BufObj->hptr) {
-                DPRINTF("  *WARN* GL buffer object contention, index %x target %04x access %04x",
-                    s->BufIdx, s->arg[0], ((s->FEnum == FEnum_glMapBufferRange)? s->arg[3]:s->arg[1]));
-            }
+            DPRINTF_COND((s->BufObj->hptr), "  *WARN* GL buffer object contention, index %x target %04x access %04x",
+                s->BufIdx, s->arg[0], ((s->FEnum == FEnum_glMapBufferRange)? s->arg[3]:s->arg[1]));
+            DPRINTF_COND((s->FRet == 0), "  *!ERR* MapBuffer failed");
             s->BufObj->hptr = (void *)(s->FRet);
             s->BufObj->mused = s->szUsedBuf;
             SZFBT_VALID(s->szUsedBuf, s->FRet);
@@ -1787,6 +1784,7 @@ static void processFRet(MesaPTState *s)
                                         xbuf += extnLength;
                                         *xbuf = ' ';
                                         xbuf++;
+                                        break;
                                     }
                                 }
                             }

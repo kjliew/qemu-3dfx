@@ -137,7 +137,8 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
 void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t *bufo)
 {
     uint32_t szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo->range;
-    memcpy(bufo->hptr + bufo->offst, (bufo->shmep - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
+    if (bufo->hptr)
+        memcpy(bufo->hptr + bufo->offst, (bufo->shmep - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
 }
 
 const char *getGLFuncStr(int FEnum)
