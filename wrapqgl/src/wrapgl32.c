@@ -16036,19 +16036,26 @@ static uint32_t getExtNameEntry(char *name)
     (void)argsp; \
     memcpy(funcp, a, sizeof(a))
 
+#define WGL_FUNCP_RET(a) \
+    a = argsp[0]
+
 static uint32_t PT_CALL wglSwapIntervalEXT (uint32_t arg0)
 {
+    uint32_t ret;
     WGL_FUNCP("wglSwapIntervalEXT");
     argsp[0] = arg0;
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
-    return argsp[0];
+    WGL_FUNCP_RET(ret);
+    return ret;
 }
 
 static uint32_t PT_CALL wglGetSwapIntervalEXT (void)
 {
+    uint32_t ret;
     WGL_FUNCP("wglGetSwapIntervalEXT");
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
-    return argsp[0];
+    WGL_FUNCP_RET(ret);
+    return ret;
 }
 
 static uint32_t PT_CALL wglGetExtensionsStringARB(uint32_t arg0)
@@ -16086,7 +16093,7 @@ wglGetPixelFormatAttribivARB (HDC hdc,
   //DPRINTF("GetPixelFormatAttribivARB");
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
   ret = argsp[0];
-  if (ret)
+  if (ret && piValues)
       memcpy(piValues, &argsp[2], nAttributes*sizeof(int));
   return ret;
 }
@@ -16106,7 +16113,7 @@ wglGetPixelFormatAttribfvARB (HDC hdc,
   //DPRINTF("GetPixelFormatAttribfvARB");
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
   ret = argsp[0];
-  if (ret)
+  if (ret && pfValues)
       memcpy(pfValues, &argsp[2], nAttributes*sizeof(float));
   return ret;
 }
@@ -16128,11 +16135,11 @@ wglChoosePixelFormatARB (HDC hdc,
   argsp[i] = 0; argsp[i+1] = 0;
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
   ret = argsp[0];
-  if (ret) {
+  if (ret && piFormats && nNumFormats) {
       *piFormats = argsp[1];
       *nNumFormats = 1;
-      DPRINTF("ChoosePixelFormatARB() fmt %02x", *piFormats);
   }
+  DPRINTF("ChoosePixelFormatARB() fmt %02x", *piFormats);
   return ret;
 }
 
@@ -16152,7 +16159,7 @@ wglCreateContextAttribsARB(HDC hDC,
   }
   argsp[i+2] = 0; argsp[i+3] = 0;
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
-  ret = argsp[0];
+  WGL_FUNCP_RET(ret);
   if (ret) {
       if (currGLRC && hShareContext)
           level++;
@@ -16171,27 +16178,32 @@ wglCreateContextAttribsARB(HDC hDC,
 static BOOL WINAPI
 wglBindTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
 {
+  BOOL ret;
   WGL_FUNCP("wglBindTexImageARB");
   argsp[0] = (uint32_t)hPbuffer; argsp[1] = iBuffer;
   //DPRINTF("BindTexImageARB %x", iBuffer);
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
-  return argsp[0];
+  WGL_FUNCP_RET(ret);
+  return ret;
 }
 
 static BOOL WINAPI
 wglReleaseTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
 {
+  BOOL ret;
   WGL_FUNCP("wglReleaseTexImageARB");
   argsp[0] = (uint32_t)hPbuffer; argsp[1] = iBuffer;
   //DPRINTF("ReleaseTexImageARB %x", iBuffer);
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
-  return argsp[0];
+  WGL_FUNCP_RET(ret);
+  return ret;
 }
 
 static BOOL WINAPI
 wglSetPbufferAttribARB (HPBUFFERARB hPbuffer,
 			const int *piAttribList)
 {
+  BOOL ret;
   int i;
   WGL_FUNCP("wglSetPbufferAttribARB");
   argsp[0] = (uint32_t)hPbuffer;
@@ -16202,7 +16214,8 @@ wglSetPbufferAttribARB (HPBUFFERARB hPbuffer,
   argsp[i+2] = 0; argsp[i+3] = 0;
   //DPRINTF("SetPbufferAttribARB");
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
-  return argsp[0];
+  WGL_FUNCP_RET(ret);
+  return ret;
 }
 
 /* WGL_ARB_pbuffer */
@@ -16213,6 +16226,7 @@ wglCreatePbufferARB (HDC hDC,
 		     int iHeight,
 		     const int *piAttribList)
 {
+  uint32_t ret;
   int i;
   WGL_FUNCP("wglCreatePbufferARB");
   argsp[0] = iPixelFormat; argsp[1] = iWidth; argsp[2] = iHeight;
@@ -16224,7 +16238,8 @@ wglCreatePbufferARB (HDC hDC,
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
   //DPRINTF("CreatePbufferARB %p %02x %d %d pbuf %02x", hDC, iPixelFormat, iWidth, iHeight, argsp[1]);
   currPB[argsp[1] & (MAX_PBUFFER - 1)] = (argsp[0])? (((MESAGL_MAGIC & 0x0FFFFFFFU) << 4) | argsp[1]):0;
-  return (HPBUFFERARB)currPB[argsp[1] & (MAX_PBUFFER - 1)];
+  ret = currPB[argsp[1] & (MAX_PBUFFER - 1)];
+  return (HPBUFFERARB)ret;
 }
 
 static HDC WINAPI
@@ -16248,12 +16263,14 @@ wglReleasePbufferDCARB (HPBUFFERARB hPbuffer, HDC hDC)
 static BOOL WINAPI
 wglDestroyPbufferARB (HPBUFFERARB hPbuffer)
 {
+  BOOL ret;
   WGL_FUNCP("wglDestroyPbufferARB");
   argsp[0] = (uint32_t)hPbuffer;
   //DPRINTF("DestroyPbufferARB %p", hPbuffer);
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
+  WGL_FUNCP_RET(ret);
   currPB[((uint32_t)hPbuffer & (MAX_PBUFFER - 1))] = 0;
-  return argsp[0];
+  return ret;
 }
 
 static BOOL WINAPI
@@ -16267,7 +16284,7 @@ wglQueryPbufferARB (HPBUFFERARB hPbuffer,
   argsp[0] = (uint32_t)hPbuffer; argsp[1] = iAttribute;
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
   ret = argsp[0];
-  if (ret)
+  if (ret && piValue)
       *piValue = argsp[2];
   return ret;
 }
@@ -16292,7 +16309,7 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
     WGL_FUNCP("wglSetDeviceGammaRamp3DFX");
     memcpy(&argsp[0], arrays, 3*256*sizeof(uint16_t));
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
-    ret = argsp[0];
+    WGL_FUNCP_RET(ret);
     return ret;
 }
 
@@ -16413,8 +16430,7 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
 
 uint32_t PT_CALL mglDeleteContext (uint32_t arg0)
 {
-    if (level && ((arg0 + level) == MESAGL_MAGIC))
-        ptm[0xFF4 >> 2] = arg0;
+    if (level && ((arg0 + level) == MESAGL_MAGIC)) { }
     else if (!currGLRC && (arg0 == MESAGL_MAGIC)) {
         for (int i = 0; i < MAX_PBUFFER; i++) {
             if (currPB[i])
@@ -16422,8 +16438,11 @@ uint32_t PT_CALL mglDeleteContext (uint32_t arg0)
         }
         currDC = 0;
         DPRINTF("DeleteContext %x", arg0);
-        ptm[0xFF4 >> 2] = arg0;
     }
+    else
+        return TRUE;
+
+    ptm[0xFF4 >> 2] = arg0;
     return TRUE;
 }
 
@@ -16455,25 +16474,31 @@ uint32_t PT_CALL mglCreateLayerContext(uint32_t arg0, uint32_t arg1)
 
 uint32_t PT_CALL mglShareLists(uint32_t arg0, uint32_t arg1)
 {
+    uint32_t ret;
     WGL_FUNCP("wglShareLists");
     argsp[0] = arg0; argsp[1] = arg1;
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
-    DPRINTF("wglShareLists %x %x ret %x", arg0, arg1, argsp[0]);
-    return argsp[0];
+    WGL_FUNCP_RET(ret);
+    DPRINTF("wglShareLists %x %x ret %x", arg0, arg1, ret);
+    return ret;
 }
 uint32_t PT_CALL mglUseFontBitmapsA(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
+    uint32_t ret;
     WGL_FUNCP("wglUseFontBitmapsA");
     argsp[0] = arg0; argsp[1] = arg1; argsp[2] = arg2; argsp[3] = arg3; 
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
-    return argsp[0];
+    WGL_FUNCP_RET(ret);
+    return ret;
 }
 uint32_t PT_CALL mglUseFontBitmapsW(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
+    uint32_t ret;
     WGL_FUNCP("wglUseFontBitmapsW");
     argsp[0] = arg0; argsp[1] = arg1; argsp[2] = arg2; argsp[3] = arg3; 
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
-    return argsp[0];
+    WGL_FUNCP_RET(ret);
+    return ret;
 }
 uint32_t PT_CALL mglUseFontOutlinesA(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3,
         uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7)
@@ -16492,9 +16517,10 @@ uint32_t PT_CALL mglUseFontOutlinesW(uint32_t arg0, uint32_t arg1, uint32_t arg2
 
 int WINAPI wglSwapBuffers (HDC hdc)
 {
-    uint32_t *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
+    uint32_t ret, *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
     ptm[0xFF0 >> 2] = MESAGL_MAGIC;
-    return swapRet[0];
+    ret = swapRet[0];
+    return ret;
 }
 int WINAPI wgdSwapBuffers(HDC hdc) { return wglSwapBuffers(hdc); }
 int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wglSwapBuffers(hdc); }
@@ -16574,6 +16600,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         LPVOID lpReserved
         )
 {
+    uint8_t *refcnt = (uint8_t *)&mdata[1];
     uint32_t HostRet;
     TCHAR procName[2048];
     OSVERSIONINFO osInfo;
@@ -16594,14 +16621,14 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             if (drv.Init()) {
                 if (InitMesaPTMMBase(&drv)) {
                     drv.Fini();
-                    mdata[1]++;
+                    (*refcnt)++;
                     return (ptm)? TRUE:FALSE;
                 }
                 drv.Fini();
                 mdata[1] = 1;
             }
             else {
-                mdata[1]++;
+                (*refcnt)++;
                 return FALSE;
             }
 #ifdef DEBUG_MGSTUB
@@ -16624,7 +16651,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             hHook = SetWindowsHookEx(WH_CALLWNDPROC, (HOOKPROC)CallWndProc, NULL, GetCurrentThreadId());
             break;
         case DLL_PROCESS_DETACH:
-            if (--mdata[1])
+            if (--(*refcnt))
                 break;
             DPRINTF("MesaGL Fini %x", currGLRC);
             if (currGLRC) {

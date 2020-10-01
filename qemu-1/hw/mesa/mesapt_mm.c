@@ -1913,8 +1913,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
         }
     }
-
-    if (addr == 0xFC0) {
+    else if (addr == 0xFC0) {
         if (s->mglContext && s->mglCntxCurrent) {
             s->FEnum = val;
             processFifo(s);
@@ -1932,8 +1931,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
         else
             DPRINTF("WARN: No GL context for func %04x", (uint32_t)val);
     }
-
-    if (val == MESAGL_MAGIC) {
+    else if (val == MESAGL_MAGIC) {
         if (s->mglContext && s->mglCntxCurrent) {
             processFifo(s);
             do {
@@ -2005,7 +2003,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     MGLDeleteContext(MESAGL_MAGIC - val);
                 break;
             case 0xFF0:
-                //DPRINTF(">>>>>>>> wglSwapBuffers <<<<<<<<");
+                DPRINTF_COND((GLFuncTrace() == 2), ">>>>>>>> wglSwapBuffers <<<<<<<<");
                 s->perfs.stat();
                 do {
                     uint32_t *swapRet = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - ALIGNED(1)));
@@ -2079,6 +2077,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
         }
     }
+    else
+        DPRINTF("  *WARN* Unhandled mesapt_write(), addr %08x val %08x", (uint32_t)addr, (uint32_t)val);
 }
 
 static const MemoryRegionOps mesapt_ops = {
