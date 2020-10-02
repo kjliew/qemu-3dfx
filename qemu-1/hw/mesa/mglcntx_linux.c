@@ -177,6 +177,11 @@ static GLXPbuffer PBDC[MAX_PBUFFER];
 static GLXContext PBRC[MAX_PBUFFER];
 static int cAuxBuffers;
 
+static struct {
+    int (*SwapIntervalEXT)(unsigned int);
+    int (*GetSwapIntervalEXT)(void);
+} xglFuncs;
+
 #define MAX_RAMP_SIZE 0x800
 struct wgamma {
     uint16_t r[0x100];
@@ -236,6 +241,10 @@ void *MesaGLGetProc(const char *proc)
 
 void MGLTmpContext(void)
 {
+    xglFuncs.SwapIntervalEXT = (int (*)(unsigned int))
+        MesaGLGetProc("glXSwapIntervalMESA");
+    xglFuncs.GetSwapIntervalEXT = (int (*)(void))
+        MesaGLGetProc("glXGetSwapIntervalMESA");
 }
 
 void MGLDeleteContext(int level)
@@ -280,6 +289,8 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         glXMakeContextCurrent(dpy, win, win, ctx[n]);
         InitMesaGLExt();
+        if (xglFuncs.SwapIntervalEXT)
+            xglFuncs.SwapIntervalEXT(GetVsyncInit());
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         glXMakeContextCurrent(dpy, PBDC[i], PBDC[i], PBRC[i]);
@@ -401,22 +412,16 @@ void MGLFuncHandler(const char *name)
        return;
     }
     FUNCP_HANDLER("wglSwapIntervalEXT") {
-        strncpy(fname, "glXSwapIntervalMESA", sizeof(fname));
-        void (*fp)(uint32_t) =
-           (void (*)(uint32_t)) MesaGLGetProc(fname);
-        if (fp) {
-            fp(argsp[0]);
+        if (xglFuncs.SwapIntervalEXT) {
+            xglFuncs.SwapIntervalEXT(argsp[0]);
             DPRINTF("wglSwapIntervalEXT(%u)", argsp[0]);
             argsp[0] = 1;
             return;
         }
     }
     FUNCP_HANDLER("wglGetSwapIntervalEXT") {
-        strncpy(fname, "glXGetSwapIntervalMESA", sizeof(fname));
-        uint32_t (*fp)(void) =
-            (uint32_t (*)(void)) MesaGLGetProc(fname);
-        if (fp) {
-            argsp[0] = fp();
+        if (xglFuncs.GetSwapIntervalEXT) {
+            argsp[0] = xglFuncs.GetSwapIntervalEXT();
             DPRINTF("wglGetSwapIntervalEXT() ret %u", argsp[0]);
             return;
         }

@@ -107,6 +107,8 @@ static struct {
     BOOL  (WINAPI *ChoosePixelFormatARB)(HDC, const int *, const float *, UINT, int *, UINT *);
     const char * (WINAPI *GetExtensionsStringARB)(HDC);
     HGLRC (WINAPI *CreateContextAttribsARB)(HDC, HGLRC, const int *);
+    BOOL (WINAPI *SwapIntervalEXT)(int);
+    int (WINAPI *GetSwapIntervalEXT)(void);
 } wglFuncs;
 
 static void MesaInitGammaRamp(void)
@@ -166,6 +168,10 @@ void MGLTmpContext(void)
         MesaGLGetProc("wglGetExtensionsStringARB");
     wglFuncs.CreateContextAttribsARB = (HGLRC (WINAPI *)(HDC, HGLRC, const int *))
         MesaGLGetProc("wglCreateContextAttribsARB");
+    wglFuncs.SwapIntervalEXT = (BOOL (WINAPI *)(int))
+        MesaGLGetProc("wglSwapIntervalEXT");
+    wglFuncs.GetSwapIntervalEXT = (int (WINAPI *)(void))
+        MesaGLGetProc("wglGetSwapIntervalEXT");
 
     wglFuncs.MakeCurrent(NULL, NULL);
     wglFuncs.DeleteContext(tmpGL);
@@ -224,6 +230,8 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         wglFuncs.MakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();
+        if (wglFuncs.SwapIntervalEXT)
+            wglFuncs.SwapIntervalEXT(GetVsyncInit());
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         wglFuncs.MakeCurrent(hPBDC[i], hPBRC[i]);
@@ -395,11 +403,9 @@ void MGLFuncHandler(const char *name)
         return;
     }
     FUNCP_HANDLER("wglSwapIntervalEXT") {
-        uint32_t (__stdcall *fp)(uint32_t) =
-           (uint32_t (__stdcall *)(uint32_t)) MesaGLGetProc(fname);
-        if (fp) {
+        if (wglFuncs.SwapIntervalEXT) {
             uint32_t ret, err;
-            ret =  fp(argsp[0]);
+            ret =  wglFuncs.SwapIntervalEXT(argsp[0]);
             err = (ret)? 0:GetLastError();
             DPRINTF("wglSwapIntervalEXT(%u) %s %-24u", argsp[0], ((ret)? "ret":"err"), ((ret)? ret:err));
             argsp[0] = ret;
@@ -407,11 +413,9 @@ void MGLFuncHandler(const char *name)
         }
     }
     FUNCP_HANDLER("wglGetSwapIntervalEXT") {
-        uint32_t (__stdcall *fp)(void) =
-            (uint32_t (__stdcall *)(void)) MesaGLGetProc(fname);
-        if (fp) {
+        if (wglFuncs.GetSwapIntervalEXT) {
             uint32_t ret;
-            ret = fp();
+            ret = wglFuncs.GetSwapIntervalEXT();
             DPRINTF("wglGetSwapIntervalEXT() ret %-24u", ret);
             argsp[0] = ret;
             return;

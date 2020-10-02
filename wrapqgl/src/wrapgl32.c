@@ -5,6 +5,7 @@
  */
 #include <windows.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "fxlib.h"
 #include "mglfuncs.h"
@@ -338,6 +339,37 @@ static void InitClientStates(void)
     szPackWidth = 0; szUnpackWidth = 0;
     szPackHeight = 0; szUnpackHeight = 0;
     queryBuf = 0;
+}
+
+static void fltrxstr(const char *xstr)
+{
+#define MAX_XSTR 128
+#define XSTRCFG "opengl32.mod"
+    char *str = (char *)xstr, *tmp = (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2];
+    FILE *f = fopen(XSTRCFG, "r");
+    *tmp = ' ';
+    *(tmp + 1) = '\0';
+    if (f) {
+        char *stok, line[MAX_XSTR];
+        stok = strtok(str, " ");
+        while (stok) {
+            size_t xlen = strnlen(stok, MAX_XSTR);
+            while(fgets(line, MAX_XSTR, f)) {
+                if (!strncmp(stok, line, strnlen(line, MAX_XSTR) - 1)) {
+                    memcpy(tmp, stok, xlen);
+                    tmp += xlen;
+                    *tmp = ' ';
+                    tmp++;
+                    break;
+                }
+            }
+            fseek(f, 0, SEEK_SET);
+            stok = strtok(NULL, " ");
+        }
+        *(--tmp) = '\0';
+        fclose(f);
+        strncpy(str, (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2], (3*PAGE_SIZE));
+    }
 }
 
 #define FIFO_EN 1
@@ -5051,6 +5083,8 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetString;
     fifoOutData(0, (uint32_t)cstrTbl[arg0 & 0x03U], cstrsz[arg0 & 0x03U]);
+    if ((arg0 & 0x03U) == 0x03U)
+        fltrxstr(cstrTbl[arg0 & 0x03U]);
     //DPRINTF("%s [ %04x ]", cstrTbl[arg0 & 0x03U], arg0);
     return (uint8_t *)cstrTbl[arg0 & 0x03U];
 }
@@ -16600,7 +16634,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         LPVOID lpReserved
         )
 {
-    uint8_t *refcnt = (uint8_t *)&mdata[1];
+    static char cbref, *refcnt;
     uint32_t HostRet;
     TCHAR procName[2048];
     OSVERSIONINFO osInfo;
@@ -16621,13 +16655,16 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             if (drv.Init()) {
                 if (InitMesaPTMMBase(&drv)) {
                     drv.Fini();
+                    refcnt = (ptm)? (char *)&mdata[1]:&cbref;
                     (*refcnt)++;
                     return (ptm)? TRUE:FALSE;
                 }
                 drv.Fini();
                 mdata[1] = 1;
+                refcnt = (char *)&mdata[1];
             }
             else {
+                refcnt = &cbref;
                 (*refcnt)++;
                 return FALSE;
             }

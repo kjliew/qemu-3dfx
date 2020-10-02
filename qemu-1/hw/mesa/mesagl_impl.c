@@ -1328,6 +1328,7 @@ static int cfg_xYear;
 static int cfg_xLength;
 static int cfg_vertCacheMB;
 static int cfg_dispTimerMS;
+static int cfg_vsyncInit;
 static int cfg_createWnd;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
@@ -1337,6 +1338,7 @@ static void conf_MGLOptions(void)
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
     cfg_dispTimerMS = 2000;
+    cfg_vsyncInit = 0;
     cfg_createWnd = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
@@ -1353,6 +1355,8 @@ static void conf_MGLOptions(void)
             cfg_vertCacheMB = (i == 1)? v:cfg_vertCacheMB;
             i = sscanf(line, "DispTimerMS,%d", &v);
             cfg_dispTimerMS = (i == 1)? v:cfg_dispTimerMS;
+            i = sscanf(line, "VsyncInit,%d", &v);
+            cfg_vsyncInit = (i == 1)? v:cfg_vsyncInit;
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
             i = sscanf(line, "CreateWindow,%d", &v);
             cfg_createWnd = (i == 1)? v:cfg_createWnd;
@@ -1371,6 +1375,7 @@ int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
+int GetVsyncInit(void) { return cfg_vsyncInit; }
 int GetCreateWindow(void) { return cfg_createWnd; }
 int GLFifoTrace(void) { return cfg_traceFifo; }
 int GLFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }

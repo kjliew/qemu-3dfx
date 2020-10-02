@@ -42,6 +42,7 @@ int GetGLExtYear(void);
 int GetGLExtLength(void);
 int GetVertCacheMB(void);
 int GetDispTimerMS(void);
+int GetVsyncInit(void);
 int GetCreateWindow(void);
 int GLFifoTrace(void);
 int GLFuncTrace(void);
