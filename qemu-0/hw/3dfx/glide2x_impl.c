@@ -27,7 +27,7 @@
 
 #ifdef DEBUG_GLIDE2X
 #define DPRINTF(fmt, ...) \
-    do { fprintf(stderr, "wr2x_trace: " fmt , ## __VA_ARGS__); } while(0)
+    do { fprintf(stderr, "wr2x_trace: " fmt "\n", ## __VA_ARGS__); } while(0)
 #else
 #define DPRINTF(fmt, ...)
 #endif
@@ -326,7 +326,7 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
     if (GRFuncTrace()) {
         const char *fstr = getGRFuncStr(FEnum);
         if (fstr)
-            DPRINTF("%-64s\n", tblGlide2x[FEnum].sym);
+            DPRINTF("%-64s", fstr);
     }
 
     if (glidePostInit == 0) {

@@ -27,7 +27,7 @@
 #include "mesagl_impl.h"
 
 #define DPRINTF(fmt, ...) \
-    do { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); fflush(stderr); } while(0)
+    do { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); } while(0)
 
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
 #include <GL/glx.h>
@@ -354,7 +354,8 @@ void MGLActivateHandler(int i)
 #define WA_INACTIVE 0
     if (i != last) {
         last = i;
-        //DPRINTF("wm_activate %d%-32s", i," ");
+        if (GLFuncTrace())
+            DPRINTF("wm_activate %-32d", i);
         switch (i) {
             case WA_ACTIVE:
                 mesa_enabled_set();
@@ -414,7 +415,7 @@ void MGLFuncHandler(const char *name)
     FUNCP_HANDLER("wglSwapIntervalEXT") {
         if (xglFuncs.SwapIntervalEXT) {
             xglFuncs.SwapIntervalEXT(argsp[0]);
-            DPRINTF("wglSwapIntervalEXT(%u)", argsp[0]);
+            DPRINTF("wglSwapIntervalEXT(%u)%-24s", argsp[0], " ");
             argsp[0] = 1;
             return;
         }
@@ -422,7 +423,7 @@ void MGLFuncHandler(const char *name)
     FUNCP_HANDLER("wglGetSwapIntervalEXT") {
         if (xglFuncs.GetSwapIntervalEXT) {
             argsp[0] = xglFuncs.GetSwapIntervalEXT();
-            DPRINTF("wglGetSwapIntervalEXT() ret %u", argsp[0]);
+            DPRINTF("wglGetSwapIntervalEXT() ret %-24u", argsp[0]);
             return;
         }
     }

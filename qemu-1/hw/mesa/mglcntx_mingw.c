@@ -27,7 +27,7 @@
 #include "mesagl_impl.h"
 
 #define DPRINTF(fmt, ...) \
-    do { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); fflush(stderr); } while(0)
+    do { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); } while(0)
 
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
@@ -617,7 +617,8 @@ static void profile_dump(void)
     PSTATSFX p = &fxstats;
     if (p->last) {
 	p->last = 0;
-	fprintf(stderr, "%-4u frames in %-4.1f seconds, %-4.1f FPS\r", p->fcount, p->ftime, (p->fcount / p->ftime));
+	fprintf(stderr, "%-4u frames in %-4.1f seconds, %-4.1f FPS%-8s\r", p->fcount, p->ftime, (p->fcount / p->ftime), " ");
+        fflush(stderr);
     }
 }
 
@@ -626,7 +627,7 @@ static void profile_last(void)
     PSTATSFX p = &fxstats;
     if (p->last) {
 	p->last = 0;
-	fprintf(stderr, "                                                        \r");
+	fprintf(stderr, "%-64s\r", " ");
     }
 }
 

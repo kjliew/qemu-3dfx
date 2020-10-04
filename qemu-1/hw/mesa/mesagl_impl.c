@@ -157,7 +157,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
     if (GLFuncTrace()) {
         const char *fstr = getGLFuncStr(FEnum);
         if (fstr) {
-            DPRINTF("%-64s", tblMesaGL[FEnum].sym);
+            DPRINTF("%-64s", fstr);
         }
     }
 

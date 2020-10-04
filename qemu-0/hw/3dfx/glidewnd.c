@@ -26,7 +26,7 @@
 #include "glide2x_impl.h"
 
 #define DPRINTF(fmt, ...) \
-    do { fprintf(stderr, " " fmt , ## __VA_ARGS__); fflush(stderr); } while(0)
+    do { fprintf(stderr, " " fmt "\n", ## __VA_ARGS__); } while(0)
 
 #define GLIDECFG "glide.cfg"
 
@@ -96,7 +96,7 @@ static HWND CreateGlideWindow(const char *title, int w, int h)
 	wc.lpszClassName = "GlideWnd";
 
 	if (!RegisterClass(&wc)) {
-	    DPRINTF("RegisterClass() faled, Error %08lx\n", GetLastError());
+	    DPRINTF("RegisterClass() faled, Error %08lx", GetLastError());
 	    return NULL;
 	}
     }
@@ -113,7 +113,7 @@ static HWND CreateGlideWindow(const char *title, int w, int h)
 	    CW_USEDEFAULT, CW_USEDEFAULT, rect.right, rect.bottom,
 	    NULL, NULL, hInstance, NULL);
     GetClientRect(hWnd, &rect);
-    DPRINTF("    window %lux%lu\n", rect.right, rect.bottom);
+    DPRINTF("    window %lux%lu", rect.right, rect.bottom);
     ShowCursor(FALSE);
     ShowWindow(hWnd, SW_SHOW);
 
@@ -157,7 +157,7 @@ int stat_window(const int res, const int activate)
             (((tblRes[sel].h & 0xFFFFU) << 0x10) | tblRes[sel].w) : glide_window_stat(activate);
 	if (activate) {
 	    if (wndStat == (((tblRes[sel].h & 0xFFFFU) << 0x10) | tblRes[sel].w)) {
-		DPRINTF("    window %ux%u %s\n", (wndStat & 0xFFFFU), (wndStat >> 0x10), (cfg_scaleX)? "(scaled)":"");
+		DPRINTF("    window %ux%u %s", (wndStat & 0xFFFFU), (wndStat >> 0x10), (cfg_scaleX)? "(scaled)":"");
 		stat = 0;
 	    }
 	}
@@ -282,7 +282,8 @@ static void profile_dump(void)
     PSTATSFX p = &fxstats;
     if (p->last) {
 	p->last = 0;
-	DPRINTF("%-4u frames in %-4.1f seconds, %-4.1f FPS\r", p->fcount, p->ftime, (p->fcount / p->ftime));
+	fprintf(stderr, "%-4u frames in %-4.1f seconds, %-4.1f FPS%-8s\r", p->fcount, p->ftime, (p->fcount / p->ftime)," ");
+        fflush(stderr);
     }
 }
 
@@ -291,7 +292,7 @@ static void profile_last(void)
     PSTATSFX p = &fxstats;
     if (p->last) {
 	p->last = 0;
-	DPRINTF("                                         \r");
+	fprintf(stderr, "%-64s\r", " ");
     }
 }
 
@@ -325,6 +326,7 @@ static void profile_stat(void)
 
 void glidestat(PPERFSTAT s)
 {
+    cfg_traceFunc = 2;
     s->stat = &profile_stat;
     s->last = &profile_last;
 }
