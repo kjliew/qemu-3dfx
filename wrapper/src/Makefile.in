@@ -1,6 +1,7 @@
 QEMU_SRC_DIR=../../qemu-0
+GIT=$(shell git rev-parse HEAD | sed "s/\(.......\).*/\1\-/")
 CC=gcc
-CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -Werror -O3 -fomit-frame-pointer
+CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -D__REV__=\"$(GIT)\" -Werror -O3 -fomit-frame-pointer
 LDFLAGS=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 SRCDIR=../src
 TARGET1=glide.dll

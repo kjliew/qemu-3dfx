@@ -142,7 +142,7 @@ static INLINE void fifoAddData(int nArg, uint32_t argData, int cbData)
     uint32_t numData = (cbData & 0x03)? ((cbData >> 2) + 1):(cbData >> 2);
 
     int j = mdata[0];
-    mdata[0] = (j + numData);
+    mdata[0] = ((j + numData) & 0x01)? (j + numData + 1):(j + numData);
     pt[nArg] = (nArg)? argData:pt[nArg];
     memcpy(&mdata[j], data, (numData << 2));
 }
@@ -256,28 +256,31 @@ void PT_CALL ConvertAndDownloadRle(uint32_t arg0, uint32_t arg1, uint32_t arg2, 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_ConvertAndDownloadRle;
 }
 void PT_CALL grAADrawLine(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRVERTEX)); fifoAddData(2, arg1, ALIGNED(SIZE_GRVERTEX)); 
+    fifoAddData(1, arg0, SIZE_GRVERTEX);
+    fifoAddData(2, arg1, SIZE_GRVERTEX);
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAADrawLine, 2);
 }
 void PT_CALL grAADrawPoint(uint32_t arg0) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRVERTEX)); 
+    fifoAddData(1, arg0, SIZE_GRVERTEX);
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAADrawPoint, 1);
 }
 void PT_CALL grAADrawPolygon(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     int i, *ilist = (int *)arg1;
-    fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(int)));
+    fifoAddData(0, arg1, arg0 * sizeof(int));
     for (i = 0; i < arg0; i++)
-        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), ALIGNED(SIZE_GRVERTEX));
+        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), SIZE_GRVERTEX);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAADrawPolygon, 3);
 }
 void PT_CALL grAADrawPolygonVertexList(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0 * SIZE_GRVERTEX));
+    fifoAddData(0, arg1, arg0 * SIZE_GRVERTEX);
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAADrawPolygonVertexList, 2);
 }
 void PT_CALL grAADrawTriangle(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRVERTEX)); fifoAddData(2, arg1, ALIGNED(SIZE_GRVERTEX)); fifoAddData(3, arg2, ALIGNED(SIZE_GRVERTEX)); 
+    fifoAddData(1, arg0, SIZE_GRVERTEX);
+    fifoAddData(2, arg1, SIZE_GRVERTEX);
+    fifoAddData(3, arg2, SIZE_GRVERTEX);
     pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grAADrawTriangle, 6);
 }
@@ -379,41 +382,44 @@ void PT_CALL grDitherMode(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDitherMode, 1);
 }
 void PT_CALL grDrawLine(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRVERTEX)); fifoAddData(2, arg1, ALIGNED(SIZE_GRVERTEX)); 
+    fifoAddData(1, arg0, SIZE_GRVERTEX);
+    fifoAddData(2, arg1, SIZE_GRVERTEX);
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawLine, 2);
 }
 void PT_CALL grDrawPlanarPolygon(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     int i, *ilist = (int *)arg1;
-    fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(int)));
+    fifoAddData(0, arg1, arg0 * sizeof(int));
     for (i = 0; i < arg0; i++)
-        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), ALIGNED(SIZE_GRVERTEX));
+        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), SIZE_GRVERTEX);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawPlanarPolygon, 3);
 }
 void PT_CALL grDrawPlanarPolygonVertexList(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0 * SIZE_GRVERTEX));
+    fifoAddData(0, arg1, arg0 * SIZE_GRVERTEX);
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawPlanarPolygonVertexList, 2);
 }
 void PT_CALL grDrawPoint(uint32_t arg0) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRVERTEX)); 
+    fifoAddData(1, arg0, SIZE_GRVERTEX);
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawPoint, 1);
 }
 void PT_CALL grDrawPolygon(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     int i, *ilist = (int *)arg1;
-    fifoAddData(0, arg1, ALIGNED(arg0 * sizeof(int)));
+    fifoAddData(0, arg1, arg0 * sizeof(int));
     for (i = 0; i < arg0; i++)
-        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), ALIGNED(SIZE_GRVERTEX));
+        fifoAddData(0, (arg2 + (ilist[i] * SIZE_GRVERTEX)), SIZE_GRVERTEX);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawPolygon, 3);
 }
 void PT_CALL grDrawPolygonVertexList(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0 * SIZE_GRVERTEX));
+    fifoAddData(0, arg1, arg0 * SIZE_GRVERTEX);
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawPolygonVertexList, 2);
 }
 void PT_CALL grDrawTriangle(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRVERTEX)); fifoAddData(2, arg1, ALIGNED(SIZE_GRVERTEX)); fifoAddData(3, arg2, ALIGNED(SIZE_GRVERTEX)); 
+    fifoAddData(1, arg0, SIZE_GRVERTEX);
+    fifoAddData(2, arg1, SIZE_GRVERTEX);
+    fifoAddData(3, arg2, SIZE_GRVERTEX);
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawTriangle, 3);
 }
 void PT_CALL grErrorSetCallback(uint32_t arg0) {
@@ -429,9 +435,9 @@ void PT_CALL grFogMode(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogMode, 1);
 }
 void PT_CALL grFogTable(uint32_t arg0) {
-    uint32_t n[2]; n[0] = 64;
-    fifoAddData(0, (uint32_t)n, ALIGNED(sizeof(uint32_t)));
-    fifoAddData(0, arg0, ALIGNED(n[0] * sizeof(uint8_t)));
+    uint32_t n = 64;
+    fifoAddData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoAddData(0, arg0, n * sizeof(uint8_t));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grFogTable, 1);
 }
@@ -490,7 +496,7 @@ void PT_CALL grLfbConstantDepth(uint32_t arg0) {
 uint32_t PT_CALL grLfbLock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     int ret;
     uint32_t shmaddr;
-    fifoAddData(0, arg5, ALIGNED(SIZE_GRLFBINFO));
+    fifoAddData(0, arg5, SIZE_GRLFBINFO);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grLfbLock;
     ret = *pt0;
@@ -570,7 +576,7 @@ void PT_CALL grSstOrigin(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grSstOrigin;
 }
 void PT_CALL grSstPerfStats(uint32_t arg0) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRSSTPERFSTATS));
+    fifoAddData(1, arg0, SIZE_GRSSTPERFSTATS);
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grSstPerfStats;
     fifoOutData(0, arg0, SIZE_GRSSTPERFSTATS);
 }
@@ -578,7 +584,7 @@ uint32_t PT_CALL grSstQueryBoards(uint32_t arg0) {
     int ret = 0;
     if ((!grGlidePresent) && (!Init()))
 	return ret;
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRHWCONFIG));
+    fifoAddData(1, arg0, SIZE_GRHWCONFIG);
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grSstQueryBoards;
     ret = *pt0;
     if (ret) 
@@ -589,7 +595,7 @@ uint32_t PT_CALL grSstQueryHardware(uint32_t arg0) {
     int ret = 0;
     if ((!grGlidePresent) && (!Init()))
 	return ret;
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRHWCONFIG));
+    fifoAddData(1, arg0, SIZE_GRHWCONFIG);
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grSstQueryHardware;
     ret = *pt0;
     if (ret)
@@ -686,8 +692,8 @@ void PT_CALL grTexDownloadMipMap(uint32_t arg0, uint32_t arg1, uint32_t arg2, ui
     info.format = ((wrTexInfo *)arg3)->format;
     dlen =  grTexTextureMemRequired(arg2, (uint32_t)&info);
 
-    fifoAddData(0, arg3, ALIGNED(SIZE_GRTEXINFO));
-    fifoAddData(0, addr, ALIGNED(dlen));
+    fifoAddData(0, arg3, SIZE_GRTEXINFO);
+    fifoAddData(0, addr, dlen);
 
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = dlen;
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexDownloadMipMap, 5);
@@ -702,7 +708,7 @@ void PT_CALL grTexDownloadMipMapLevel(uint32_t arg0, uint32_t arg1, uint32_t arg
     info.format = arg5;
     dlen =  grTexTextureMemRequired(arg6, (uint32_t)&info);
 
-    fifoAddData(0, arg7, ALIGNED(dlen));
+    fifoAddData(0, arg7, dlen);
 
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = dlen;
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexDownloadMipMapLevel, 9);
@@ -720,7 +726,7 @@ void PT_CALL grTexDownloadMipMapLevelPartial(uint32_t arg0, uint32_t arg1, uint3
         texBytes = 1;
     texBytes = texBytes * (arg9 - arg8 + 1) * 4;
 
-    fifoAddData(0, arg7, ALIGNED(texBytes));
+    fifoAddData(0, arg7, texBytes);
 
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = texBytes; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexDownloadMipMapLevelPartial, 11);
@@ -731,7 +737,7 @@ void PT_CALL grTexDownloadTable(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexDownloadTable, 3);
 }
 void PT_CALL grTexDownloadTablePartial(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
-    fifoAddData(0, arg2, (arg1 == 0x02)? ALIGNED((arg4 + 1)*sizeof(uint32_t)):SIZE_GUNCCTABLE);
+    fifoAddData(0, arg2, (arg1 == 0x02)? (arg4 + 1)*sizeof(uint32_t):SIZE_GUNCCTABLE);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexDownloadTablePartial, 5);
 }
@@ -770,21 +776,19 @@ void PT_CALL grTexNCCTable(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexNCCTable, 2);
 }
 void PT_CALL grTexSource(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, ALIGNED(SIZE_GRTEXINFO));
+    fifoAddData(0, arg3, SIZE_GRTEXINFO);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grTexSource, 4);
 }
 uint32_t PT_CALL grTexTextureMemRequired(uint32_t arg0, uint32_t arg1) {
-    uint8_t texInfo[ALIGNED(SIZE_GRTEXINFO)];
-    memcpy(texInfo, (uint8_t *)arg1, ALIGNED(SIZE_GRTEXINFO));
-    fifoAddData(0, (uint32_t)texInfo, ALIGNED(SIZE_GRTEXINFO));
+    fifoAddData(0, arg1, SIZE_GRTEXINFO);
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grTexTextureMemRequired;
     return *pt0;
 }
 void PT_CALL grTriStats(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(1, arg0, ALIGNED(sizeof(uint32_t)));
-    fifoAddData(2, arg1, ALIGNED(sizeof(uint32_t)));
+    fifoAddData(1, arg0, sizeof(uint32_t));
+    fifoAddData(2, arg1, sizeof(uint32_t));
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grTriStats;
     fifoOutData(0, arg0, sizeof(uint32_t));
     fifoOutData(ALIGNED(sizeof(uint32_t)), arg1, sizeof(uint32_t));
@@ -827,7 +831,9 @@ uint32_t PT_CALL gu3dfLoad(uint32_t arg0, uint32_t arg1) {
     return ret;
 }
 void PT_CALL guAADrawTriangleWithClip(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRVERTEX)); fifoAddData(2, arg1, ALIGNED(SIZE_GRVERTEX)); fifoAddData(3, arg2, ALIGNED(SIZE_GRVERTEX)); 
+    fifoAddData(1, arg0, SIZE_GRVERTEX);
+    fifoAddData(2, arg1, SIZE_GRVERTEX);
+    fifoAddData(3, arg2, SIZE_GRVERTEX);
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_guAADrawTriangleWithClip, 3);
 }
 void PT_CALL guAlphaSource(uint32_t arg0) {
@@ -839,12 +845,14 @@ void PT_CALL guColorCombineFunction(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_guColorCombineFunction, 1);
 }
 void PT_CALL guDrawPolygonVertexListWithClip(uint32_t arg0, uint32_t arg1) {
-    fifoAddData(0, arg1, ALIGNED(arg0 * SIZE_GRVERTEX));
+    fifoAddData(0, arg1, arg0 * SIZE_GRVERTEX);
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_guDrawPolygonVertexListWithClip, 2);
 }
 void PT_CALL guDrawTriangleWithClip(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    fifoAddData(1, arg0, ALIGNED(SIZE_GRVERTEX)); fifoAddData(2, arg1, ALIGNED(SIZE_GRVERTEX)); fifoAddData(3, arg2, ALIGNED(SIZE_GRVERTEX)); 
+    fifoAddData(1, arg0, SIZE_GRVERTEX);
+    fifoAddData(2, arg1, SIZE_GRVERTEX);
+    fifoAddData(3, arg2, SIZE_GRVERTEX);
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_guDrawTriangleWithClip, 3);
 }
 void PT_CALL guEncodeRLE16(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
@@ -936,7 +944,7 @@ void PT_CALL guTexCreateColorMipMap(void) {
 void PT_CALL guTexDownloadMipMap(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     uint32_t texBytes  = guTexSize(arg0, 0x0F);
     if (texBytes)
-        fifoAddData(0, arg1, ALIGNED(texBytes));
+        fifoAddData(0, arg1, texBytes);
     if (arg2)
         fifoAddData(0, arg2, SIZE_GUNCCTABLE);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = texBytes;
@@ -947,7 +955,7 @@ void PT_CALL guTexDownloadMipMapLevel(uint32_t arg0, uint32_t arg1, uint32_t arg
     uint8_t pad[ALIGNED(1)];
     uint32_t texBytes  = guTexSize(arg0, arg1);
     if (texBytes) {
-        fifoAddData(0, (uint32_t)(*src), ALIGNED(texBytes));
+        fifoAddData(0, (uint32_t)(*src), texBytes);
         fifoAddData(0, (uint32_t)pad, ALIGNED(1));
         *src = (void *)(((uint32_t)*src) + texBytes);
     }
