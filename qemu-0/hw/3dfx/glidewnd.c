@@ -59,6 +59,7 @@ static uintptr_t hwnd;
 static int cfg_createWnd;
 static int cfg_scaleGuiX;
 static int cfg_scaleX;
+static int cfg_vsyncInit;
 static int cfg_lfbHandler;
 static int cfg_lfbNoAux;
 static int cfg_lfbLockDirty;
@@ -202,6 +203,7 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_createWnd = 0;
     cfg_scaleGuiX = 1;
     cfg_scaleX = 0;
+    cfg_vsyncInit = 0;
     cfg_lfbHandler = 0;
     cfg_lfbNoAux = 0;
     cfg_lfbLockDirty = 0;
@@ -220,6 +222,8 @@ uint32_t init_window(const int res, const char *wndTitle)
             cfg_scaleGuiX = ((i == 1) && (c == 0))? 0:cfg_scaleGuiX;
             i = sscanf(line, "ScaleWidth,%d", &c);
             cfg_scaleX = ((i == 1) && c)? c:cfg_scaleX;
+            i = sscanf(line, "VsyncInit,%d", &c);
+            cfg_vsyncInit = ((i == 1) && c)? 1:cfg_vsyncInit;
             i = sscanf(line, "LfbHandler,%d", &c);
             cfg_lfbHandler = ((i == 1) && c)? 1:cfg_lfbHandler;
             i = sscanf(line, "LfbNoAux,%d", &c);
@@ -241,9 +245,11 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_scaleX = (cfg_scaleGuiX && (gui_width >= 800) && (tblRes[res].w < gui_width))? gui_width:cfg_scaleX;
 
 #define WRAPPER_FLAG_WINDOWED   0x01
+#define WRAPPER_FLAG_VSYNC      0x40
 #define WRAPPER_FLAG_QEMU       0x80
     uint32_t flags = (glide_gui_fullscreen())? WRAPPER_FLAG_QEMU:
         (WRAPPER_FLAG_QEMU | WRAPPER_FLAG_WINDOWED);
+    flags |= (cfg_vsyncInit)? WRAPPER_FLAG_VSYNC:0;
 
     int sel = res;
     if (cfg_scaleX) {
@@ -319,14 +325,14 @@ static void profile_stat(void)
     p->ftime += (curr - p->last) * (1.0f /  NANOSECONDS_PER_SECOND);
     p->last = curr;
 
-    i = (int) p->ftime;
+    i = (GRFifoTrace() || GRFuncTrace())? 0:((int) p->ftime);
     if (i && ((i % 5) == 0))
 	profile_dump();
 }
 
 void glidestat(PPERFSTAT s)
 {
-    cfg_traceFunc = 2;
+    cfg_traceFunc = 1;
     s->stat = &profile_stat;
     s->last = &profile_last;
 }

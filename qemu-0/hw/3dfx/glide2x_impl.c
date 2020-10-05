@@ -358,15 +358,20 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
     }
     if (!trGlideInit.glideHasWin) {
         switch (FEnum) {
+            case FEnum_grErrorSetCallback:
 	    case FEnum_grGet:
 	    case FEnum_grGlideGetVersion:
 	    case FEnum_grGlideInit:
             case FEnum_grGlideShutdown:
+            case FEnum_grQueryResolutions:
 	    case FEnum_grSstControl:
 	    case FEnum_grSstQueryBoards:
 	    case FEnum_grSstQueryHardware:
 	    case FEnum_grSstSelect:
-            case FEnum_grErrorSetCallback:
+            case FEnum_grTexCalcMemRequired:
+            case FEnum_grTexMaxAddress:
+            case FEnum_grTexMinAddress:
+            case FEnum_grTexTextureMemRequired:
                 break;
             case FEnum_grSstOpen:
             case FEnum_grSstWinOpen:
@@ -824,6 +829,11 @@ int init_glide2x(const char *dllname)
     
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
     hDll = LoadLibrary(dllname);
+    if (!hDll) {
+        char prefix[32] = "lib";
+        const char *libname = strcat(prefix, dllname);
+        hDll = LoadLibrary(libname);
+    }
     setConfig = (void *)(GetProcAddress(hDll, "_setConfig@4"));
     setConfigRes = (void *)(GetProcAddress(hDll, "_setConfigRes@4"));
 #endif
