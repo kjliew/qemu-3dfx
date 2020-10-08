@@ -1338,7 +1338,7 @@ static void conf_MGLOptions(void)
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
     cfg_dispTimerMS = 2000;
-    cfg_vsyncInit = 0;
+    cfg_vsyncInit = -1;
     cfg_createWnd = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
@@ -1356,7 +1356,7 @@ static void conf_MGLOptions(void)
             i = sscanf(line, "DispTimerMS,%d", &v);
             cfg_dispTimerMS = (i == 1)? v:cfg_dispTimerMS;
             i = sscanf(line, "VsyncInit,%d", &v);
-            cfg_vsyncInit = (i == 1)? v:cfg_vsyncInit;
+            cfg_vsyncInit = (i == 1)? (v & 0x01U):cfg_vsyncInit;
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
             i = sscanf(line, "CreateWindow,%d", &v);
             cfg_createWnd = (i == 1)? v:cfg_createWnd;

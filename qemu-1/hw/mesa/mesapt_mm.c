@@ -1961,6 +1961,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     char xYear[8], xLen[8], dispTimer[8];
                     uint32_t *ptVer = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
                     int level = ((ptVer[0] & 0xFFFFFFF0U) == (MESAGL_MAGIC & 0xFFFFFFF0U))? (MESAGL_MAGIC - ptVer[0]):0;
+                    int vsync = GetVsyncInit();
                     if (s->mglContext && !s->mglCntxCurrent && ptVer[0]) {
                         DPRINTF("wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
                         DPRINTF("%sWRAPGL32", (char *)&ptVer[1]);
@@ -1972,9 +1973,9 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         snprintf(xLen, 8, "%u", (uint32_t)s->extnLength);
                         snprintf(xYear, 8, "%d", s->extnYear);
                         snprintf(dispTimer, 8, "%dms", GetDispTimerMS());
+                        DPRINTF_COND((vsync != -1), "VsyncInit %d", vsync);
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
                         DPRINTF("DispTimerSched %s", GetDispTimerMS()? dispTimer:"disabled");
-                        DPRINTF("VsyncInit %d", GetVsyncInit());
                         DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
                                 (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
                         s->dispTimer = timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0);
@@ -2067,7 +2068,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 do {
                     int *i = (int *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
                     if (s->mglContext && s->mglCntxCurrent) {
-                        DPRINTF("ActivateHandler %-32d", i[0]);
+                        DPRINTF_COND((GLFuncTrace()), "ActivateHandler %d", i[0]);
                         MGLActivateHandler(i[0]);
                         if (i[0])
                             dispTimerSched(s->dispTimer);

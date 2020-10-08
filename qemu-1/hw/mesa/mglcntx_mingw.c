@@ -230,8 +230,10 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         wglFuncs.MakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();
-        if (wglFuncs.SwapIntervalEXT)
-            wglFuncs.SwapIntervalEXT(GetVsyncInit());
+        int val = GetVsyncInit();
+        if (val == -1) { }
+        else if (wglFuncs.SwapIntervalEXT)
+            wglFuncs.SwapIntervalEXT(val);
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         wglFuncs.MakeCurrent(hPBDC[i], hPBRC[i]);
@@ -405,9 +407,16 @@ void MGLFuncHandler(const char *name)
     FUNCP_HANDLER("wglSwapIntervalEXT") {
         if (wglFuncs.SwapIntervalEXT) {
             uint32_t ret, err;
-            ret =  wglFuncs.SwapIntervalEXT(argsp[0]);
-            err = (ret)? 0:GetLastError();
-            DPRINTF("wglSwapIntervalEXT(%u) %s %-24u", argsp[0], ((ret)? "ret":"err"), ((ret)? ret:err));
+            int curr = wglFuncs.GetSwapIntervalEXT();
+            if (curr != argsp[0]) {
+                ret =  wglFuncs.SwapIntervalEXT(argsp[0]);
+                err = (ret)? 0:GetLastError();
+                DPRINTF("wglSwapIntervalEXT(%u) %s %-24u", argsp[0], ((ret)? "ret":"err"), ((ret)? ret:err));
+            }
+            else {
+                ret = 1;
+                DPRINTF("wglSwapIntervalEXT(%u) curr %d ret %-24u", argsp[0], curr, ret);
+            }
             argsp[0] = ret;
             return;
         }

@@ -170,6 +170,7 @@ static const int attrib[] = {
 static Display     *dpy;
 static Window       win;
 static XVisualInfo *xvi;
+static const char  *xstr;
 static GLXContext   ctx[4];
 
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
@@ -181,6 +182,25 @@ static struct {
     int (*SwapIntervalEXT)(unsigned int);
     int (*GetSwapIntervalEXT)(void);
 } xglFuncs;
+
+static int find_xstr(const char *xstr, const char *str)
+{
+    int ret = 0;
+    char sbuf[1024], *stok;
+    if (xstr)
+        strncpy(sbuf, xstr, 1024);
+    else
+        memset(sbuf, 0, 1024);
+    stok = strtok(sbuf, " ");
+    while (stok) {
+        if (!strncmp(stok, str, strnlen(str, 64))) {
+            ret = 1;
+            break;
+        }
+        stok = strtok(NULL, " ");
+    }
+    return ret;
+}
 
 #define MAX_RAMP_SIZE 0x800
 struct wgamma {
@@ -241,10 +261,19 @@ void *MesaGLGetProc(const char *proc)
 
 void MGLTmpContext(void)
 {
-    xglFuncs.SwapIntervalEXT = (int (*)(unsigned int))
-        MesaGLGetProc("glXSwapIntervalMESA");
-    xglFuncs.GetSwapIntervalEXT = (int (*)(void))
-        MesaGLGetProc("glXGetSwapIntervalMESA");
+    Display *tmpDisp = XOpenDisplay(NULL);
+    xstr = glXQueryExtensionsString(tmpDisp, DefaultScreen(tmpDisp));
+    if (find_xstr(xstr, "GLX_MESA_swap_control")) {
+        xglFuncs.SwapIntervalEXT = (int (*)(unsigned int))
+            MesaGLGetProc("glXSwapIntervalMESA");
+        xglFuncs.GetSwapIntervalEXT = (int (*)(void))
+            MesaGLGetProc("glXGetSwapIntervalMESA");
+    }
+    else {
+        xglFuncs.SwapIntervalEXT = 0;
+        xglFuncs.GetSwapIntervalEXT = 0;
+    }
+    XCloseDisplay(tmpDisp);
 }
 
 void MGLDeleteContext(int level)
@@ -289,8 +318,16 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         glXMakeContextCurrent(dpy, win, win, ctx[n]);
         InitMesaGLExt();
-        if (xglFuncs.SwapIntervalEXT)
-            xglFuncs.SwapIntervalEXT(GetVsyncInit());
+        int val = GetVsyncInit();
+        if (val == -1) { }
+        else if (xglFuncs.SwapIntervalEXT)
+            xglFuncs.SwapIntervalEXT(val);
+        else if (find_xstr(xstr, "GLX_EXT_swap_control")) {
+            void (*p_glXSwapIntervalEXT)(Display *, GLXDrawable, int) =
+                (void (*)(Display *, GLXDrawable, int)) MesaGLGetProc("glXSwapIntervalEXT");
+            if (p_glXSwapIntervalEXT)
+                p_glXSwapIntervalEXT(dpy, win, val);
+        }
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         glXMakeContextCurrent(dpy, PBDC[i], PBDC[i], PBRC[i]);
@@ -413,16 +450,31 @@ void MGLFuncHandler(const char *name)
        return;
     }
     FUNCP_HANDLER("wglSwapIntervalEXT") {
-        if (xglFuncs.SwapIntervalEXT) {
-            xglFuncs.SwapIntervalEXT(argsp[0]);
-            DPRINTF("wglSwapIntervalEXT(%u)%-24s", argsp[0], " ");
-            argsp[0] = 1;
+        int val = -1;
+        if (xglFuncs.SwapIntervalEXT)
+            val = xglFuncs.SwapIntervalEXT(argsp[0]);
+        else if (find_xstr(xstr, "GLX_EXT_swap_control")) {
+            void (*p_glXSwapIntervalEXT)(Display *, GLXDrawable, int) =
+                (void (*)(Display *, GLXDrawable, int)) MesaGLGetProc("glXSwapIntervalEXT");
+            if (p_glXSwapIntervalEXT) {
+                p_glXSwapIntervalEXT(dpy, win, argsp[0]);
+                val = 0;
+            }
+        }
+        if (val != -1) {
+            DPRINTF("wglSwapIntervalEXT(%u) %s %-24u", argsp[0], ((val)? "err":"ret"), ((val)? val:1));
+            argsp[0] = (val)? 0:1;
             return;
         }
     }
     FUNCP_HANDLER("wglGetSwapIntervalEXT") {
-        if (xglFuncs.GetSwapIntervalEXT) {
-            argsp[0] = xglFuncs.GetSwapIntervalEXT();
+        int val = -1;
+        if (xglFuncs.GetSwapIntervalEXT)
+            val = xglFuncs.GetSwapIntervalEXT();
+        else if (find_xstr(xstr, "GLX_EXT_swap_control"))
+            glXQueryDrawable(dpy, win, GLX_SWAP_INTERVAL_EXT, (unsigned int *)&val);
+        if (val != -1) {
+            argsp[0] = val;
             DPRINTF("wglGetSwapIntervalEXT() ret %-24u", argsp[0]);
             return;
         }
