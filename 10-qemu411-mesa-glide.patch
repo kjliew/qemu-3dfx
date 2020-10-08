@@ -98,7 +98,7 @@ diff -Nru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
 +uintptr_t glide_prepare_window(int w, int h);
 +void glide_release_window(void);
 +uint32_t glide_window_stat(int);
-+int glide_gui_getwidth(void);
++int glide_gui_getheight(void);
 +int glide_gui_fullscreen(void);
 +int is_glide_enabled(void);
 +void glide_enabled_set(void);
@@ -229,11 +229,11 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    return stat;
 +}
 +
-+int glide_gui_getwidth(void)
++int glide_gui_getheight(void)
 +{
 +    int scr_w, scr_h;
 +    SDL_GetWindowSize(sdl2_console[0].real_window, &scr_w, &scr_h);
-+    return scr_w;
++    return scr_h;
 +}
 +
 +int glide_gui_fullscreen(void) { return gui_fullscreen; }

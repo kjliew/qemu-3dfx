@@ -240,9 +240,10 @@ uint32_t init_window(const int res, const char *wndTitle)
         fclose(fp);
     }
 
-    int gui_width = glide_gui_getwidth();
+    int gui_height = glide_gui_getheight();
     cfg_scaleGuiX = (cfg_createWnd || cfg_scaleX)? 0:cfg_scaleGuiX;
-    cfg_scaleX = (cfg_scaleGuiX && (gui_width >= 800) && (tblRes[res].w < gui_width))? gui_width:cfg_scaleX;
+    cfg_scaleX = (cfg_scaleGuiX && (gui_height > 480) && (gui_height > tblRes[res].h))?
+        (int)((1.f * tblRes[res].w * gui_height) / tblRes[res].h):cfg_scaleX;
 
 #define WRAPPER_FLAG_WINDOWED   0x01
 #define WRAPPER_FLAG_VSYNC      0x40
