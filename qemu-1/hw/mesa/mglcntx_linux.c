@@ -114,6 +114,8 @@ typedef struct tagPIXELFORMATDESCRIPTOR {
 #define WGL_SWAP_UNDEFINED_ARB                  0x202A
 #define WGL_TYPE_RGBA_ARB                       0x202B
 #define WGL_TYPE_COLORINDEX_ARB                 0x202C
+#define WGL_SAMPLE_BUFFERS_ARB                  0x2041
+#define WGL_SAMPLES_ARB                         0x2042
 
 typedef struct tagFakePBuffer {
     int width;
@@ -151,21 +153,42 @@ static const int iAttribs[] = {
     WGL_DEPTH_BITS_ARB, pfd.cDepthBits,
     WGL_STENCIL_BITS_ARB, pfd.cStencilBits,
     WGL_AUX_BUFFERS_ARB, pfd.cAuxBuffers,
+    WGL_SAMPLE_BUFFERS_ARB, 0,
+    WGL_SAMPLES_ARB, 0,
     0,0
 };
-static const int attrib[] = {
-    GLX_X_RENDERABLE    , True,
-    GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-    GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-    GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-    GLX_RED_SIZE        , 8,
-    GLX_GREEN_SIZE      , 8,
-    GLX_BLUE_SIZE       , 8,
-    GLX_DEPTH_SIZE      , 24,
-    GLX_STENCIL_SIZE    , 8,
-    GLX_DOUBLEBUFFER    , True,
-    None
-};
+
+static int *iattribs_fb(const int do_msaa)
+{
+    static int ia[] = {
+        GLX_X_RENDERABLE    , True,
+        GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
+        GLX_RENDER_TYPE     , GLX_RGBA_BIT,
+        GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
+        GLX_RED_SIZE        , 8,
+        GLX_GREEN_SIZE      , 8,
+        GLX_BLUE_SIZE       , 8,
+        GLX_DEPTH_SIZE      , 24,
+        GLX_STENCIL_SIZE    , 8,
+        GLX_DOUBLEBUFFER    , True,
+        GLX_SAMPLE_BUFFERS  , 0,
+        GLX_SAMPLES         , 0,
+        None
+    };
+    for (int i = 0; ia[i]; i+=2) {
+        switch(ia[i]) {
+            case GLX_SAMPLE_BUFFERS:
+                ia[i+1] = (do_msaa && GetContextMSAA())? 1:0;
+                break;
+            case GLX_SAMPLES:
+                ia[i+1] = (do_msaa)? GetContextMSAA():0;
+                break;
+            default:
+                break;
+        }
+    }
+    return ia;
+}
 
 static Display     *dpy;
 static Window       win;
@@ -177,6 +200,7 @@ static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 static GLXPbuffer PBDC[MAX_PBUFFER];
 static GLXContext PBRC[MAX_PBUFFER];
 static int cAuxBuffers;
+static int cSampleBuf[2];
 
 static struct {
     int (*SwapIntervalEXT)(unsigned int);
@@ -318,7 +342,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         glXMakeContextCurrent(dpy, win, win, ctx[n]);
         InitMesaGLExt();
-        int val = GetVsyncInit();
+        int val = GetContextVsync();
         if (val == -1) { }
         else if (xglFuncs.SwapIntervalEXT)
             xglFuncs.SwapIntervalEXT(val);
@@ -345,13 +369,21 @@ static int MGLPresetPixelFormat(void)
 {
     dpy = XOpenDisplay(NULL);
     win = mesa_prepare_window();
+    ImplMesaGLReset();
 
-    int fbid, fbcnt;
+    int fbid, fbcnt, *attrib = iattribs_fb(GetContextMSAA());
     GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
+    if (GetContextMSAA() && !fbcnt && !fbcnf) {
+        attrib = iattribs_fb(0);
+        fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
+    }
     xvi = glXGetVisualFromFBConfig(dpy, fbcnf[0]);
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_FBCONFIG_ID, &fbid);
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_AUX_BUFFERS, &cAuxBuffers);
-    DPRINTF("FBConfig id 0x%03x visual 0x%03lx nAux %d", fbid, xvi->visualid, cAuxBuffers);
+    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_SAMPLE_BUFFERS, &cSampleBuf[0]);
+    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_SAMPLES, &cSampleBuf[1]);
+    DPRINTF("FBConfig 0x%03x visual 0x%03lx nAux %d nSamples %d %d",
+        fbid, xvi->visualid, cAuxBuffers, cSampleBuf[0], cSampleBuf[1]);
     MesaInitGammaRamp();
     XFree(fbcnf);
     XFlush(dpy);
@@ -418,6 +450,8 @@ static int LookupAttribArray(const int *attrib, const int attr)
     for (int i = 0; (attrib[i] && attrib[i+1]); i+=2) {
         if (attrib[i] == attr) {
             ret = (attr == WGL_AUX_BUFFERS_ARB)? cAuxBuffers:attrib[i+1];
+            ret = (attr == WGL_SAMPLE_BUFFERS_ARB)? cSampleBuf[0]:attrib[i+1];
+            ret = (attr == WGL_SAMPLES_ARB)? cSampleBuf[1]:attrib[i+1];
             break;
         }
     }
@@ -489,6 +523,7 @@ void MGLFuncHandler(const char *name)
                 "WGL_ARB_pbuffer "
                 "WGL_ARB_pixel_format "
                 "WGL_ARB_render_texture "
+                "WGL_ARB_multisample "
                 "WGL_EXT_extensions_string "
                 "WGL_EXT_swap_control";
             strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
@@ -502,8 +537,12 @@ void MGLFuncHandler(const char *name)
             (GLXContext (*)(Display *, GLXFBConfig, GLXContext, Bool, const int *)) MesaGLGetProc(fname);
         if (fp) {
             uint32_t i = 0, ret;
-            int fbcnt;
+            int fbcnt, *attrib = iattribs_fb(GetContextMSAA());
             GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
+            if (GetContextMSAA() && !fbcnt && !fbcnf) {
+                attrib = iattribs_fb(0);
+                fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
+            }
             while (ctx[i]) i++;
             argsp[1] = (argsp[0])? i:0;
             if (argsp[1] == 0) {

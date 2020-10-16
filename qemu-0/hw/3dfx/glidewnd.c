@@ -59,7 +59,8 @@ static uintptr_t hwnd;
 static int cfg_createWnd;
 static int cfg_scaleGuiX;
 static int cfg_scaleX;
-static int cfg_vsyncInit;
+static int cfg_cntxMSAA;
+static int cfg_cntxVsync;
 static int cfg_lfbHandler;
 static int cfg_lfbNoAux;
 static int cfg_lfbLockDirty;
@@ -203,7 +204,8 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_createWnd = 0;
     cfg_scaleGuiX = 1;
     cfg_scaleX = 0;
-    cfg_vsyncInit = 0;
+    cfg_cntxMSAA = 0;
+    cfg_cntxVsync = 0;
     cfg_lfbHandler = 0;
     cfg_lfbNoAux = 0;
     cfg_lfbLockDirty = 0;
@@ -222,8 +224,10 @@ uint32_t init_window(const int res, const char *wndTitle)
             cfg_scaleGuiX = ((i == 1) && (c == 0))? 0:cfg_scaleGuiX;
             i = sscanf(line, "ScaleWidth,%d", &c);
             cfg_scaleX = ((i == 1) && c)? c:cfg_scaleX;
-            i = sscanf(line, "VsyncInit,%d", &c);
-            cfg_vsyncInit = ((i == 1) && c)? 1:cfg_vsyncInit;
+            i = sscanf(line, "ContextMSAA,%d", &c);
+            cfg_cntxMSAA = (i == 1)? ((c << 3) & 0x30U):cfg_cntxMSAA;
+            i = sscanf(line, "ContextVsync,%d", &c);
+            cfg_cntxVsync = ((i == 1) && c)? 1:cfg_cntxVsync;
             i = sscanf(line, "LfbHandler,%d", &c);
             cfg_lfbHandler = ((i == 1) && c)? 1:cfg_lfbHandler;
             i = sscanf(line, "LfbNoAux,%d", &c);
@@ -250,7 +254,8 @@ uint32_t init_window(const int res, const char *wndTitle)
 #define WRAPPER_FLAG_QEMU       0x80
     uint32_t flags = (glide_gui_fullscreen())? WRAPPER_FLAG_QEMU:
         (WRAPPER_FLAG_QEMU | WRAPPER_FLAG_WINDOWED);
-    flags |= (cfg_vsyncInit)? WRAPPER_FLAG_VSYNC:0;
+    flags |= (cfg_cntxVsync)? WRAPPER_FLAG_VSYNC:0;
+    flags |= cfg_cntxMSAA;
 
     int sel = res;
     if (cfg_scaleX) {

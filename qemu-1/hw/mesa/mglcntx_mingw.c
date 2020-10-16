@@ -90,6 +90,39 @@ static HWND CreateMesaWindow(const char *title, int w, int h, int show)
     return hWnd;
 }
 
+static int *iattribs_fb(const int do_msaa)
+{
+    static int ia[] = {
+        WGL_DRAW_TO_WINDOW_ARB, 1,
+        WGL_SUPPORT_OPENGL_ARB, 1,
+        WGL_DOUBLE_BUFFER_ARB, 1,
+        WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+        WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+        WGL_DEPTH_BITS_ARB,  24,
+        WGL_STENCIL_BITS_ARB, 8,
+        WGL_RED_BITS_ARB,   8,
+        WGL_GREEN_BITS_ARB, 8,
+        WGL_BLUE_BITS_ARB,  8,
+        WGL_ALPHA_BITS_ARB, 8,
+        WGL_SAMPLE_BUFFERS_ARB, 0,
+        WGL_SAMPLES_ARB, 0,
+        0,0,
+    };
+    for (int i = 0; ia[i]; i+=2) {
+        switch(ia[i]) {
+            case WGL_SAMPLE_BUFFERS_ARB:
+                ia[i+1] = (do_msaa && GetContextMSAA())? 1:0;
+                break;
+            case WGL_SAMPLES_ARB:
+                ia[i+1] = (do_msaa)? GetContextMSAA():0;
+                break;
+            default:
+                break;
+        }
+    }
+    return ia;
+}
+
 
 static HWND hwnd;
 static HDC hDC, hPBDC[MAX_PBUFFER];
@@ -104,7 +137,8 @@ static struct {
     BOOL  (WINAPI *ShareLists)(HGLRC, HGLRC);
     PROC  (WINAPI *GetProcAddress)(LPCSTR);
     /* WGL extensions */
-    BOOL  (WINAPI *ChoosePixelFormatARB)(HDC, const int *, const float *, UINT, int *, UINT *);
+    BOOL (WINAPI *GetPixelFormatAttribivARB)(HDC, int, int, UINT, const int *, int *);
+    BOOL (WINAPI *ChoosePixelFormatARB)(HDC, const int *, const float *, UINT, int *, UINT *);
     const char * (WINAPI *GetExtensionsStringARB)(HDC);
     HGLRC (WINAPI *CreateContextAttribsARB)(HDC, HGLRC, const int *);
     BOOL (WINAPI *SwapIntervalEXT)(int);
@@ -162,6 +196,8 @@ void MGLTmpContext(void)
     HGLRC tmpGL = wglFuncs.CreateContext(tmpDC);
     wglFuncs.MakeCurrent(tmpDC, tmpGL);
 
+    wglFuncs.GetPixelFormatAttribivARB = (BOOL (WINAPI *)(HDC, int, int, UINT, const int *, int *))
+        MesaGLGetProc("wglGetPixelFormatAttribivARB");
     wglFuncs.ChoosePixelFormatARB = (BOOL (WINAPI *)(HDC, const int *, const float *, UINT, int *, UINT *))
         MesaGLGetProc("wglChoosePixelFormatARB");
     wglFuncs.GetExtensionsStringARB =  (const char * (WINAPI *)(HDC))
@@ -230,7 +266,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         wglFuncs.MakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();
-        int val = GetVsyncInit();
+        int val = GetContextVsync();
         if (val == -1) { }
         else if (wglFuncs.SwapIntervalEXT)
             wglFuncs.SwapIntervalEXT(val);
@@ -250,27 +286,20 @@ int MGLSwapBuffers(void)
 static int MGLPresetPixelFormat(void)
 {
     int ipixfmt = 0;
+    ImplMesaGLReset();
 
     if (wglFuncs.ChoosePixelFormatARB) {
-        const int ia[] = {
-            WGL_DRAW_TO_WINDOW_ARB, 1,
-            WGL_SUPPORT_OPENGL_ARB, 1,
-            WGL_DOUBLE_BUFFER_ARB, 1,
-            WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-            WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-            WGL_DEPTH_BITS_ARB,  24,
-            WGL_STENCIL_BITS_ARB, 8,
-            WGL_RED_BITS_ARB,   8,
-            WGL_GREEN_BITS_ARB, 8, 
-            WGL_BLUE_BITS_ARB,  8,
-            WGL_ALPHA_BITS_ARB, 8,
-            0,0,
-        };
-        const float fa[] = {0, 0};
+        static const float fa[] = {0, 0};
+        int *ia = iattribs_fb(GetContextMSAA());
         int pi[64]; UINT nFmts = 0;
         BOOL status = wglFuncs.ChoosePixelFormatARB(hDC, ia, fa, 64, pi, &nFmts);
+        if (GetContextMSAA() && !nFmts) {
+            ia = iattribs_fb(0);
+            status = wglFuncs.ChoosePixelFormatARB(hDC, ia, fa, 64, pi, &nFmts);
+        }
         if (status && nFmts)
             ipixfmt = (nFmts)? pi[0]:0;
+
     }
 
     if (ipixfmt == 0) {
@@ -301,7 +330,7 @@ int MGLChoosePixelFormat(void)
     if (curr == 0)
         curr = MGLPresetPixelFormat();
     fmt = curr;
-    DPRINTF("ChoosePixelFormat() fmt %02x", fmt);
+    DPRINTF("ChoosePixelFormat() fmt 0x%02x", fmt);
     return fmt;
 }
 
@@ -313,8 +342,19 @@ int MGLSetPixelFormat(int fmt, const void *p)
     curr = GetPixelFormat(hDC);
     if (curr == 0)
         curr = MGLPresetPixelFormat();
+    if (wglFuncs.GetPixelFormatAttribivARB) {
+        static const int iattr[] = {
+            WGL_AUX_BUFFERS_ARB,
+            WGL_SAMPLE_BUFFERS_ARB,
+            WGL_SAMPLES_ARB,
+        };
+        int cattr[3];
+        wglFuncs.GetPixelFormatAttribivARB(hDC, curr, 0, 3, iattr, cattr);
+        DPRINTF("PixFmt 0x%02x nAux %d nSamples %d %d", curr,
+            cattr[0], cattr[1], cattr[2]);
+    }
     ret = SetPixelFormat(hDC, curr, (ppfd->nSize)? ppfd:0);
-    DPRINTF("SetPixelFormat() fmt %02x ret %d", curr, (ret)? 1:0);
+    DPRINTF("SetPixelFormat() fmt 0x%02x ret %d", curr, (ret)? 1:0);
     return ret;
 }
 
@@ -327,7 +367,16 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
     if (curr == 0)
         curr = MGLPresetPixelFormat();
     if (sz == sizeof(PIXELFORMATDESCRIPTOR)) {
+        int cattr[2];
+        if (wglFuncs.GetPixelFormatAttribivARB) {
+            static const int iattr[] = {
+                WGL_SUPPORT_OPENGL_ARB,
+                WGL_ACCELERATION_ARB,
+            };
+            wglFuncs.GetPixelFormatAttribivARB(hDC, curr, 0, 2, iattr, cattr);
+        }
         DescribePixelFormat(hDC, curr, sizeof(PIXELFORMATDESCRIPTOR), ppfd);
+        ppfd->dwFlags |= (cattr[0] && (cattr[1] == WGL_FULL_ACCELERATION_ARB))? PFD_SUPPORT_OPENGL:0;
         DPRINTF("DescribePixelFormat() dwFlags:%08lx\n"
             "  cColorbits:%02d cDepthBits:%02d cStencilBits:%02d ARGB%d%d%d%d\n"
             "  cAlphaShift:%02d cRedShift:%02d cGreenShift:%02d cBlueShift:%02d",
@@ -437,6 +486,7 @@ void MGLFuncHandler(const char *name)
                 "WGL_ARB_create_context "
                 "WGL_ARB_create_context_profile "
                 "WGL_ARB_extensions_string "
+                "WGL_ARB_multisample "
                 "WGL_ARB_pbuffer "
                 "WGL_ARB_pixel_format "
                 "WGL_ARB_render_texture "
@@ -485,12 +535,10 @@ void MGLFuncHandler(const char *name)
         }
     }
     FUNCP_HANDLER("wglGetPixelFormatAttribivARB") {
-        BOOL (__stdcall *fp)(HDC, int, int, UINT, const int *, int *) =
-            (BOOL (__stdcall *)(HDC, int, int, UINT, const int *, int *)) MesaGLGetProc(fname);
-        if (fp) {
+        if (wglFuncs.GetPixelFormatAttribivARB) {
             uint32_t ret;
             int pi[64], n = argsp[2];
-            ret = fp(hDC, argsp[0], argsp[1], argsp[2], (const int *)&argsp[4], pi);
+            ret = wglFuncs.GetPixelFormatAttribivARB(hDC, argsp[0], argsp[1], argsp[2], (const int *)&argsp[4], pi);
             if (ret)
                 memcpy(&argsp[2], pi, n*sizeof(int));
             argsp[0] = ret;
