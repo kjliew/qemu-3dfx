@@ -343,7 +343,7 @@ static void dispTimerProc(void *opaque)
 
 static void dispTimerSched(QEMUTimer *ts)
 {
-    int timer_ms = GetDispTimerMS();
+    int timer_ms = (ts)? GetDispTimerMS():0;
     if (timer_ms)
         timer_mod(ts, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + timer_ms);
 }
@@ -1963,6 +1963,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     int level = ((ptVer[0] & 0xFFFFFFF0U) == (MESAGL_MAGIC & 0xFFFFFFF0U))? (MESAGL_MAGIC - ptVer[0]):0;
                     int msaa = GetContextMSAA();
                     int vsync = GetContextVsync();
+                    int disptmr = GetDispTimerMS();
                     if (s->mglContext && !s->mglCntxCurrent && ptVer[0]) {
                         DPRINTF("wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
                         DPRINTF("%sWRAPGL32", (char *)&ptVer[1]);
@@ -1975,12 +1976,12 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         snprintf(xYear, 8, "%d", s->extnYear);
                         DPRINTF_COND(msaa, "ContextMSAA %dx", msaa);
                         DPRINTF_COND((vsync != -1), "ContextVsync %d", vsync);
-                        snprintf(dispTimer, 8, "%dms", GetDispTimerMS());
+                        snprintf(dispTimer, 8, "%dms", disptmr);
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
                         DPRINTF("DispTimerSched %s", GetDispTimerMS()? dispTimer:"disabled");
                         DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
                                 (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
-                        s->dispTimer = timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0);
+                        s->dispTimer = (disptmr)? timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0):0;
                     }
                     else {
                         DPRINTF_COND((0 == NumPbuffer()),
@@ -1994,9 +1995,12 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 if (s->mglContext && s->mglCntxCurrent && (val == MESAGL_MAGIC)) {
                     s->perfs.last();
                     MGLDeleteContext(0);
-                    timer_del(s->dispTimer);
-                    timer_free(s->dispTimer);
                     g_free(s->logpname);
+                    if (s->dispTimer) {
+                        timer_del(s->dispTimer);
+                        timer_free(s->dispTimer);
+                    }
+                    s->dispTimer = 0;
                     s->mglContext = 0;
                     s->mglCntxWGL = 0;
                     s->mglCntxCurrent = 0;
