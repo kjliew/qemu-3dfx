@@ -201,6 +201,7 @@ typedef enum {
 #define GLIDE_FIFO_BASE 0xfb500000
 
 #define ALIGNED(x)                              ((x%8)?(((x>>3)+1)<<3):x)
+#define ALIGNBO(x)                              ((x%16)?(((x>>4)+1)<<4):x)
 #define SHLFB_SIZE                              0x300000
 #define GRSHM_SIZE                              0x300000
 #define GRLFB_SIZE                              0x200000

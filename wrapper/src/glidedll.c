@@ -981,6 +981,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 	    logfp = fopen(LOG_FNAME, "w");
 #endif
 	    DPRINTF("ptm 0x%08x, lfb 0x%08x\n", (uint32_t)ptm, (uint32_t)lfb);
+            memcpy(&vgLfb[(SHLFB_SIZE - ALIGNBO(1)) >> 2], buildstr, ALIGNED(1));
 	    ptm[(0xfbcU >> 2)] = (0xa0UL << 12) | GLIDEVER;
 	    HostRet = ptm[(0xfbcU >> 2)];
 	    if (HostRet != ((GLIDEVER << 8) | 0xa0UL)) {

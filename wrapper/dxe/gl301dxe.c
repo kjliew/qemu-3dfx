@@ -885,6 +885,7 @@ int Init(void)
     if (InitGlidePTMMBase())
         return 0;
 
+    memcpy(&vgLfb[(SHLFB_SIZE - ALIGNBO(1)) >> 2], buildstr, ALIGNED(1));
     ptm[(0xfbcU >> 2)] = (0xa0UL << 12) | GLIDEVER;
     HostRet = ptm[(0xfbcU >> 2)];
     if (HostRet != ((GLIDEVER << 8) | 0xa0UL))

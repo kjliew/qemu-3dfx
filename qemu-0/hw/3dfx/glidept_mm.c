@@ -881,6 +881,7 @@ static void processFifo(GlidePTState *s)
 
 static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
 {
+    const char rev_[ALIGNED(1)];
     GlidePTState *s = opaque;
 
     switch (addr) {
@@ -891,9 +892,13 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 	    break;
 
 	case 0xfbc:
+            if ((val == 0xa0243) || (val == 0xa0211) || (val == 0xa0301)) {
+                s->initDLL = 0;
+                if (memcmp(s->glfb_ptr + SHLFB_SIZE - ALIGNBO(1), rev_, ALIGNED(1)))
+                    break;
+            }
 	    if (val == 0xa0243) {
 		strncpy(s->version, "Glide2x", sizeof(char [80]));
-                trInitReset();
 		if (init_glide2x("glide2x.dll") == 0) {
 		    s->initDLL = 0x243a0;
 		    s->lfbDev->v1Lfb = 0;
@@ -901,9 +906,8 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 		    DPRINTF("DLL loaded - glide2x.dll");
 		}
 	    }
-	    if (val == 0xa0211) {
+            else if (val == 0xa0211) {
 		strncpy(s->version, "Glide", sizeof(char [80]));
-                trInitReset();
 		if (init_glide2x("glide.dll") == 0) {
 		    s->initDLL = 0x211a0;
                     s->lfb_real = 1;
@@ -918,9 +922,8 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 		    DPRINTF("DLL loaded - glide2x.dll, emulating API 2.11");
 		}
 	    }
-            if (val == 0xa0301) {
+            else if (val == 0xa0301) {
                 strncpy(s->version, "Glide3x", sizeof(char [80]));
-                trInitReset();
                 if (init_glide2x("glide3x.dll") == 0) {
                     s->initDLL = 0x301a0;
                     s->lfbDev->v1Lfb = 0;
@@ -929,13 +932,15 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
                 }
             }
 	    if ((val == 0xd0243) || (val == 0xd0211) || (val == 0xd0301)) {
-		s->initDLL = 0;
-		fini_window();
-		fini_glide2x();
-                trInitReset();
-		memset(s->version, 0, sizeof(char [80]));
-		DPRINTF("DLL unloaded");
+                if (s->initDLL) {
+                    s->initDLL = 0;
+                    fini_window();
+                    fini_glide2x();
+                    memset(s->version, 0, sizeof(char [80]));
+                    DPRINTF("DLL unloaded");
+                }
 	    }
+            trInitReset();
 	    break;
 		
         case 0xfc0:
