@@ -126,7 +126,7 @@ static int *iattribs_fb(const int do_msaa)
 
 static HWND hwnd;
 static HDC hDC, hPBDC[MAX_PBUFFER];
-static HGLRC hRC[4], hPBRC[MAX_PBUFFER];
+static HGLRC hRC[MAX_LVLCNTX], hPBRC[MAX_PBUFFER];
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 
 static struct {
@@ -226,8 +226,16 @@ void MGLTmpContext(void)
 
 void MGLDeleteContext(int level)
 {
-    int n = level & 0x03U;
+    int n = (level >= MAX_LVLCNTX)? (MAX_LVLCNTX - 1):level;
     wglFuncs.MakeCurrent(NULL, NULL);
+    if (n == 0) {
+        for (int i = MAX_LVLCNTX; i > 1;) {
+            if (hRC[--i]) {
+                wglFuncs.DeleteContext(hRC[i]);
+                hRC[i] = 0;
+            }
+        }
+    }
     wglFuncs.DeleteContext(hRC[n]);
     hRC[n] = 0;
     if (!GetCreateWindow())
@@ -254,6 +262,13 @@ int MGLCreateContext(uint32_t gDC)
         ret = (hPBRC[i])? 0:1;
     }
     else {
+        wglFuncs.MakeCurrent(NULL, NULL);
+        for (i = MAX_LVLCNTX; i > 0;) {
+            if (hRC[--i]) {
+                wglFuncs.DeleteContext(hRC[i]);
+                hRC[i] = 0;
+            }
+        }
         hRC[0] = wglFuncs.CreateContext(hDC);
         ret = (hRC[0])? 0:1;
     }
@@ -262,7 +277,7 @@ int MGLCreateContext(uint32_t gDC)
 
 int MGLMakeCurrent(uint32_t cntxRC, int level)
 {
-    uint32_t i = cntxRC & (MAX_PBUFFER - 1), n = level & 0x03U;
+    uint32_t i = cntxRC & (MAX_PBUFFER - 1), n = (level >= MAX_LVLCNTX)? (MAX_LVLCNTX - 1):level;
     if (cntxRC == (MESAGL_MAGIC - n)) {
         wglFuncs.MakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();
@@ -500,12 +515,12 @@ void MGLFuncHandler(const char *name)
     }
     FUNCP_HANDLER("wglCreateContextAttribsARB") {
         if (wglFuncs.CreateContextAttribsARB) {
-            uint32_t i = 0, ret;
-            while(hRC[i]) i++;
+            uint32_t i, ret;
+            for (i = 0; ((i < MAX_LVLCNTX) && hRC[i]); i++);
             argsp[1] = (argsp[0])? i:0;
             if (argsp[1] == 0) {
                 wglFuncs.MakeCurrent(NULL, NULL);
-                for (i = 4; i > 0;) {
+                for (i = MAX_LVLCNTX; i > 0;) {
                     if (hRC[--i]) {
                         wglFuncs.DeleteContext(hRC[i]);
                         hRC[i] = 0;
@@ -515,6 +530,11 @@ void MGLFuncHandler(const char *name)
                 ret = (hRC[0])? 1:0;
             }
             else {
+                if (i == MAX_LVLCNTX) {
+                    wglFuncs.DeleteContext(hRC[1]);
+                    for (i = 1; i < (MAX_LVLCNTX - 1); i++)
+                        hRC[i] = hRC[i + 1];
+                }
                 hRC[i] = wglFuncs.CreateContextAttribsARB(hDC, hRC[i-1], (const int *)&argsp[2]);
                 ret = (hRC[i])? 1:0;
             }

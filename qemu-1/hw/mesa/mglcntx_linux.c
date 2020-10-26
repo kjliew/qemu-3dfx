@@ -194,7 +194,7 @@ static Display     *dpy;
 static Window       win;
 static XVisualInfo *xvi;
 static const char  *xstr;
-static GLXContext   ctx[4];
+static GLXContext   ctx[MAX_LVLCNTX];
 
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 static GLXPbuffer PBDC[MAX_PBUFFER];
@@ -302,8 +302,16 @@ void MGLTmpContext(void)
 
 void MGLDeleteContext(int level)
 {
-    int n = level & 0x03U;
+    int n = (level >= MAX_LVLCNTX)? (MAX_LVLCNTX - 1):level;
     glXMakeContextCurrent(dpy, None, None, NULL);
+    if (n == 0) {
+        for (int i = MAX_LVLCNTX; i > 1;) {
+            if (ctx[--i]) {
+                glXDestroyContext(dpy, ctx[i]);
+                ctx[i] = 0;
+            }
+        }
+    }
     glXDestroyContext(dpy, ctx[n]);
     ctx[n] = 0;
     MGLActivateHandler(0);
@@ -330,6 +338,13 @@ int MGLCreateContext(uint32_t gDC)
         ret = 0;
     }
     else {
+        glXMakeContextCurrent(dpy, None, None, NULL);
+        for (i = MAX_LVLCNTX; i > 0;) {
+            if (ctx[--i]) {
+                glXDestroyContext(dpy, ctx[i]);
+                ctx[i] = 0;
+            }
+        }
         ctx[0] = glXCreateContext(dpy, xvi, NULL, true);
         ret = (ctx[0])? 0:1;
     }
@@ -338,7 +353,7 @@ int MGLCreateContext(uint32_t gDC)
 
 int MGLMakeCurrent(uint32_t cntxRC, int level)
 {
-    uint32_t i = cntxRC & (MAX_PBUFFER - 1), n = level & 0x03U;
+    uint32_t i = cntxRC & (MAX_PBUFFER - 1), n = (level >= MAX_LVLCNTX)? (MAX_LVLCNTX - 1):level;
     if (cntxRC == (MESAGL_MAGIC - n)) {
         glXMakeContextCurrent(dpy, win, win, ctx[n]);
         InitMesaGLExt();
@@ -536,18 +551,18 @@ void MGLFuncHandler(const char *name)
         GLXContext (*fp)(Display *, GLXFBConfig, GLXContext, Bool, const int *) =
             (GLXContext (*)(Display *, GLXFBConfig, GLXContext, Bool, const int *)) MesaGLGetProc(fname);
         if (fp) {
-            uint32_t i = 0, ret;
+            uint32_t i, ret;
             int fbcnt, *attrib = iattribs_fb(GetContextMSAA());
             GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
             if (GetContextMSAA() && !fbcnt && !fbcnf) {
                 attrib = iattribs_fb(0);
                 fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
             }
-            while (ctx[i]) i++;
+            for (i = 0; ((i < MAX_LVLCNTX) && ctx[i]); i++);
             argsp[1] = (argsp[0])? i:0;
             if (argsp[1] == 0) {
                 glXMakeContextCurrent(dpy, None, None, NULL);
-                for (i = 4; i > 0;) {
+                for (i = MAX_LVLCNTX; i > 0;) {
                     if (ctx[--i]) {
                         glXDestroyContext(dpy, ctx[i]);
                         ctx[i] = 0;
@@ -557,6 +572,11 @@ void MGLFuncHandler(const char *name)
                 ret = (ctx[0])? 1:0;
             }
             else {
+                if (i == MAX_LVLCNTX) {
+                    glXDestroyContext(dpy, ctx[1]);
+                    for (i = 1; i < (MAX_LVLCNTX - 1); i++)
+                        ctx[i] = ctx[i + 1];
+                }
                 ctx[i] = fp(dpy, fbcnf[0], ctx[i-1], True, (const int *)&argsp[2]);
                 ret = (ctx[i])? 1:0;
             }
