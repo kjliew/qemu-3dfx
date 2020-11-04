@@ -31,6 +31,8 @@
 
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
+#include "sysemu/whpx.h"
+#include <winhvplatformdefs.h>
 #include <GL/gl.h>
 #include <GL/wglext.h>
 
@@ -175,6 +177,25 @@ void SetMesaFuncPtr(void *p)
 void *MesaGLGetProc(const char *proc)
 {
     return (void *)wglFuncs.GetProcAddress(proc);
+}
+
+int MGLBOUseAccel(void)
+{
+    return GetBufOAccelEN()? whpx_enabled():0;
+}
+void MGLBOMap(mapbufo_t *bufo)
+{
+    whpx_update_guest_pa_range(bufo->gpa - ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
+        ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
+        (void *)(bufo->hva - (bufo->hva & 0xFFFU)),
+        (WHvMapGpaRangeFlagRead |
+        ((bufo->acc & GL_MAP_WRITE_BIT)? WHvMapGpaRangeFlagWrite:0)), 1);
+}
+void MGLBOUnmap(mapbufo_t *bufo)
+{
+    whpx_update_guest_pa_range(bufo->gpa - ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
+        ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
+        (void *)(bufo->hva - (bufo->hva & 0xFFFU)), 0, 0);
 }
 
 void MGLTmpContext(void)

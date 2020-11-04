@@ -30,6 +30,7 @@
     do { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); } while(0)
 
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
+#include "sysemu/kvm.h"
 #include <GL/glx.h>
 #include <X11/extensions/xf86vmode.h>
 
@@ -281,6 +282,24 @@ void SetMesaFuncPtr(void *hDLL)
 void *MesaGLGetProc(const char *proc)
 {
     return (void *)glXGetProcAddress((const GLubyte *)proc);
+}
+
+int MGLBOUseAccel(void)
+{
+    return GetBufOAccelEN()? kvm_enabled():0;
+}
+void MGLBOMap(mapbufo_t *bufo)
+{
+    kvm_update_guest_pa_range(bufo->gpa - ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
+        ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
+        (void *)(bufo->hva - (bufo->hva & 0xFFFU)),
+        (bufo->acc & GL_MAP_WRITE_BIT)? 0:KVM_MEM_READONLY, 1);
+}
+void MGLBOUnmap(mapbufo_t *bufo)
+{
+    kvm_update_guest_pa_range(bufo->gpa - ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
+        ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
+        (void *)(bufo->hva - (bufo->hva & 0xFFFU)), 0, 0);
 }
 
 void MGLTmpContext(void)

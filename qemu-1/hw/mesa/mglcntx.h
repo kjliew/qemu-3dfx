@@ -36,6 +36,10 @@ void MGLFuncHandler(const char *);
 void MGLDeleteContext(int);
 int MGLCreateContext(uint32_t);
 
+int MGLBOUseAccel(void);
+void MGLBOMap(mapbufo_t *);
+void MGLBOUnmap(mapbufo_t *);
+
 typedef struct _perfstat {
     void (*stat)(void);
     void (*last)(void);

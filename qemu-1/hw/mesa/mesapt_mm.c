@@ -1276,16 +1276,20 @@ static void processArgs(MesaPTState *s)
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
             s->BufObj = LookupBufObj(s->BufIdx);
-            if (s->BufObj->hptr && (s->BufObj->acc & GL_MAP_WRITE_BIT) &&
-                !(s->BufObj->acc & GL_MAP_FLUSH_EXPLICIT_BIT)) {
-                wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
-                    s->arg[0], s->BufObj);
+            if (MGLBOUseAccel()) {
+                MGLBOUnmap(s->BufObj);
+                if (s->szUsedBuf == s->BufObj->mused + ALIGNPG((s->BufObj->mapsz + (s->BufObj->hva & 0xFFFU))))
+                    s->szUsedBuf -= ALIGNPG((s->BufObj->mapsz + (s->BufObj->hva & 0xFFFU)));
+            }
+            else {
+                if ((s->BufObj->acc & (GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT)) == GL_MAP_WRITE_BIT)
+                    wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
+                        s->arg[0], s->BufObj);
                 if (s->szUsedBuf == s->BufObj->mused + ALIGNBO(s->BufObj->mapsz))
                     s->szUsedBuf -= ALIGNBO(s->BufObj->mapsz);
             }
+            s->szUsedBuf = FreeBufObj(s->BufIdx)? s->szUsedBuf:0;
             //DPRINTF("UnmapBuffer %x used %x idx %x", s->arg[0], s->szUsedBuf, s->BufIdx);
-            if (FreeBufObj(s->BufIdx) == 0)
-                s->szUsedBuf = 0;
             break;
         case FEnum_glGetTexImage:
             s->parg[0] = s->arg[4];
@@ -1685,13 +1689,13 @@ static void processFRet(MesaPTState *s)
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
         case FEnum_glMapBufferRange:
-            DPRINTF_COND((s->BufObj->hptr), "  *WARN* GL buffer object contention, index %x target %04x access %04x",
+            DPRINTF_COND((s->BufObj->hva), "  *WARN* GL buffer object contention, index %x target %04x access %04x",
                 s->BufIdx, s->arg[0], ((s->FEnum == FEnum_glMapBufferRange)? s->arg[3]:s->arg[1]));
             DPRINTF_COND((s->FRet == 0), "  *!ERR* MapBuffer failed");
-            s->BufObj->hptr = (void *)(s->FRet);
+            s->BufObj->hva = s->FRet;
             s->BufObj->mused = s->szUsedBuf;
             SZFBT_VALID(s->szUsedBuf, s->FRet);
-            s->BufObj->shmep = s->fbtm_ptr + MGLFBT_SIZE - s->szUsedBuf;
+            s->BufObj->gpa = (MGLBOUseAccel()? MESA_FBTM_BASE:((uintptr_t)s->fbtm_ptr + MGLFBT_SIZE)) - s->szUsedBuf;
             s->BufObj->offst = 0;
             s->BufObj->range = 0;
             s->BufObj->acc = 0;
@@ -1707,9 +1711,17 @@ static void processFRet(MesaPTState *s)
                 s->BufObj->mapsz = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)?
                     FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB, s->arg[0], GL_BUFFER_SIZE);
             }
-            s->szUsedBuf += ALIGNBO(s->BufObj->mapsz);
-            s->FRet = s->szUsedBuf;
-            //DPRINTF("MapBuffer hptr %p shm %p sz %x", s->BufObj->hptr, (s->BufObj->shmep - ALIGNED(s->BufObj->mapsz)), (uint32_t)s->FRet);
+            if (MGLBOUseAccel()) {
+                MGLBOMap(s->BufObj);
+                s->szUsedBuf += ALIGNPG((s->BufObj->mapsz + (s->BufObj->hva & 0xFFFU)));
+                s->FRet = s->szUsedBuf - (s->BufObj->hva & 0xFFF);
+                s->FRet |= 0x01U;
+            }
+            else {
+                s->szUsedBuf += ALIGNBO(s->BufObj->mapsz);
+                s->FRet = s->szUsedBuf;
+            }
+            //DPRINTF("MapBuffer hva %p gpa %p sz %x", s->BufObj->hva, (s->BufObj->gpa - ALIGNED(s->BufObj->mapsz)), (uint32_t)s->FRet);
             break;
         case FEnum_glPixelStorei:
             s->szPackWidth = (s->arg[0] == GL_PACK_ROW_LENGTH)? s->arg[1]:s->szPackWidth;
@@ -1979,6 +1991,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         snprintf(dispTimer, 8, "%dms", disptmr);
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
                         DPRINTF("DispTimerSched %s", GetDispTimerMS()? dispTimer:"disabled");
+                        DPRINTF("MappedBufferObject %s-copy", MGLBOUseAccel()? "Zero":"One");
                         DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
                                 (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
                         s->dispTimer = (disptmr)? timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0):0;

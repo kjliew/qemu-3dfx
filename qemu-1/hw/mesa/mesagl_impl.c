@@ -117,6 +117,9 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
     void *(__stdcall *wrMap)(uint32_t arg0, uint32_t arg1);
     uint32_t (__stdcall *wrUnmap)(uint32_t arg0);
 
+    if (MGLBOUseAccel())
+        return;
+
     switch (target) {
         case GL_PIXEL_UNPACK_BUFFER:
             break;
@@ -136,9 +139,14 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
 
 void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t *bufo)
 {
-    uint32_t szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo->range;
-    if (bufo->hptr)
-        memcpy(bufo->hptr + bufo->offst, (bufo->shmep - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
+    uint32_t szBuf;
+
+    if (MGLBOUseAccel())
+        return;
+
+    szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo->range;
+    if (bufo->hva)
+        memcpy((void *)(bufo->hva + bufo->offst), (void *)(bufo->gpa - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
 }
 
 const char *getGLFuncStr(int FEnum)
@@ -1328,6 +1336,7 @@ static int cfg_xYear;
 static int cfg_xLength;
 static int cfg_vertCacheMB;
 static int cfg_dispTimerMS;
+static int cfg_bufoAccelEN;
 static int cfg_cntxMSAA;
 static int cfg_cntxVsync;
 static int cfg_createWnd;
@@ -1339,6 +1348,7 @@ static void conf_MGLOptions(void)
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
     cfg_dispTimerMS = 2000;
+    cfg_bufoAccelEN = 0;
     cfg_cntxMSAA = 0;
     cfg_cntxVsync = -1;
     cfg_createWnd = 0;
@@ -1357,6 +1367,8 @@ static void conf_MGLOptions(void)
             cfg_vertCacheMB = (i == 1)? v:cfg_vertCacheMB;
             i = sscanf(line, "DispTimerMS,%d", &v);
             cfg_dispTimerMS = (i == 1)? v:cfg_dispTimerMS;
+            i = sscanf(line, "BufOAccelEN,%d", &v);
+            cfg_bufoAccelEN = ((i == 1) && v)? 1:cfg_bufoAccelEN;
             i = sscanf(line, "ContextMSAA,%d", &v);
             cfg_cntxMSAA = (i == 1)? v:cfg_cntxMSAA;
             i = sscanf(line, "ContextVsync,%d", &v);
@@ -1379,6 +1391,7 @@ int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
+int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
 int GetContextMSAA(void) { return cfg_cntxMSAA; }
 int GetContextVsync(void) { return cfg_cntxVsync; }
 int GetCreateWindow(void) { return cfg_createWnd; }

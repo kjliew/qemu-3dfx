@@ -24,9 +24,9 @@
 #include <stdint.h>
 #include "extensions_defs.h"
 #include "mglfuncs.h"
-#include "mglcntx.h"
 #include "mglvarry.h"
 #include "mglmapbo.h"
+#include "mglcntx.h"
 
 int GLFEnumArgsCnt(int);
 int ExtFuncIsValid(char *);
@@ -42,6 +42,7 @@ int GetGLExtYear(void);
 int GetGLExtLength(void);
 int GetVertCacheMB(void);
 int GetDispTimerMS(void);
+int GetBufOAccelEN(void);
 int GetContextMSAA(void);
 int GetContextVsync(void);
 int GetCreateWindow(void);

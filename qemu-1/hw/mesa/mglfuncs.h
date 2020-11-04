@@ -21,6 +21,7 @@ typedef struct {
 
 #define ALIGNED(x)                              ((x%8)?(((x>>3)+1)<<3):x)
 #define ALIGNBO(x)                              ((x%16)?(((x>>4)+1)<<4):x)
+#define ALIGNPG(x)                              ((x%4096)?(((x>>12)+1)<<12):x)
 #define MGLFBT_SIZE                             0x2000000
 #define MGLSHM_SIZE                             0x3ffc000
 #define FIRST_FIFO                              24

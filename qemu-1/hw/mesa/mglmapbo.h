@@ -23,8 +23,8 @@
 
 typedef struct {
     int idx;
-    void *hptr;
-    uint8_t *shmep;
+    uintptr_t hva;
+    uintptr_t gpa;
     uint32_t mused;
     uint32_t mapsz;
     uint32_t offst;

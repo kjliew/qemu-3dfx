@@ -51,9 +51,9 @@ static int InitMesaPTMMBase(PDRVFUNC pDrv)
     if (pDrv->MapLinear(0, MESA_FIFO_BASE, &linear_addr, &length)) {
         mfifo = (uint32_t *)linear_addr;
     }
-    length = MGLFBT_SIZE;
-    if (pDrv->MapLinear(0, MESA_FBTM_BASE, &linear_addr, &length)) {
-        fbtm = (uint32_t *)linear_addr;
+    length = MGLFBT_SIZE << 1;
+    if (pDrv->MapLinear(0, MESA_FBTM_BASE - MGLFBT_SIZE, &linear_addr, &length)) {
+        fbtm = (uint32_t *)(linear_addr + MGLFBT_SIZE);
     }
 
     if (ptm == 0)
@@ -6487,25 +6487,40 @@ void PT_CALL glMap2xOES(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t ar
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMap2xOES;
 }
 void * PT_CALL glMapBuffer(uint32_t arg0, uint32_t arg1) {
+    void *vaddr;
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBuffer;
     szBuf = *pt0;
-    return (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    if (szBuf & 0x01U)
+        vaddr = (void *)((uint32_t)fbtm - (szBuf & ~0x01U));
+    else
+        vaddr = (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    return vaddr;
 }
 void * PT_CALL glMapBufferARB(uint32_t arg0, uint32_t arg1) {
+    void *vaddr;
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferARB;
     szBuf = *pt0;
-    return (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    if (szBuf & 0x01U)
+        vaddr = (void *)((uint32_t)fbtm - (szBuf & ~0x01U));
+    else
+        vaddr = (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    return vaddr;
 }
 void * PT_CALL glMapBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    void *vaddr;
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferRange;
     szBuf = *pt0;
-    return (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    if (szBuf & 0x01U)
+        vaddr = (void *)((uint32_t)fbtm - (szBuf & ~0x01U));
+    else
+        vaddr = (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    return vaddr;
 }
 void PT_CALL glMapControlPointsNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
