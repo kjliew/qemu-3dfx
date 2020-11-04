@@ -1,7 +1,64 @@
+diff -Nru ../orig/qemu-3.1.1.1/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
+--- ../orig/qemu-3.1.1.1/accel/kvm/kvm-all.c	2019-10-01 15:31:43.000000000 -0700
++++ ./accel/kvm/kvm-all.c	2020-11-03 12:12:35.649139200 -0800
+@@ -138,6 +138,9 @@
+     KVM_CAP_LAST_INFO
+ };
+
++#define kvm_slots_lock(kml)
++#define kvm_slots_unlock(kml)
++
+ int kvm_get_max_memslots(void)
+ {
+     KVMState *s = KVM_STATE(current_machine->accelerator);
+@@ -216,6 +219,43 @@
+     return NULL;
+ }
+
++void kvm_update_guest_pa_range(hwaddr start_pa, ram_addr_t size, void *host_va, int flags, int add)
++{
++    KVMState *s = kvm_state;
++    KVMMemoryListener *kml = &s->memory_listener;
++    KVMSlot *slot;
++    struct kvm_userspace_memory_region mem;
++    int ret;
++
++    kvm_slots_lock(kml);
++    if (add) {
++        slot = kvm_alloc_slot(kml);
++        slot->start_addr = start_pa;
++        slot->memory_size = size;
++        slot->ram = host_va;
++        slot->flags = flags;
++    }
++    else {
++        slot = kvm_lookup_matching_slot(kml, start_pa, size);
++        slot->memory_size = 0;
++    }
++
++    mem.slot = slot->slot | (kml->as_id << 16);
++    mem.guest_phys_addr = slot->start_addr;
++    mem.userspace_addr = (unsigned long)slot->ram;
++    mem.flags = slot->flags;
++    mem.memory_size = slot->memory_size;
++
++    ret = kvm_vm_ioctl(s, KVM_SET_USER_MEMORY_REGION, &mem);
++    if (ret < 0) {
++        error_report("%s: KVM_SET_USER_MEMORY_REGION failed, slot=%d,"
++                     " start=0x%" PRIx64 ", size=0x%" PRIx64 ": %s",
++                     __func__, mem.slot, slot->start_addr,
++                     (uint64_t)mem.memory_size, strerror(errno));
++    }
++    kvm_slots_unlock(kml);
++}
++
+ /*
+  * Calculate and align the start address and the size of the section.
+  * Return the size. If the size is 0, the aligned section is empty.
 diff -Nru ../orig/qemu-3.1.1.1/configure ./configure
---- ../orig/qemu-3.1.1.1/configure	2020-08-08 03:36:49.848742700 -0700
-+++ ./configure	2020-08-08 03:40:07.034755500 -0700
-@@ -881,6 +883,8 @@
+--- ../orig/qemu-3.1.1.1/configure	2019-10-01 15:31:44.000000000 -0700
++++ ./configure	2020-11-03 13:48:28.580810200 -0800
+@@ -881,6 +881,8 @@
    vhost_scsi="yes"
    vhost_vsock="yes"
    QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$PWD/linux-headers $QEMU_INCLUDES"
@@ -10,9 +67,28 @@ diff -Nru ../orig/qemu-3.1.1.1/configure ./configure
    supported_os="yes"
    libudev="yes"
  ;;
+diff -Nru ../orig/qemu-3.1.1.1/hw/Makefile.objs ./hw/Makefile.objs
+--- ../orig/qemu-3.1.1.1/hw/Makefile.objs	2019-10-01 15:31:44.000000000 -0700
++++ ./hw/Makefile.objs	2020-06-01 18:34:16.581486000 -0700
+@@ -7,6 +7,7 @@
+ devices-dirs-$(CONFIG_SOFTMMU) += char/
+ devices-dirs-$(CONFIG_SOFTMMU) += cpu/
+ devices-dirs-$(CONFIG_SOFTMMU) += display/
++devices-dirs-$(CONFIG_SOFTMMU) += 3dfx/
+ devices-dirs-$(CONFIG_SOFTMMU) += dma/
+ devices-dirs-$(CONFIG_SOFTMMU) += gpio/
+ devices-dirs-$(CONFIG_HYPERV) += hyperv/
+@@ -17,6 +18,7 @@
+ devices-dirs-$(CONFIG_IPACK) += ipack/
+ devices-dirs-$(CONFIG_IPMI) += ipmi/
+ devices-dirs-$(CONFIG_SOFTMMU) += isa/
++devices-dirs-$(CONFIG_SOFTMMU) += mesa/
+ devices-dirs-$(CONFIG_SOFTMMU) += misc/
+ devices-dirs-$(CONFIG_SOFTMMU) += net/
+ devices-dirs-$(CONFIG_SOFTMMU) += rdma/
 diff -Nru ../orig/qemu-3.1.1.1/hw/i386/pc.c ./hw/i386/pc.c
---- ../orig/qemu-3.1.1.1/hw/i386/pc.c	2020-08-08 03:37:07.444016500 -0700
-+++ ./hw/i386/pc.c	2020-08-08 03:40:07.047936300 -0700
+--- ../orig/qemu-3.1.1.1/hw/i386/pc.c	2019-10-01 15:31:44.000000000 -0700
++++ ./hw/i386/pc.c	2020-08-14 01:47:55.734263100 -0700
 @@ -1636,6 +1636,28 @@
  
      /* Super I/O */
@@ -42,28 +118,9 @@ diff -Nru ../orig/qemu-3.1.1.1/hw/i386/pc.c ./hw/i386/pc.c
  }
  
  void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
-diff -Nru ../orig/qemu-3.1.1.1/hw/Makefile.objs ./hw/Makefile.objs
---- ../orig/qemu-3.1.1.1/hw/Makefile.objs	2020-08-08 03:37:03.726212600 -0700
-+++ ./hw/Makefile.objs	2020-08-08 03:40:07.058968500 -0700
-@@ -7,6 +7,7 @@
- devices-dirs-$(CONFIG_SOFTMMU) += char/
- devices-dirs-$(CONFIG_SOFTMMU) += cpu/
- devices-dirs-$(CONFIG_SOFTMMU) += display/
-+devices-dirs-$(CONFIG_SOFTMMU) += 3dfx/
- devices-dirs-$(CONFIG_SOFTMMU) += dma/
- devices-dirs-$(CONFIG_SOFTMMU) += gpio/
- devices-dirs-$(CONFIG_HYPERV) += hyperv/
-@@ -17,6 +18,7 @@
- devices-dirs-$(CONFIG_IPACK) += ipack/
- devices-dirs-$(CONFIG_IPMI) += ipmi/
- devices-dirs-$(CONFIG_SOFTMMU) += isa/
-+devices-dirs-$(CONFIG_SOFTMMU) += mesa/
- devices-dirs-$(CONFIG_SOFTMMU) += misc/
- devices-dirs-$(CONFIG_SOFTMMU) += net/
- devices-dirs-$(CONFIG_SOFTMMU) += rdma/
 diff -Nru ../orig/qemu-3.1.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
---- ../orig/qemu-3.1.1.1/include/hw/i386/pc.h	2020-08-08 03:37:17.442119800 -0700
-+++ ./include/hw/i386/pc.h	2020-08-08 03:40:07.068750300 -0700
+--- ../orig/qemu-3.1.1.1/include/hw/i386/pc.h	2019-10-01 15:31:45.000000000 -0700
++++ ./include/hw/i386/pc.h	2020-08-14 01:45:02.237365100 -0700
 @@ -165,6 +165,22 @@
  
  void gsi_handler(void *opaque, int n, int level);
@@ -87,9 +144,31 @@ diff -Nru ../orig/qemu-3.1.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
  /* vmport.c */
  #define TYPE_VMPORT "vmport"
  typedef uint32_t (VMPortReadFunc)(void *opaque, uint32_t address);
+diff -Nru ../orig/qemu-3.1.1.1/include/sysemu/kvm.h ./include/sysemu/kvm.h
+--- ../orig/qemu-3.1.1.1/include/sysemu/kvm.h	2019-10-01 15:31:45.000000000 -0700
++++ ./include/sysemu/kvm.h	2020-11-03 12:15:14.421898600 -0800
+@@ -469,6 +469,7 @@
+ void kvm_set_sigmask_len(KVMState *s, unsigned int sigmask_len);
+
+ #if !defined(CONFIG_USER_ONLY)
++void kvm_update_guest_pa_range(hwaddr, ram_addr_t, void *, int, int);
+ int kvm_physical_memory_addr_from_host(KVMState *s, void *ram_addr,
+                                        hwaddr *phys_addr);
+ #endif
+diff -Nru ../orig/qemu-3.1.1.1/include/sysemu/whpx.h ./include/sysemu/whpx.h
+--- ../orig/qemu-3.1.1.1/include/sysemu/whpx.h	2019-10-01 15:31:45.000000000 -0700
++++ ./include/sysemu/whpx.h	2020-11-03 14:16:35.980888000 -0800
+@@ -29,6 +29,7 @@
+
+ #ifdef CONFIG_WHPX
+
++void whpx_update_guest_pa_range(hwaddr, ram_addr_t, void *, int, int);
+ int whpx_enabled(void);
+
+ #else /* CONFIG_WHPX */
 diff -Nru ../orig/qemu-3.1.1.1/include/ui/console.h ./include/ui/console.h
---- ../orig/qemu-3.1.1.1/include/ui/console.h	2020-08-08 03:37:21.967432700 -0700
-+++ ./include/ui/console.h	2020-08-08 03:40:07.079611600 -0700
+--- ../orig/qemu-3.1.1.1/include/ui/console.h	2019-10-01 15:31:45.000000000 -0700
++++ ./include/ui/console.h	2020-10-06 22:57:11.337593800 -0700
 @@ -464,4 +464,21 @@
  /* input.c */
  int index_from_key(const char *key, size_t key_length);
@@ -112,9 +191,38 @@ diff -Nru ../orig/qemu-3.1.1.1/include/ui/console.h ./include/ui/console.h
 +void mesa_enabled_reset(void);
 +
  #endif
+diff -Nru ../orig/qemu-3.1.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
+--- ../orig/qemu-3.1.1.1/target/i386/whpx-all.c	2019-10-01 15:31:46.000000000 -0700
++++ ./target/i386/whpx-all.c	2020-11-03 14:29:48.815473400 -0800
+@@ -1466,6 +1466,25 @@
+     return ret;
+ }
+
++void whpx_update_guest_pa_range(hwaddr start_pa, ram_addr_t size, void *host_va, int flags, int add)
++{
++    struct whpx_state *whpx = &whpx_global;
++    HRESULT hr;
++
++    if (add)
++        hr = whp_dispatch.WHvMapGpaRange(whpx->partition,
++                host_va, start_pa, size, flags);
++    else
++        hr = whp_dispatch.WHvUnmapGpaRange(whpx->partition, start_pa, size);
++
++    if (FAILED(hr)) {
++        error_report("WHPX: Failed to %s GPA range PA:%p, Size:%p bytes,"
++                     " Host:%p, hr=%08lx",
++                     (add ? "MAP" : "UNMAP"),
++                     (void *)(uintptr_t)start_pa, (void *)size, host_va, hr);
++    }
++}
++
+ int whpx_enabled(void)
+ {
+     return whpx_allowed;
 diff -Nru ../orig/qemu-3.1.1.1/ui/console.c ./ui/console.c
---- ../orig/qemu-3.1.1.1/ui/console.c	2020-08-08 03:39:29.938803900 -0700
-+++ ./ui/console.c	2020-08-08 03:40:07.090711100 -0700
+--- ../orig/qemu-3.1.1.1/ui/console.c	2019-10-01 15:31:46.000000000 -0700
++++ ./ui/console.c	2020-06-01 18:33:05.471261100 -0700
 @@ -258,8 +258,22 @@
      ds->have_text = have_text;
  }
@@ -139,8 +247,8 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/console.c ./ui/console.c
          con = active_console;
      }
 diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
---- ../orig/qemu-3.1.1.1/ui/sdl.c	2020-08-08 03:39:30.140782000 -0700
-+++ ./ui/sdl.c	2020-08-08 03:41:30.728524400 -0700
+--- ../orig/qemu-3.1.1.1/ui/sdl.c	2019-10-01 15:31:46.000000000 -0700
++++ ./ui/sdl.c	2020-11-03 14:00:24.050235800 -0800
 @@ -822,6 +822,10 @@
              break;
          case SDL_VIDEORESIZE:
@@ -152,7 +260,7 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
              graphic_hw_invalidate(NULL);
              graphic_hw_update(NULL);
              break;
-@@ -892,6 +896,86 @@
+@@ -892,6 +896,90 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -166,10 +274,12 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
 +
 +    SDL_VERSION(&wmi.version);
 +    if(SDL_GetWMInfo(&wmi)) {
-+#if defined(_WIN32)
-+	hwndSDL = (uintptr_t)wmi.window;
-+#elif defined(SDL_VIDEO_DRIVER_X11)
++#if defined(SDL_VIDEO_DRIVER_X11)
 +	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#elif defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW)
++	hwndSDL = (uintptr_t)wmi.window;
++#else
++#error Unsupported window binding
 +#endif
 +    }
 +    gui_saved_width = real_screen->w;
@@ -224,10 +334,12 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
 +
 +    SDL_VERSION(&wmi.version);
 +    if(SDL_GetWMInfo(&wmi)) {
-+#if defined(_WIN32)
-+	hwndSDL = (uintptr_t)wmi.window;
-+#elif defined(SDL_VIDEO_DRIVER_X11)
++#if defined(SDL_VIDEO_DRIVER_X11)
 +	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#elif defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW)
++	hwndSDL = (uintptr_t)wmi.window;
++#else
++#error Unsupported window binding
 +#endif
 +    }
 +
@@ -240,8 +352,8 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
      .dpy_name             = "sdl",
      .dpy_gfx_update       = sdl_update,
 diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
---- ../orig/qemu-3.1.1.1/ui/sdl2.c	2020-08-08 03:39:30.179508800 -0700
-+++ ./ui/sdl2.c	2020-08-08 03:40:07.113387700 -0700
+--- ../orig/qemu-3.1.1.1/ui/sdl2.c	2019-10-01 15:31:46.000000000 -0700
++++ ./ui/sdl2.c	2020-11-03 14:10:04.611516100 -0800
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
@@ -266,7 +378,7 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
-@@ -719,6 +729,97 @@
+@@ -719,6 +729,101 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -286,6 +398,8 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
 +	hwndSDL = (uintptr_t)wmi.info.win.window;
 +#elif defined(SDL_VIDEO_DRIVER_X11)
 +	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#else
++#error Unsupported window binding
 +#endif
 +    }
 +    SDL_GetWindowSize(sdl2_console[0].real_window, &scr_w, &scr_h);
@@ -353,6 +467,8 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
 +	hwndSDL = (uintptr_t)wmi.info.win.window;
 +#elif defined(SDL_VIDEO_DRIVER_X11)
 +	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#else
++#error Unsupported window binding
 +#endif
 +    }
 +

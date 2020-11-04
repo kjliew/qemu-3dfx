@@ -1,7 +1,54 @@
+diff -Nru ../orig/qemu-4.1.1/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
+--- ../orig/qemu-4.1.1/accel/kvm/kvm-all.c	2019-11-14 10:06:20.000000000 -0800
++++ ./accel/kvm/kvm-all.c	2020-11-03 16:17:32.680290200 -0800
+@@ -235,6 +235,43 @@
+     return NULL;
+ }
+
++void kvm_update_guest_pa_range(hwaddr start_pa, ram_addr_t size, void *host_va, int flags, int add)
++{
++    KVMState *s = kvm_state;
++    KVMMemoryListener *kml = &s->memory_listener;
++    KVMSlot *slot;
++    struct kvm_userspace_memory_region mem;
++    int ret;
++
++    kvm_slots_lock(kml);
++    if (add) {
++        slot = kvm_alloc_slot(kml);
++        slot->start_addr = start_pa;
++        slot->memory_size = size;
++        slot->ram = host_va;
++        slot->flags = flags;
++    }
++    else {
++        slot = kvm_lookup_matching_slot(kml, start_pa, size);
++        slot->memory_size = 0;
++    }
++
++    mem.slot = slot->slot | (kml->as_id << 16);
++    mem.guest_phys_addr = slot->start_addr;
++    mem.userspace_addr = (unsigned long)slot->ram;
++    mem.flags = slot->flags;
++    mem.memory_size = slot->memory_size;
++
++    ret = kvm_vm_ioctl(s, KVM_SET_USER_MEMORY_REGION, &mem);
++    if (ret < 0) {
++        error_report("%s: KVM_SET_USER_MEMORY_REGION failed, slot=%d,"
++                     " start=0x%" PRIx64 ", size=0x%" PRIx64 ": %s",
++                     __func__, mem.slot, slot->start_addr,
++                     (uint64_t)mem.memory_size, strerror(errno));
++    }
++    kvm_slots_unlock(kml);
++}
++
+ /*
+  * Calculate and align the start address and the size of the section.
+  * Return the size. If the size is 0, the aligned section is empty.
 diff -Nru ../orig/qemu-4.1.1/configure ./configure
---- ../orig/qemu-4.1.1/configure	2020-08-08 03:55:59.788923100 -0700
-+++ ./configure	2020-08-08 04:09:51.767163100 -0700
-@@ -903,6 +905,8 @@
+--- ../orig/qemu-4.1.1/configure	2019-11-14 10:06:20.000000000 -0800
++++ ./configure	2020-11-03 16:16:30.609783400 -0800
+@@ -903,6 +903,8 @@
    linux_user="yes"
    kvm="yes"
    QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$PWD/linux-headers $QEMU_INCLUDES"
@@ -10,9 +57,28 @@ diff -Nru ../orig/qemu-4.1.1/configure ./configure
    supported_os="yes"
    libudev="yes"
  ;;
+diff -Nru ../orig/qemu-4.1.1/hw/Makefile.objs ./hw/Makefile.objs
+--- ../orig/qemu-4.1.1/hw/Makefile.objs	2019-11-14 10:06:20.000000000 -0800
++++ ./hw/Makefile.objs	2020-11-03 16:19:37.973105600 -0800
+@@ -9,6 +9,7 @@
+ devices-dirs-y += char/
+ devices-dirs-y += cpu/
+ devices-dirs-y += display/
++devices-dirs-y += 3dfx/
+ devices-dirs-y += dma/
+ devices-dirs-y += gpio/
+ devices-dirs-$(CONFIG_HYPERV) += hyperv/
+@@ -19,6 +20,7 @@
+ devices-dirs-$(CONFIG_IPACK) += ipack/
+ devices-dirs-$(CONFIG_IPMI) += ipmi/
+ devices-dirs-y += isa/
++devices-dirs-y += mesa/
+ devices-dirs-y += misc/
+ devices-dirs-y += net/
+ devices-dirs-y += rdma/
 diff -Nru ../orig/qemu-4.1.1/hw/i386/pc.c ./hw/i386/pc.c
---- ../orig/qemu-4.1.1/hw/i386/pc.c	2020-08-08 03:56:19.275005300 -0700
-+++ ./hw/i386/pc.c	2020-08-08 04:09:52.384763100 -0700
+--- ../orig/qemu-4.1.1/hw/i386/pc.c	2019-11-14 10:06:20.000000000 -0800
++++ ./hw/i386/pc.c	2020-11-03 16:16:30.634829900 -0800
 @@ -2113,6 +2113,28 @@
  
      /* Super I/O */
@@ -42,28 +108,9 @@ diff -Nru ../orig/qemu-4.1.1/hw/i386/pc.c ./hw/i386/pc.c
  }
  
  void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
-diff -Nru ../orig/qemu-4.1.1/hw/Makefile.objs ./hw/Makefile.objs
---- ../orig/qemu-4.1.1/hw/Makefile.objs	2020-08-08 03:56:14.705205400 -0700
-+++ ./hw/Makefile.objs	2020-08-08 04:11:24.119025500 -0700
-@@ -9,6 +9,7 @@
- devices-dirs-y += char/
- devices-dirs-y += cpu/
- devices-dirs-y += display/
-+devices-dirs-y += 3dfx/
- devices-dirs-y += dma/
- devices-dirs-y += gpio/
- devices-dirs-$(CONFIG_HYPERV) += hyperv/
-@@ -19,6 +20,7 @@
- devices-dirs-$(CONFIG_IPACK) += ipack/
- devices-dirs-$(CONFIG_IPMI) += ipmi/
- devices-dirs-y += isa/
-+devices-dirs-y += mesa/
- devices-dirs-y += misc/
- devices-dirs-y += net/
- devices-dirs-y += rdma/
 diff -Nru ../orig/qemu-4.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
---- ../orig/qemu-4.1.1/include/hw/i386/pc.h	2020-08-08 03:56:31.243545900 -0700
-+++ ./include/hw/i386/pc.h	2020-08-08 04:09:52.418233100 -0700
+--- ../orig/qemu-4.1.1/include/hw/i386/pc.h	2019-11-14 10:06:20.000000000 -0800
++++ ./include/hw/i386/pc.h	2020-11-03 16:16:30.648773200 -0800
 @@ -173,6 +173,22 @@
  
  void gsi_handler(void *opaque, int n, int level);
@@ -87,9 +134,31 @@ diff -Nru ../orig/qemu-4.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
  /* vmport.c */
  #define TYPE_VMPORT "vmport"
  typedef uint32_t (VMPortReadFunc)(void *opaque, uint32_t address);
+diff -Nru ../orig/qemu-4.1.1/include/sysemu/kvm.h ./include/sysemu/kvm.h
+--- ../orig/qemu-4.1.1/include/sysemu/kvm.h	2019-11-14 10:06:20.000000000 -0800
++++ ./include/sysemu/kvm.h	2020-11-03 16:16:30.660790700 -0800
+@@ -469,6 +469,7 @@
+ void kvm_set_sigmask_len(KVMState *s, unsigned int sigmask_len);
+
+ #if !defined(CONFIG_USER_ONLY)
++void kvm_update_guest_pa_range(hwaddr, ram_addr_t, void *, int, int);
+ int kvm_physical_memory_addr_from_host(KVMState *s, void *ram_addr,
+                                        hwaddr *phys_addr);
+ #endif
+diff -Nru ../orig/qemu-4.1.1/include/sysemu/whpx.h ./include/sysemu/whpx.h
+--- ../orig/qemu-4.1.1/include/sysemu/whpx.h	2019-11-14 10:06:20.000000000 -0800
++++ ./include/sysemu/whpx.h	2020-11-03 16:16:30.670773700 -0800
+@@ -27,6 +27,7 @@
+
+ #ifdef CONFIG_WHPX
+
++void whpx_update_guest_pa_range(hwaddr, ram_addr_t, void *, int, int);
+ int whpx_enabled(void);
+
+ #else /* CONFIG_WHPX */
 diff -Nru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
---- ../orig/qemu-4.1.1/include/ui/console.h	2020-08-08 03:56:36.630994900 -0700
-+++ ./include/ui/console.h	2020-08-08 04:09:52.429297600 -0700
+--- ../orig/qemu-4.1.1/include/ui/console.h	2019-11-14 10:06:20.000000000 -0800
++++ ./include/ui/console.h	2020-11-03 16:16:30.675787800 -0800
 @@ -453,4 +453,21 @@
  /* input.c */
  int index_from_key(const char *key, size_t key_length);
@@ -112,9 +181,38 @@ diff -Nru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
 +void mesa_enabled_reset(void);
 +
  #endif
+diff -Nru ../orig/qemu-4.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
+--- ../orig/qemu-4.1.1/target/i386/whpx-all.c	2019-11-14 10:06:21.000000000 -0800
++++ ./target/i386/whpx-all.c	2020-11-03 16:16:30.687774000 -0800
+@@ -1465,6 +1465,25 @@
+     return ret;
+ }
+
++void whpx_update_guest_pa_range(hwaddr start_pa, ram_addr_t size, void *host_va, int flags, int add)
++{
++    struct whpx_state *whpx = &whpx_global;
++    HRESULT hr;
++
++    if (add)
++        hr = whp_dispatch.WHvMapGpaRange(whpx->partition,
++                host_va, start_pa, size, flags);
++    else
++        hr = whp_dispatch.WHvUnmapGpaRange(whpx->partition, start_pa, size);
++
++    if (FAILED(hr)) {
++        error_report("WHPX: Failed to %s GPA range PA:%p, Size:%p bytes,"
++                     " Host:%p, hr=%08lx",
++                     (add ? "MAP" : "UNMAP"),
++                     (void *)(uintptr_t)start_pa, (void *)size, host_va, hr);
++    }
++}
++
+ int whpx_enabled(void)
+ {
+     return whpx_allowed;
 diff -Nru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
---- ../orig/qemu-4.1.1/ui/console.c	2020-08-08 04:06:37.518405000 -0700
-+++ ./ui/console.c	2020-08-08 04:09:52.442247300 -0700
+--- ../orig/qemu-4.1.1/ui/console.c	2019-11-14 10:06:21.000000000 -0800
++++ ./ui/console.c	2020-11-03 16:16:30.699773000 -0800
 @@ -259,8 +259,22 @@
      ds->have_text = have_text;
  }
@@ -139,8 +237,8 @@ diff -Nru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
          con = active_console;
      }
 diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
---- ../orig/qemu-4.1.1/ui/sdl2.c	2020-08-08 04:06:37.785807100 -0700
-+++ ./ui/sdl2.c	2020-08-08 04:10:11.832599900 -0700
+--- ../orig/qemu-4.1.1/ui/sdl2.c	2019-11-14 10:06:21.000000000 -0800
++++ ./ui/sdl2.c	2020-11-03 16:16:30.720782200 -0800
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
@@ -165,7 +263,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
-@@ -712,6 +722,97 @@
+@@ -712,6 +722,101 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -185,6 +283,8 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +	hwndSDL = (uintptr_t)wmi.info.win.window;
 +#elif defined(SDL_VIDEO_DRIVER_X11)
 +	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#else
++#error Unsupported window binding
 +#endif
 +    }
 +    SDL_GetWindowSize(sdl2_console[0].real_window, &scr_w, &scr_h);
@@ -242,7 +342,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +{
 +    uintptr_t hwndSDL = 0;
 +    SDL_SysWMinfo wmi;
-+    
++
 +    if (!sdl2_console)
 +        return hwndSDL;
 +
@@ -252,6 +352,8 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +	hwndSDL = (uintptr_t)wmi.info.win.window;
 +#elif defined(SDL_VIDEO_DRIVER_X11)
 +	hwndSDL = (uintptr_t)wmi.info.x11.window;
++#else
++#error Unsupported window binding
 +#endif
 +    }
 +
