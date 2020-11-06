@@ -11,14 +11,14 @@
 
 #define INLINE inline
 #define PT_CALL
-#define LOG_FNAME "C:\\WRAPPER.LOG"
-//#define DEBUG_WRAPPER
+#define LOG_FNAME "C:\\WRAPFX32.LOG"
+//#define DEBUG_FXSTUB
 
-#ifdef DEBUG_WRAPPER
+#ifdef DEBUG_FXSTUB
 #define DPRINTF(fmt, ...) \
     do {printf("dxe: " fmt , ## __VA_ARGS__); } while(0)
 #else
-#define DPRINTF(fmt, ...) 
+#define DPRINTF(fmt, ...)
 #endif
 #include "clib.h"
 
@@ -54,47 +54,36 @@ typedef struct {
 int  Init(void);
 void Fini(void);
 
-static volatile uint32_t *ft = 0;
-static volatile uint32_t *ptm = 0;
-static volatile uint32_t *pt0 = 0;
-static uint32_t *pt = 0;
-static uint32_t *lfb = 0;
+static volatile uint32_t *ft;
+static volatile uint32_t *ptm;
+static volatile uint32_t *pt0;
+static uint32_t *pt;
+static uint32_t *lfb;
 static uint32_t *m3df;
-static uint32_t *mdata;
 static uint32_t *mfifo;
+static uint32_t *mdata;
 static uint32_t *vgLfb;
-static int InitGlidePTMMBase(void) { 
-    //return (uint32_t *)GLIDEPT_MM_BASE; 
-    FxU32 linear_addr, length;
 
+static int InitGlidePTMMBase(void)
+{
     DPRINTF("InitGlidePTMMBase() called %d\r\n", 1);
-
-    length = PAGE_SIZE;
-    if (fxMapLinear(0, GLIDEPT_MM_BASE, &linear_addr, &length)) {
-        ptm = (uint32_t *)linear_addr;
-    }
-    length = GRSHM_SIZE;
-    if (fxMapLinear(0, GLIDE_FIFO_BASE, &linear_addr, &length)) {
-        mfifo = (uint32_t *)linear_addr;
-    }
-    length = GRLFB_SIZE;
-    if (fxMapLinear(0, GLIDE_LFB_BASE, &linear_addr, &length)) {
-        lfb = (uint32_t *)linear_addr;
-    }
-    length = SHLFB_SIZE;
-    if (fxMapLinear(0, (GLIDE_LFB_BASE + GRLFB_SIZE), &linear_addr, &length)) {
-        vgLfb = (uint32_t *)linear_addr;
-    }
+#define MAPMEM(x,paddr,len) \
+    do { unsigned long vaddr, valen = len; \
+        x = fxMapLinear(0, paddr, &vaddr, &valen)? (void *)vaddr:0; } while(0)
+    MAPMEM(ptm, GLIDEPT_MM_BASE, PAGE_SIZE);
+    MAPMEM(mfifo, GLIDE_FIFO_BASE, GRSHM_SIZE);
+    MAPMEM(lfb, GLIDE_LFB_BASE, GRLFB_SIZE);
+    MAPMEM(vgLfb, (GLIDE_LFB_BASE + GRLFB_SIZE), SHLFB_SIZE);
 
     if (ptm == 0)
         return 1;
-    mfifo[0] = FIRST_FIFO;
     mdata = &mfifo[MAX_FIFO];
-    mdata[0] = ALIGNED(1) >> 2;
-    m3df = &mfifo[(GRSHM_SIZE - MAX_3DF) >> 2];
-    ft = ptm + (0xfb0U >> 2);
     pt = &mfifo[1];
-    pt[0] = (uint32_t)(ptm + (0xfc0U >> 2));
+    mfifo[0] = FIRST_FIFO;
+    mdata[0] = ALIGNED(1) >> 2;
+    pt[0] = (uint32_t)(ptm + (0xFC0U >> 2));
+    m3df = &mfifo[(GRSHM_SIZE - MAX_3DF) >> 2];
+    ft = ptm + (0xFB0U >> 2);
 
     return 0;
 }
@@ -886,9 +875,9 @@ int Init(void)
         return 0;
 
     memcpy(&vgLfb[(SHLFB_SIZE - ALIGNBO(1)) >> 2], buildstr, ALIGNED(1));
-    ptm[(0xfbcU >> 2)] = (0xa0UL << 12) | GLIDEVER;
-    HostRet = ptm[(0xfbcU >> 2)];
-    if (HostRet != ((GLIDEVER << 8) | 0xa0UL))
+    ptm[(0xFBCU >> 2)] = (0xA0UL << 12) | GLIDEVER;
+    HostRet = ptm[(0xFBCU >> 2)];
+    if (HostRet != ((GLIDEVER << 8) | 0xA0UL))
         return 0;
 
     grGlidePresent = 1;
@@ -897,7 +886,7 @@ int Init(void)
 
 void Fini(void)
 {
-    ptm[(0xfbcU >> 2)] = (0xd0UL << 12) | GLIDEVER;
+    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | GLIDEVER;
 }
 
 int __djgpp_base_address;

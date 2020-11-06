@@ -14,12 +14,12 @@
 #define PT_CALL __stdcall
 #define LOG_NAME "C:\\WRAPGL32.LOG"
 
-#ifdef DEBUG_MGSTUB
+#ifdef DEBUG_GLSTUB
 static FILE *logfp = NULL;
 #define DPRINTF(fmt, ...) \
-    do {fprintf(logfp, "mgstub: " fmt "\n" , ## __VA_ARGS__); } while(0)
+    do {fprintf(logfp, "glwrap: " fmt "\n" , ## __VA_ARGS__); } while(0)
 #define DPRINTF_COND(cond, fmt, ...) \
-    if (cond) {fprintf(logfp, "mgstub: " fmt "\n" , ## __VA_ARGS__); }
+    if (cond) {fprintf(logfp, "glwrap: " fmt "\n" , ## __VA_ARGS__); }
 #else
   #ifndef _DPRINT_H
     #define DPRINTF(fmt, ...)
@@ -32,9 +32,9 @@ static FILE *logfp = NULL;
 #define PAGE_SIZE 0x1000
 
 extern const char rev_[];
-static volatile uint32_t *ptm = 0;
-static volatile uint32_t *pt0 = 0;
-static uint32_t *pt = 0;
+static volatile uint32_t *ptm;
+static volatile uint32_t *pt0;
+static uint32_t *pt;
 static uint32_t *mfifo;
 static uint32_t *mdata;
 static uint32_t *fbtm;
@@ -42,16 +42,15 @@ static void *mbufo;
 
 static int InitMesaPTMMBase(PDRVFUNC pDrv)
 {
-    FxU32 linear_addr = 0, length = (1 << 28);
+#define MAPMEM(x,paddr,len) \
+    do { unsigned long vaddr, valen = len; \
+        x = pDrv->MapLinear(0, paddr, &vaddr, &valen)? (void *)vaddr:0; } while(0)
+    MAPMEM(ptm, MESAPT_MM_BASE, PAGE_SIZE);
+    MAPMEM(mfifo, MESA_FIFO_BASE, MGLSHM_SIZE);
+    MAPMEM(fbtm, MESA_FBTM_BASE, MGLFBT_SIZE);
+    MAPMEM(mbufo, (0x0EU << 28), (0x08U << 24));
 
-    if (pDrv->MapLinear(0, (0x0EU << 28), &linear_addr, &length)) {
-        mbufo = (void *)linear_addr;
-        ptm   = mbufo + (MESAPT_MM_BASE & 0x0FFFFFFFU);
-        mfifo = mbufo + (MESA_FIFO_BASE & 0x0FFFFFFFU);
-        fbtm  = mbufo + (MESA_FBTM_BASE & 0x0FFFFFFFU);
-    }
-
-    if (linear_addr == 0)
+    if (ptm == 0)
         return 1;
     mdata = &mfifo[MAX_FIFO];
     pt = &mfifo[1];
@@ -6482,31 +6481,25 @@ void PT_CALL glMap2xOES(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t ar
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMap2xOES;
 }
 void * PT_CALL glMapBuffer(uint32_t arg0, uint32_t arg1) {
-    void *vaddr;
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBuffer;
     szBuf = *pt0;
-    vaddr = (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
-    return vaddr;
+    return (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
 }
 void * PT_CALL glMapBufferARB(uint32_t arg0, uint32_t arg1) {
-    void *vaddr;
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferARB;
     szBuf = *pt0;
-    vaddr = (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
-    return vaddr;
+    return (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
 }
 void * PT_CALL glMapBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    void *vaddr;
     uint32_t szBuf;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferRange;
     szBuf = *pt0;
-    vaddr = (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
-    return vaddr;
+    return (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
 }
 void PT_CALL glMapControlPointsNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
@@ -16669,7 +16662,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
                 (*refcnt)++;
                 return FALSE;
             }
-#ifdef DEBUG_MGSTUB
+#ifdef DEBUG_GLSTUB
             logfp = fopen(LOG_NAME, "w");
 #endif
             hHook = 0;
@@ -16701,7 +16694,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | MESAVER;
             memset(&fbtm[(MGLFBT_SIZE - ALIGNBO(1)) >> 2], 0, ALIGNED(1));
             mfifo[1] = 0;
-#ifdef DEBUG_MGSTUB
+#ifdef DEBUG_GLSTUB
             fclose(logfp);
 #endif
             break;
