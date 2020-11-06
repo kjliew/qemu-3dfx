@@ -23,6 +23,7 @@
 
 void SetMesaFuncPtr(void *);
 void *MesaGLGetProc(const char *);
+int MGLUpdateGuestBufo(mapbufo_t *, int);
 void MGLTmpContext(void);
 void MGLWndRelease(void);
 int MGLMakeCurrent(uint32_t, int);
@@ -35,10 +36,6 @@ int NumPbuffer(void);
 void MGLFuncHandler(const char *);
 void MGLDeleteContext(int);
 int MGLCreateContext(uint32_t);
-
-int MGLBOUseAccel(void);
-void MGLBOMap(mapbufo_t *);
-void MGLBOUnmap(mapbufo_t *);
 
 typedef struct _perfstat {
     void (*stat)(void);

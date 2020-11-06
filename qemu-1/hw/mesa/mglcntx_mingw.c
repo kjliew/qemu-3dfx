@@ -32,7 +32,6 @@
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 #include "sysemu/whpx.h"
-#include <winhvplatformdefs.h>
 #include <GL/gl.h>
 #include <GL/wglext.h>
 
@@ -179,23 +178,18 @@ void *MesaGLGetProc(const char *proc)
     return (void *)wglFuncs.GetProcAddress(proc);
 }
 
-int MGLBOUseAccel(void)
+int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 {
-    return GetBufOAccelEN()? whpx_enabled():0;
-}
-void MGLBOMap(mapbufo_t *bufo)
-{
-    whpx_update_guest_pa_range(bufo->gpa - ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
-        ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
-        (void *)(bufo->hva - (bufo->hva & 0xFFFU)),
-        (WHvMapGpaRangeFlagRead |
-        ((bufo->acc & GL_MAP_WRITE_BIT)? WHvMapGpaRangeFlagWrite:0)), 1);
-}
-void MGLBOUnmap(mapbufo_t *bufo)
-{
-    whpx_update_guest_pa_range(bufo->gpa - ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
-        ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
-        (void *)(bufo->hva - (bufo->hva & 0xFFFU)), 0, 0);
+    int ret = GetBufOAccelEN()? whpx_enabled():0;
+
+    if (ret && bufo) {
+        whpx_update_guest_pa_range((0x0EU << 28) | (bufo->hva & (0x07FFFFFFU - (qemu_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_host_page_mask),
+            (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
+    }
+
+    return ret;
 }
 
 void MGLTmpContext(void)

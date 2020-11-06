@@ -117,7 +117,7 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
     void *(__stdcall *wrMap)(uint32_t arg0, uint32_t arg1);
     uint32_t (__stdcall *wrUnmap)(uint32_t arg0);
 
-    if (MGLBOUseAccel())
+    if (MGLUpdateGuestBufo(0, 0))
         return;
 
     switch (target) {
@@ -141,7 +141,7 @@ void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t *bufo)
 {
     uint32_t szBuf;
 
-    if (MGLBOUseAccel())
+    if (MGLUpdateGuestBufo(0, 0))
         return;
 
     szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo->range;

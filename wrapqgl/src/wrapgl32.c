@@ -38,25 +38,20 @@ static uint32_t *pt = 0;
 static uint32_t *mfifo;
 static uint32_t *mdata;
 static uint32_t *fbtm;
+static void *mbufo;
 
 static int InitMesaPTMMBase(PDRVFUNC pDrv)
 {
-    FxU32 linear_addr, length;
+    FxU32 linear_addr = 0, length = (1 << 28);
 
-    length = PAGE_SIZE;
-    if (pDrv->MapLinear(0, MESAPT_MM_BASE, &linear_addr, &length)) {
-        ptm = (uint32_t *)linear_addr;
-    }
-    length = MGLSHM_SIZE;
-    if (pDrv->MapLinear(0, MESA_FIFO_BASE, &linear_addr, &length)) {
-        mfifo = (uint32_t *)linear_addr;
-    }
-    length = MGLFBT_SIZE << 1;
-    if (pDrv->MapLinear(0, MESA_FBTM_BASE - MGLFBT_SIZE, &linear_addr, &length)) {
-        fbtm = (uint32_t *)(linear_addr + MGLFBT_SIZE);
+    if (pDrv->MapLinear(0, (0x0EU << 28), &linear_addr, &length)) {
+        mbufo = (void *)linear_addr;
+        ptm   = mbufo + (MESAPT_MM_BASE & 0x0FFFFFFFU);
+        mfifo = mbufo + (MESA_FIFO_BASE & 0x0FFFFFFFU);
+        fbtm  = mbufo + (MESA_FBTM_BASE & 0x0FFFFFFFU);
     }
 
-    if (ptm == 0)
+    if (linear_addr == 0)
         return 1;
     mdata = &mfifo[MAX_FIFO];
     pt = &mfifo[1];
@@ -6492,10 +6487,7 @@ void * PT_CALL glMapBuffer(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBuffer;
     szBuf = *pt0;
-    if (szBuf & 0x01U)
-        vaddr = (void *)((uint32_t)fbtm - (szBuf & ~0x01U));
-    else
-        vaddr = (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    vaddr = (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
     return vaddr;
 }
 void * PT_CALL glMapBufferARB(uint32_t arg0, uint32_t arg1) {
@@ -6504,10 +6496,7 @@ void * PT_CALL glMapBufferARB(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferARB;
     szBuf = *pt0;
-    if (szBuf & 0x01U)
-        vaddr = (void *)((uint32_t)fbtm - (szBuf & ~0x01U));
-    else
-        vaddr = (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    vaddr = (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
     return vaddr;
 }
 void * PT_CALL glMapBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
@@ -6516,10 +6505,7 @@ void * PT_CALL glMapBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glMapBufferRange;
     szBuf = *pt0;
-    if (szBuf & 0x01U)
-        vaddr = (void *)((uint32_t)fbtm - (szBuf & ~0x01U));
-    else
-        vaddr = (void *)&fbtm[(MGLFBT_SIZE - szBuf) >> 2];
+    vaddr = (szBuf & 0x01U)? (void *)&fbtm[(MGLFBT_SIZE - szBuf + 1) >> 2]:(mbufo + szBuf);
     return vaddr;
 }
 void PT_CALL glMapControlPointsNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {

@@ -284,22 +284,18 @@ void *MesaGLGetProc(const char *proc)
     return (void *)glXGetProcAddress((const GLubyte *)proc);
 }
 
-int MGLBOUseAccel(void)
+int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 {
-    return GetBufOAccelEN()? kvm_enabled():0;
-}
-void MGLBOMap(mapbufo_t *bufo)
-{
-    kvm_update_guest_pa_range(bufo->gpa - ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
-        ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
-        (void *)(bufo->hva - (bufo->hva & 0xFFFU)),
-        (bufo->acc & GL_MAP_WRITE_BIT)? 0:KVM_MEM_READONLY, 1);
-}
-void MGLBOUnmap(mapbufo_t *bufo)
-{
-    kvm_update_guest_pa_range(bufo->gpa - ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
-        ALIGNPG((bufo->mapsz + (bufo->hva & 0xFFFU))),
-        (void *)(bufo->hva - (bufo->hva & 0xFFFU)), 0, 0);
+    int ret = GetBufOAccelEN()? kvm_enabled():0;
+
+    if (ret && bufo) {
+        kvm_update_guest_pa_range((0x0EU << 28) | (bufo->hva & (0x07FFFFFFU - (qemu_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_host_page_mask),
+            (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
+    }
+
+    return ret;
 }
 
 void MGLTmpContext(void)
