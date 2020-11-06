@@ -1056,7 +1056,7 @@ static void glidelfb_init(Object *obj)
     SysBusDevice *sbd = SYS_BUS_DEVICE(obj);
     GlideLfbState *s = GLIDELFB(obj);
 
-    memory_region_init_io(&s->iomem, obj, &glideLfb_ops, s, TYPE_GLIDELFB, GRLFB_SIZE >> 1);
+    memory_region_init_io(&s->iomem, obj, &glideLfb_ops, s, TYPE_GLIDELFB, GRLFB_SIZE);
     sysbus_init_mmio(sbd, &s->iomem);
 }
 
