@@ -32,6 +32,14 @@ int stat_window(const int, const int);
 uint32_t init_window(const int, const char *);
 void fini_window(void);
 
+typedef struct {
+    uintptr_t hva;
+    uint32_t mapsz;
+    uint32_t acc;
+} mapbufo_t;
+
+int glide_mapbufo(mapbufo_t *, int);
+
 typedef struct _perfstat {
     void (*stat)(void);
     void (*last)(void);

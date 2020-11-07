@@ -199,6 +199,8 @@ typedef enum {
 
 #define GLIDE_LFB_BASE	0xfb000000
 #define GLIDE_FIFO_BASE 0xfb500000
+#define MBUFO_BASE      (0xE8U << 24)
+#define MBUFO_SIZE      (0x01U << 24)
 
 #define ALIGNED(x)                              ((x%8)?(((x>>3)+1)<<3):x)
 #define ALIGNBO(x)                              ((x%16)?(((x>>4)+1)<<4):x)

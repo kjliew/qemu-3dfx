@@ -57,6 +57,7 @@ typedef struct GlideLfbState
     uint8_t *lfbPtr[2];
     uint32_t stride[2];
     int lock[2];
+    mapbufo_t mbufo[2];
     uint32_t guestLfb;
     uint32_t origin;
     uint32_t writeMode;
@@ -174,6 +175,8 @@ static void guest_memory_write(hwaddr vaddr, void *buf, int len)
 
 static void vgLfbFlush(GlidePTState *s)
 {
+    if (glide_mapbufo(0, 0))
+        return;
     uint32_t stride = ((s->lfbDev->writeMode & 0x0EU) == 0x04)? 0x1000:0x800;
     uint32_t xwidth = ((s->lfbDev->writeMode & 0x0EU) == 0x04)? (s->lfb_w << 2):(s->lfb_w << 1);
     uint8_t *gLfb = ((s->FEnum == FEnum_grLfbUnlock) && (s->arg[1] & 0xFEU))? (s->glfb_ptr + (s->lfb_h * 0x800)):s->glfb_ptr;
@@ -644,7 +647,8 @@ static void processFRet(GlidePTState *s)
                     glide_winres(s->arg[1], &s->lfb_w, &s->lfb_h);
                     memset(s->glfb_ptr + (s->lfb_h * 0x800), 0, (s->lfb_h * 0x800));
                 }
-                DPRINTF("LFB mode is %s%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
+                DPRINTF("LFB mode is %s%s-copy%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
+                        (s->lfb_real || glide_mapbufo(0, 0))? ", Zero":", One",
                         (glide_lfbdirty())? ", LfbLockDirty":"",
                         (s->lfb_noaux)? ", LfbNoAux":"", (s->lfb_merge)? ", LfbWriteMerge":"");
 	    }
@@ -731,24 +735,38 @@ static void processFRet(GlidePTState *s)
                     DPRINTF("LFB writeMode mismatch, buf %d %x %x", s->lfbDev->grBuffer, s->arg[2], gLfbInfo->writeMode);
                 if ((s->arg[3] < 0xff) && (s->arg[3] != gLfbInfo->origin))
                     DPRINTF("LFB origin mismatch, %x %x", s->arg[3], gLfbInfo->origin);
-                if (s->lfb_real == 0)
-                    gLfbInfo->lfbPtr = (s->lfbDev->grBuffer & 0xFEU)? (s->lfb_h * 0x800):0;
+                if (s->lfb_real == 0) {
+                    if ((s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) || !glide_mapbufo(0, 0))
+                        gLfbInfo->lfbPtr = (s->lfbDev->grBuffer & 0xFEU)? (s->lfb_h * 0x800):0;
+                    else
+                        gLfbInfo->lfbPtr = (uint32_t)((uintptr_t)s->lfbDev->lfbPtr[s->lfbDev->grLock] & (MBUFO_SIZE - 1));
+                }
 	    }
             if (s->lfb_real == 0) {
+                int mode = (1 << 4);
                 uint8_t *gLfb = (s->lfbDev->grBuffer & 0xFEU)? (s->glfb_ptr + (s->lfb_h * 0x800)):s->glfb_ptr;
                 if (s->lfbDev->grLock) {
-                    if (s->lfb_dirty & 0x01U) {
+                    s->lfbDev->mbufo[1].hva = (uintptr_t)s->lfbDev->lfbPtr[1];
+                    s->lfbDev->mbufo[1].mapsz = s->lfb_h * s->lfbDev->stride[1];
+                    s->lfbDev->mbufo[1].acc = 0;
+                    if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) { }
+                    else if ((s->lfbDev->emu211 == 0) && glide_mapbufo(&s->lfbDev->mbufo[1], 1))
+                        mode <<= 1;
+                    else if (s->lfb_dirty & 0x01U) {
                         s->lfb_dirty = 0;
-                        if (((s->lfbDev->writeMode & 0x0EU) == 0x04) || (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU))) { }
-                        else {
+                        if ((s->lfbDev->writeMode & 0x0EU) != 0x04)
                             wrReadRegion(s->lfbDev->grBuffer, 0, 0, s->lfb_w, s->lfb_h, 0x800, (uintptr_t)gLfb);
-                        }
                     }
                 }
                 else {
-                    uint8_t *hLfb = s->lfbDev->lfbPtr[0];
+                    s->lfbDev->mbufo[0].hva = (uintptr_t)s->lfbDev->lfbPtr[0];
+                    s->lfbDev->mbufo[0].mapsz = s->lfb_h * s->lfbDev->stride[0];
+                    s->lfbDev->mbufo[0].acc = 1;
                     if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) { }
+                    else if ((s->lfbDev->emu211 == 0) && glide_mapbufo(&s->lfbDev->mbufo[0], 1))
+                        mode <<= 1;
                     else if (s->lfb_dirty & 0x01U) {
+                        uint8_t *hLfb = s->lfbDev->lfbPtr[0];
                         s->lfb_dirty = 0;
                         for (int y = 0; y < s->lfb_h; y++) {
                             memcpy(gLfb, hLfb, (s->lfb_w << 1));
@@ -757,14 +775,15 @@ static void processFRet(GlidePTState *s)
                         }
                     }
                 }
-                s->FRet = (s->FRet)? (s->FRet | 0x10):s->FRet;
+                s->FRet = (s->FRet)? (s->FRet | mode):s->FRet;
             }
             else {
                 if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU))
-                    s->FRet = (s->FRet)? (s->FRet | 0x10):s->FRet;
+                    s->FRet = (s->FRet)? (s->FRet | (1 << 4)):s->FRet;
             }
 	    break;
 	case FEnum_grLfbUnlock:
+            glide_mapbufo(&s->lfbDev->mbufo[s->arg[0] & 0x01U], 0);
 	    s->lfbDev->lock[s->arg[0] & 0x1U] = 0;
 	    //DPRINTF("LFB unlocked, buffer %u type %u", s->arg[1], s->arg[0] & 0x1U);
 	    break;

@@ -63,6 +63,7 @@ static uint32_t *m3df;
 static uint32_t *mfifo;
 static uint32_t *mdata;
 static uint32_t *vgLfb;
+static void *mbufo;
 
 static int InitGlidePTMMBase(void)
 {
@@ -74,6 +75,7 @@ static int InitGlidePTMMBase(void)
     MAPMEM(mfifo, GLIDE_FIFO_BASE, GRSHM_SIZE);
     MAPMEM(lfb, GLIDE_LFB_BASE, GRLFB_SIZE);
     MAPMEM(vgLfb, (GLIDE_LFB_BASE + GRLFB_SIZE), SHLFB_SIZE);
+    MAPMEM(mbufo, MBUFO_BASE, MBUFO_SIZE);
 
     if (ptm == 0)
         return 1;
@@ -323,6 +325,11 @@ uint32_t PT_CALL grLfbLock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grLfbLock;
     ret = *pt0;
     fifoOutData(0, arg5, SIZE_GRLFBINFO);
+    if (ret & 0x20U) {
+        shmaddr = (uint32_t)mbufo + (uint32_t)(((wrLfbInfo *)arg5)->lfbPtr);
+        ((wrLfbInfo *)arg5)->lfbPtr = (uint32_t *)shmaddr;
+        ret = 1;
+    }
     if (ret & 0x10U) {
         shmaddr = (uint32_t)vgLfb + (uint32_t)(((wrLfbInfo *)arg5)->lfbPtr);
         ((wrLfbInfo *)arg5)->lfbPtr = (uint32_t *)shmaddr;

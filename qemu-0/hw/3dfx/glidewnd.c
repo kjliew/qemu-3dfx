@@ -21,6 +21,7 @@
 #include "qemu/osdep.h"
 #include "qemu/timer.h"
 #include "qemu-common.h"
+#include "cpu.h"
 #include "ui/console.h"
 
 #include "glide2x_impl.h"
@@ -65,10 +66,44 @@ static int cfg_lfbHandler;
 static int cfg_lfbNoAux;
 static int cfg_lfbLockDirty;
 static int cfg_lfbWriteMerge;
+static int cfg_lfbMapBufo;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
 
+#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#include "sysemu/kvm.h"
+int glide_mapbufo(mapbufo_t *bufo, int add)
+{
+    int ret = (!cfg_lfbHandler && !cfg_lfbWriteMerge && cfg_lfbMapBufo)? kvm_enabled():0;
+
+    if (ret && bufo && bufo->hva) {
+        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_host_page_mask),
+            bufo->acc, add);
+        bufo->hva = (add)? bufo->hva:0;
+    }
+
+    return ret;
+}
+#endif
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
+#include "sysemu/whpx.h"
+int glide_mapbufo(mapbufo_t *bufo, int add)
+{
+    int ret = (!cfg_lfbHandler && !cfg_lfbWriteMerge && cfg_lfbMapBufo)? whpx_enabled():0;
+
+    if (ret && bufo && bufo->hva) {
+        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_host_page_mask),
+            bufo->acc, add);
+        bufo->hva = (add)? bufo->hva:0;
+    }
+
+    return ret;
+}
+
 static LONG WINAPI GlideWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch(uMsg) {
@@ -138,8 +173,8 @@ static int scaledRes(int w, float r)
 
 int GRFifoTrace(void) { return cfg_traceFifo; }
 int GRFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }
-int glide_lfbmerge(void) { return cfg_lfbWriteMerge; }
-int glide_lfbdirty(void) { return cfg_lfbLockDirty; }
+int glide_lfbmerge(void) { return (cfg_lfbMapBufo)? 0:cfg_lfbWriteMerge; }
+int glide_lfbdirty(void) { return (cfg_lfbMapBufo)? 0:cfg_lfbLockDirty; }
 int glide_lfbnoaux(void) { return cfg_lfbNoAux; }
 int glide_lfbmode(void) { return cfg_lfbHandler; }
 void glide_winres(const int res, uint32_t *w, uint32_t *h)
@@ -210,6 +245,7 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_lfbNoAux = 0;
     cfg_lfbLockDirty = 0;
     cfg_lfbWriteMerge = 0;
+    cfg_lfbMapBufo = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
 
@@ -236,6 +272,8 @@ uint32_t init_window(const int res, const char *wndTitle)
             cfg_lfbLockDirty = ((i == 1) && c)? 1:cfg_lfbLockDirty;
             i = sscanf(line, "LfbWriteMerge,%d", &c);
             cfg_lfbWriteMerge = ((i == 1) && c)? 1:cfg_lfbWriteMerge;
+            i = sscanf(line, "LfbMapBufo,%d", &c);
+            cfg_lfbMapBufo = ((i == 1) && c)? 1:cfg_lfbMapBufo;
             i = sscanf(line, "FifoTrace,%d", &c);
             cfg_traceFifo = ((i == 1) && c)? 1:cfg_traceFifo;
             i = sscanf(line, "FuncTrace,%d", &c);

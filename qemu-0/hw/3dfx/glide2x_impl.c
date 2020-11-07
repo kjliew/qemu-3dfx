@@ -358,6 +358,8 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
     }
     if (!trGlideInit.glideHasWin) {
         switch (FEnum) {
+            case FEnum_grDisable:
+            case FEnum_grEnable:
             case FEnum_grErrorSetCallback:
 	    case FEnum_grGet:
 	    case FEnum_grGlideGetVersion:
