@@ -1701,7 +1701,7 @@ static void processFRet(MesaPTState *s)
                     FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB, s->arg[0], GL_BUFFER_SIZE);
             }
             if (MGLUpdateGuestBufo(s->BufObj, 1))
-                s->FRet &= 0x07FFFFFFU;
+                s->FRet &= (MBUFO_SIZE - 1);
             else {
                 s->szUsedBuf += ALIGNBO(s->BufObj->mapsz);
                 s->FRet = s->szUsedBuf + 1;

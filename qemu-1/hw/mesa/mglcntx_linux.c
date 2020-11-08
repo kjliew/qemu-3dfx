@@ -289,7 +289,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
     int ret = GetBufOAccelEN()? kvm_enabled():0;
 
     if (ret && bufo) {
-        kvm_update_guest_pa_range((0x0EU << 28) | (bufo->hva & (0x07FFFFFFU - (qemu_host_page_size - 1))),
+        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_host_page_size - 1))),
             bufo->mapsz + (bufo->hva & (qemu_host_page_size - 1)),
             (void *)(bufo->hva & qemu_host_page_mask),
             (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);

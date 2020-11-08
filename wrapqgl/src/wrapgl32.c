@@ -48,7 +48,7 @@ static int InitMesaPTMMBase(PDRVFUNC pDrv)
     MAPMEM(ptm, MESAPT_MM_BASE, PAGE_SIZE);
     MAPMEM(mfifo, MESA_FIFO_BASE, MGLSHM_SIZE);
     MAPMEM(fbtm, MESA_FBTM_BASE, MGLFBT_SIZE);
-    MAPMEM(mbufo, (0x0EU << 28), (0x08U << 24));
+    MAPMEM(mbufo, MBUFO_BASE, MBUFO_SIZE);
 
     if (ptm == 0)
         return 1;

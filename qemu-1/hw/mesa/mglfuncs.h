@@ -18,6 +18,8 @@ typedef struct {
 #define MESA_FIFO_BASE  0xec000000
 #define MESA_FBTM_BASE  0xea000000
 
+#define MBUFO_BASE      (0xE0U << 24)
+#define MBUFO_SIZE      (0x08U << 24)
 
 #define ALIGNED(x)                              ((x%8)?(((x>>3)+1)<<3):x)
 #define ALIGNBO(x)                              ((x%16)?(((x>>4)+1)<<4):x)
