@@ -179,7 +179,8 @@ static void vgLfbFlush(GlidePTState *s)
         return;
     uint32_t stride = ((s->lfbDev->writeMode & 0x0EU) == 0x04)? 0x1000:0x800;
     uint32_t xwidth = ((s->lfbDev->writeMode & 0x0EU) == 0x04)? (s->lfb_w << 2):(s->lfb_w << 1);
-    uint8_t *gLfb = ((s->FEnum == FEnum_grLfbUnlock) && (s->arg[1] & 0xFEU))? (s->glfb_ptr + (s->lfb_h * 0x800)):s->glfb_ptr;
+    uint8_t *gLfb = ((s->FEnum == FEnum_grLfbUnlock) && (s->arg[1] & 0xFEU))?
+        (s->glfb_ptr + (((s->lfb_h > 0x300)? 0x300:s->lfb_h) * 0x800)):s->glfb_ptr;
     uint8_t *hLfb = s->lfbDev->lfbPtr[1];
     if (hLfb == 0)
         DPRINTF("WARN: LFB write pointer is NULL");
@@ -645,6 +646,7 @@ static void processFRet(GlidePTState *s)
                 if (s->lfb_real == 0) {
                     s->lfb_dirty = 1;
                     glide_winres(s->arg[1], &s->lfb_w, &s->lfb_h);
+                    s->lfb_h = (s->lfb_h > 0x300)? 0x300:s->lfb_h;
                     memset(s->glfb_ptr + (s->lfb_h * 0x800), 0, (s->lfb_h * 0x800));
                 }
                 DPRINTF("LFB mode is %s%s-copy%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
@@ -744,14 +746,19 @@ static void processFRet(GlidePTState *s)
 	    }
             if (s->lfb_real == 0) {
                 int mode = (1 << 4);
-                uint8_t *gLfb = (s->lfbDev->grBuffer & 0xFEU)? (s->glfb_ptr + (s->lfb_h * 0x800)):s->glfb_ptr;
+                uint8_t *gLfb = (s->lfbDev->grBuffer & 0xFEU)?
+                    (s->glfb_ptr + (((s->lfb_h > 0x300)? 0x300:s->lfb_h) * 0x800)):s->glfb_ptr;
                 if (s->lfbDev->grLock) {
                     s->lfbDev->mbufo[1].hva = (uintptr_t)s->lfbDev->lfbPtr[1];
                     s->lfbDev->mbufo[1].mapsz = s->lfb_h * s->lfbDev->stride[1];
                     s->lfbDev->mbufo[1].acc = 0;
                     if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) { }
-                    else if ((s->lfbDev->emu211 == 0) && glide_mapbufo(&s->lfbDev->mbufo[1], 1))
+                    else if ((s->lfbDev->emu211 == 0) && glide_mapbufo(0, 0)) {
+                        if (s->lfbDev->mbufo[1].hva == s->lfbDev->mbufo[0].hva)
+                            glide_mapbufo(&s->lfbDev->mbufo[0], 0);
+                        glide_mapbufo(&s->lfbDev->mbufo[1], 1);
                         mode <<= 1;
+                    }
                     else if (s->lfb_dirty & 0x01U) {
                         s->lfb_dirty = 0;
                         if ((s->lfbDev->writeMode & 0x0EU) != 0x04)
@@ -763,8 +770,12 @@ static void processFRet(GlidePTState *s)
                     s->lfbDev->mbufo[0].mapsz = s->lfb_h * s->lfbDev->stride[0];
                     s->lfbDev->mbufo[0].acc = 1;
                     if (s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) { }
-                    else if ((s->lfbDev->emu211 == 0) && glide_mapbufo(&s->lfbDev->mbufo[0], 1))
+                    else if ((s->lfbDev->emu211 == 0) && glide_mapbufo(0, 0)) {
+                        if (s->lfbDev->mbufo[0].hva == s->lfbDev->mbufo[1].hva)
+                            glide_mapbufo(&s->lfbDev->mbufo[1], 0);
+                        glide_mapbufo(&s->lfbDev->mbufo[0], 1);
                         mode <<= 1;
+                    }
                     else if (s->lfb_dirty & 0x01U) {
                         uint8_t *hLfb = s->lfbDev->lfbPtr[0];
                         s->lfb_dirty = 0;
