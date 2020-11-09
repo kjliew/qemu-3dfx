@@ -970,7 +970,6 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
                     DPRINTF("DLL unloaded");
                 }
 	    }
-            trInitReset();
 	    break;
 		
         case 0xfc0:

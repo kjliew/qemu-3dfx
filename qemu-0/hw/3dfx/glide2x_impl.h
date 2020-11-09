@@ -119,7 +119,6 @@ void glide_enabled_set(void);
 void glide_enabled_reset(void);
 #endif //CONSOLE_H
 
-void trInitReset(void);
 void doGlideFunc(int, uint32_t *, uintptr_t *, uint32_t *, int);
 void conf_glide2x(const uint32_t, const int);
 int init_glide2x(const char *);

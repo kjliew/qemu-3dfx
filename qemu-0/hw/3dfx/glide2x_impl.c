@@ -318,15 +318,9 @@ const char *getGRFuncStr(int FEnum)
     return 0;
 }
 
-static struct trInit {
-    int glidePostInit;
-    int glideHasWin;
-} trGlideInit;
-
-void trInitReset(void) { memset(&trGlideInit, 0, sizeof(struct trInit)); }
-
 void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int emu211)
 {
+    static int glidePostInit = 0;
     int numArgs = getNumArgs(tblGlide2x[FEnum].sym);
 
     if (GRFuncTrace()) {
@@ -335,7 +329,7 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
             DPRINTF("%-64s", fstr);
     }
 
-    if (!trGlideInit.glidePostInit) {
+    if (glidePostInit == 0) {
 	switch (FEnum) {
 	    case FEnum_grGet:
 	    case FEnum_grGlideGetVersion:
@@ -345,10 +339,8 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
 	    case FEnum_grSstQueryHardware:
 	    case FEnum_grSstSelect:
 		fprintf(stderr, "trace: %s called\n", tblGlide2x[FEnum].sym);
-		if (FEnum == FEnum_grGlideInit) {
-                    trGlideInit.glideHasWin = 0;
-		    trGlideInit.glidePostInit = 1;
-                }
+		if (FEnum == FEnum_grGlideInit)
+		    glidePostInit = 1;
 		break;
 	    default:
 		fprintf(stderr, "WARN: Illegal %s call blocked\n", tblGlide2x[FEnum].sym);
@@ -356,42 +348,8 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
 		return;
 	}
     }
-    if (!trGlideInit.glideHasWin) {
-        switch (FEnum) {
-            case FEnum_grDisable:
-            case FEnum_grEnable:
-            case FEnum_grErrorSetCallback:
-	    case FEnum_grGet:
-	    case FEnum_grGlideGetVersion:
-	    case FEnum_grGlideInit:
-            case FEnum_grGlideShutdown:
-            case FEnum_grQueryResolutions:
-	    case FEnum_grSstControl:
-	    case FEnum_grSstQueryBoards:
-	    case FEnum_grSstQueryHardware:
-	    case FEnum_grSstSelect:
-            case FEnum_grTexCalcMemRequired:
-            case FEnum_grTexMaxAddress:
-            case FEnum_grTexMinAddress:
-            case FEnum_grTexTextureMemRequired:
-                break;
-            case FEnum_grSstOpen:
-            case FEnum_grSstWinOpen:
-            case FEnum_grSstWinOpenExt:
-                trGlideInit.glideHasWin = 1;
-                break;
-            default:
-		fprintf(stderr, "WARN: Illegal %s call blocked\n", tblGlide2x[FEnum].sym);
-                *ret = 0;
-                return;
-        }
-    }
-    if (FEnum == FEnum_grSstWinClose)
-        trGlideInit.glideHasWin = 0;
-    if (FEnum == FEnum_grGlideShutdown) {
-        trGlideInit.glideHasWin = 0;
-	trGlideInit.glidePostInit = 0;
-    }
+    if (FEnum == FEnum_grGlideShutdown)
+	glidePostInit = 0;
 
     typedef union {
     uint32_t __stdcall (*fprp0)(uintptr_t arg0);
