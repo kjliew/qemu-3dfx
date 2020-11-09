@@ -221,3 +221,5 @@ typedef enum {
 #define GR_VENDOR                       0xa3
 #define GR_VERSION                      0xa4
 
+#define COMMIT_SIGN \
+    const char rev_[ALIGNED(1)]

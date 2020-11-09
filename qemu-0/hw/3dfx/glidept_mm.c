@@ -911,7 +911,7 @@ static void processFifo(GlidePTState *s)
 
 static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
 {
-    const char rev_[ALIGNED(1)];
+    COMMIT_SIGN;
     GlidePTState *s = opaque;
 
     switch (addr) {

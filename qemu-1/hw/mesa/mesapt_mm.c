@@ -1896,7 +1896,7 @@ static void ContextCreateCommon(MesaPTState *s)
 
 static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
 {
-    const char rev_[ALIGNED(1)];
+    COMMIT_SIGN;
     MesaPTState *s = opaque;
 
     if (addr == 0xFBC) {

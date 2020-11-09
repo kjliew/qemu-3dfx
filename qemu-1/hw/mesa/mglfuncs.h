@@ -31,3 +31,6 @@ typedef struct {
 #define MAX_LVLCNTX                             ((MESAGL_MAGIC & 0x0FU) + 1)
 #define MAX_TEXUNIT                             8
 #define MAX_PBUFFER                             16
+
+#define COMMIT_SIGN \
+    const char rev_[ALIGNED(1)]
