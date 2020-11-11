@@ -175,7 +175,7 @@ static void guest_memory_write(hwaddr vaddr, void *buf, int len)
 
 static void vgLfbFlush(GlidePTState *s)
 {
-    if (glide_mapbufo(0, 0))
+    if ((s->lfbDev->emu211 == 0) && glide_mapbufo(0, 0))
         return;
     uint32_t stride = ((s->lfbDev->writeMode & 0x0EU) == 0x04)? 0x1000:0x800;
     uint32_t xwidth = ((s->lfbDev->writeMode & 0x0EU) == 0x04)? (s->lfb_w << 2):(s->lfb_w << 1);
@@ -649,8 +649,9 @@ static void processFRet(GlidePTState *s)
                     s->lfb_h = (s->lfb_h > 0x300)? 0x300:s->lfb_h;
                     memset(s->glfb_ptr + (s->lfb_h * 0x800), 0, (s->lfb_h * 0x800));
                 }
-                DPRINTF("LFB mode is %s%s-copy%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
+                DPRINTF("LFB mode is %s%s-copy%s%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
                         (s->lfb_real || glide_mapbufo(0, 0))? ", Zero":", One",
+                        (glide_fpslimit())? ", FpsLimit":"",
                         (glide_lfbdirty())? ", LfbLockDirty":"",
                         (s->lfb_noaux)? ", LfbNoAux":"", (s->lfb_merge)? ", LfbWriteMerge":"");
 	    }
@@ -702,6 +703,9 @@ static void processFRet(GlidePTState *s)
 	    strncpy(s->version, "Glide2x", sizeof(char [80]));
 	    break;
 
+        case FEnum_grBufferSwap:
+            s->FRet = glide_fpslimit();
+            break;
 	case FEnum_grLfbLock:
 	    if (s->lfbDev->lock[s->arg[0] & 0x1U] == 1) {
                 if (s->lfbDev->grBuffer != s->arg[1]) {

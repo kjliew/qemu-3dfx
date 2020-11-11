@@ -62,6 +62,7 @@ static int cfg_scaleGuiX;
 static int cfg_scaleX;
 static int cfg_cntxMSAA;
 static int cfg_cntxVsync;
+static int cfg_fpsLimit;
 static int cfg_lfbHandler;
 static int cfg_lfbNoAux;
 static int cfg_lfbLockDirty;
@@ -173,6 +174,7 @@ static int scaledRes(int w, float r)
 
 int GRFifoTrace(void) { return cfg_traceFifo; }
 int GRFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }
+int glide_fpslimit(void) { return cfg_fpsLimit; }
 int glide_lfbmerge(void) { return (cfg_lfbMapBufo)? 0:cfg_lfbWriteMerge; }
 int glide_lfbdirty(void) { return (cfg_lfbMapBufo)? 0:cfg_lfbLockDirty; }
 int glide_lfbnoaux(void) { return cfg_lfbNoAux; }
@@ -241,6 +243,7 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_scaleX = 0;
     cfg_cntxMSAA = 0;
     cfg_cntxVsync = 0;
+    cfg_fpsLimit = 0;
     cfg_lfbHandler = 0;
     cfg_lfbNoAux = 0;
     cfg_lfbLockDirty = 0;
@@ -264,6 +267,8 @@ uint32_t init_window(const int res, const char *wndTitle)
             cfg_cntxMSAA = (i == 1)? ((c << 3) & 0x30U):cfg_cntxMSAA;
             i = sscanf(line, "ContextVsync,%d", &c);
             cfg_cntxVsync = ((i == 1) && c)? 1:cfg_cntxVsync;
+            i = sscanf(line, "FpsLimit,%d", &c);
+            cfg_fpsLimit = ((i == 1) && (c <= 60))? c:cfg_fpsLimit;
             i = sscanf(line, "LfbHandler,%d", &c);
             cfg_lfbHandler = ((i == 1) && c)? 1:cfg_lfbHandler;
             i = sscanf(line, "LfbNoAux,%d", &c);

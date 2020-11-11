@@ -279,8 +279,17 @@ uint32_t PT_CALL grBufferNumPending(void) {
     return *pt0;
 }
 void PT_CALL grBufferSwap(uint32_t arg0) {
+    static uint32_t nexttick;
+    uint32_t ret, t;
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grBufferSwap;
+    ret = *pt0;
+    t = GetTickCount();
+    nexttick = (nexttick == 0)? t:nexttick;
+    if (ret) {
+        nexttick += 1000/ret;
+        while (GetTickCount() < nexttick);
+    }
 }
 void PT_CALL grCheckForRoom(uint32_t arg0) {
     pt[1] = arg0; 
