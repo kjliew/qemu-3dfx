@@ -12,6 +12,8 @@ typedef struct {
     void *ptr;
 } vtxarry_t;
 
+#define PAGE_SIZE       0x1000
+
 #define MESAGL_MAGIC    0x5b5eb5e5
 #define MESAGL_HWNDC    0x574e4443
 #define MESAGL_HPBDC    0x50424443

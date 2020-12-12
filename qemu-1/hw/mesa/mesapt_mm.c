@@ -21,7 +21,6 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "qemu-common.h"
-#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "hw/sysbus.h"
@@ -475,7 +474,7 @@ static int PArgsShouldAligned(MesaPTState *s)
 #define VAL(x) (uintptr_t)x
 static void processArgs(MesaPTState *s)
 {
-    uint8_t *outshm = s->fifo_ptr + (MGLSHM_SIZE - (3*TARGET_PAGE_SIZE));
+    uint8_t *outshm = s->fifo_ptr + (MGLSHM_SIZE - (3*PAGE_SIZE));
 
     switch (s->FEnum) {
         case FEnum_glAreTexturesResident:
@@ -1432,7 +1431,7 @@ static void processArgs(MesaPTState *s)
             s->parg[1] = VAL(s->hshm);
             break;
         case FEnum_glGetShaderInfoLog:
-            s->arg[1] = (s->arg[1] > (3*TARGET_PAGE_SIZE))? (3*TARGET_PAGE_SIZE):s->arg[1];
+            s->arg[1] = (s->arg[1] > (3*PAGE_SIZE))? (3*PAGE_SIZE):s->arg[1];
             s->parg[2] = VAL(outshm);
             s->parg[3] = VAL(PTR(outshm, ALIGNED(sizeof(int))));
             break;
@@ -1603,7 +1602,7 @@ static void processArgs(MesaPTState *s)
 
 static void processFRet(MesaPTState *s)
 {
-    uint8_t *outshm = s->fifo_ptr + (MGLSHM_SIZE - (3*TARGET_PAGE_SIZE));
+    uint8_t *outshm = s->fifo_ptr + (MGLSHM_SIZE - (3*PAGE_SIZE));
 
     if (PArgsShouldAligned(s) == 0) {
         s->parg[0] &= ~(sizeof(uintptr_t) - 1);
@@ -1768,7 +1767,7 @@ static void processFRet(MesaPTState *s)
 #endif
         case FEnum_glGetString:
             if (s->FRet) {
-                size_t len = strnlen((char *)s->FRet, 3*TARGET_PAGE_SIZE);
+                size_t len = strnlen((char *)s->FRet, 3*PAGE_SIZE);
                 len++; /* '\0' */
                 if ((s->arg[0] & 0x03U) != 0x03U) {
                     strncpy((char *)outshm, (char *)s->FRet, len);
@@ -1781,7 +1780,7 @@ static void processFRet(MesaPTState *s)
                     //DPRINTF("Host GL Extensions:\n%s", tmpstr);
                     stok = strtok(tmpstr, " ");
                     while (stok) {
-                        size_t extnLength = strnlen(stok, TARGET_PAGE_SIZE);
+                        size_t extnLength = strnlen(stok, PAGE_SIZE);
                         for (int i = 0; i < MESA_EXTENSION_COUNT; i++) {
                             if ((s->extnLength == 0) || (s->extnLength >= extnLength)) {
                                 if (!memcmp(_mesa_extension_table[i].name, stok, extnLength)) {
@@ -1950,7 +1949,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
         switch(addr) {
             case 0xFFC:
                 do {
-                    uint32_t *cntxRC = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
+                    uint32_t *cntxRC = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE));
                     if (!s->mglContext) {
                         DPRINTF("wglCreateContext cntx %d curr %d", s->mglContext, s->mglCntxCurrent);
                         s->mglContext = MGLCreateContext(cntxRC[0])? 0:1;
@@ -1965,7 +1964,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xFF8:
                 do {
                     char xYear[8], xLen[8], dispTimer[8];
-                    uint32_t *ptVer = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
+                    uint32_t *ptVer = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE));
                     int level = ((ptVer[0] & 0xFFFFFFF0U) == (MESAGL_MAGIC & 0xFFFFFFF0U))? (MESAGL_MAGIC - ptVer[0]):0;
                     int msaa = GetContextMSAA();
                     int vsync = GetContextVsync();
@@ -2031,7 +2030,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFE8:
                 do {
-                    uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
+                    uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
                     int pixfmt = *(int *)ppfd;
                     unsigned int nbytes = *(uint32_t *)PTR(ppfd, sizeof(int));
                     s->pixfmtMax = ((uint32_t *)s->fifo_ptr)[1]? MGLDescribePixelFormat(pixfmt, nbytes, ppfd):0;
@@ -2039,7 +2038,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFE4:
                 do {
-                    uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
+                    uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
                     int pixfmt = *(int *)ppfd;
                     s->procRet = MGLSetPixelFormat(pixfmt, PTR(ppfd, ALIGNED(sizeof(int))))?
                         (((uint32_t*)s->fifo_ptr)[1]? MESAGL_MAGIC:0):0;
@@ -2047,7 +2046,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFE0:
                 do {
-                    uint8_t *name = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
+                    uint8_t *name = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
                     s->procRet = (ExtFuncIsValid((char *)name))? MESAGL_MAGIC:0;
                     DPRINTF_COND((s->procRet == 0),
                         "  query_ext: %s -- %s", name, (s->procRet)? "OK":"Missing");
@@ -2055,7 +2054,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFDC:
                 do {
-                    uint8_t *func = s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE);
+                    uint8_t *func = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
                     MGLFuncHandler((const char *)func);
                     if (strncmp((const char *)func, "wglCreateContextAttribsARB", 64) == 0) {
                         uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
@@ -2079,7 +2078,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFD8:
                 do {
-                    int *i = (int *)(s->fifo_ptr + (MGLSHM_SIZE - TARGET_PAGE_SIZE));
+                    int *i = (int *)(s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE));
                     if (s->mglContext && s->mglCntxCurrent) {
                         DPRINTF_COND((GLFuncTrace()), "ActivateHandler %d", i[0]);
                         MGLActivateHandler(i[0]);
@@ -2124,7 +2123,7 @@ static void mesapt_init(Object *obj)
     memory_region_add_subregion(sysmem, MESA_FIFO_BASE, &s->fifo_ram);
     memory_region_add_subregion(sysmem, MESA_FBTM_BASE, &s->fbtm_ram);
 
-    memory_region_init_io(&s->iomem, obj, &mesapt_ops, s, TYPE_MESAPT, TARGET_PAGE_SIZE);
+    memory_region_init_io(&s->iomem, obj, &mesapt_ops, s, TYPE_MESAPT, PAGE_SIZE);
     sysbus_init_mmio(sbd, &s->iomem);
 }
 

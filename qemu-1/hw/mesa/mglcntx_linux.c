@@ -21,7 +21,6 @@
 #include "qemu/osdep.h"
 #include "qemu/timer.h"
 #include "qemu-common.h"
-#include "cpu.h"
 #include "ui/console.h"
 
 #include "mesagl_impl.h"
@@ -30,7 +29,10 @@
     do { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); } while(0)
 
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
+#undef CONFIG_KVM_IS_POSSIBLE
+#define CONFIG_KVM_IS_POSSIBLE
 #include "sysemu/kvm.h"
+#undef CONFIG_KVM_IS_POSSIBLE
 #include <GL/glx.h>
 #include <X11/extensions/xf86vmode.h>
 
@@ -556,7 +558,7 @@ void MGLFuncHandler(const char *name)
                 "WGL_ARB_multisample "
                 "WGL_EXT_extensions_string "
                 "WGL_EXT_swap_control";
-            strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
+            strncpy((char *)name, tmp, PAGE_SIZE);
             //DPRINTF("WGL extensions\nHost: %s [ %d ]\nGuest: %s [ %d ]", str, (uint32_t)strlen(str), name, (uint32_t)strlen(name));
             return;
         }

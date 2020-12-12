@@ -21,7 +21,6 @@
 #include "qemu/osdep.h"
 #include "qemu/timer.h"
 #include "qemu-common.h"
-#include "cpu.h"
 #include "ui/console.h"
 
 #include "glide2x_impl.h"
@@ -72,15 +71,18 @@ static int cfg_traceFifo;
 static int cfg_traceFunc;
 
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
+#undef CONFIG_KVM_IS_POSSIBLE
+#define CONFIG_KVM_IS_POSSIBLE
 #include "sysemu/kvm.h"
+#undef CONFIG_KVM_IS_POSSIBLE
 int glide_mapbufo(mapbufo_t *bufo, int add)
 {
     int ret = (!cfg_lfbHandler && !cfg_lfbWriteMerge && cfg_lfbMapBufo)? kvm_enabled():0;
 
     if (ret && bufo && bufo->hva) {
-        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_host_page_size - 1))),
-            bufo->mapsz + (bufo->hva & (qemu_host_page_size - 1)),
-            (void *)(bufo->hva & qemu_host_page_mask),
+        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_real_host_page_mask),
             bufo->acc, add);
         bufo->hva = (add)? bufo->hva:0;
     }
@@ -89,15 +91,18 @@ int glide_mapbufo(mapbufo_t *bufo, int add)
 }
 #endif
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
+#undef CONFIG_WHPX
+#define CONFIG_WHPX
 #include "sysemu/whpx.h"
+#undef CONFIG_WHPX
 int glide_mapbufo(mapbufo_t *bufo, int add)
 {
     int ret = (!cfg_lfbHandler && !cfg_lfbWriteMerge && cfg_lfbMapBufo)? whpx_enabled():0;
 
     if (ret && bufo && bufo->hva) {
-        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_host_page_size - 1))),
-            bufo->mapsz + (bufo->hva & (qemu_host_page_size - 1)),
-            (void *)(bufo->hva & qemu_host_page_mask),
+        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_real_host_page_mask),
             bufo->acc, add);
         bufo->hva = (add)? bufo->hva:0;
     }

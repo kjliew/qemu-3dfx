@@ -29,7 +29,6 @@ static FILE *logfp = NULL;
 
 #define MESAVER 0x320
 #define MESAPT_MM_BASE 0xefffe000
-#define PAGE_SIZE 0x1000
 
 extern const char rev_[];
 static volatile uint32_t *ptm;

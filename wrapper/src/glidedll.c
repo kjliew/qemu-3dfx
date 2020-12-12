@@ -29,7 +29,6 @@ static FILE *logfp = NULL;
 
 #define GLIDEVER 0x243
 #define GLIDEPT_MM_BASE 0xfbdff000
-#define PAGE_SIZE 0x1000
 #define PUSH_F3DF 1
 #define MAX_3DF 256*1024
 #define MAX_GUTEX 0x1000
@@ -279,16 +278,17 @@ uint32_t PT_CALL grBufferNumPending(void) {
     return *pt0;
 }
 void PT_CALL grBufferSwap(uint32_t arg0) {
-    static uint32_t nexttick;
-    uint32_t ret, t;
+    uint32_t ret;
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grBufferSwap;
     ret = *pt0;
-    t = GetTickCount();
-    nexttick = (nexttick == 0)? t:nexttick;
     if (ret) {
+        static uint32_t nexttick;
+        uint32_t t = GetTickCount();
+        nexttick = (nexttick == 0)? t:nexttick;
         nexttick += 1000/ret;
-        while (GetTickCount() < nexttick);
+        while (GetTickCount() < nexttick)
+            Sleep(0);
     }
 }
 void PT_CALL grCheckForRoom(uint32_t arg0) {

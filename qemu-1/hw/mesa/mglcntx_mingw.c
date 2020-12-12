@@ -21,7 +21,6 @@
 #include "qemu/osdep.h"
 #include "qemu/timer.h"
 #include "qemu-common.h"
-#include "cpu.h"
 #include "ui/console.h"
 
 #include "mesagl_impl.h"
@@ -31,7 +30,10 @@
 
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
+#undef CONFIG_WHPX
+#define CONFIG_WHPX
 #include "sysemu/whpx.h"
+#undef CONFIG_WHPX
 #include <GL/gl.h>
 #include <GL/wglext.h>
 
@@ -183,9 +185,9 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
     int ret = GetBufOAccelEN()? whpx_enabled():0;
 
     if (ret && bufo) {
-        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_host_page_size - 1))),
-            bufo->mapsz + (bufo->hva & (qemu_host_page_size - 1)),
-            (void *)(bufo->hva & qemu_host_page_mask),
+        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->hva & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_real_host_page_mask),
             (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
     }
 
@@ -523,7 +525,7 @@ void MGLFuncHandler(const char *name)
                 "WGL_ARB_render_texture "
                 "WGL_EXT_extensions_string "
                 "WGL_EXT_swap_control";
-            strncpy((char *)name, tmp, TARGET_PAGE_SIZE);
+            strncpy((char *)name, tmp, PAGE_SIZE);
             //DPRINTF("WGL extensions\nHost: %s [ %d ]\nGuest: %s [ %d ]", str, (uint32_t)strlen(str), name, (uint32_t)strlen(name));
             return;
         }

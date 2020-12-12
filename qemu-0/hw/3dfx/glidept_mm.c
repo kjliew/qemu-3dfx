@@ -21,7 +21,6 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "qemu-common.h"
-#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "hw/sysbus.h"
@@ -200,7 +199,7 @@ static wr3dfInfo *info3df;
 #define VAL(x) (uintptr_t)x
 static void processArgs(GlidePTState *s)
 {
-    uint8_t *outshm = s->fifo_ptr + (GRSHM_SIZE - TARGET_PAGE_SIZE);
+    uint8_t *outshm = s->fifo_ptr + (GRSHM_SIZE - PAGE_SIZE);
 
     switch (s->FEnum) {
 	case FEnum_grDrawLine:
@@ -606,7 +605,7 @@ static void processArgs(GlidePTState *s)
 
 static void processFRet(GlidePTState *s)
 {
-    uint8_t *outshm = s->fifo_ptr + (GRSHM_SIZE - TARGET_PAGE_SIZE);
+    uint8_t *outshm = s->fifo_ptr + (GRSHM_SIZE - PAGE_SIZE);
 
     switch (s->FEnum) {
 	case FEnum_grDrawPolygon:
@@ -1126,7 +1125,7 @@ static void glidept_init(Object *obj)
     memory_region_add_subregion(sysmem, (GLIDE_LFB_BASE + GRLFB_SIZE), &s->glfb_ram);
     memory_region_add_subregion(sysmem, GLIDE_FIFO_BASE, &s->fifo_ram);
 
-    memory_region_init_io(&s->iomem, obj, &glidept_ops, s, TYPE_GLIDEPT, TARGET_PAGE_SIZE);
+    memory_region_init_io(&s->iomem, obj, &glidept_ops, s, TYPE_GLIDEPT, PAGE_SIZE);
     sysbus_init_mmio(sbd, &s->iomem);
 }
 

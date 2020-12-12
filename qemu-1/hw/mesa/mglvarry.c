@@ -19,8 +19,8 @@
  */
 
 #include "qemu/osdep.h"
-#include "cpu.h"
 
+#include "mglfuncs.h"
 #include "mglvarry.h"
 
 typedef struct _vertArry {
@@ -50,7 +50,7 @@ static void *LookupVertArry(PVERTARRY *pArry, uint32_t handle, uint32_t size)
     
     if (p == NULL) {
         p = g_new(VERTARRY, 1);
-        p->tagLo = (handle > size)? (handle - size):TARGET_PAGE_SIZE;
+        p->tagLo = (handle > size)? (handle - size):PAGE_SIZE;
         p->tagHi = p->tagLo + (size << 1);
         p->ptr = g_malloc(size << 1);
         p->next = NULL;
@@ -63,7 +63,7 @@ static void *LookupVertArry(PVERTARRY *pArry, uint32_t handle, uint32_t size)
         else {
             p->next = g_new(VERTARRY, 1);
             p = p->next;
-            p->tagLo = (handle > size)? (handle - size):TARGET_PAGE_SIZE;
+            p->tagLo = (handle > size)? (handle - size):PAGE_SIZE;
             p->tagHi = p->tagLo + (size << 1);
             p->ptr = g_malloc(size << 1);
             fprintf(stderr, " alloc vaddr %08x-%08x from hndl %08x\n", p->tagLo, p->tagHi, handle);

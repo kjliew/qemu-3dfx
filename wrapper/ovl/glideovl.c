@@ -23,7 +23,6 @@
 
 #define GLIDEVER 0x243
 #define GLIDEPT_MM_BASE 0xfbdff000
-#define PAGE_SIZE 0x1000
 #define PUSH_F3DF 1
 #define MAX_3DF 256*1024
 #define MAX_GUTEX 0x1000
