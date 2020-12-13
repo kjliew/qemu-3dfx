@@ -6,6 +6,7 @@ Content
 -------
 qemu-0/hw/3dfx              - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
 qemu-1/hw/mesa              - Overlay for QEMU source tree to add MESA GL pass-through device model
+scripts/sign_commit         - Script for stamping commit id
 wrapper                     - Glide wrappers for supported guest OS/environment. (DOS/Windows/DJGPP/Linux)
 wrapqgl                     - MESA GL wrapper for supported guest OS/environment. (Windows)
 00-qemu520-mesa-glide.patch - Patch for QEMU version 5.2x (MESA & Glide)
@@ -26,6 +27,7 @@ $ cd qemu-5.2.0
 $ rsync -r ../qemu-0/hw/3dfx ./hw/
 $ rsync -r ../qemu-1/hw/mesa ./hw/
 $ patch -p0 -i ../00-qemu520-mesa-glide.patch
+$ ../scripts/sign_commit
 $ mkdir ../build && cd ../build
 $ ../qemu-5.2.0/configure && make
 

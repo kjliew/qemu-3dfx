@@ -1,0 +1,13 @@
+#!/bin/sh
+
+REV=`git rev-parse HEAD | sed "s/\(.......\).*/\1\-/"`
+if [ -z $REV ]; then exit 1; fi
+SRC=" \
+    hw/3dfx/g2xfuncs.h \
+    hw/mesa/mglfuncs.h \
+" \
+
+echo $REV
+sed -i "s/\(rev_\[\).*\].*/\1\]\ =\ \"$REV\"/" $SRC
+grep "rev_\[" $SRC | sed "s/\(rev_\[\).*\].*/\1\]\ =\ \"$REV\"/"
+
