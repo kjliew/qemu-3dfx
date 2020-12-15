@@ -1430,6 +1430,7 @@ static void processArgs(MesaPTState *s)
             s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
             s->parg[1] = VAL(s->hshm);
             break;
+        case FEnum_glGetProgramInfoLog:
         case FEnum_glGetShaderInfoLog:
             s->arg[1] = (s->arg[1] > (3*PAGE_SIZE))? (3*PAGE_SIZE):s->arg[1];
             s->parg[2] = VAL(outshm);

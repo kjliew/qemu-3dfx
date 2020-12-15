@@ -707,6 +707,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa1p2 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa1p2)(arg[0], arg[1], parg[2]);
             GLDONE();
+        case FEnum_glGetProgramInfoLog:
         case FEnum_glGetShaderInfoLog:
         case FEnum_glShaderSource:
         case FEnum_glShaderSourceARB:

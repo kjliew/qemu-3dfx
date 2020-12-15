@@ -4773,8 +4773,12 @@ void PT_CALL glGetProgramEnvParameterfvARB(uint32_t arg0, uint32_t arg1, uint32_
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetProgramEnvParameterfvARB;
 }
 void PT_CALL glGetProgramInfoLog(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t len;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetProgramInfoLog;
+    fifoOutData(0, (uint32_t)&len, sizeof(uint32_t));
+    len = (len > arg1)? arg1:len;
+    fifoOutData(0, arg3, len);
 }
 void PT_CALL glGetProgramInterfaceiv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
