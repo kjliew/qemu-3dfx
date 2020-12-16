@@ -661,7 +661,7 @@ static void processFRet(GlidePTState *s)
         case FEnum_grSstWinClose3x:
 	    s->perfs.last();
 	    /* TODO - Window management */
-	    DPRINTF("grSstWinClose called");
+	    DPRINTF("%-64s", "grSstWinClose called");
 	    s->GrContext = 0;
 	    s->reg[0] = 0;
 	    fini_window();
