@@ -40,9 +40,9 @@ $ ../qemu-5.2.0/configure && make
 Building Guest Wrappers
 -----------------------
 Requirements:
-  * make
+  * base-devel (make, sed, xxd)
   * pexports
-  * mingw32 cross-tools (binutils, gcc)
+  * mingw32 cross-tools (binutils, gcc) for WIN32 DLL wrappers
   * Watcom 11.0 for DOS OVL wrapper
   * i686-pc-msdosdjgpp cross-tools (binutils, gcc, dxe3gen) for DJGPP DXE wrappers
 

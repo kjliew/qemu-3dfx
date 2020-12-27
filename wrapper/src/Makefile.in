@@ -14,11 +14,12 @@ C_OBJS:=\
     fxlibnt.o \
 
 
-all: $(TARGET1) $(TARGET2) $(TARGET3) kdrvcpy
+all: $(TARGET1) $(TARGET2) $(TARGET3) makedrv
 
-kdrvcpy:
+makedrv:
 	make -C ../dxe
 	make -C ../ovl
+	make -C ../drv
 
 $(TARGET2): $(C_OBJS) glidedll.o
 	@echo "  CFLAGS  $(CFLAGS)"
