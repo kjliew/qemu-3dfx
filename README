@@ -56,3 +56,17 @@ $ mkdir build && cd build
 $ cp ../src/Makefile.in ./Makefile
 $ make && make clean
 
+Installing Guest Wrappers
+-------------------------
+For Win9x/ME,
+  * Copy FXMEMMAP.VXD to C:\WINDOWS\SYSTEM
+  * Copy GLIDE.DLL, GLIDE2X.DLL and GLIDE3X.DLL to C:\WINDOWS\SYSTEM
+  * Copy GLIDE2X.OVL to C:\WINDOWS
+  * Copy OPENGL32.DLL to Game installation folders
+
+For Win2k/XP,
+  * Copy FXPTL.SYS to %SystemRoot%\system32\drivers
+  * Copy GLIDE.DLL, GLIDE2X.DLL and GLIDE3X.DLL to %SystemRoot%\system32
+  * Run INSTDRV.EXE, require Administrator Priviledge
+  * Copy OPENGL32.DLL to Game installation folders
+
