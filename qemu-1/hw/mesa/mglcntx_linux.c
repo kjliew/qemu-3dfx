@@ -557,7 +557,8 @@ void MGLFuncHandler(const char *name)
                 "WGL_ARB_render_texture "
                 "WGL_ARB_multisample "
                 "WGL_EXT_extensions_string "
-                "WGL_EXT_swap_control";
+                "WGL_EXT_swap_control "
+                ;
             strncpy((char *)name, tmp, PAGE_SIZE);
             //DPRINTF("WGL extensions\nHost: %s [ %d ]\nGuest: %s [ %d ]", str, (uint32_t)strlen(str), name, (uint32_t)strlen(name));
             return;

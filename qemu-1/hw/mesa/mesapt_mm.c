@@ -817,7 +817,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMultiTexCoord4dv:
         case FEnum_glMultiTexCoord4dvARB:
         case FEnum_glVertexAttrib4dv:
-        case FEnum_glVertexAttrib4dvARB:            
+        case FEnum_glVertexAttrib4dvARB:
             s->datacb = 4*sizeof(double);
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
@@ -1913,7 +1913,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xD0320:
                 if (s->MesaVer) {
                     MGLWndRelease();
-                    DPRINTF("DLL unloaded");
+                    DPRINTF("%-64s", "DLL unloaded");
                 }
                 FiniMesaGL();
                 break;

@@ -721,8 +721,8 @@ static void processFRet(GlidePTState *s)
 	    s->lfbDev->stride[s->lfbDev->grLock] = ((wrLfbInfo *)PTR(outshm, ALIGNED(sizeof(wrgLfbInfo))))->stride;
 	    s->lfbDev->lock[s->lfbDev->grLock] = 1;
             WARNONCE(((s->lfbDev->grBuffer < 2) && s->arg[2] && (s->arg[2] < 0xff)), "LFB writeMode not 565, %d", s->arg[2]);
-            WARNONCE((s->lfbDev->grBuffer > 1), "Locked AUX/DEPTH buffer, buf %d lock %d",
-                    s->lfbDev->grBuffer, s->lfbDev->grLock);
+            WARNONCE((s->lfbDev->grBuffer > 1), "Locked AUX/DEPTH buffer, buf %d lock %d writeMode %02x",
+                    s->lfbDev->grBuffer, s->lfbDev->grLock, s->arg[2]);
 	    if (s->lfbDev->emu211 == 0) {
 		wrgLfbInfo *gLfbInfo = (wrgLfbInfo *)PTR(outshm, 0);
 		gLfbInfo->lfbPtr = s->lfbDev->guestLfb;
