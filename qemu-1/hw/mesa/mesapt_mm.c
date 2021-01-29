@@ -1023,6 +1023,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetMaterialfv:
         case FEnum_glGetMaterialiv:
         case FEnum_glGetProgramiv:
+        case FEnum_glGetObjectParameterfvARB:
+        case FEnum_glGetObjectParameterivARB:
         case FEnum_glGetProgramivARB:
         case FEnum_glGetQueryiv:
         case FEnum_glGetQueryivARB:
@@ -1423,6 +1425,13 @@ static void processArgs(MesaPTState *s)
             s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
             s->parg[3] = VAL(s->hshm);
             break;
+        case FEnum_glGetActiveUniformARB:
+            memset(outshm, 0, 4*ALIGNED(1));
+            s->parg[3] = VAL(outshm);
+            s->parg[0] = VAL(PTR(outshm, ALIGNED(1)));
+            s->parg[1] = VAL(PTR(outshm, 2*ALIGNED(1)));
+            s->parg[2] = VAL(PTR(outshm, 3*ALIGNED(1)));
+            break;
         case FEnum_glGetAttribLocation:
         case FEnum_glGetAttribLocationARB:
         case FEnum_glGetUniformLocation:
@@ -1430,6 +1439,7 @@ static void processArgs(MesaPTState *s)
             s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
             s->parg[1] = VAL(s->hshm);
             break;
+        case FEnum_glGetInfoLogARB:
         case FEnum_glGetProgramInfoLog:
         case FEnum_glGetShaderInfoLog:
             s->arg[1] = (s->arg[1] > (3*PAGE_SIZE))? (3*PAGE_SIZE):s->arg[1];
@@ -1764,6 +1774,12 @@ static void processFRet(MesaPTState *s)
                 DPRINTF("%sLocation %s %d", ((s->FEnum == FEnum_glGetAttribLocation) || (s->FEnum == FEnum_glGetAttribLocationARB))?
                         "Attrib":"Uniform", (char *)s->hshm, (uint32_t)s->FRet);
             }
+            break;
+        case FEnum_glGetActiveUniformARB:
+            DPRINTF("ActiveUniform \"%s\" len %02x sz %02x enum %04x", PTR(outshm, 3*ALIGNED(1)),
+                    *(uint32_t *)outshm,
+                    *(uint32_t *)PTR(outshm, ALIGNED(1)),
+                    *(uint32_t *)PTR(outshm, 2*ALIGNED(1)));
             break;
 #endif
         case FEnum_glGetString:

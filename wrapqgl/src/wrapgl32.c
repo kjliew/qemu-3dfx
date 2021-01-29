@@ -3771,8 +3771,18 @@ void PT_CALL glGetActiveUniform(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetActiveUniform;
 }
 void PT_CALL glGetActiveUniformARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
+    uint32_t n, e;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetActiveUniformARB;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(2*ALIGNED(1), (uint32_t)&e, sizeof(uint32_t));
+    if (e) {
+        if (arg3)
+            memcpy((char *)arg3, &n, sizeof(uint32_t));
+        memcpy((char *)arg5, &e, sizeof(uint32_t));
+        fifoOutData(ALIGNED(1), arg4, sizeof(uint32_t));
+        fifoOutData(3*ALIGNED(1), arg6, n + 1);
+    }
 }
 void PT_CALL glGetActiveUniformBlockName(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -4211,8 +4221,12 @@ void PT_CALL glGetImageTransformParameterivHP(uint32_t arg0, uint32_t arg1, uint
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetImageTransformParameterivHP;
 }
 void PT_CALL glGetInfoLogARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t len;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetInfoLogARB;
+    fifoOutData(0, (uint32_t)&len, sizeof(uint32_t));
+    len = (len > arg1)? arg1:len;
+    fifoOutData(0, arg3, len);
 }
 void PT_CALL glGetInstrumentsSGIX(void) {
     
@@ -4576,16 +4590,22 @@ void PT_CALL glGetObjectLabelEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, ui
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetObjectLabelEXT;
 }
 void PT_CALL glGetObjectParameterfvARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetObjectParameterfvARB;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(float));
 }
 void PT_CALL glGetObjectParameterivAPPLE(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetObjectParameterivAPPLE;
 }
 void PT_CALL glGetObjectParameterivARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetObjectParameterivARB;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
 }
 void PT_CALL glGetObjectPtrLabel(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 

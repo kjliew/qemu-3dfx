@@ -186,6 +186,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         uint32_t (__stdcall *fpa1p3)(uint32_t, uint32_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa0p2a3)(uint32_t, uintptr_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa2p3)(uint32_t, uint32_t, uint32_t, uintptr_t);
+        uint32_t (__stdcall *fpa2p6)(uint32_t, uint32_t, uint32_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa2p3a4)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa2p3a5)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t, uint32_t);
         uint32_t (__stdcall *fpa2p3a6)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t, uint32_t, uint32_t);
@@ -290,6 +291,10 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glWeightPointerARB:
             usfp.fpa2p3 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa2p3)(arg[0], arg[1], arg[2], parg[3]);
+            GLDONE();
+        case FEnum_glGetActiveUniformARB:
+            usfp.fpa2p6 = tblMesaGL[FEnum].ptr;
+            *ret = (*usfp.fpa2p6)(arg[0], arg[1], arg[2], parg[3], parg[0], parg[1], parg[2]);
             GLDONE();
         case FEnum_glDrawElementsBaseVertex:
         case FEnum_glDrawElementsInstanced:
@@ -656,6 +661,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glMaterialfv:
         case FEnum_glMaterialiv:
         case FEnum_glNormalPointer:
+        case FEnum_glGetObjectParameterfvARB:
+        case FEnum_glGetObjectParameterivARB:
         case FEnum_glPixelMapfv:
         case FEnum_glPixelMapuiv:
         case FEnum_glPixelMapusv:
@@ -707,6 +714,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa1p2 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa1p2)(arg[0], arg[1], parg[2]);
             GLDONE();
+        case FEnum_glGetInfoLogARB:
         case FEnum_glGetProgramInfoLog:
         case FEnum_glGetShaderInfoLog:
         case FEnum_glShaderSource:
