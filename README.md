@@ -40,6 +40,7 @@ Simple guide to apply the patch:<br>
  - `Watcom C/C++ 11.0` for DOS OVL wrapper  
  - `i686-pc-msdosdjgpp` cross-tools (binutils, gcc, dxe3gen) for DJGPP DXE wrappers
 <br>
+
     $ cd ~/myqemu/qemu-3dfx/wrapper
     $ mkdir build && cd build
     $ cp ../src/Makefile.in ./Makefile
