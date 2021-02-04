@@ -2473,7 +2473,7 @@ void PT_CALL glDispatchComputeIndirect(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDispatchComputeIndirect;
 }
 void PT_CALL glDrawArrays(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    if (vtxArry.arrayBuf == 0) {
+    if (arg2 && (vtxArry.arrayBuf == 0)) {
         PrepVertexArray(arg1, arg1 + arg2 - 1, 0);
         PushVertexArray(arg1, arg1 + arg2 - 1);
     }
@@ -2481,7 +2481,7 @@ void PT_CALL glDrawArrays(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDrawArrays, 3);
 }
 void PT_CALL glDrawArraysEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-    if (vtxArry.arrayBuf == 0) {
+    if (arg2 && (vtxArry.arrayBuf == 0)) {
         PrepVertexArray(arg1, arg1 + arg2 - 1, 0);
         PushVertexArray(arg1, arg1 + arg2 - 1);
     }
@@ -6418,8 +6418,10 @@ void PT_CALL glLoadTransposeMatrixxOES(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glLoadTransposeMatrixxOES;
 }
 void PT_CALL glLockArraysEXT(uint32_t arg0, uint32_t arg1) {
-    PrepVertexArray(arg0, arg0 + arg1 - 1, 0);
-    PushVertexArray(arg0, arg0 + arg1 - 1);
+    if (arg1) {
+        PrepVertexArray(arg0, arg0 + arg1 - 1, 0);
+        PushVertexArray(arg0, arg0 + arg1 - 1);
+    }
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glLockArraysEXT, 2);
 }
@@ -16364,6 +16366,26 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
     return ret;
 }
 
+static void HookDeviceGammaRamp(const uint32_t caddr)
+{
+    DWORD oldProt;
+    uint32_t *patch, addr;
+#define GLGAMMA_HOOK(mod,ret,off,get,set) \
+    addr = (uint32_t)GetModuleHandle(mod); \
+    if (addr && ((caddr & 0xFFFFU) == ret)) { \
+        patch = (uint32_t *)(caddr + off); \
+        if (VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) { \
+            patch[get] = (uint32_t)&wglGetDeviceGammaRamp3DFX; \
+            patch[set] = (uint32_t)&wglSetDeviceGammaRamp3DFX; \
+            VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt); \
+        } \
+    }
+    GLGAMMA_HOOK("jk2mp.exe", 0x2450, 0x47bcc, 4, 0);
+    GLGAMMA_HOOK("jk2sp.exe", 0xecb0, 0x4b36c, 0, 1);
+    GLGAMMA_HOOK("opengldrv.dll", 0x33a8, 0x15ebc, 0, 1);
+#undef GLGAMMA_HOOK
+}
+
 BOOL WINAPI
 mglDescribeLayerPlane(HDC hdc, int iPixelFormat, int iLayerPlane,
                       UINT nBytes, LPLAYERPLANEDESCRIPTOR ppfd)
@@ -16427,6 +16449,7 @@ uint32_t PT_CALL mglGetProcAddress (uint32_t arg0)
     /* WGL_3DFX_gamma_control */
     FUNC_WGL_EXT(wglGetDeviceGammaRamp3DFX);
     FUNC_WGL_EXT(wglSetDeviceGammaRamp3DFX);
+#undef FUNC_WGL_EXT
 
     ret = (uint32_t)fptr;
     if (ret == 0) {
@@ -16614,6 +16637,8 @@ BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *
 {
     uint32_t ret;
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
+    asm volatile("movl 0x4c(%%esp), %0;":"=rm"(ret));
+    HookDeviceGammaRamp(ret);
     if (currGLRC) {
         mglMakeCurrent(0, 0);
         mglDeleteContext(MESAGL_MAGIC);

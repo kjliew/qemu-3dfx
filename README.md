@@ -3,7 +3,7 @@ Copyright (C) 2018-2021
 KJ Liew \<liewkj@yahoo.com\>
 ## Content
     qemu-0/hw/3dfx      - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
-    qemu-1/hw/mesa      - Overlay for QEMU source tree to add MESA GL pass-through device mode
+    qemu-1/hw/mesa      - Overlay for QEMU source tree to add MESA GL pass-through device model
     scripts/sign_commit - Script for stamping commit id
     wrapper             - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
     wrapqgl             - MESA GL wrapper for supported guest OS/environment (Windows)

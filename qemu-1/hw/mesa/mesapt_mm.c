@@ -842,7 +842,7 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDrawArrays:
         case FEnum_glDrawArraysEXT:
-            if (s->arrayBuf == 0) {
+            if (s->arg[2] && (s->arrayBuf == 0)) {
                 s->elemMax = ((s->arg[1] + s->arg[2] - 1) > s->elemMax)? (s->arg[1] + s->arg[2] - 1):s->elemMax;
                 PushVertexArray(s, s->hshm, s->arg[1], s->arg[1] + s->arg[2] - 1);
             }
@@ -1104,7 +1104,8 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glLockArraysEXT:
             //DPRINTF("LockArraysEXT() %04x %04x", s->arg[0], s->arg[1]);
-            PushVertexArray(s, s->hshm, s->arg[0], s->arg[0] + s->arg[1] - 1);
+            if (s->arg[1])
+                PushVertexArray(s, s->hshm, s->arg[0], s->arg[0] + s->arg[1] - 1);
             break;
         case FEnum_glProgramEnvParameter4dvARB:
         case FEnum_glProgramLocalParameter4dvARB:
