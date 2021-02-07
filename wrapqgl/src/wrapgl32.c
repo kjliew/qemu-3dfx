@@ -16368,22 +16368,35 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
 
 static void HookDeviceGammaRamp(const uint32_t caddr)
 {
-    DWORD oldProt;
-    uint32_t *patch, addr;
+    DWORD oldProt, hkGet, hkSet;
+    uint32_t *patch, addr, *idata;
+    hkGet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDeviceGammaRamp");
+    hkSet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "SetDeviceGammaRamp");
 #define GLGAMMA_HOOK(mod,ret,off,get,set) \
     addr = (uint32_t)GetModuleHandle(mod); \
     if (addr && ((caddr & 0xFFFFU) == ret)) { \
         patch = (uint32_t *)(caddr + off); \
         if (VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) { \
-            patch[get] = (uint32_t)&wglGetDeviceGammaRamp3DFX; \
-            patch[set] = (uint32_t)&wglSetDeviceGammaRamp3DFX; \
+            patch[get] = (hkGet == patch[get])? (uint32_t)&wglGetDeviceGammaRamp3DFX:patch[get]; \
+            patch[set] = (hkSet == patch[set])? (uint32_t)&wglSetDeviceGammaRamp3DFX:patch[set]; \
             VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt); \
+            return; \
         } \
     }
-    GLGAMMA_HOOK("jk2mp.exe", 0x2450, 0x47bcc, 4, 0);
-    GLGAMMA_HOOK("jk2sp.exe", 0xecb0, 0x4b36c, 0, 1);
     GLGAMMA_HOOK("opengldrv.dll", 0x33a8, 0x15ebc, 0, 1);
 #undef GLGAMMA_HOOK
+    idata = (uint32_t *)(caddr - 0x04);
+    addr = *idata;
+    patch = (uint32_t *)addr;
+    while (*(--patch));
+    if (hkGet && hkGet &&
+        VirtualProtect((void *)addr, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
+        while (*(++patch)) {
+            *patch = (hkGet == (*patch))? (uint32_t)&wglGetDeviceGammaRamp3DFX:(*patch);
+            *patch = (hkSet == (*patch))? (uint32_t)&wglSetDeviceGammaRamp3DFX:(*patch);
+        }
+        VirtualProtect((void *)addr, sizeof(intptr_t), oldProt, &oldProt);
+    }
 }
 
 BOOL WINAPI
