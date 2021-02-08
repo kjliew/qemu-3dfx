@@ -16370,6 +16370,7 @@ static void HookDeviceGammaRamp(const uint32_t caddr)
 {
     DWORD oldProt, hkGet, hkSet;
     uint32_t *patch, addr, *idata;
+    uint16_t *callOp;
     hkGet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDeviceGammaRamp");
     hkSet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "SetDeviceGammaRamp");
 #define GLGAMMA_HOOK(mod,ret,off,get,set) \
@@ -16386,16 +16387,19 @@ static void HookDeviceGammaRamp(const uint32_t caddr)
     GLGAMMA_HOOK("opengldrv.dll", 0x33a8, 0x15ebc, 0, 1);
 #undef GLGAMMA_HOOK
     idata = (uint32_t *)(caddr - 0x04);
-    addr = *idata;
-    patch = (uint32_t *)addr;
-    while (*(--patch));
-    if (hkGet && hkGet &&
-        VirtualProtect((void *)addr, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
-        while (*(++patch)) {
-            *patch = (hkGet == (*patch))? (uint32_t)&wglGetDeviceGammaRamp3DFX:(*patch);
-            *patch = (hkSet == (*patch))? (uint32_t)&wglSetDeviceGammaRamp3DFX:(*patch);
+    callOp = (uint16_t *)(caddr - 0x06);
+    if (0x15ff == (*callOp)) {
+        addr = *idata;
+        patch = (uint32_t *)addr;
+        while (*(--patch));
+        if (hkGet && hkGet &&
+            VirtualProtect((void *)addr, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
+            while (*(++patch)) {
+                *patch = (hkGet == (*patch))? (uint32_t)&wglGetDeviceGammaRamp3DFX:(*patch);
+                *patch = (hkSet == (*patch))? (uint32_t)&wglSetDeviceGammaRamp3DFX:(*patch);
+            }
+            VirtualProtect((void *)addr, sizeof(intptr_t), oldProt, &oldProt);
         }
-        VirtualProtect((void *)addr, sizeof(intptr_t), oldProt, &oldProt);
     }
 }
 
