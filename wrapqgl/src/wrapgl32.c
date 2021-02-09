@@ -16366,7 +16366,7 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
     return ret;
 }
 
-static void HookDeviceGammaRamp(const uint32_t caddr)
+void HookDeviceGammaRamp(const uint32_t caddr)
 {
     DWORD oldProt, hkGet, hkSet;
     uint32_t *patch, addr, *idata;
@@ -16652,10 +16652,11 @@ int WINAPI wgdGetPixelFormat(HDC hdc) { return wglGetPixelFormat(hdc); }
 
 BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 {
-    uint32_t ret;
-    uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
-    asm volatile("movl 0x4c(%%esp), %0;":"=rm"(ret));
+    uint32_t ret, *rsp, *xppfd;
+    asm volatile("lea 0x3c(%%esp), %0;":"=rm"(rsp));
+    ret = (format == rsp[2])? rsp[0]:rsp[4];
     HookDeviceGammaRamp(ret);
+    xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     if (currGLRC) {
         mglMakeCurrent(0, 0);
         mglDeleteContext(MESAGL_MAGIC);
@@ -16669,7 +16670,7 @@ BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *
     currPixFmt = (ret)? format:0;
     return (currPixFmt)? TRUE:FALSE;
 }
-BOOL WINAPI wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
+BOOL WINAPI __attribute__((optimize("Og"))) wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 { return wglSetPixelFormat(hdc, format, ppfd); }
 
 LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
