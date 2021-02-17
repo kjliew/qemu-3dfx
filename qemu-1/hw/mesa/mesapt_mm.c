@@ -1447,6 +1447,12 @@ static void processArgs(MesaPTState *s)
             s->parg[2] = VAL(outshm);
             s->parg[3] = VAL(PTR(outshm, ALIGNED(sizeof(int))));
             break;
+        case FEnum_glDebugMessageInsertARB:
+            s->datacb = ALIGNED(s->arg[4]);
+            DPRINTF_COND(((s->arg[0] == GL_DEBUG_SOURCE_OTHER_ARB) &&
+                (s->arg[1] == GL_DEBUG_TYPE_OTHER_ARB) &&
+                (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB)), "%s", (char *)(s->hshm));
+            break;
         case FEnum_glShaderSource:
         case FEnum_glShaderSourceARB:
             {

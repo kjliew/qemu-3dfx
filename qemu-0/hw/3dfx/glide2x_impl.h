@@ -53,6 +53,9 @@
 #define GR_TEXFMT_AYIQ_8422             0x9
 #define GR_TEXFMT_AP_88                 0xe /* 8-bit alpha 8-bit palette */
 
+#define GR_CONTROL_ACTIVATE             0x1
+#define GR_CONTROL_DEACTIVATE           0x2
+
 typedef struct {
     uint32_t small;
     uint32_t large;

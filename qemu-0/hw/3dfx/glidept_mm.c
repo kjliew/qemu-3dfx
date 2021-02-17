@@ -230,7 +230,7 @@ static void processArgs(GlidePTState *s)
             s->parg[0] = VAL(outshm);
             break;
         case FEnum_grSstControl:
-            if (s->arg[0] == 0x01)
+            if (s->arg[0] == GR_CONTROL_ACTIVATE)
                 glide_enabled_set();
             break;
         case FEnum_grSstPerfStats:
@@ -546,10 +546,10 @@ static void processArgs(GlidePTState *s)
 	    }
 	    break;
         case FEnum_grSstPassthruMode:
-            if (s->arg[0] == 0x01)
+            if (s->arg[0] == GR_CONTROL_ACTIVATE)
                 glide_enabled_set();
             if (s->lfbDev->emu211 == 1) {
-                s->arg[0] = (s->arg[0])? 1:2;
+                s->arg[0] = (s->arg[0])? GR_CONTROL_ACTIVATE:GR_CONTROL_DEACTIVATE;
                 s->FEnum = FEnum_grSstControl;
             }
             break;
@@ -618,7 +618,7 @@ static void processFRet(GlidePTState *s)
             DPRINTF("grGlideGetVersion  %s", s->version);
             break;
         case FEnum_grSstControl:
-            if (s->arg[0] == 0x02)
+            if (s->arg[0] == GR_CONTROL_DEACTIVATE)
                 glide_enabled_reset();
             break;
         case FEnum_grSstPassthruMode:
