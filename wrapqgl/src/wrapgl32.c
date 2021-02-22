@@ -130,6 +130,21 @@ static void vtxarry_init(vtxarry_t *varry, int size, int type, int stride, void 
     varry->stride = stride;
     varry->ptr = ptr;
 }
+static void vtxarry_ptr_reset(void)
+{
+    vtxArry.Color.ptr = 0;
+    vtxArry.EdgeFlag.ptr = 0;
+    vtxArry.Index.ptr = 0;
+    vtxArry.Normal.ptr = 0;
+    for (int i = 0; i < MAX_TEXUNIT; i++)
+        vtxArry.TexCoord[i].ptr = 0;
+    vtxArry.Vertex.ptr = 0;
+    vtxArry.SecondaryColor.ptr = 0;
+    vtxArry.FogCoord.ptr = 0;
+    vtxArry.Weight.ptr = 0;
+    vtxArry.GenAttrib[0].ptr = 0;
+    vtxArry.GenAttrib[1].ptr = 0;
+}
 static void vtxarry_state(uint32_t arg0, int st)
 {
 #define GENERIC_ATTRIB6 0x06
@@ -576,6 +591,8 @@ void PT_CALL glBindBuffer(uint32_t arg0, uint32_t arg1) {
     queryBuf = (arg0 == GL_QUERY_BUFFER)? arg1:queryBuf;
     vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
     vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
+    if ((vtxArry.vao == 0) && (arg0 == GL_ARRAY_BUFFER) && (arg1 == 0))
+        vtxarry_ptr_reset();
     if (vtxArry.vao) {
         vtxArry.arrayBuf = vtxArry.vao;
         vtxArry.elemArryBuf = vtxArry.vao;
@@ -589,6 +606,8 @@ void PT_CALL glBindBufferARB(uint32_t arg0, uint32_t arg1) {
     queryBuf = (arg0 == GL_QUERY_BUFFER)? arg1:queryBuf;
     vtxArry.arrayBuf = (arg0 == GL_ARRAY_BUFFER)? arg1:vtxArry.arrayBuf;
     vtxArry.elemArryBuf = (arg0 == GL_ELEMENT_ARRAY_BUFFER)? arg1:vtxArry.elemArryBuf;
+    if ((vtxArry.vao == 0) && (arg0 == GL_ARRAY_BUFFER) && (arg1 == 0))
+        vtxarry_ptr_reset();
     if (vtxArry.vao) {
         vtxArry.arrayBuf = vtxArry.vao;
         vtxArry.elemArryBuf = vtxArry.vao;
@@ -2165,6 +2184,8 @@ void PT_CALL glDeleteBuffers(uint32_t arg0, uint32_t arg1) {
         pixPackBuf = (((uint32_t *)arg1)[i] == pixPackBuf)? 0:pixPackBuf;
         pixUnpackBuf = (((uint32_t *)arg1)[i] == pixUnpackBuf)? 0:pixUnpackBuf;
         queryBuf = (((uint32_t *)arg1)[i] == queryBuf)? 0:queryBuf;
+        if ((vtxArry.vao == 0) && vtxArry.arrayBuf && (((uint32_t *)arg1)[i] == vtxArry.arrayBuf))
+            vtxarry_ptr_reset();
         vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
         vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
     }
@@ -2181,6 +2202,8 @@ void PT_CALL glDeleteBuffersARB(uint32_t arg0, uint32_t arg1) {
         pixPackBuf = (((uint32_t *)arg1)[i] == pixPackBuf)? 0:pixPackBuf;
         pixUnpackBuf = (((uint32_t *)arg1)[i] == pixUnpackBuf)? 0:pixUnpackBuf;
         queryBuf = (((uint32_t *)arg1)[i] == queryBuf)? 0:queryBuf;
+        if ((vtxArry.vao == 0) && vtxArry.arrayBuf && (((uint32_t *)arg1)[i] == vtxArry.arrayBuf))
+            vtxarry_ptr_reset();
         vtxArry.arrayBuf = (((uint32_t *)arg1)[i] == vtxArry.arrayBuf)? 0:vtxArry.arrayBuf;
         vtxArry.elemArryBuf = (((uint32_t *)arg1)[i] == vtxArry.elemArryBuf)? 0:vtxArry.elemArryBuf;
     }

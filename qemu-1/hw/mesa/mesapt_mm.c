@@ -96,6 +96,22 @@ static void vtxarry_init(vtxarry_t *varry, int size, int type, int stride, void 
     varry->ptr = ptr;
 }
 
+static void vtxarry_ptr_reset(MesaPTState *s)
+{
+    s->Color.ptr = 0;
+    s->EdgeFlag.ptr = 0;
+    s->Index.ptr = 0;
+    s->Normal.ptr = 0;
+    for (int i = 0; i < MAX_TEXUNIT; i++)
+        s->TexCoord[i].ptr = 0;
+    s->Vertex.ptr = 0;
+    s->SecondaryColor.ptr = 0;
+    s->FogCoord.ptr = 0;
+    s->Weight.ptr = 0;
+    s->GenAttrib[0].ptr = 0;
+    s->GenAttrib[1].ptr = 0;
+}
+
 static void vtxarry_state(MesaPTState *s, uint32_t arry, int st)
 {
 #define GENERIC_ATTRIB6 0x06
@@ -1638,6 +1654,8 @@ static void processFRet(MesaPTState *s)
             s->arrayBuf = (s->arg[0] == GL_ARRAY_BUFFER)? s->arg[1]:s->arrayBuf;
             s->elemArryBuf = (s->arg[0] == GL_ELEMENT_ARRAY_BUFFER)? s->arg[1]:s->elemArryBuf;
             s->BufIdx = s->arg[1];
+            if ((s->vao == 0) && (s->arg[0] == GL_ARRAY_BUFFER) && (s->arg[1] == 0))
+                vtxarry_ptr_reset(s);
             if (s->vao) {
                 s->arrayBuf = s->vao;
                 s->elemArryBuf = s->vao;
@@ -1649,6 +1667,8 @@ static void processFRet(MesaPTState *s)
                 s->pixPackBuf = (((uint32_t *)s->hshm)[i] == s->pixPackBuf)? 0:s->pixPackBuf;
                 s->pixUnpackBuf = (((uint32_t *)s->hshm)[i] == s->pixUnpackBuf)? 0:s->pixUnpackBuf;
                 s->queryBuf = (((uint32_t *)s->hshm)[i] == s->queryBuf)? 0:s->queryBuf;
+                if ((s->vao == 0) && s->arrayBuf && (((uint32_t *)s->hshm)[i] == s->arrayBuf))
+                    vtxarry_ptr_reset(s);
                 s->arrayBuf = (((uint32_t *)s->hshm)[i] == s->arrayBuf)? 0:s->arrayBuf;
                 s->elemArryBuf = (((uint32_t *)s->hshm)[i] == s->elemArryBuf)? 0:s->elemArryBuf;
             }
