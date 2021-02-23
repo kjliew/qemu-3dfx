@@ -14,6 +14,7 @@ KJ Liew \<liewkj@yahoo.com\>
     99-3dfx.patch               - Patch for QEMU version 1.6.x to 2.12.1 (deprecated)
     99-oldqemu.patch            - Additional patch for QEMU version < 2.10 (deprecated)
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
+Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Windows 10 and Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to make them work on newer version of Windows.
 - YouTube channel (https://www.youtube.com/channel/UCl8InhZs1ixZBcLrMDSWd0A/videos)
 - VOGONS forums (https://www.vogons.org)
 
