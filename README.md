@@ -63,3 +63,15 @@ Simple guide to apply the patch:<br>
  - Copy `GLIDE.DLL`, `GLIDE2X.DLL` and `GLIDE3X.DLL` to `%SystemRoot%\system32`  
  - Run `INSTDRV.EXE`, require Administrator Priviledge  
  - Copy `OPENGL32.DLL` to `Game Installation` folders
+ 
+## Donation
+If this project helps you relive the nostalgic memory of old Windows games, you can now donate to the cause of supporting those games preservation with QEMU. Your donation also motivates and encourages me in research of making QEMU a better platform for retro Windows games.
+
+For $59.99 donation, you will deserve the following donor's privileges:
+- QEMU binary package built for platform of your choice (choose one: Windows 10, Ubuntu, etc.)
+- QEMU-enhanced OpenGlide host binary package built for platform of your choice (choose one: Windows 10, Ubuntu, etc.)
+- QEMU-enhanced **WineD3D libraries for Win98/2K/ME/XP VMs** for DirectDraw/Direct3D games up to DirectX 9.0c
+- OpenGlide guest binary package for Windows
+- Elect up to 3 games for priority support and your name as the honorary sponsor in the supported & tested list of games.
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XE47KTASERX4A)
