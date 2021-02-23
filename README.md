@@ -13,7 +13,11 @@ KJ Liew \<liewkj@yahoo.com\>
     02-qemu311-mesa-glide.patch - Patch for QEMU version 3.xx (MESA & Glide)
     99-3dfx.patch               - Patch for QEMU version 1.6.x to 2.12.1 (deprecated)
     99-oldqemu.patch            - Additional patch for QEMU version < 2.10 (deprecated)
-<br>Following instructions are based on `MSYS2/mingw-w64` BASH shell environment on Windows 10. It is meant to be simple and minor variations are inevitable due to different flavors of Linux distributions.
+## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
+- YouTube channel (https://www.youtube.com/channel/UCl8InhZs1ixZBcLrMDSWd0A/videos)
+- VOGONS forums (https://www.vogons.org)
+
+Following instructions are based on `MSYS2/mingw-w64` BASH shell environment on Windows 10. It is meant to be simple and minor variations are inevitable due to different flavors of Linux distributions.
 
 ## Building QEMU
 Simple guide to apply the patch:<br>
