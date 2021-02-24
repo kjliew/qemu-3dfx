@@ -28,6 +28,7 @@
 
 #include "glide2x_impl.h"
 #include "gllstbuf.h"
+#include "vertex3x.h"
 
 #define DEBUG_GLIDEPT
 
@@ -204,23 +205,32 @@ static void processArgs(GlidePTState *s)
     switch (s->FEnum) {
 	case FEnum_grDrawLine:
 	case FEnum_grAADrawLine:
-            s->datacb = 2*ALIGNED(SIZE_GRVERTEX);
-            s->parg[0] = VAL(PTR(s->hshm,0));
-            s->parg[1] = VAL(PTR(s->hshm,1*ALIGNED(SIZE_GRVERTEX)));
+            do {
+                uint32_t szvert = (s->initDLL == 0x301a0)? size_vertex3x():SIZE_GRVERTEX;
+                s->datacb = 2*ALIGNED(szvert);
+                s->parg[0] = VAL(PTR(s->hshm,0));
+                s->parg[1] = VAL(PTR(s->hshm,1*ALIGNED(szvert)));
+            } while(0);
 	    break;
         case FEnum_grDrawTriangle:
 	case FEnum_grAADrawTriangle:
 	case FEnum_guDrawTriangleWithClip:
 	case FEnum_guAADrawTriangleWithClip:
-            s->datacb = 3*ALIGNED(SIZE_GRVERTEX);
-            s->parg[0] = VAL(PTR(s->hshm,0));
-            s->parg[1] = VAL(PTR(s->hshm,1*ALIGNED(SIZE_GRVERTEX)));
-            s->parg[2] = VAL(PTR(s->hshm,2*ALIGNED(SIZE_GRVERTEX)));
+            do {
+                uint32_t szvert = (s->initDLL == 0x301a0)? size_vertex3x():SIZE_GRVERTEX;
+                s->datacb = 3*ALIGNED(szvert);
+                s->parg[0] = VAL(PTR(s->hshm,0));
+                s->parg[1] = VAL(PTR(s->hshm,1*ALIGNED(szvert)));
+                s->parg[2] = VAL(PTR(s->hshm,2*ALIGNED(szvert)));
+            } while(0);
             break;
 	case FEnum_grDrawPoint:
 	case FEnum_grAADrawPoint:
-            s->datacb = ALIGNED(SIZE_GRVERTEX);
-            s->parg[0] = VAL(PTR(s->hshm,0));
+            do {
+                uint32_t szvert = (s->initDLL == 0x301a0)? size_vertex3x():SIZE_GRVERTEX;
+                s->datacb = ALIGNED(szvert);
+                s->parg[0] = VAL(PTR(s->hshm,0));
+            } while(0);
 	    break;
         case FEnum_grGlideSetState:
         case FEnum_grGlideGetState:
@@ -581,11 +591,11 @@ static void processArgs(GlidePTState *s)
 	    s->parg[0] = VAL(LookupVtxLayout(s->arg[0], s->szVtxLayout));
             break;
         case FEnum_grDrawVertexArray:
-            s->datacb = s->arg[1] * ALIGNED(s->arg[1] * SIZE_GRVERTEX);
+            s->datacb = s->arg[1] * ALIGNED(s->arg[1] * size_vertex3x());
             do {
                 uint8_t **np = (uint8_t **)outshm;
                 for (int i = 0; i < s->arg[1]; i++)
-                    np[i] = PTR(s->hshm, i * ALIGNED(s->arg[1] * SIZE_GRVERTEX));
+                    np[i] = PTR(s->hshm, i * ALIGNED(s->arg[1] * size_vertex3x()));
             } while(0);
             s->parg[2] = VAL(outshm);
             break;
@@ -821,6 +831,13 @@ static void processFRet(GlidePTState *s)
                 if (s->arg[0] == GR_GLIDE_VERTEXLAYOUT_SIZE)
                     s->szVtxLayout = *(uint32_t *)outshm;
             }
+            break;
+        case FEnum_grReset:
+            if (s->arg[0] == GR_VERTEX_PARAMETER)
+                memset(vlut, 0, sizeof(vlut));
+            break;
+        case FEnum_grVertexLayout:
+            vlut_vvars(s->arg[0], s->arg[1], s->arg[2]);
             break;
 
 	case FEnum_grLfbBegin:

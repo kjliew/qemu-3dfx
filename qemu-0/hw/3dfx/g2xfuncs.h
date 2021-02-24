@@ -212,16 +212,36 @@ typedef enum {
 #define FIRST_FIFO                              24
 #define MAX_FIFO                                0x10000
 #define MAX_DATA                                ((GRSHM_SIZE - (4*MAX_FIFO) - (64*1024)) >> 2)
-#define G3_LOD_TRANSLATE(lod)                       (0x8-lod)
-#define G3_ASPECT_TRANSLATE(aspect)                 (0x3-(aspect))
+#define G3_LOD_TRANSLATE(lod)                   (0x8-lod)
+#define G3_ASPECT_TRANSLATE(aspect)             (0x3-(aspect))
+#define GR_PARAM_IDX(p)                         ((p&0xF0U)? ((p&0x01U)? ((p>>4) + 6):((p>>4) + GR_PARAM_Q)):(p-1))
+#define GR_VERTEX_PARAMETER             0x29
 #define GR_FOG_TABLE_ENTRIES            0x04
 #define GR_GLIDE_STATE_SIZE             0x06
 #define GR_GLIDE_VERTEXLAYOUT_SIZE      0x07
+#define GR_NUM_BOARDS                   0x0f
 #define GR_EXTENSION                    0xa0
 #define GR_HARDWARE                     0xa1
 #define GR_RENDERER                     0xa2
 #define GR_VENDOR                       0xa3
 #define GR_VERSION                      0xa4
+
+/* Parameters for strips */
+#define GR_PARAM_XY       0x01
+#define GR_PARAM_Z        0x02
+#define GR_PARAM_W        0x03
+#define GR_PARAM_Q        0x04
+#define GR_PARAM_FOG_EXT  0x05
+#define GR_PARAM_A        0x10
+#define GR_PARAM_RGB      0x20
+#define GR_PARAM_PARGB    0x30
+#define GR_PARAM_ST0      0x40
+#define GR_PARAM_ST1      GR_PARAM_ST0+1
+#define GR_PARAM_Q0       0x50
+#define GR_PARAM_Q1       GR_PARAM_Q0+1
+
+#define GR_PARAM_DISABLE  0x00
+#define GR_PARAM_ENABLE   0x01
 
 #define COMMIT_SIGN \
     const char rev_[ALIGNED(1)]
