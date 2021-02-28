@@ -16539,7 +16539,8 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
     memcpy((char *)&ptVer[1], rev_, 8);
     memcpy(((char *)&ptVer[1] + 8), icdBuild, sizeof(icdBuild));
     ptm[0xFF8 >> 2] = MESAGL_MAGIC;
-    currGLRC = (level && ((arg1 + level) == MESAGL_MAGIC))? (arg1 + level):arg1;
+    currGLRC = (level && ((arg1 + level) == MESAGL_MAGIC))?
+        (arg1 + level):((level)? MESAGL_MAGIC:arg1);
     return TRUE;
 }
 

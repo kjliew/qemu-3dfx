@@ -2034,7 +2034,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         s->dispTimer = (disptmr)? timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0):0;
                     }
                     else {
-                        DPRINTF_COND((0 == NumPbuffer()),
+                        DPRINTF_COND((ptVer[0] && (0 == NumPbuffer())),
                             "wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
                         MGLMakeCurrent(ptVer[0], level);
                     }
