@@ -16238,8 +16238,11 @@ wglCreateContextAttribsARB(HDC hDC,
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
   WGL_FUNCP_RET(ret);
   if (ret) {
-      if (currGLRC && hShareContext)
+      if (currGLRC && hShareContext) {
           level++;
+          if (level == MAX_LVLCNTX)
+              level--;
+      }
       else {
           currDC = (uint32_t)hDC;
           currGLRC = 0;

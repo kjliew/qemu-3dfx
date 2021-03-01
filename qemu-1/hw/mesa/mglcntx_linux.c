@@ -594,6 +594,7 @@ void MGLFuncHandler(const char *name)
                     glXDestroyContext(dpy, ctx[1]);
                     for (i = 1; i < (MAX_LVLCNTX - 1); i++)
                         ctx[i] = ctx[i + 1];
+                    argsp[1] = i;
                 }
                 ctx[i] = fp(dpy, fbcnf[0], ctx[i-1], True, (const int *)&argsp[2]);
                 ret = (ctx[i])? 1:0;

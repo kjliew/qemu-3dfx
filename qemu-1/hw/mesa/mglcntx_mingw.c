@@ -552,6 +552,7 @@ void MGLFuncHandler(const char *name)
                     wglFuncs.DeleteContext(hRC[1]);
                     for (i = 1; i < (MAX_LVLCNTX - 1); i++)
                         hRC[i] = hRC[i + 1];
+                    argsp[1] = i;
                 }
                 hRC[i] = wglFuncs.CreateContextAttribsARB(hDC, hRC[i-1], (const int *)&argsp[2]);
                 ret = (hRC[i])? 1:0;
