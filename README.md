@@ -17,10 +17,10 @@ KJ Liew \<liewkj@yahoo.com\>
 Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Windows 10 and Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to make them work on newer version of Windows.
 - YouTube channel (https://www.youtube.com/channel/UCl8InhZs1ixZBcLrMDSWd0A/videos)
 - VOGONS forums (https://www.vogons.org)
-
+- Wiki (https://github.com/kjliew/qemu-3dfx/wiki)
+## Building QEMU
 Following instructions are based on `MSYS2/mingw-w64` BASH shell environment on Windows 10. It is meant to be simple and minor variations are inevitable due to different flavors of Linux distributions.
 
-## Building QEMU
 Simple guide to apply the patch:<br>
 (using `00-qemu520-mesa-glide.patch`)
 
