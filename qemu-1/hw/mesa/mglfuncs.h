@@ -28,7 +28,7 @@ typedef struct {
 #define MGLFBT_SIZE                             0x2000000
 #define MGLSHM_SIZE                             0x3ffc000
 #define FIRST_FIFO                              24
-#define MAX_FIFO                                0x20000
+#define MAX_FIFO                                0x60000
 #define MAX_DATA                                ((MGLSHM_SIZE - (4*MAX_FIFO) - (4*4096)) >> 2)
 #define MAX_LVLCNTX                             ((MESAGL_MAGIC & 0x0FU) + 1)
 #define MAX_TEXUNIT                             8
