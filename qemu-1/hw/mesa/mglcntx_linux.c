@@ -264,9 +264,9 @@ static void MesaInitGammaRamp(void)
             break;
         case 0x800:
             for (int i = 0; i < rampsz; i++) {
-                GammaRamp.r[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xFC00U) >> 11)) & 0xFFFFU);
-                GammaRamp.g[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xFC00U) >> 11)) & 0xFFFFU);
-                GammaRamp.b[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xFC00U) >> 11)) & 0xFFFFU);
+                GammaRamp.r[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xF800U) >> 11)) & 0xFFFFU);
+                GammaRamp.g[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xF800U) >> 11)) & 0xFFFFU);
+                GammaRamp.b[i] = (uint16_t)(((i << 5) | (((i << 5) & 0xF800U) >> 11)) & 0xFFFFU);
             }
             break;
 
@@ -713,16 +713,16 @@ void MGLFuncHandler(const char *name)
                 break;
             case 0x400:
                 for (int i = 0; i < 0x100; i++) {
-                    wRamp->r[i] = xRamp.r[i << 2];
-                    wRamp->g[i] = xRamp.g[i << 2];
-                    wRamp->b[i] = xRamp.b[i << 2];
+                    wRamp->r[i] = (xRamp.r[i << 2] & 0xFF00U) | i;
+                    wRamp->g[i] = (xRamp.g[i << 2] & 0xFF00U) | i;
+                    wRamp->b[i] = (xRamp.b[i << 2] & 0xFF00U) | i;
                 }
                 break;
             case 0x800:
                 for (int i = 0; i < 0x100; i++) {
-                    wRamp->r[i] = xRamp.r[i << 3];
-                    wRamp->g[i] = xRamp.g[i << 3];
-                    wRamp->b[i] = xRamp.b[i << 3];
+                    wRamp->r[i] = (xRamp.r[i << 3] & 0xFF00U) | i;
+                    wRamp->g[i] = (xRamp.g[i << 3] & 0xFF00U) | i;
+                    wRamp->b[i] = (xRamp.b[i << 3] & 0xFF00U) | i;
                 }
                 break;
 
