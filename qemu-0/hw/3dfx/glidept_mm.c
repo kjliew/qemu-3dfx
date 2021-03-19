@@ -591,11 +591,11 @@ static void processArgs(GlidePTState *s)
 	    s->parg[0] = VAL(LookupVtxLayout(s->arg[0], s->szVtxLayout));
             break;
         case FEnum_grDrawVertexArray:
-            s->datacb = s->arg[1] * ALIGNED(s->arg[1] * size_vertex3x());
+            s->datacb = s->arg[1] * ALIGNED(size_vertex3x());
             do {
                 uint8_t **np = (uint8_t **)outshm;
                 for (int i = 0; i < s->arg[1]; i++)
-                    np[i] = PTR(s->hshm, i * ALIGNED(s->arg[1] * size_vertex3x()));
+                    np[i] = PTR(s->hshm, i * ALIGNED(size_vertex3x()));
             } while(0);
             s->parg[2] = VAL(outshm);
             break;

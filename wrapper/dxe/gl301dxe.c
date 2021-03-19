@@ -619,7 +619,7 @@ void PT_CALL grDrawVertexArray(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     int i;
     uint8_t **vp = (uint8_t **)arg2;
     for (i = 0; i < arg1; i++)
-        fifoAddData(0, (uint32_t)vp[i], arg1 * SIZE_GRVERTEX);
+        fifoAddData(0, (uint32_t)vp[i], size_vertex3x());
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GRFUNC(FEnum_grDrawVertexArray, 3);
 }
