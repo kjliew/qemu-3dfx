@@ -1,11 +1,11 @@
-diff -Nru ../orig/qemu-3.1.1.1/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
---- ../orig/qemu-3.1.1.1/accel/kvm/kvm-all.c	2019-10-01 15:31:43.000000000 -0700
-+++ ./accel/kvm/kvm-all.c	2020-11-05 17:12:40.133513400 -0800
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/accel/kvm/kvm-all.c	2019-10-01 15:31:43.000000000 -0700
++++ ./accel/kvm/kvm-all.c	2020-12-11 15:51:03.100843900 -0800
 @@ -819,6 +819,41 @@
      }
  }
 
-+void kvm_update_guest_pa_range(hwaddr start_pa, ram_addr_t size, void *host_va, int readonly, int add)
++void kvm_update_guest_pa_range(uint64_t start_pa, uint64_t size, void *host_va, int readonly, int add)
 +{
 +    KVMState *s = kvm_state;
 +    KVMMemoryListener *kml = &s->memory_listener;
@@ -43,9 +43,9 @@ diff -Nru ../orig/qemu-3.1.1.1/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
  static void kvm_region_add(MemoryListener *listener,
                             MemoryRegionSection *section)
  {
-diff -Nru ../orig/qemu-3.1.1.1/configure ./configure
---- ../orig/qemu-3.1.1.1/configure	2019-10-01 15:31:44.000000000 -0700
-+++ ./configure	2020-11-03 15:54:39.132654500 -0800
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/configure ./configure
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/configure	2019-10-01 15:31:44.000000000 -0700
++++ ./configure	2021-02-10 18:00:47.860303400 -0800
 @@ -881,6 +881,8 @@
    vhost_scsi="yes"
    vhost_vsock="yes"
@@ -55,8 +55,8 @@ diff -Nru ../orig/qemu-3.1.1.1/configure ./configure
    supported_os="yes"
    libudev="yes"
  ;;
-diff -Nru ../orig/qemu-3.1.1.1/hw/Makefile.objs ./hw/Makefile.objs
---- ../orig/qemu-3.1.1.1/hw/Makefile.objs	2019-10-01 15:31:44.000000000 -0700
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/hw/Makefile.objs ./hw/Makefile.objs
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/hw/Makefile.objs	2019-10-01 15:31:44.000000000 -0700
 +++ ./hw/Makefile.objs	2020-06-01 18:34:16.581486000 -0700
 @@ -7,6 +7,7 @@
  devices-dirs-$(CONFIG_SOFTMMU) += char/
@@ -74,8 +74,8 @@ diff -Nru ../orig/qemu-3.1.1.1/hw/Makefile.objs ./hw/Makefile.objs
  devices-dirs-$(CONFIG_SOFTMMU) += misc/
  devices-dirs-$(CONFIG_SOFTMMU) += net/
  devices-dirs-$(CONFIG_SOFTMMU) += rdma/
-diff -Nru ../orig/qemu-3.1.1.1/hw/i386/pc.c ./hw/i386/pc.c
---- ../orig/qemu-3.1.1.1/hw/i386/pc.c	2019-10-01 15:31:44.000000000 -0700
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/hw/i386/pc.c ./hw/i386/pc.c
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/hw/i386/pc.c	2019-10-01 15:31:44.000000000 -0700
 +++ ./hw/i386/pc.c	2020-08-14 01:47:55.734263100 -0700
 @@ -1636,6 +1636,28 @@
  
@@ -106,8 +106,8 @@ diff -Nru ../orig/qemu-3.1.1.1/hw/i386/pc.c ./hw/i386/pc.c
  }
  
  void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
-diff -Nru ../orig/qemu-3.1.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
---- ../orig/qemu-3.1.1.1/include/hw/i386/pc.h	2019-10-01 15:31:45.000000000 -0700
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/include/hw/i386/pc.h	2019-10-01 15:31:45.000000000 -0700
 +++ ./include/hw/i386/pc.h	2020-08-14 01:45:02.237365100 -0700
 @@ -165,6 +165,22 @@
  
@@ -132,30 +132,32 @@ diff -Nru ../orig/qemu-3.1.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
  /* vmport.c */
  #define TYPE_VMPORT "vmport"
  typedef uint32_t (VMPortReadFunc)(void *opaque, uint32_t address);
-diff -Nru ../orig/qemu-3.1.1.1/include/sysemu/kvm.h ./include/sysemu/kvm.h
---- ../orig/qemu-3.1.1.1/include/sysemu/kvm.h	2019-10-01 15:31:45.000000000 -0700
-+++ ./include/sysemu/kvm.h	2020-11-03 12:15:14.421898600 -0800
-@@ -469,6 +469,7 @@
- void kvm_set_sigmask_len(KVMState *s, unsigned int sigmask_len);
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/include/sysemu/kvm.h ./include/sysemu/kvm.h
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/include/sysemu/kvm.h	2019-10-01 15:31:45.000000000 -0700
++++ ./include/sysemu/kvm.h	2020-12-11 15:48:07.315383300 -0800
+@@ -475,6 +475,8 @@
 
- #if !defined(CONFIG_USER_ONLY)
-+void kvm_update_guest_pa_range(hwaddr, ram_addr_t, void *, int, int);
- int kvm_physical_memory_addr_from_host(KVMState *s, void *ram_addr,
-                                        hwaddr *phys_addr);
- #endif
-diff -Nru ../orig/qemu-3.1.1.1/include/sysemu/whpx.h ./include/sysemu/whpx.h
---- ../orig/qemu-3.1.1.1/include/sysemu/whpx.h	2019-10-01 15:31:45.000000000 -0700
-+++ ./include/sysemu/whpx.h	2020-11-03 14:16:35.980888000 -0800
-@@ -29,6 +29,7 @@
+ #endif /* NEED_CPU_H */
+
++void kvm_update_guest_pa_range(uint64_t start_pa, uint64_t size, void *host_va, int readonly, int add);
++
+ void kvm_cpu_synchronize_state(CPUState *cpu);
+ void kvm_cpu_synchronize_post_reset(CPUState *cpu);
+ void kvm_cpu_synchronize_post_init(CPUState *cpu);
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/include/sysemu/whpx.h ./include/sysemu/whpx.h
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/include/sysemu/whpx.h	2019-10-01 15:31:45.000000000 -0700
++++ ./include/sysemu/whpx.h	2020-12-11 15:46:58.466996300 -0800
+@@ -29,6 +29,8 @@
 
  #ifdef CONFIG_WHPX
 
-+void whpx_update_guest_pa_range(hwaddr, ram_addr_t, void *, int, int);
++void whpx_update_guest_pa_range(uint64_t start_pa, uint64_t size, void *host_va, int readonly, int add);
++
  int whpx_enabled(void);
 
  #else /* CONFIG_WHPX */
-diff -Nru ../orig/qemu-3.1.1.1/include/ui/console.h ./include/ui/console.h
---- ../orig/qemu-3.1.1.1/include/ui/console.h	2019-10-01 15:31:45.000000000 -0700
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/include/ui/console.h ./include/ui/console.h
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/include/ui/console.h	2019-10-01 15:31:45.000000000 -0700
 +++ ./include/ui/console.h	2020-10-06 22:57:11.337593800 -0700
 @@ -464,4 +464,21 @@
  /* input.c */
@@ -179,9 +181,9 @@ diff -Nru ../orig/qemu-3.1.1.1/include/ui/console.h ./include/ui/console.h
 +void mesa_enabled_reset(void);
 +
  #endif
-diff -Nru ../orig/qemu-3.1.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
---- ../orig/qemu-3.1.1.1/target/i386/whpx-all.c	2019-10-01 15:31:46.000000000 -0700
-+++ ./target/i386/whpx-all.c	2020-11-05 15:14:00.596654800 -0800
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/target/i386/whpx-all.c	2019-10-01 15:31:46.000000000 -0700
++++ ./target/i386/whpx-all.c	2020-12-11 15:50:20.905823800 -0800
 @@ -10,6 +10,7 @@
 
  #include "qemu/osdep.h"
@@ -194,7 +196,7 @@ diff -Nru ../orig/qemu-3.1.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
                          memory_region_is_rom(mr), mr->name);
  }
 
-+void whpx_update_guest_pa_range(hwaddr start_pa, ram_addr_t size, void *host_va, int readonly, int add)
++void whpx_update_guest_pa_range(uint64_t start_pa, uint64_t size, void *host_va, int readonly, int add)
 +{
 +    MemoryRegion mr;
 +    MemoryRegionSection section;
@@ -229,8 +231,8 @@ diff -Nru ../orig/qemu-3.1.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
  static void whpx_region_add(MemoryListener *listener,
                             MemoryRegionSection *section)
  {
-diff -Nru ../orig/qemu-3.1.1.1/ui/console.c ./ui/console.c
---- ../orig/qemu-3.1.1.1/ui/console.c	2019-10-01 15:31:46.000000000 -0700
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/ui/console.c ./ui/console.c
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/ui/console.c	2019-10-01 15:31:46.000000000 -0700
 +++ ./ui/console.c	2020-11-05 02:56:13.405910500 -0800
 @@ -258,11 +258,25 @@
      ds->have_text = have_text;
@@ -258,8 +260,8 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/console.c ./ui/console.c
      if (con && con->hw_ops->gfx_update) {
          con->hw_ops->gfx_update(con->hw);
      }
-diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
---- ../orig/qemu-3.1.1.1/ui/sdl.c	2019-10-01 15:31:46.000000000 -0700
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/ui/sdl.c	2019-10-01 15:31:46.000000000 -0700
 +++ ./ui/sdl.c	2020-11-03 14:00:24.050235800 -0800
 @@ -822,6 +822,10 @@
              break;
@@ -363,9 +365,9 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
  static const DisplayChangeListenerOps dcl_ops = {
      .dpy_name             = "sdl",
      .dpy_gfx_update       = sdl_update,
-diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
---- ../orig/qemu-3.1.1.1/ui/sdl2.c	2019-10-01 15:31:46.000000000 -0700
-+++ ./ui/sdl2.c	2020-11-03 14:10:04.611516100 -0800
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/ui/sdl2.c	2019-10-01 15:31:46.000000000 -0700
++++ ./ui/sdl2.c	2021-01-03 13:25:41.188939500 -0800
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
@@ -492,3 +494,28 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
+diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/vl.c ./vl.c
+--- ../../../scratch/qemu/orig/qemu-3.1.1.1/vl.c	2019-10-01 15:31:47.000000000 -0700
++++ ./vl.c	2021-03-28 14:33:27.156001600 -0700
+@@ -1896,6 +1896,13 @@
+     }
+ }
+
++static void feature(void)
++{
++    const char rev_[ALIGNED(1)]
++        ;
++    printf("  featuring qemu-3dfx@%s"__TIME__" "__DATE__" build\n", rev_);
++}
++
+ static void version(void)
+ {
+     printf("QEMU emulator version " QEMU_FULL_VERSION "\n"
+@@ -3292,6 +3299,7 @@
+                 break;
+             case QEMU_OPTION_version:
+                 version();
++                feature();
+                 exit(0);
+                 break;
+             case QEMU_OPTION_m:
