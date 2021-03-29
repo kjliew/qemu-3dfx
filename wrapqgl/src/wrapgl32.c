@@ -352,7 +352,7 @@ static void InitClientStates(void)
 static void fltrxstr(const char *xstr)
 {
 #define MAX_XSTR 128
-#define XSTRCFG "opengl32.mod"
+#define XSTRCFG "wrapgl32.ext"
     char *str = (char *)xstr, *tmp = (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2];
     FILE *f = fopen(XSTRCFG, "r");
     *tmp = ' ';

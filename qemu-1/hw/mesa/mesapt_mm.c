@@ -1743,7 +1743,7 @@ static void processFRet(MesaPTState *s)
                 s->szUsedBuf += ALIGNBO(s->BufObj->mapsz);
                 s->FRet = s->szUsedBuf + 1;
             }
-            //DPRINTF("MapBuffer hva %p gpa %p sz %x", s->BufObj->hva, (s->BufObj->gpa - ALIGNED(s->BufObj->mapsz)), (uint32_t)s->FRet);
+            //DPRINTF("MapBuffer hva %p gpa %p sz %x", (void *)s->BufObj->hva, (void *)(s->BufObj->gpa - ALIGNED(s->BufObj->mapsz)), (((uint32_t)s->FRet) & (~0xFU)));
             break;
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
