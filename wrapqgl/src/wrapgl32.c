@@ -349,6 +349,13 @@ static void InitClientStates(void)
     queryBuf = 0;
 }
 
+#define OHST_DMESG(fmt, ...) \
+    do { char str[64]; \
+        void PT_CALL glDebugMessageInsertARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5); \
+        snprintf(str, 64, fmt, ## __VA_ARGS__); \
+        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW, -1, 64, (uint32_t)str); \
+    } while(0)
+
 static void fltrxstr(const char *xstr)
 {
 #define MAX_XSTR 128
@@ -377,6 +384,7 @@ static void fltrxstr(const char *xstr)
         *(--tmp) = '\0';
         fclose(f);
         strncpy(str, (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2], (3*PAGE_SIZE));
+        OHST_DMESG("Guest GL Extensions filtering enabled");
     }
 }
 

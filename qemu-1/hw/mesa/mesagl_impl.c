@@ -1353,7 +1353,7 @@ static int cfg_traceFifo;
 static int cfg_traceFunc;
 static void conf_MGLOptions(void)
 {
-    cfg_xYear = 2004;
+    cfg_xYear = 0;
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
     cfg_dispTimerMS = 2000;
