@@ -677,8 +677,8 @@ static void processFRet(GlidePTState *s)
 	    fini_window();
 	    break;
 	case FEnum_grGlideInit:
-            s->szGrState = SIZE_GRSTATE;
-            s->szVtxLayout = SIZE_GRVERTEX;
+            s->szGrState = ALIGNED(SIZE_GRSTATE);
+            s->szVtxLayout = ALIGNED(SIZE_GRVERTEX);
             DPRINTF("%sWRAPFX32", (char *)outshm);
             if (s->initDLL == 0x301a0) {
                 init_g3ext();
@@ -827,9 +827,9 @@ static void processFRet(GlidePTState *s)
         case FEnum_grGet:
             if (s->FRet) {
                 if (s->arg[0] == GR_GLIDE_STATE_SIZE)
-                    s->szGrState = *(uint32_t *)outshm;
+                    s->szGrState = ALIGNED((*(uint32_t *)outshm));
                 if (s->arg[0] == GR_GLIDE_VERTEXLAYOUT_SIZE)
-                    s->szVtxLayout = *(uint32_t *)outshm;
+                    s->szVtxLayout = ALIGNED((*(uint32_t *)outshm));
             }
             break;
         case FEnum_grReset:
