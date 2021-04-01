@@ -350,9 +350,9 @@ static void InitClientStates(void)
 }
 
 #define OHST_DMESG(fmt, ...) \
-    do { char str[64]; \
-        void PT_CALL glDebugMessageInsertARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5); \
-        snprintf(str, 64, fmt, ## __VA_ARGS__); \
+    do { void PT_CALL glDebugMessageInsertARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5); \
+        char str[64]; \
+        wsprintf(str, fmt, ##__VA_ARGS__); \
         glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW, -1, 64, (uint32_t)str); \
     } while(0)
 
@@ -16767,8 +16767,10 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 #ifdef DEBUG_GLSTUB
             logfp = fopen(LOG_NAME, "w");
 #endif
-            hHook = 0;
+            currGLRC = 0;
+            currPixFmt = 0;
             memset(procName, 0, sizeof(procName));
+            hHook = SetWindowsHookEx(WH_CALLWNDPROC, (HOOKPROC)CallWndProc, NULL, GetCurrentThreadId());
             GetModuleFileName(NULL, procName, sizeof(procName) - 1);
             DPRINTF("MesaGL Init ( %s )", procName);
 	    DPRINTF("ptm 0x%08x fbtm 0x%08x", (uint32_t)ptm, (uint32_t)fbtm);
@@ -16779,9 +16781,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 		DPRINTF("Error - MesaGL init failed 0x%08x", HostRet);
 		return FALSE;
 	    }
-            currPixFmt = 0;
-            currGLRC = 0;
-            hHook = SetWindowsHookEx(WH_CALLWNDPROC, (HOOKPROC)CallWndProc, NULL, GetCurrentThreadId());
+            DisableThreadLibraryCalls(hModule);
             break;
         case DLL_PROCESS_DETACH:
             if (--(*refcnt))

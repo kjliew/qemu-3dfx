@@ -995,6 +995,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 		DPRINTF("Error - Glide2x init failed 0x%08x\n", HostRet);
 		return FALSE;
 	    }
+            DisableThreadLibraryCalls(hModule);
             break;
         case DLL_PROCESS_DETACH:
 	    if (grGlidePresent)
