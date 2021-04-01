@@ -10,3 +10,15 @@
      s->glfb_ptr = memory_region_get_ram_ptr(&s->glfb_ram);
      s->fifo_ptr = memory_region_get_ram_ptr(&s->fifo_ram);
      memory_region_add_subregion(sysmem, (GLIDE_LFB_BASE + (GRLFB_SIZE >> 1)), &s->glfb_ram);
+--- ../orig/hw/mesa/mesapt_mm.c	2021-03-28 16:24:13.101400700 -0700
++++ ./hw/mesa/mesapt_mm.c	2021-04-01 01:15:56.970052600 -0700
+@@ -2162,6 +2162,9 @@
+ 
+     memory_region_init_ram(&s->fifo_ram, NULL, "mglshm", MGLSHM_SIZE, &error_fatal);
+     memory_region_init_ram(&s->fbtm_ram, NULL, "mglfbt", MGLFBT_SIZE, &error_fatal);
++    /* QEMU version < 2.10 require additional API to register memory */
++    vmstate_register_ram_global(&s->fifo_ram);
++    vmstate_register_ram_global(&s->fbtm_ram);
+     s->fifo_ptr = memory_region_get_ram_ptr(&s->fifo_ram);
+     s->fbtm_ptr = memory_region_get_ram_ptr(&s->fbtm_ram);
+     memory_region_add_subregion(sysmem, MESA_FIFO_BASE, &s->fifo_ram);
