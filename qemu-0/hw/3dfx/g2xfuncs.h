@@ -214,6 +214,7 @@ typedef enum {
 #define MAX_DATA                                ((GRSHM_SIZE - (4*MAX_FIFO) - (64*1024)) >> 2)
 #define G3_LOD_TRANSLATE(lod)                   (0x8-lod)
 #define G3_ASPECT_TRANSLATE(aspect)             (0x3-(aspect))
+#define GR_MIPMAPLEVELMASK_BOTH                 (0x3)
 #define GR_PARAM_IDX(p)                         ((p&0xF0U)? ((p&0x01U)? ((p>>4) + 6):((p>>4) + GR_PARAM_Q)):(p-1))
 #define GR_VERTEX_PARAMETER             0x29
 #define GR_FOG_TABLE_ENTRIES            0x04

@@ -147,7 +147,15 @@ static INLINE void fifoOutData(int offs, uint32_t darg, int cbData)
 
 uint32_t PT_CALL grTexTextureMemRequired(uint32_t arg0, uint32_t arg1);
 static guTexInfo guTex[MAX_GUTEX];
-static int guTexNum = 0;
+static int guTexNum;
+static void guTexReset(void)
+{
+    int i;
+    for (i = 0; i < MAX_GUTEX; i++)
+        guTex[i].mmid = -1;
+    guTexNum = 0;
+}
+
 static uint32_t guTexRecord(const uint32_t mmid, const uint32_t oddEven, 
         const uint32_t small, const uint32_t large, const uint32_t aspect, const uint32_t format)
 {
@@ -165,14 +173,6 @@ static uint32_t guTexRecord(const uint32_t mmid, const uint32_t oddEven,
     else retval = -1;
 
     return retval;
-}
-
-static void guTexReset(void)
-{
-    int i;
-    for (i = 0; i < MAX_GUTEX; i++)
-        guTex[i].mmid = -1;
-    guTexNum = 0;
 }
 
 static uint32_t guTexSize(const uint32_t mmid, const int lodLevel)
@@ -193,7 +193,7 @@ static uint32_t guTexSize(const uint32_t mmid, const int lodLevel)
                 texInfo.small = lodLevel;
                 texInfo.large = lodLevel;
             }
-            texBytes = grTexTextureMemRequired(oddEven, (uint32_t)&texInfo);
+            texBytes = grTexTextureMemRequired(GR_MIPMAPLEVELMASK_BOTH, (uint32_t)&texInfo);
             break;
         }
     }
@@ -226,8 +226,8 @@ static int detTomb(void) {
     return 0;
 }
 
-static int grGlidePresent = 0;
-static int grGlideWnd = 0;
+static int grGlidePresent;
+static int grGlideWnd;
 void PT_CALL grSstWinClose(void);
 char *basename(const char *name);
 
@@ -455,6 +455,8 @@ void PT_CALL grGlideInit(void) {
     ptVer = &mfifo[(GRSHM_SIZE - PAGE_SIZE) >> 2];
     memcpy(ptVer, buildstr, sizeof(buildstr));
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideInit;
+    guTexReset();
+    grGlideWnd = 0;
 }
 void PT_CALL grGlideSetState(uint32_t arg0) {
     pt[1] = arg0;
@@ -684,7 +686,7 @@ void PT_CALL grTexDownloadMipMap(uint32_t arg0, uint32_t arg1, uint32_t arg2, ui
     info.large = ((wrTexInfo *)arg3)->large;
     info.aspect = ((wrTexInfo *)arg3)->aspect;
     info.format = ((wrTexInfo *)arg3)->format;
-    dlen =  grTexTextureMemRequired(arg2, (uint32_t)&info);
+    dlen =  grTexTextureMemRequired(GR_MIPMAPLEVELMASK_BOTH, (uint32_t)&info);
 
     fifoAddData(0, arg3, SIZE_GRTEXINFO);
     fifoAddData(0, addr, dlen);
