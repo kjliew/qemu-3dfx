@@ -1,4 +1,4 @@
-QEMU_SRC_DIR=../../qemu-0
+QEMU_SRC_DIR=../../../qemu-0
 GIT=$(shell git rev-parse HEAD | sed "s/\(.......\).*/\1\-/")
 CROSS=i686-pc-msdosdjgpp
 CC=$(CROSS)-gcc

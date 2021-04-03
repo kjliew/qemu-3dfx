@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "fxlib.h"
 
-static FxU32 pciErrorCode = 0;
+static FxU32 pciErrorCode;
 static HANDLE hMemmapFile;
 
 static FxBool fxlibFini(void)

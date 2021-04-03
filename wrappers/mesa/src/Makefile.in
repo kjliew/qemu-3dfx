@@ -1,6 +1,7 @@
-QEMU_SRC_DIR=../../qemu-1
+QEMU_SRC_DIR=../../../qemu-1
+FXLIB=../../fxlib
 CC=gcc
-CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
+CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -I$(FXLIB) -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 LDFLAGS+=
 SRCDIR=../src
@@ -12,7 +13,7 @@ C_OBJS:=\
     fxlibnt.o \
 
 
-all: $(TARGET)
+all: fxlib $(TARGET)
 
 $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@echo "  CFLAGS  $(CFLAGS)"
@@ -28,6 +29,11 @@ stamp.o:
 	@echo "  REV stamp"
 	@git rev-parse HEAD | sed "s/\(.......\).*/const\ char\ rev_\[\]\ =\ \"\1\-\";/" > /tmp/$(@:o=c)
 	@$(CC) -c -o $@ /tmp/$(@:o=c)
+
+fxlib:
+	@echo "  CC  fxlib9x.o fxlibnt.o"
+	@$(CC) $(CFLAGS) -c -o fxlib9x.o $(FXLIB)/fxlib9x.c
+	@$(CC) $(CFLAGS) -c -o fxlibnt.o $(FXLIB)/fxlibnt.c
 
 %.o: $(SRCDIR)/%.c
 	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi

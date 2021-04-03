@@ -5,8 +5,8 @@ KJ Liew \<liewkj@yahoo.com\>
     qemu-0/hw/3dfx      - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
     qemu-1/hw/mesa      - Overlay for QEMU source tree to add MESA GL pass-through device model
     scripts/sign_commit - Script for stamping commit id
-    wrapper             - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
-    wrapqgl             - MESA GL wrapper for supported guest OS/environment (Windows)
+    wrappers/3dfx       - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
+    wrappers/mesa       - MESA GL wrapper for supported guest OS/environment (Windows)
 ## Patch
     00-qemu520-mesa-glide.patch - Patch for QEMU version 5.2x (MESA & Glide)
     01-qemu411-mesa-glide.patch - Patch for QEMU version 4.xx (MESA & Glide)
@@ -46,12 +46,12 @@ Simple guide to apply the patch:<br>
  - `i686-pc-msdosdjgpp` cross-tools (binutils, gcc, dxe3gen) for DJGPP DXE wrappers
 <br>
 
-    $ cd ~/myqemu/qemu-3dfx/wrapper
+    $ cd ~/myqemu/qemu-3dfx/wrappers/3dfx
     $ mkdir build && cd build
     $ cp ../src/Makefile.in ./Makefile
     $ make && make clean
 
-    $ cd ~/myqemu/qemu-3dfx/wrapqgl
+    $ cd ~/myqemu/qemu-3dfx/wrappers/mesa
     $ mkdir build && cd build
     $ cp ../src/Makefile.in ./Makefile
     $ make && make clean

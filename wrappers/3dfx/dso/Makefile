@@ -1,4 +1,4 @@
-QEMU_SRC_DIR=../../qemu-0
+QEMU_SRC_DIR=../../../qemu-0
 CC=gcc
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -Werror -O3 -fomit-frame-pointer
 LDFLAGS=

@@ -1,7 +1,8 @@
-QEMU_SRC_DIR=../../qemu-0
+QEMU_SRC_DIR=../../../qemu-0
+FXLIB=../../fxlib
 GIT=$(shell git rev-parse HEAD | sed "s/\(.......\).*/\1\-/")
 CC=gcc
-CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -D__REV__=\"$(GIT)\" -Werror -O3 -fomit-frame-pointer
+CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -I$(FXLIB) -D__REV__=\"$(GIT)\" -Werror -O3 -fomit-frame-pointer
 LDFLAGS=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 SRCDIR=../src
 TARGET1=glide.dll
@@ -14,7 +15,7 @@ C_OBJS:=\
     fxlibnt.o \
 
 
-all: $(TARGET1) $(TARGET2) $(TARGET3) makedrv
+all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) makedrv
 
 makedrv:
 	make -C ../dxe
@@ -48,6 +49,11 @@ $(TARGET3): $(C_OBJS) gl301dll.o
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
 	dlltool -U -d lib$(@:dll=def) -l lib$@.a
+
+fxlib:
+	@echo "  CC  fxlib9x.o fxlibnt.o"
+	@$(CC) $(CFLAGS) -c -o fxlib9x.o $(FXLIB)/fxlib9x.c
+	@$(CC) $(CFLAGS) -c -o fxlibnt.o $(FXLIB)/fxlibnt.c
 
 %.o: $(SRCDIR)/%.c
 	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi
