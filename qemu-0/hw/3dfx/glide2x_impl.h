@@ -61,7 +61,7 @@ typedef struct {
     uint32_t large;
     uint32_t aspect;
     uint32_t format;
-    void* data;
+    void *data;
 } wrTexInfo;
 
 typedef struct {
@@ -92,6 +92,13 @@ typedef struct {
     uint32_t data;
     uint32_t mem_required;
 } wrg3dfInfo;
+
+typedef struct {
+    wr3dfInfo *info3df;
+    wrTexInfo *texInfo;
+    void *fbuf;
+    uint32_t flen;
+} wrTexStruct;
 
 typedef struct {
     int size;

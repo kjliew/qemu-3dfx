@@ -98,8 +98,7 @@ typedef struct GlidePTState
     uint32_t initDLL;
     uint32_t GrContext;
     uint32_t GrRes;
-    uint8_t *fbuf;
-    uint32_t flen;
+    wrTexStruct GrTex;
     PERFSTAT perfs;
 } GlidePTState;
 
@@ -192,9 +191,6 @@ static void vgLfbFlush(GlidePTState *s)
         }
     }
 }
-
-static wrTexInfo *texInfo;
-static wr3dfInfo *info3df;
 
 #define PTR(x,y) (((uint8_t *)x)+y)
 #define VAL(x) (uintptr_t)x
@@ -296,16 +292,16 @@ static void processArgs(GlidePTState *s)
         case FEnum_grTexSource:
         case FEnum_grTexDownloadMipMap:
             s->datacb = ALIGNED(SIZE_GRTEXINFO);
-	    texInfo = (wrTexInfo *)outshm;
-	    texInfo->small = ((wrgTexInfo *)PTR(s->hshm,0))->small;
-	    texInfo->large = ((wrgTexInfo *)PTR(s->hshm,0))->large;
-	    texInfo->aspect = ((wrgTexInfo *)PTR(s->hshm,0))->aspect;
-	    texInfo->format = ((wrgTexInfo *)PTR(s->hshm,0))->format;
+	    s->GrTex.texInfo = (wrTexInfo *)outshm;
+	    (s->GrTex.texInfo)->small = ((wrgTexInfo *)PTR(s->hshm,0))->small;
+	    (s->GrTex.texInfo)->large = ((wrgTexInfo *)PTR(s->hshm,0))->large;
+	    (s->GrTex.texInfo)->aspect = ((wrgTexInfo *)PTR(s->hshm,0))->aspect;
+	    (s->GrTex.texInfo)->format = ((wrgTexInfo *)PTR(s->hshm,0))->format;
 	    if (s->FEnum == FEnum_grTexDownloadMipMap) {
                 s->datacb += ALIGNED(s->arg[4]);
-                texInfo->data  = PTR(s->hshm, ALIGNED(SIZE_GRTEXINFO));
+                (s->GrTex.texInfo)->data = PTR(s->hshm, ALIGNED(SIZE_GRTEXINFO));
 	    }
-            s->parg[3] = VAL(texInfo);
+            s->parg[3] = VAL(s->GrTex.texInfo);
             break;
 	case FEnum_grTexDownloadMipMapLevel:
 	case FEnum_grTexDownloadMipMapLevelPartial:
@@ -330,13 +326,13 @@ static void processArgs(GlidePTState *s)
             break;
 	case FEnum_grTexTextureMemRequired:
             s->datacb = ALIGNED(SIZE_GRTEXINFO);
-	    texInfo = (wrTexInfo *)outshm;
-	    texInfo->small = ((wrgTexInfo *)PTR(s->hshm,0))->small;
-	    texInfo->large = ((wrgTexInfo *)PTR(s->hshm,0))->large;
-	    texInfo->aspect = ((wrgTexInfo *)PTR(s->hshm,0))->aspect;
-	    texInfo->format = ((wrgTexInfo *)PTR(s->hshm,0))->format;
-	    texInfo->data = 0;
-	    s->parg[1] = VAL(texInfo);
+	    s->GrTex.texInfo = (wrTexInfo *)outshm;
+	    s->GrTex.texInfo->small = ((wrgTexInfo *)PTR(s->hshm,0))->small;
+	    s->GrTex.texInfo->large = ((wrgTexInfo *)PTR(s->hshm,0))->large;
+	    s->GrTex.texInfo->aspect = ((wrgTexInfo *)PTR(s->hshm,0))->aspect;
+	    s->GrTex.texInfo->format = ((wrgTexInfo *)PTR(s->hshm,0))->format;
+	    s->GrTex.texInfo->data = 0;
+	    s->parg[1] = VAL(s->GrTex.texInfo);
 	    break;
 
         case FEnum_grBufferSwap:
@@ -404,26 +400,26 @@ static void processArgs(GlidePTState *s)
 	case FEnum_gu3dfGetInfo:
         case FEnum_gu3dfLoad:
             s->datacb = sizeof(char[64]);
-	    info3df = (wr3dfInfo *)PTR(outshm, ALIGNED(SIZE_GU3DFINFO));
+	    s->GrTex.info3df = (wr3dfInfo *)PTR(outshm, ALIGNED(SIZE_GU3DFINFO));
             if (s->FEnum == FEnum_gu3dfGetInfo) {
-                info3df->data = 0;
-                info3df->mem_required = 0;
-                if (s->fbuf && s->flen) {
+                (s->GrTex.info3df)->data = 0;
+                (s->GrTex.info3df)->mem_required = 0;
+                if (s->GrTex.fbuf && s->GrTex.flen) {
                     int fd = open((char *)(s->hshm), O_BINARY | O_CREAT | O_WRONLY, 0666);
                     if (fd > 0) {
-                        if (s->flen == write(fd, s->fbuf, s->flen))
-                            DPRINTF("Push texFile %s, size = %-8x", (uint8_t *)(s->hshm), s->flen);
+                        if (s->GrTex.flen == write(fd, s->GrTex.fbuf, s->GrTex.flen))
+                            DPRINTF("Push texFile %s, size = %-8x", (char *)(s->hshm), s->GrTex.flen);
                         close(fd);
                     }
-                    s->flen = 0;
+                    s->GrTex.flen = 0;
                 }
             }
-            if (info3df->mem_required) {
-                info3df->data = s->fbuf;
-                s->fbuf = 0;
+            if ((s->GrTex.info3df)->mem_required) {
+                (s->GrTex.info3df)->data = s->GrTex.fbuf;
+                s->GrTex.fbuf = 0;
             }
             s->parg[0] = VAL(s->hshm);
-            s->parg[1] = VAL(info3df);
+            s->parg[1] = VAL(s->GrTex.info3df);
             break;
 
         case FEnum_guTexDownloadMipMap:
@@ -815,11 +811,11 @@ static void processFRet(GlidePTState *s)
 	case FEnum_gu3dfGetInfo:
         case FEnum_gu3dfLoad:
             if (s->FRet) {
-                memcpy(outshm, info3df->header, SIZE_GU3DFHEADER);
-                ((wrg3dfInfo *)outshm)->mem_required = info3df->mem_required;
-                if (texTableValid(((wr3dfHeader *)info3df->header)->format))
-                    memcpy(PTR(outshm, SIZE_GU3DFHEADER), info3df->table, SIZE_GUTEXTABLE);
-                DPRINTF("%s texFile %s, mem_rq = %-8x", (s->FEnum == FEnum_gu3dfLoad)? "Load":"Info", (uint8_t *)(s->hshm),
+                memcpy(outshm, (s->GrTex.info3df)->header, SIZE_GU3DFHEADER);
+                ((wrg3dfInfo *)outshm)->mem_required = (s->GrTex.info3df)->mem_required;
+                if (texTableValid(((wr3dfHeader *)(s->GrTex.info3df)->header)->format))
+                    memcpy(PTR(outshm, SIZE_GU3DFHEADER), (s->GrTex.info3df)->table, SIZE_GUTEXTABLE);
+                DPRINTF("%s texFile %s, mem_rq = %-8x", (s->FEnum == FEnum_gu3dfLoad)? "Load":"Info", (char *)(s->hshm),
                         ((wrg3dfInfo *)outshm)->mem_required);
             }
             break;
@@ -936,9 +932,9 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 
     switch (addr) {
 	case 0xfb0:
-            s->fbuf = s->fifo_ptr + (GRSHM_SIZE - val);
-            s->flen = ((uint32_t *)s->fbuf)[0];
-            s->fbuf += ALIGNED(1);
+            s->GrTex.fbuf = s->fifo_ptr + (GRSHM_SIZE - val);
+            s->GrTex.flen = ((uint32_t *)s->GrTex.fbuf)[0];
+            s->GrTex.fbuf += ALIGNED(1);
 	    break;
 
 	case 0xfbc:
