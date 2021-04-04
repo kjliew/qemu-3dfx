@@ -3,9 +3,10 @@ format os2 le dll initglobal
 name glide2x.ovl
 file glideovl.obj
 #library clib3s.lib
+option description 'GLIDE2X.OVL'
 option map
 option nocaseexact
-option description 'GLIDE2X.OVL'
 option nod
+option quiet
 #option undefsok
 EXPORT __DLLstart_

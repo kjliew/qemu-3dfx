@@ -42,8 +42,10 @@ fxlib:
 
 clean:
 	@rm -f *.o *.def
-	@-if [ -f $(TARGET) ]; then strip --strip-unneeded $(TARGET); fi
-	@-if [ -f $(TARGET) ]; then strings $(TARGET) | grep "\ build\ "; sh -c 'ls -l $(TARGET)'; fi
+	@if [ -f $(TARGET) ]; then \
+	    strip --strip-unneeded $(TARGET); \
+	    sh -c 'ls -l $(TARGET)'; \
+	    strings $(TARGET) | grep "\ build\ "; fi
 
 distclean: clean
 	@rm -f $(TARGET)

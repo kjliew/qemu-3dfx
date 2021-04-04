@@ -1,0 +1,51 @@
+#include <windows.h>
+
+#ifdef GLIDE2
+#define DLLNAME             "glide2x.dll\0"
+#define VERSIONDEF          2,43,0,0363
+#define VERSIONSTR          "2.43\0"
+#endif
+#ifdef GLIDE1
+#define DLLNAME             "glide.dll\0"
+#define VERSIONDEF          2,11,0,0323
+#define VERSIONSTR          "2.11\0"
+#endif
+#ifdef GLIDE3
+#define DLLNAME             "glide3x.dll\0"
+#define VERSIONDEF          3,01,0,0455
+#define VERSIONSTR          "3.01\0"
+#endif
+
+#ifndef DLLNAME
+#error undefined DLLNAME
+#endif
+
+#define HWSTR   " Voodoo Banshee\256, Voodoo3\256, & Velocity(tm) 100/200\256\0"
+#define PRODNAME "Glide\256 for Voodoo Banshee\256, Voodoo3\256, & Velocity(tm) 100/200\256\0"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION VERSIONDEF
+ PRODUCTVERSION VERSIONDEF
+ FILEFLAGSMASK 0x0030003FL
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName", "3Dfx Interactive, Inc.\0"
+            VALUE "FileDescription", "3Dfx Interactive, Inc. Glide DLL\0"
+            VALUE "FileVersion", VERSIONSTR
+            VALUE "InternalName", DLLNAME
+            VALUE "LegalCopyright", "Copyright \251 3Dfx Interactive, Inc. 1997\0"
+            VALUE "OriginalFilename", DLLNAME
+            VALUE "ProductName", PRODNAME
+            VALUE "ProductVersion", VERSIONSTR
+            VALUE "Graphics Subsystem", HWSTR
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        /* the following line should be extended for localized versions */
+        VALUE "Translation", 0x409, 1252
+    END
+END

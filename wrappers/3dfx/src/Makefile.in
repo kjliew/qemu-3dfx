@@ -18,37 +18,43 @@ C_OBJS:=\
 all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) makedrv
 
 makedrv:
-	make -C ../dxe
-	make -C ../ovl
-	make -C ../drv
+	@make -C ../dxe
+	@make -C ../ovl
+	@make -C ../drv
 
 $(TARGET2): $(C_OBJS) glidedll.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
+	@echo "  RC  $(@:.dll=_res.o)"
+	@windres -Jrc -Ocoff -DGLIDE2 -o $(@:.dll=_res.o) ../src/version.rc
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
-	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
-	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
-	dlltool -U -d lib$(@:dll=def) -l lib$@.a
+	@$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
+	@$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
+	@dlltool -U -d lib$(@:dll=def) -l lib$@.a
 
 $(TARGET1): $(C_OBJS) gl211dll.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
+	@echo "  RC  $(@:.dll=_res.o)"
+	@windres -Jrc -Ocoff -DGLIDE1 -o $(@:.dll=_res.o) ../src/version.rc
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
-	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
+	@$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
 
 $(TARGET3): $(C_OBJS) gl301dll.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
+	@echo "  RC  $(@:.dll=_res.o)"
+	@windres -Jrc -Ocoff -DGLIDE3 -o $(@:.dll=_res.o) ../src/version.rc
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
-	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
-	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
-	dlltool -U -d lib$(@:dll=def) -l lib$@.a
+	@$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
+	@$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
+	@dlltool -U -d lib$(@:dll=def) -l lib$@.a
 
 fxlib:
 	@echo "  CC  fxlib9x.o fxlibnt.o"
@@ -61,13 +67,15 @@ fxlib:
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	make -C ../dxe $@
-	make -C ../ovl $@
+	@make -C ../dxe $@
+	@make -C ../ovl $@
 	@rm -f *.o *.def
-	@for i in $$(find -iregex ".*\.a\|.*\.dll"); do strip --strip-unneeded $$i; done
+	@if [ ! -z "$$(find -iregex ".*\.dll\.a")" ]; then \
+	    strip --strip-unneeded *.dll *.a; \
+	    sh -c 'ls -l glide*'; fi
 
 distclean: clean
-	make -C ../dxe $@
-	make -C ../ovl $@
+	@make -C ../dxe $@
+	@make -C ../ovl $@
 	@rm -f $(TARGET1) $(TARGET2) $(TARGET3) *.a *.vxd *.sys *.exe *.zip
 
