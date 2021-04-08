@@ -374,15 +374,16 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         glXMakeContextCurrent(dpy, win, win, ctx[n]);
         InitMesaGLExt();
-        int val = GetContextVsync();
-        if (val == -1) { }
-        else if (xglFuncs.SwapIntervalEXT)
-            xglFuncs.SwapIntervalEXT(val);
-        else if (find_xstr(xstr, "GLX_EXT_swap_control")) {
-            void (*p_glXSwapIntervalEXT)(Display *, GLXDrawable, int) =
-                (void (*)(Display *, GLXDrawable, int)) MesaGLGetProc("glXSwapIntervalEXT");
-            if (p_glXSwapIntervalEXT)
-                p_glXSwapIntervalEXT(dpy, win, val);
+        if (ContextVsyncOff()) {
+            const int val = 0;
+            if (xglFuncs.SwapIntervalEXT)
+                xglFuncs.SwapIntervalEXT(val);
+            else if (find_xstr(xstr, "GLX_EXT_swap_control")) {
+                void (*p_glXSwapIntervalEXT)(Display *, GLXDrawable, int) =
+                    (void (*)(Display *, GLXDrawable, int)) MesaGLGetProc("glXSwapIntervalEXT");
+                if (p_glXSwapIntervalEXT)
+                    p_glXSwapIntervalEXT(dpy, win, val);
+            }
         }
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))

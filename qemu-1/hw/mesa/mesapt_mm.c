@@ -2007,11 +2007,10 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFF8:
                 do {
-                    char xYear[8], xLen[8], dispTimer[8];
+                    char xYear[8], xLen[8], strTimerMS[8];
                     uint32_t *ptVer = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE));
                     int level = ((ptVer[0] & 0xFFFFFFF0U) == (MESAGL_MAGIC & 0xFFFFFFF0U))? (MESAGL_MAGIC - ptVer[0]):0;
                     int msaa = GetContextMSAA();
-                    int vsync = GetContextVsync();
                     int disptmr = GetDispTimerMS();
                     if (s->mglContext && !s->mglCntxCurrent && ptVer[0]) {
                         DPRINTF("wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
@@ -2023,11 +2022,11 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         s->szVertCache = GetVertCacheMB() << 19;
                         snprintf(xLen, 8, "%u", (uint32_t)s->extnLength);
                         snprintf(xYear, 8, "%d", s->extnYear);
+                        snprintf(strTimerMS, 8, "%dms", disptmr);
                         DPRINTF_COND(msaa, "ContextMSAA %dx", msaa);
-                        DPRINTF_COND((vsync != -1), "ContextVsync %d", vsync);
-                        snprintf(dispTimer, 8, "%dms", disptmr);
+                        DPRINTF_COND(ContextVsyncOff(), "ContextVsyncOff");
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
-                        DPRINTF("DispTimerSched %s", GetDispTimerMS()? dispTimer:"disabled");
+                        DPRINTF("DispTimerSched %s", disptmr? strTimerMS:"disabled");
                         DPRINTF("MappedBufferObject %s-copy", MGLUpdateGuestBufo(0, 0)? "Zero":"One");
                         DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
                                 (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");

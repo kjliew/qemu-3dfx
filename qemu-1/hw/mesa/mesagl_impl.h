@@ -44,7 +44,7 @@ int GetVertCacheMB(void);
 int GetDispTimerMS(void);
 int GetBufOAccelEN(void);
 int GetContextMSAA(void);
-int GetContextVsync(void);
+int ContextVsyncOff(void);
 int GetCreateWindow(void);
 int GLFifoTrace(void);
 int GLFuncTrace(void);

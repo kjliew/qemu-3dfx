@@ -298,10 +298,11 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         wglFuncs.MakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();
-        int val = GetContextVsync();
-        if (val == -1) { }
-        else if (wglFuncs.SwapIntervalEXT)
-            wglFuncs.SwapIntervalEXT(val);
+        if (ContextVsyncOff()) {
+            const int val = 0;
+            if (wglFuncs.SwapIntervalEXT)
+                wglFuncs.SwapIntervalEXT(val);
+        }
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         wglFuncs.MakeCurrent(hPBDC[i], hPBRC[i]);

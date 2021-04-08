@@ -60,7 +60,7 @@ static int cfg_createWnd;
 static int cfg_scaleGuiX;
 static int cfg_scaleX;
 static int cfg_cntxMSAA;
-static int cfg_cntxVsync;
+static int cfg_cntxVsyncOff;
 static int cfg_fpsLimit;
 static int cfg_lfbHandler;
 static int cfg_lfbNoAux;
@@ -247,7 +247,7 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_scaleGuiX = 1;
     cfg_scaleX = 0;
     cfg_cntxMSAA = 0;
-    cfg_cntxVsync = 0;
+    cfg_cntxVsyncOff = 0;
     cfg_fpsLimit = 0;
     cfg_lfbHandler = 0;
     cfg_lfbNoAux = 0;
@@ -270,8 +270,8 @@ uint32_t init_window(const int res, const char *wndTitle)
             cfg_scaleX = ((i == 1) && c)? c:cfg_scaleX;
             i = sscanf(line, "ContextMSAA,%d", &c);
             cfg_cntxMSAA = (i == 1)? ((c << 3) & 0x30U):cfg_cntxMSAA;
-            i = sscanf(line, "ContextVsync,%d", &c);
-            cfg_cntxVsync = ((i == 1) && c)? 1:cfg_cntxVsync;
+            i = sscanf(line, "ContextVsyncOff,%d", &c);
+            cfg_cntxVsyncOff = ((i == 1) && c)? 1:cfg_cntxVsyncOff;
             i = sscanf(line, "FpsLimit,%d", &c);
             cfg_fpsLimit = ((i == 1) && (c <= 60))? c:cfg_fpsLimit;
             i = sscanf(line, "LfbHandler,%d", &c);
@@ -298,11 +298,11 @@ uint32_t init_window(const int res, const char *wndTitle)
         (int)((1.f * tblRes[res].w * gui_height) / tblRes[res].h):cfg_scaleX;
 
 #define WRAPPER_FLAG_WINDOWED   0x01
-#define WRAPPER_FLAG_VSYNC      0x40
+#define WRAPPER_FLAG_VSYNCOFF   0x40
 #define WRAPPER_FLAG_QEMU       0x80
     uint32_t flags = (glide_gui_fullscreen())? WRAPPER_FLAG_QEMU:
         (WRAPPER_FLAG_QEMU | WRAPPER_FLAG_WINDOWED);
-    flags |= (cfg_cntxVsync)? WRAPPER_FLAG_VSYNC:0;
+    flags |= (cfg_cntxVsyncOff)? WRAPPER_FLAG_VSYNCOFF:0;
     flags |= cfg_cntxMSAA;
 
     int sel = res;
