@@ -351,9 +351,11 @@ static void InitClientStates(void)
 
 #define OHST_DMESG(fmt, ...) \
     do { void PT_CALL glDebugMessageInsertARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5); \
-        char str[64]; \
-        wsprintf(str, fmt, ##__VA_ARGS__); \
-        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW, -1, 64, (uint32_t)str); \
+        FILE *f = fopen("NUL", "w"); int c = fprintf(f, fmt, ##__VA_ARGS__); fclose(f); \
+        char *str = HeapAlloc(GetProcessHeap(), 0, ALIGNED((c+1))); \
+        sprintf(str, fmt, ##__VA_ARGS__); \
+        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW, -1, (c+1), (uint32_t)str); \
+        HeapFree(GetProcessHeap(), 0, str); \
     } while(0)
 
 static void fltrxstr(const char *xstr)
@@ -369,14 +371,19 @@ static void fltrxstr(const char *xstr)
         stok = strtok(str, " ");
         while (stok) {
             size_t xlen = strnlen(stok, MAX_XSTR);
+            int fltr = 0;
             while(fgets(line, MAX_XSTR, f)) {
                 if (!strncmp(stok, line, strnlen(line, MAX_XSTR) - 1)) {
-                    memcpy(tmp, stok, xlen);
-                    tmp += xlen;
-                    *tmp = ' ';
-                    tmp++;
+                    fltr = 1;
+                    OHST_DMESG("..ignoring %s", stok);
                     break;
                 }
+            }
+            if (!fltr) {
+                memcpy(tmp, stok, xlen);
+                tmp += xlen;
+                *tmp = ' ';
+                tmp++;
             }
             fseek(f, 0, SEEK_SET);
             stok = strtok(NULL, " ");
@@ -384,8 +391,22 @@ static void fltrxstr(const char *xstr)
         *(--tmp) = '\0';
         fclose(f);
         strncpy(str, (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2], (3*PAGE_SIZE));
-        OHST_DMESG("Guest GL Extensions filtering enabled");
     }
+}
+static int xstrYear(void)
+{
+    int ret = 0;
+    FILE *f = fopen(XSTRCFG, "r");
+    if (f) {
+        char line[MAX_XSTR];
+        while(fgets(line, MAX_XSTR, f)) {
+            int i = sscanf(line, "ExtensionsYear,%d", &ret);
+            if (i == 1)
+                break;
+        }
+        fclose(f);
+    }
+    return ret;
 }
 
 #define FIFO_EN 1
@@ -5126,9 +5147,12 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
     static const int cstrsz[] = {
         64, 64, 64, 3*PAGE_SIZE,
     };
+    int nYear;
 
     if (!currGLRC)
         return 0;
+    nYear = xstrYear();
+    fifoAddData(0, (uint32_t)&nYear, sizeof(int));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetString;
     fifoOutData(0, (uint32_t)cstrTbl[arg0 & 0x03U], cstrsz[arg0 & 0x03U]);

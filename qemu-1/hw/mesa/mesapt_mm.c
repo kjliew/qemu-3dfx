@@ -1068,6 +1068,16 @@ static void processArgs(MesaPTState *s)
                 s->parg[2] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
             }
             break;
+        case FEnum_glGetString:
+            s->datacb = ALIGNED(sizeof(int));
+            if (s->arg[0]  == GL_EXTENSIONS) {
+                int nYear = *(const int *)(s->hshm);
+                if (nYear) {
+                    s->extnYear = (s->extnYear == 0)? nYear:((nYear < s->extnYear)? nYear:s->extnYear);
+                    DPRINTF_COND((s->extnYear == nYear), "Guest GL Extensions limit to Year %d", s->extnYear);
+                }
+            }
+            break;
         case FEnum_glGetMapdv:
         case FEnum_glGetMapfv:
         case FEnum_glGetMapiv:
