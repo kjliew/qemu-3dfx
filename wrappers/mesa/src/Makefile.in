@@ -6,6 +6,7 @@ LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 SRCDIR=../src
 TARGET=opengl32.dll
+TOOLS=wglinfo.exe
 PEXPORTS=pexports
 
 C_OBJS:=\
@@ -13,7 +14,7 @@ C_OBJS:=\
     fxlibnt.o \
 
 
-all: fxlib $(TARGET)
+all: fxlib $(TARGET) $(TOOLS)
 
 $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@echo "  CFLAGS  $(CFLAGS)"
@@ -24,6 +25,10 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 #	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
 #	dlltool -U -d lib$(@:dll=def) -l lib$@.a
+
+$(TOOLS):
+	@echo "  LD  $@"
+	@$(CC) $(CFLAGS) -s -o $@ $(SRCDIR)/wglinfo.c $(LDFLAGS) -lgdi32 -lopengl32
 
 stamp.o:
 	@echo "  REV stamp"
@@ -48,5 +53,5 @@ clean:
 	    strings $(TARGET) | grep "\ build\ "; fi
 
 distclean: clean
-	@rm -f $(TARGET)
+	@rm -f $(TARGET) $(TOOLS)
 
