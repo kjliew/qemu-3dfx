@@ -426,13 +426,16 @@ void PT_CALL grGlideGetVersion(uint32_t arg0) {
 }
 void PT_CALL grGlideInit(void) {
 
-    uint32_t *ptVer;
+    uint32_t *ptVer, *rsp, ret;
+    asm volatile("lea 0x1c(%%esp), %0;":"=rm"(rsp));
+    ret = rsp[0];
     ptVer = &mfifo[(GRSHM_SIZE - PAGE_SIZE) >> 2];
     memcpy(ptVer, buildstr, sizeof(buildstr));
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideInit;
     guTexReset();
     grGlideWnd = 0;
     grGlidePresent = 1;
+    HookTimeGetTime(ret);
 }
 void PT_CALL grGlideSetState(uint32_t arg0) {
     pt[1] = arg0;
@@ -446,6 +449,7 @@ void PT_CALL grGlideShutdown(void) {
     grSstWinClose(); 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideShutdown;
     grGlidePresent = 0;
+    HookEntryHook(0, 0);
 }
 void PT_CALL grHints(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 

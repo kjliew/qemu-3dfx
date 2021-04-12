@@ -301,7 +301,9 @@ void PT_CALL grGlideGetState(uint32_t arg0) {
 }
 void PT_CALL grGlideInit(void) {
 
-    uint32_t *ptVer;
+    uint32_t *ptVer, *rsp, ret;
+    asm volatile("lea 0x1c(%%esp), %0;":"=rm"(rsp));
+    ret = rsp[0];
     ptVer = &mfifo[(GRSHM_SIZE - PAGE_SIZE) >> 2];
     memcpy(ptVer, buildstr, sizeof(buildstr));
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideInit;
@@ -310,6 +312,7 @@ void PT_CALL grGlideInit(void) {
     fifoOutData(0, (uint32_t)g3ext_str, sizeof(char[192]));
     fifoOutData(sizeof(char[192]), (uint32_t)g3hw_str, sizeof(char[16]));
     fifoOutData(sizeof(char[208]), (uint32_t)g3ver_str, sizeof(char[32]));
+    HookTimeGetTime(ret);
 }
 void PT_CALL grGlideSetState(uint32_t arg0) {
     pt[1] = arg0;
@@ -319,6 +322,7 @@ void PT_CALL grGlideShutdown(void) {
     grSstWinClose(grGlideWnd); 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideShutdown;
     grGlidePresent = 0;
+    HookEntryHook(0, 0);
 }
 void PT_CALL grLfbConstantAlpha(uint32_t arg0) {
     pt[1] = arg0; 

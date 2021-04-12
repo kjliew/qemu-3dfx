@@ -1348,6 +1348,7 @@ static int cfg_dispTimerMS;
 static int cfg_bufoAccelEN;
 static int cfg_cntxMSAA;
 static int cfg_cntxVsyncOff;
+static int cfg_fpsLimit;
 static int cfg_createWnd;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
@@ -1360,6 +1361,7 @@ static void conf_MGLOptions(void)
     cfg_bufoAccelEN = 0;
     cfg_cntxMSAA = 0;
     cfg_cntxVsyncOff = 0;
+    cfg_fpsLimit = 0;
     cfg_createWnd = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
@@ -1382,6 +1384,8 @@ static void conf_MGLOptions(void)
             cfg_cntxMSAA = (i == 1)? v:cfg_cntxMSAA;
             i = sscanf(line, "ContextVsyncOff,%d", &v);
             cfg_cntxVsyncOff = ((i == 1) && v)? 1:cfg_cntxVsyncOff;
+            i = sscanf(line, "FpsLimit,%d", &v);
+            cfg_fpsLimit = (i == 1)? (v & 0x3FU):cfg_fpsLimit;
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
             i = sscanf(line, "CreateWindow,%d", &v);
             cfg_createWnd = (i == 1)? v:cfg_createWnd;
@@ -1403,6 +1407,7 @@ int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
 int GetContextMSAA(void) { return cfg_cntxMSAA; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
+int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GetCreateWindow(void) { return cfg_createWnd; }
 int GLFifoTrace(void) { return cfg_traceFifo; }
 int GLFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }

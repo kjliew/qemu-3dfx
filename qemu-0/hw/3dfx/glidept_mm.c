@@ -640,6 +640,8 @@ static void processFRet(GlidePTState *s)
 	case FEnum_grSstWinOpen:
         case FEnum_grSstWinOpenExt:
 	    if (s->FRet != 0) {
+                char strFpsLimit[sizeof(", FpsLimit ...FPS")];
+                snprintf(strFpsLimit, sizeof(", FpsLimit ...FPS"), "FpsLimit %dFPS", glide_fpslimit());
 		s->lfbDev->origin = s->arg[4];
 		s->lfbDev->guestLfb = (s->FEnum == FEnum_grSstWinOpenExt)? s->arg[8]:s->arg[7];
 		s->GrContext = s->FRet;
@@ -656,7 +658,7 @@ static void processFRet(GlidePTState *s)
                 }
                 DPRINTF("LFB mode is %s%s-copy%s%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
                         (s->lfb_real || glide_mapbufo(0, 0))? ", Zero":", One",
-                        (glide_fpslimit())? ", FpsLimit":"",
+                        (glide_fpslimit())? strFpsLimit:"",
                         (glide_lfbdirty())? ", LfbLockDirty":"",
                         (s->lfb_noaux)? ", LfbNoAux":"", (s->lfb_merge)? ", LfbWriteMerge":"");
 	    }

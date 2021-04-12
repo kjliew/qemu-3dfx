@@ -45,6 +45,7 @@ int GetDispTimerMS(void);
 int GetBufOAccelEN(void);
 int GetContextMSAA(void);
 int ContextVsyncOff(void);
+int GetFpsLimit(void);
 int GetCreateWindow(void);
 int GLFifoTrace(void);
 int GLFuncTrace(void);

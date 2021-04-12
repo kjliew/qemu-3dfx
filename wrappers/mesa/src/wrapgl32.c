@@ -16428,37 +16428,69 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
 void HookDeviceGammaRamp(const uint32_t caddr)
 {
     DWORD oldProt, hkGet, hkSet;
-    uint32_t *patch, addr, *idata;
+    uint32_t *patch, addr = 0;
     uint16_t *callOp;
+    const char idata[] = ".idata", rdata[] = ".rdata";
     hkGet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDeviceGammaRamp");
     hkSet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "SetDeviceGammaRamp");
-#define GLGAMMA_HOOK(mod,ret,off,get,set) \
-    addr = (uint32_t)GetModuleHandle(mod); \
-    if (addr && ((caddr & 0xFFFFU) == ret)) { \
-        patch = (uint32_t *)(caddr + off); \
-        if (VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) { \
-            patch[get] = (hkGet == patch[get])? (uint32_t)&wglGetDeviceGammaRamp3DFX:patch[get]; \
-            patch[set] = (hkSet == patch[set])? (uint32_t)&wglSetDeviceGammaRamp3DFX:patch[set]; \
-            VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt); \
-            return; \
+
+#define GLGAMMA_HOOK(mod) \
+    if (!addr) { \
+        addr = (uint32_t)GetModuleHandle(mod); \
+        for (int i = 0; addr && (i < (PAGE_SIZE >> 2)); i++) { \
+            if (0x4550U == *(uint32_t *)addr) break; \
+            addr += 0x04; \
         } \
+        addr = (0x4550U == *(uint32_t *)addr)? addr:0; \
     }
-    GLGAMMA_HOOK("opengldrv.dll", 0x33a8, 0x15ebc, 0, 1);
+    GLGAMMA_HOOK("opengldrv.dll");
 #undef GLGAMMA_HOOK
-    idata = (uint32_t *)(caddr - 0x04);
-    callOp = (uint16_t *)(caddr - 0x06);
-    if (0x15ff == (*callOp)) {
-        addr = *idata;
-        patch = (uint32_t *)addr;
-        while (*(--patch));
-        if (hkGet && hkGet &&
-            VirtualProtect((void *)addr, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
-            while (*(++patch)) {
-                *patch = (hkGet == (*patch))? (uint32_t)&wglGetDeviceGammaRamp3DFX:(*patch);
-                *patch = (hkSet == (*patch))? (uint32_t)&wglSetDeviceGammaRamp3DFX:(*patch);
+    if (addr && (0x4550U == *(uint32_t *)addr)) {
+        for (int i = 0; i < PAGE_SIZE; i += 0x04) {
+            if (!memcmp((void *)(addr + i), idata, sizeof(idata))) {
+                addr += ((uint32_t *)(addr + i))[3];
+                patch = (uint32_t *)addr;
+                break;
             }
-            VirtualProtect((void *)addr, sizeof(intptr_t), oldProt, &oldProt);
         }
+        for (int i = 0; i < PAGE_SIZE; i += 0x04) {
+            if (addr == (uint32_t)patch)
+                break;
+            if (!memcmp((void *)(addr + i), rdata, sizeof(rdata))) {
+                addr += ((uint32_t *)(addr + i))[3];
+                patch = (uint32_t *)addr;
+                break;
+            }
+        }
+    }
+
+    if (addr == (uint32_t)patch) { }
+    else {
+        callOp = (uint16_t *)(caddr - 0x06);
+        if (0x15ff == (*callOp)) {
+            addr = *(uint32_t *)(caddr - 0x04);
+            addr &= ~(PAGE_SIZE - 1);
+            patch = (uint32_t *)addr;
+        }
+    }
+
+    if ((addr == (uint32_t)patch) &&
+        VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
+        for (int i = 0; i < (PAGE_SIZE >> 2); i++) {
+            if (hkGet && (hkGet == patch[i])) {
+                HookEntryHook(&patch[i], patch[i]);
+                patch[i] = (uint32_t)&wglGetDeviceGammaRamp3DFX;
+                hkGet = 0;
+            }
+            if (hkSet && (hkSet == patch[i])) {
+                HookEntryHook(&patch[i], patch[i]);
+                patch[i] = (uint32_t)&wglSetDeviceGammaRamp3DFX;
+                hkSet = 0;
+            }
+            if (!hkGet && !hkSet)
+                break;
+        }
+        VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt);
     }
 }
 
@@ -16671,7 +16703,15 @@ int WINAPI wglSwapBuffers (HDC hdc)
     uint32_t ret, *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
     ptm[0xFF0 >> 2] = MESAGL_MAGIC;
     ret = swapRet[0];
-    return ret;
+    if (ret & 0x3F00U) {
+        static uint32_t nexttick;
+        uint32_t t = GetTickCount();
+        nexttick = (nexttick == 0)? t:nexttick;
+        nexttick += 1000/((ret & 0x3F00U) >> 8);
+        while (GetTickCount() < nexttick)
+            Sleep(0);
+    }
+    return (ret & 0x01U);
 }
 int WINAPI wgdSwapBuffers(HDC hdc) { return wglSwapBuffers(hdc); }
 int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wglSwapBuffers(hdc); }
@@ -16716,6 +16756,7 @@ BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *
     asm volatile("lea 0x3c(%%esp), %0;":"=rm"(rsp));
     ret = (format == rsp[2])? rsp[0]:rsp[4];
     HookDeviceGammaRamp(ret);
+    HookTimeGetTime(ret);
     xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     if (currGLRC) {
         mglMakeCurrent(0, 0);
@@ -16811,6 +16852,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             if (--(*refcnt))
                 break;
             DPRINTF("MesaGL Fini %x", currGLRC);
+            HookEntryHook(0, 0);
             if (currGLRC) {
                 mglMakeCurrent(0, 0);
                 mglDeleteContext(MESAGL_MAGIC);

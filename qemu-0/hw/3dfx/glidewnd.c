@@ -273,7 +273,7 @@ uint32_t init_window(const int res, const char *wndTitle)
             i = sscanf(line, "ContextVsyncOff,%d", &c);
             cfg_cntxVsyncOff = ((i == 1) && c)? 1:cfg_cntxVsyncOff;
             i = sscanf(line, "FpsLimit,%d", &c);
-            cfg_fpsLimit = ((i == 1) && (c <= 60))? c:cfg_fpsLimit;
+            cfg_fpsLimit = (i == 1)? (c & 0x3FU):cfg_fpsLimit;
             i = sscanf(line, "LfbHandler,%d", &c);
             cfg_lfbHandler = ((i == 1) && c)? 1:cfg_lfbHandler;
             i = sscanf(line, "LfbNoAux,%d", &c);
