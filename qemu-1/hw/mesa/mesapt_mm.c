@@ -1851,9 +1851,13 @@ static void processFRet(MesaPTState *s)
                         //DPRINTF("  %s[ %u ]", stok, (uint32_t)extnLength);
                         stok = strtok(NULL, " ");
                     }
-                    memcpy(xbuf, "GL_WIN_swap_hint WGL_3DFX_gamma_control WGL_EXT_swap_control",
-                            sizeof("GL_WIN_swap_hint WGL_3DFX_gamma_control WGL_EXT_swap_control"));
-                    xbuf += sizeof("GL_WIN_swap_hint WGL_3DFX_gamma_control WGL_EXT_swap_control");
+                    const char wglext[] =
+                        "GL_WIN_swap_hint "
+                        "WGL_3DFX_gamma_control "
+                        "WGL_EXT_swap_control "
+                        ;
+                    memcpy(xbuf, wglext, sizeof(wglext));
+                    xbuf += sizeof(wglext);
                     *xbuf = '\0';
                     g_free(tmpstr);
                 }

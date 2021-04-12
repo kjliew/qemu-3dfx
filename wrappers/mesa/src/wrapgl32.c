@@ -16441,7 +16441,7 @@ void HookDeviceGammaRamp(const uint32_t caddr)
             if (0x4550U == *(uint32_t *)addr) break; \
             addr += 0x04; \
         } \
-        addr = (0x4550U == *(uint32_t *)addr)? addr:0; \
+        addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
     }
     GLGAMMA_HOOK("opengldrv.dll");
 #undef GLGAMMA_HOOK
