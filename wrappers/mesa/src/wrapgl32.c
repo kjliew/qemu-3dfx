@@ -16472,7 +16472,7 @@ void HookDeviceGammaRamp(const uint32_t caddr)
     } \
     addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
     HookParseRange(&addr, &patch, PAGE_SIZE); \
-    HookPatchGamma(addr, patch, PAGE_SIZE);
+    HookPatchGamma(addr, patch, PAGE_SIZE - (((uint32_t)patch) & (PAGE_SIZE - 1)));
     GLGAMMA_HOOK("opengldrv.dll");
 #undef GLGAMMA_HOOK
 }
