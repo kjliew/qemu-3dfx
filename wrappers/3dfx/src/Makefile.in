@@ -3,7 +3,8 @@ FXLIB=../../fxlib
 GIT=$(shell git rev-parse HEAD | sed "s/\(.......\).*/\1\-/")
 CC=gcc
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -I$(FXLIB) -D__REV__=\"$(GIT)\" -Werror -O3 -fomit-frame-pointer
-LDFLAGS=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
+LDFLAGS=-static-libgcc
+LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 SRCDIR=../src
 TARGET1=glide.dll
 TARGET2=glide2x.dll
@@ -11,13 +12,14 @@ TARGET3=glide3x.dll
 PEXPORTS=pexports
 
 C_OBJS:=\
+    fxhook.o \
     fxlib9x.o \
     fxlibnt.o \
 
 
-all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) makedrv
+all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) fxdrv
 
-makedrv:
+fxdrv:
 	@make -C ../dxe
 	@make -C ../ovl
 	@make -C ../drv
@@ -57,7 +59,8 @@ $(TARGET3): $(C_OBJS) gl301dll.o
 	@dlltool -U -d lib$(@:dll=def) -l lib$@.a
 
 fxlib:
-	@echo "  CC  fxlib9x.o fxlibnt.o"
+	@echo "  CC  fxhook.o fxlib9x.o fxlibnt.o"
+	@$(CC) $(CFLAGS) -c -o fxhook.o $(FXLIB)/fxhook.c
 	@$(CC) $(CFLAGS) -c -o fxlib9x.o $(FXLIB)/fxlib9x.c
 	@$(CC) $(CFLAGS) -c -o fxlibnt.o $(FXLIB)/fxlibnt.c
 

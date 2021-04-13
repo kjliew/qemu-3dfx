@@ -18,11 +18,12 @@ void HookEntryHook(uint32_t *patch, const uint32_t orig)
 
     if (!patch && !orig) {
         DWORD oldProt;
-        if (nhook && 
-            VirtualProtect(HookTbl[0].patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
-            for (int i = 0; i < nhook; i++)
+        if (nhook) {
+            for (int i = 0; i < nhook; i++) {
+                VirtualProtect(HookTbl[i].patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt);
                 (HookTbl[i].patch)[0] = HookTbl[i].data;
-            VirtualProtect(HookTbl[0].patch, sizeof(intptr_t), oldProt, &oldProt);
+                VirtualProtect(HookTbl[i].patch, sizeof(intptr_t), oldProt, &oldProt);
+            }
         }
         memset(HookTbl, 0, sizeof(struct hookrec[MAX_HOOK_ENTRY]));
         nhook = 0;
@@ -81,99 +82,89 @@ static DWORD WINAPI TimeHookProc(void)
     return (li.QuadPart * 1000) / f.QuadPart;
 }
 
-void HookTimeGetTime(const uint32_t caddr)
+void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
 {
-    SYSTEM_INFO si;
+    const char idata[] = ".idata", rdata[] = ".rdata";
+    uint32_t addr = *start;
+
+    if (addr && (0x4550U == *(uint32_t *)addr)) {
+        for (int i = 0; i < range; i += 0x04) {
+            if (!memcmp((void *)(addr + i), idata, sizeof(idata))) {
+                addr += ((uint32_t *)(addr + i))[3];
+                *iat = (uint32_t *)addr;
+                *start = addr;
+                break;
+            }
+        }
+        for (int i = 0; i < range; i += 0x04) {
+            if (addr == (uint32_t)(*iat))
+                break;
+            if (!memcmp((void *)(addr + i), rdata, sizeof(rdata))) {
+                addr += ((uint32_t *)(addr + i))[3];
+                *iat = (uint32_t *)addr;
+                *start = addr;
+                break;
+            }
+        }
+    }
+}
+
+static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWORD range)
+{
     LARGE_INTEGER f;
     DWORD oldProt, hkGet, hkPerf;
-    uint32_t *patch, addr = 0;
-    uint16_t *callOp;
-    const char idata[] = ".idata", rdata[] = ".rdata";
-    GetSystemInfo(&si);
-    HookTimeGetFreq(0);
     HookTimeGetFreq(&f);
     hkGet = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), "timeGetTime");
     hkPerf = (f.QuadPart < TICK_8254)? (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), "QueryPerformanceCounter"):0;
 #undef TICK_8254
 #undef TICK_ACPI
-    if (addr && (0x4550U == *(uint32_t *)addr)) {
-        for (int i = 0; i < si.dwPageSize; i += 0x04) {
-            if (!memcmp((void *)(addr + i), idata, sizeof(idata))) {
-                addr += ((uint32_t *)(addr + i))[3];
-                patch = (uint32_t *)addr;
-                break;
-            }
-        }
-        for (int i = 0; i < si.dwPageSize; i += 0x04) {
-            if (addr == (uint32_t)patch)
-                break;
-            if (!memcmp((void *)(addr + i), rdata, sizeof(rdata))) {
-                addr += ((uint32_t *)(addr + i))[3];
-                patch = (uint32_t *)addr;
-                break;
-            }
-        }
-    }
-
-    if (addr == (uint32_t)patch) { }
-    else {
-        callOp = (uint16_t *)(caddr - 0x06);
-        if (0x15ff == (*callOp)) {
-            addr = *(uint32_t *)(caddr - 0x04);
-            addr &= ~(si.dwPageSize - 1);
-            patch = (uint32_t *)addr;
-        }
-    }
+    uint32_t addr = start, *patch = (uint32_t *)iat;
 
     if ((addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
-        for (int i = 0; i < (si.dwPageSize >> 2); i++) {
+        for (int i = 0; i < (range >> 2); i++) {
             if (hkGet && (hkGet == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);
                 patch[i] = (uint32_t)&TimeHookProc;
                 hkGet = 0;
-                break;
             }
+            if (hkPerf && (hkPerf == patch[i])) {
+                HookEntryHook(&patch[i], patch[i]);
+                patch[i] = (uint32_t)&PerformanceCounterProc;
+                hkPerf = 0;
+            }
+            if (!hkGet && !hkPerf)
+                break;
         }
         VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt);
     }
+}
 
-    if (hkGet) {
-        addr = (uint32_t)GetModuleHandle(0);
-        for (int i = 0; i < si.dwPageSize; i += 0x04) {
-            if (!memcmp((void *)(addr + i), idata, sizeof(idata))) {
-                addr += ((uint32_t *)(addr + i))[3];
-                patch = (uint32_t *)addr;
-                break;
-            }
-        }
-        for (int i = 0; i < si.dwPageSize; i += 0x04) {
-            if (addr == (uint32_t)patch)
-                break;
-            if (!memcmp((void *)(addr + i), rdata, sizeof(rdata))) {
-                addr += ((uint32_t *)(addr + i))[3];
-                patch = (uint32_t *)addr;
-                break;
-            }
-        }
-        if ((addr = (uint32_t)patch) &&
-            VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
-            for (int i = 0; i < (si.dwPageSize >> 2); i++) {
-                if (hkGet && (hkGet == patch[i])) {
-                    HookEntryHook(&patch[i], patch[i]);
-                    patch[i] = (uint32_t)&TimeHookProc;
-                    hkGet = 0;
-                }
-                if (hkPerf && (hkPerf == patch[i])) {
-                    HookEntryHook(&patch[i], patch[i]);
-                    patch[i] = (uint32_t)&PerformanceCounterProc;
-                    hkPerf = 0;
-                }
-                if (!hkGet && !hkPerf)
-                    break;
-            }
-            VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt);
-        }
+void HookTimeGetTime(const uint32_t caddr)
+{
+    uint32_t addr, *patch;
+    uint16_t *callOp;
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    HookTimeGetFreq(0);
+
+    callOp = (uint16_t *)(caddr - 0x06);
+    if (0x15ff == (*callOp)) {
+        addr = *(uint32_t *)(caddr - 0x04);
+        addr &= ~(si.dwPageSize - 1);
+        patch = (uint32_t *)addr;
+        HookPatchTimer(addr, patch, si.dwPageSize);
     }
+#define TICK_HOOK(mod) \
+    addr = (uint32_t)GetModuleHandle(mod); \
+    for (int i = 0; addr && (i < si.dwPageSize); i+=0x04) { \
+        if (0x4550U == *(uint32_t *)addr) break; \
+        addr += 0x04; \
+    } \
+    addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
+    HookParseRange(&addr, &patch, si.dwPageSize); \
+    HookPatchTimer(addr, patch, si.dwPageSize);
+    TICK_HOOK(0);
+#undef TICK_HOOK
 }
 

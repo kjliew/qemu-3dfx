@@ -16425,54 +16425,12 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
     return ret;
 }
 
-void HookDeviceGammaRamp(const uint32_t caddr)
+static void HookPatchGamma(const uint32_t start, const uint32_t *iat, const DWORD range)
 {
     DWORD oldProt, hkGet, hkSet;
-    uint32_t *patch, addr = 0;
-    uint16_t *callOp;
-    const char idata[] = ".idata", rdata[] = ".rdata";
     hkGet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDeviceGammaRamp");
     hkSet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "SetDeviceGammaRamp");
-
-#define GLGAMMA_HOOK(mod) \
-    if (!addr) { \
-        addr = (uint32_t)GetModuleHandle(mod); \
-        for (int i = 0; addr && (i < (PAGE_SIZE >> 2)); i++) { \
-            if (0x4550U == *(uint32_t *)addr) break; \
-            addr += 0x04; \
-        } \
-        addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
-    }
-    GLGAMMA_HOOK("opengldrv.dll");
-#undef GLGAMMA_HOOK
-    if (addr && (0x4550U == *(uint32_t *)addr)) {
-        for (int i = 0; i < PAGE_SIZE; i += 0x04) {
-            if (!memcmp((void *)(addr + i), idata, sizeof(idata))) {
-                addr += ((uint32_t *)(addr + i))[3];
-                patch = (uint32_t *)addr;
-                break;
-            }
-        }
-        for (int i = 0; i < PAGE_SIZE; i += 0x04) {
-            if (addr == (uint32_t)patch)
-                break;
-            if (!memcmp((void *)(addr + i), rdata, sizeof(rdata))) {
-                addr += ((uint32_t *)(addr + i))[3];
-                patch = (uint32_t *)addr;
-                break;
-            }
-        }
-    }
-
-    if (addr == (uint32_t)patch) { }
-    else {
-        callOp = (uint16_t *)(caddr - 0x06);
-        if (0x15ff == (*callOp)) {
-            addr = *(uint32_t *)(caddr - 0x04);
-            addr &= ~(PAGE_SIZE - 1);
-            patch = (uint32_t *)addr;
-        }
-    }
+    uint32_t addr = start, *patch = (uint32_t *)iat;
 
     if ((addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
@@ -16492,6 +16450,31 @@ void HookDeviceGammaRamp(const uint32_t caddr)
         }
         VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt);
     }
+}
+
+void HookDeviceGammaRamp(const uint32_t caddr)
+{
+    uint32_t addr, *patch;
+    uint16_t *callOp;
+
+    callOp = (uint16_t *)(caddr - 0x06);
+    if (0x15ff == (*callOp)) {
+        addr = *(uint32_t *)(caddr - 0x04);
+        addr &= ~(PAGE_SIZE - 1);
+        patch = (uint32_t *)addr;
+        HookPatchGamma(addr, patch, PAGE_SIZE);
+    }
+#define GLGAMMA_HOOK(mod) \
+    addr = (uint32_t)GetModuleHandle(mod); \
+    for (int i = 0; addr && (i < (PAGE_SIZE >> 2)); i++) { \
+        if (0x4550U == *(uint32_t *)addr) break; \
+        addr += 0x04; \
+    } \
+    addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
+    HookParseRange(&addr, &patch, PAGE_SIZE); \
+    HookPatchGamma(addr, patch, PAGE_SIZE);
+    GLGAMMA_HOOK("opengldrv.dll");
+#undef GLGAMMA_HOOK
 }
 
 BOOL WINAPI
