@@ -33,7 +33,7 @@ Simple guide to apply the patch:<br>
     $ rsync -r ../qemu-0/hw/3dfx ./hw/
     $ rsync -r ../qemu-1/hw/mesa ./hw/
     $ patch -p0 -i ../00-qemu520-mesa-glide.patch
-    $ ../scripts/sign_commit
+    $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
     $ ../qemu-5.2.0/configure && make
 
