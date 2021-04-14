@@ -46,21 +46,6 @@ static inline int acpi_tick_asm(void)
     return ret;
 }
 
-static BOOL WINAPI PerformanceCounterProc(LARGE_INTEGER *count)
-{
-#define TICK_8254 0x1234F0U /* 1.193200 MHz */
-#define TICK_ACPI 0x369E99U /* 3.579545 MHz */
-    static LARGE_INTEGER tick;
-    DWORD t = acpi_tick_asm();
-    tick.QuadPart = (tick.QuadPart == 0)? t:tick.QuadPart;
-    if ((tick.u.LowPart & 0x00FFFFFFU) > t)
-        tick.QuadPart = (((tick.QuadPart >> 24) + 1) << 24) | t;
-    else
-        tick.u.LowPart = (tick.u.LowPart & 0xFF000000U) | t;
-    count->QuadPart = (tick.QuadPart * TICK_8254) / TICK_ACPI;
-    return TRUE;
-}
-
 void HookTimeGetFreq(LARGE_INTEGER *f)
 {
     static LARGE_INTEGER freq;
@@ -70,13 +55,30 @@ void HookTimeGetFreq(LARGE_INTEGER *f)
         *f = freq;
 }
 
+static BOOL WINAPI PerformanceCounterProc(LARGE_INTEGER *count)
+{
+#define TICK_8254 0x1234F0U /* 1.193200 MHz */
+#define TICK_ACPI 0x369E99U /* 3.579545 MHz */
+    static LARGE_INTEGER tick;
+    LARGE_INTEGER f;
+    HookTimeGetFreq(&f);
+    DWORD t = acpi_tick_asm();
+    tick.QuadPart = (tick.QuadPart == 0)? t:tick.QuadPart;
+    if ((tick.u.LowPart & 0x00FFFFFFU) > t)
+        tick.QuadPart = (((tick.QuadPart >> 24) + 1) << 24) | t;
+    else
+        tick.u.LowPart = (tick.u.LowPart & 0xFF000000U) | t;
+    count->QuadPart = (tick.QuadPart * f.QuadPart) / TICK_ACPI;
+    return TRUE;
+}
+
 static DWORD WINAPI TimeHookProc(void)
 {
     LARGE_INTEGER f, li;
     HookTimeGetFreq(&f);
     if (f.QuadPart < TICK_8254) {
         PerformanceCounterProc(&li);
-        return (li.QuadPart * 1000) / TICK_8254;
+        return (li.QuadPart * 1000) / f.QuadPart;
     }
     QueryPerformanceCounter(&li);
     return (li.QuadPart * 1000) / f.QuadPart;
