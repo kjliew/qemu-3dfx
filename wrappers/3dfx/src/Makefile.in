@@ -2,7 +2,7 @@ QEMU_SRC_DIR=../../../qemu-0
 FXLIB=../../fxlib
 GIT=$(shell git rev-parse HEAD | sed "s/\(.......\).*/\1\-/")
 CC=gcc
-CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -I$(FXLIB) -D__REV__=\"$(GIT)\" -Werror -O3 -fomit-frame-pointer
+CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -I$(FXLIB) -D__REV__=\"$(GIT)\" -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
 SRCDIR=../src

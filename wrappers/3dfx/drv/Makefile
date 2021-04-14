@@ -1,11 +1,12 @@
 FXLIB=../../fxlib
+CC=gcc
 
 all: instdrv.exe fxmemmap.vxd fxptl.sys md5sum
 
 instdrv.exe: instdrv.c
 	@if [ ! -d ../build ]; then exit 1; fi
 	@echo "  LD  $@"
-	@gcc -I$(FXLIB) -Wall -Wextra -Werror -s -o ../build/$@ $< ../build/fxlibnt.o
+	@$(CC) -I$(FXLIB) -Wall -Wextra -Werror -s -o ../build/$@ $< ../build/fxlibnt.o
 
 fxmemmap.vxd: fxmemmap.xxd
 	@echo "  DRV $@"

@@ -10,6 +10,7 @@ TOOLS=wglinfo.exe
 PEXPORTS=pexports
 
 C_OBJS:=\
+    fxhook.o \
     fxlib9x.o \
     fxlibnt.o \
 
@@ -36,7 +37,8 @@ stamp.o:
 	@$(CC) -c -o $@ /tmp/$(@:o=c)
 
 fxlib:
-	@echo "  CC  fxlib9x.o fxlibnt.o"
+	@echo "  CC  fxhook.o fxlib9x.o fxlibnt.o"
+	@$(CC) $(CFLAGS) -c -o fxhook.o $(FXLIB)/fxhook.c
 	@$(CC) $(CFLAGS) -c -o fxlib9x.o $(FXLIB)/fxlib9x.c
 	@$(CC) $(CFLAGS) -c -o fxlibnt.o $(FXLIB)/fxlibnt.c
 
