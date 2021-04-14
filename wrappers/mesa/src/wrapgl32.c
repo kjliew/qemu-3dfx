@@ -16733,28 +16733,30 @@ int WINAPI wglGetPixelFormat(HDC hdc)
 }
 int WINAPI wgdGetPixelFormat(HDC hdc) { return wglGetPixelFormat(hdc); }
 
-BOOL WINAPI wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
+BOOL WINAPI __attribute__((optimize("-fno-omit-frame-pointer")))
+wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 {
     uint32_t ret, *rsp, *xppfd;
-    asm volatile("lea 0x3c(%%esp), %0;":"=rm"(rsp));
-    ret = (format == rsp[2])? rsp[0]:rsp[4];
+    asm volatile("lea 0x04(%%ebp), %0;":"=rm"(rsp));
+    ret = (format == rsp[10])? rsp[8]:rsp[0];
     HookDeviceGammaRamp(ret);
     HookTimeGetTime(ret);
-    xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     if (currGLRC) {
         mglMakeCurrent(0, 0);
         mglDeleteContext(MESAGL_MAGIC);
     }
+    xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     xppfd[0] = format;
     memset(&xppfd[2], 0, sizeof(PIXELFORMATDESCRIPTOR));
     if (ppfd)
         memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFE4 >> 2] = MESAGL_MAGIC;
-    ret = (ptm[0xFE4 >> 2] == MESAGL_MAGIC)? TRUE:FALSE;
+    ret = (ptm[0xFE4 >> 2] == MESAGL_MAGIC)? 1:0;
     currPixFmt = (ret)? format:0;
-    return (currPixFmt)? TRUE:FALSE;
+    return ret;
 }
-BOOL WINAPI __attribute__((optimize("Og"))) wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
+BOOL WINAPI __attribute__((optimize("Os")))
+wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 { return wglSetPixelFormat(hdc, format, ppfd); }
 
 LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
