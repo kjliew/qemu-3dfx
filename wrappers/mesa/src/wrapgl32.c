@@ -16455,14 +16455,15 @@ static void HookPatchGamma(const uint32_t start, const uint32_t *iat, const DWOR
 void HookDeviceGammaRamp(const uint32_t caddr)
 {
     uint32_t addr, *patch;
-    uint16_t *callOp;
 
-    callOp = (uint16_t *)(caddr - 0x06);
-    if (0x15ff == (*callOp)) {
-        addr = *(uint32_t *)(caddr - 0x04);
-        addr &= ~(PAGE_SIZE - 1);
-        patch = (uint32_t *)addr;
-        HookPatchGamma(addr, patch, PAGE_SIZE);
+    if (caddr) {
+        uint16_t *callOp = (uint16_t *)(caddr - 0x06);
+        if (0x15ff == (*callOp)) {
+            addr = *(uint32_t *)(caddr - 0x04);
+            addr &= ~(PAGE_SIZE - 1);
+            patch = (uint32_t *)addr;
+            HookPatchGamma(addr, patch, PAGE_SIZE);
+        }
     }
 #define GLGAMMA_HOOK(mod) \
     addr = (uint32_t)GetModuleHandle(mod); \

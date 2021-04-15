@@ -90,7 +90,6 @@ void kmdDrvInit(PDRVFUNC);
 /* fxhook.c */
 void HookEntryHook(unsigned int *, const unsigned int);
 void HookParseRange(unsigned int *, unsigned int **, const DWORD);
-void HookTimeGetFreq(LARGE_INTEGER *);
 void HookTimeGetTime(const unsigned int);
 
 #endif // FXLIB_H
