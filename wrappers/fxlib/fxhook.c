@@ -47,42 +47,47 @@ static inline int acpi_tick_asm(void)
     return ret;
 }
 
-static void HookTimeGetFreq(LARGE_INTEGER *f)
-{
-    static LARGE_INTEGER freq;
-    if (!f)
-        QueryPerformanceFrequency(&freq);
-    else
-        *f = freq;
-}
-
-static BOOL WINAPI PerformanceCounterProc(LARGE_INTEGER *count)
+struct tckRef {
+    LARGE_INTEGER freq, run;
+};
+static void HookTimeTckRef(struct tckRef **tick)
 {
 #define TICK_8254 0x1234F0U /* 1.193200 MHz */
 #define TICK_ACPI 0x369E99U /* 3.579545 MHz */
-    static LARGE_INTEGER tick;
-    LARGE_INTEGER f;
-    HookTimeGetFreq(&f);
-    DWORD t = acpi_tick_asm();
-    tick.QuadPart = (tick.QuadPart == 0)? t:tick.QuadPart;
-    if ((tick.u.LowPart & 0x00FFFFFFU) > t)
-        tick.QuadPart = (((tick.QuadPart >> 24) + 1) << 24) | t;
+    static struct tckRef ref;
+
+    if (!tick)
+        QueryPerformanceFrequency(&ref.freq);
     else
-        tick.u.LowPart = (tick.u.LowPart & 0xFF000000U) | t;
-    count->QuadPart = (tick.QuadPart * f.QuadPart) / TICK_ACPI;
-    return TRUE;
+        *tick = &ref;
+}
+
+static void elapsedTickProc(void)
+{
+    struct tckRef *tick;
+    DWORD t = acpi_tick_asm();
+    HookTimeTckRef(&tick);
+
+    if (__sync_bool_compare_and_swap(&tick->run.QuadPart, 0, t)) { }
+    else if ((tick->run.u.LowPart & 0x00FFFFFFU) > t)
+        __sync_bool_compare_and_swap(&tick->run.QuadPart, tick->run.QuadPart, (((tick->run.QuadPart >> 24) + 1) << 24) | t);
+    else
+        __sync_bool_compare_and_swap(&tick->run.u.LowPart, tick->run.u.LowPart, (tick->run.u.LowPart & 0xFF000000U) | t);
 }
 
 static DWORD WINAPI TimeHookProc(void)
 {
-    LARGE_INTEGER f, li;
-    HookTimeGetFreq(&f);
-    if (f.QuadPart < TICK_8254) {
-        PerformanceCounterProc(&li);
-        return (li.QuadPart * 1000) / f.QuadPart;
+    struct tckRef *tick;
+    LARGE_INTEGER li;
+    HookTimeTckRef(&tick);
+    if (tick->freq.QuadPart < TICK_8254) {
+        elapsedTickProc();
+        return (tick->run.QuadPart * 1000) / TICK_ACPI;
     }
+#undef TICK_8254
+#undef TICK_ACPI
     QueryPerformanceCounter(&li);
-    return (li.QuadPart * 1000) / f.QuadPart;
+    return (li.QuadPart * 1000) / tick->freq.QuadPart;
 }
 
 void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
@@ -114,18 +119,14 @@ void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
 
 static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWORD range)
 {
-    LARGE_INTEGER f;
-    DWORD oldProt, hkGet;
-    HookTimeGetFreq(&f);
-    hkGet = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), "timeGetTime");
-#undef TICK_8254
-#undef TICK_ACPI
+    DWORD oldProt;
     uint32_t addr = start, *patch = (uint32_t *)iat;
 
     if ((addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
+        DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), "timeGetTime");
         for (int i = 0; i < (range >> 2); i++) {
-            if (hkGet && (hkGet == patch[i])) {
+            if (hkTime && (hkTime == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);
                 patch[i] = (uint32_t)&TimeHookProc;
                 break;
@@ -140,7 +141,7 @@ void HookTimeGetTime(const uint32_t caddr)
     uint32_t addr, *patch;
     SYSTEM_INFO si;
     GetSystemInfo(&si);
-    HookTimeGetFreq(0);
+    HookTimeTckRef(0);
 
     if (caddr) {
         uint16_t *callOp = (uint16_t *)(caddr - 0x06);

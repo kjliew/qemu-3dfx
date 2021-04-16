@@ -16427,13 +16427,13 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
 
 static void HookPatchGamma(const uint32_t start, const uint32_t *iat, const DWORD range)
 {
-    DWORD oldProt, hkGet, hkSet;
-    hkGet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDeviceGammaRamp");
-    hkSet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "SetDeviceGammaRamp");
+    DWORD oldProt;
     uint32_t addr = start, *patch = (uint32_t *)iat;
 
     if ((addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
+        DWORD hkGet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDeviceGammaRamp"),
+              hkSet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "SetDeviceGammaRamp");
         for (int i = 0; i < (PAGE_SIZE >> 2); i++) {
             if (hkGet && (hkGet == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);
