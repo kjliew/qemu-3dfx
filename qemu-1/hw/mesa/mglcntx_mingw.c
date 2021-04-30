@@ -464,7 +464,7 @@ void MGLFuncHandler(const char *name)
 {
     char fname[64];
     uint32_t *argsp = (uint32_t *)(name + ALIGNED(strnlen(name, sizeof(fname))));
-    strncpy(fname, name, sizeof(fname));
+    strncpy(fname, name, sizeof(fname)-1);
 
 #define FUNCP_HANDLER(a) \
     if (!memcmp(fname, a, sizeof(a)))

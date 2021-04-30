@@ -60,7 +60,7 @@ int ExtFuncIsValid(char *name)
     int i;
     for (i = 0; i < FEnum_zzMGLFuncEnum_max; i++) {
         char func[64];
-        strncpy(func, tblMesaGL[i].sym + 1, sizeof(func));
+        strncpy(func, tblMesaGL[i].sym + 1, sizeof(func)-1);
         for (int j = 0; j < sizeof(func); j++) {
             if (func[j] == '@') {
                 func[j] = 0;
@@ -1457,7 +1457,7 @@ int InitMesaGL(void)
 
     for (int i = 0; i < FEnum_zzMGLFuncEnum_max; i++) {
         char func[64];
-        strncpy(func, tblMesaGL[i].sym + 1, sizeof(func));
+        strncpy(func, tblMesaGL[i].sym + 1, sizeof(func)-1);
         for (int j = 0; j < sizeof(func); j++) {
             if (func[j] == '@') {
                 func[j] = 0;
@@ -1480,7 +1480,7 @@ void InitMesaGLExt(void)
     for (int i = 0; i < FEnum_zzMGLFuncEnum_max; i++) {
         char func[64];
         if (tblMesaGL[i].ptr == NULL) {
-            strncpy(func, tblMesaGL[i].sym + 1, sizeof(func));
+            strncpy(func, tblMesaGL[i].sym + 1, sizeof(func)-1);
             for (int j = 0; j < sizeof(func); j++) {
                 if (func[j] == '@') {
                     func[j] = 0;

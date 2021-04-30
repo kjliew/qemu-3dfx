@@ -1869,7 +1869,7 @@ static void processFRet(MesaPTState *s)
                 char str[255];
                 //DPRINTF("GetStringi() %04x %s", s->arg[1], s->FRet);
                 memset(str, 0, sizeof(str));
-                strncpy(str, (char *)s->FRet, sizeof(str));
+                strncpy(str, (char *)s->FRet, sizeof(str)-1);
                 n = strnlen(str, sizeof(str) - 1);
                 *(int *)outshm = ++n;
                 memcpy(PTR(outshm, sizeof(int)), str, n);

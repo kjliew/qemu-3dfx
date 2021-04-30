@@ -215,9 +215,9 @@ static int find_xstr(const char *xstr, const char *str)
     int ret = 0;
     char sbuf[1024], *stok;
     if (xstr)
-        strncpy(sbuf, xstr, 1024);
+        strncpy(sbuf, xstr, sizeof(sbuf)-1);
     else
-        memset(sbuf, 0, 1024);
+        memset(sbuf, 0, sizeof(sbuf));
     stok = strtok(sbuf, " ");
     while (stok) {
         if (!strncmp(stok, str, strnlen(str, 64))) {
@@ -495,7 +495,7 @@ void MGLFuncHandler(const char *name)
 {
     char fname[64];
     uint32_t *argsp = (uint32_t *)(name + ALIGNED(strnlen(name, sizeof(fname))));
-    strncpy(fname, name, sizeof(fname));
+    strncpy(fname, name, sizeof(fname)-1);
 
 #define FUNCP_HANDLER(a) \
     if (!memcmp(fname, a, sizeof(a)))
@@ -566,7 +566,7 @@ void MGLFuncHandler(const char *name)
         }
     }
     FUNCP_HANDLER("wglCreateContextAttribsARB") {
-        strncpy(fname, "glXCreateContextAttribsARB", sizeof(fname));
+        strncpy(fname, "glXCreateContextAttribsARB", sizeof(fname)-1);
         GLXContext (*fp)(Display *, GLXFBConfig, GLXContext, Bool, const int *) =
             (GLXContext (*)(Display *, GLXFBConfig, GLXContext, Bool, const int *)) MesaGLGetProc(fname);
         if (fp) {

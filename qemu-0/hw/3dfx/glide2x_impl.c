@@ -819,14 +819,14 @@ int init_glide2x(const char *dllname)
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
 	char lnxsym[128], wrapsym[128] = "wrap3x_", *pws = wrapsym;
-	strncpy(lnxsym, tblGlide2x[i].sym + 1, sizeof(lnxsym));
+	strncpy(lnxsym, tblGlide2x[i].sym + 1, sizeof(lnxsym)-1);
 	for (int i = 0; i < sizeof(lnxsym); i++) {
 	    if (lnxsym[i] == '@') {
 		lnxsym[i] = 0;
 		break;
 	    }
 	}
-        pws = strncat(wrapsym, lnxsym, sizeof(wrapsym)-1);
+        pws = strcat(wrapsym, lnxsym);
         void *plf = dlsym(hDll, lnxsym), *pwf = dlsym(hDll, pws);
         tblGlide2x[i].ptr = (enWrap3x && pwf)? pwf:plf;
 #endif
