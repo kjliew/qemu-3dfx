@@ -1,14 +1,18 @@
 #!/bin/sh
 
-REV=`git rev-parse HEAD | sed "s/\(.......\).*/\1\-/"`
+TOP=.
+GIT=`echo $@ | sed "s/\-git=\(.*\)/\1/;s/\ .*//"`
+if [ -z $GIT ]; then GIT=.; fi; shift
+ARG=$@; if [ -z $ARG ]; then ARG=HEAD; fi
+REV=`cd $GIT; git rev-parse $ARG | sed "s/\(.......\).*/\1\-/"`
 if [ -z $REV ]; then exit 1; fi
+VLC=$(find $TOP -maxdepth 2 -name vl.c)
 SRC=" \
-    hw/3dfx/g2xfuncs.h \
-    hw/mesa/mglfuncs.h \
+    $TOP/hw/3dfx/g2xfuncs.h \
+    $TOP/hw/mesa/mglfuncs.h \
+    $VLC \
 " \
 
-SRC+=$(find -maxdepth 2 -name vl.c)
 echo $REV
 sed -i "s/\(rev_\[\).*\].*/\1\]\ =\ \"$REV\"/" $SRC
 grep "rev_\[" $SRC | sed "s/\(rev_\[\).*\].*/\1\]\ =\ \"$REV\"/"
-
