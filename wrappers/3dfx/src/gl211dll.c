@@ -81,6 +81,8 @@ static int InitGlidePTMMBase(PDRVFUNC pDrv)
         return 1;
     mdata = &mfifo[MAX_FIFO];
     pt = &mfifo[1];
+    if (mfifo[1] == (uint32_t)(ptm + (0xFC0U >> 2)))
+        return 1;
     mfifo[0] = FIRST_FIFO;
     mdata[0] = ALIGNED(1) >> 2;
     pt[0] = (uint32_t)(ptm + (0xFC0U >> 2));
@@ -928,6 +930,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
         LPVOID lpReserved
         )
 {
+    static char cbref, *refcnt;
     uint32_t HostRet;
     OSVERSIONINFO osInfo;
     DRVFUNC drv;
@@ -947,12 +950,19 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             if (drv.Init()) {
                 if (InitGlidePTMMBase(&drv)) {
                     drv.Fini();
-                    return FALSE;
+                    refcnt = (ptm)? (char *)&mdata[1]:&cbref;
+                    (*refcnt)++;
+                    return (ptm)? TRUE:FALSE;
                 }
                 drv.Fini();
+                mdata[1] = 1;
+                refcnt = (char *)&mdata[1];
             }
-            else
+            else {
+                refcnt = &cbref;
+                (*refcnt)++;
                 return FALSE;
+            }
 #ifdef DEBUG_FXSTUB
 	    logfp = fopen(LOG_FNAME, "w");
 #endif
@@ -967,9 +977,13 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             DisableThreadLibraryCalls(hModule);
             break;
         case DLL_PROCESS_DETACH:
+            if (--(*refcnt))
+                break;
 	    if (grGlidePresent)
 		grGlideShutdown();
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | GLIDEVER;
+            memset(&vgLfb[(SHLFB_SIZE - ALIGNBO(1)) >> 2], 0, ALIGNED(1));
+            mfifo[1] = 0;
 #ifdef DEBUG_FXSTUB
 	    fclose(logfp);
 #endif

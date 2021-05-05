@@ -90,6 +90,8 @@ static int InitGlidePTMMBase(void)
         return 1;
     mdata = &mfifo[MAX_FIFO];
     pt = &mfifo[1];
+    if (mfifo[1] == (uint32_t)(ptm + (0xFC0U >> 2)))
+        return 1;
     mfifo[0] = FIRST_FIFO;
     mdata[0] = ALIGNED(1) >> 2;
     pt[0] = (uint32_t)(ptm + (0xFC0U >> 2));
@@ -1011,6 +1013,8 @@ int Init(void)
 void Fini(void)
 {
     ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | GLIDEVER;
+    memset(&vgLfb[(SHLFB_SIZE - ALIGNBO(1)) >> 2], 0, ALIGNED(1));
+    mfifo[1] = 0;
 }
 
 int __djgpp_base_address;

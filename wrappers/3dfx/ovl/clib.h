@@ -43,6 +43,14 @@ static void memcpy(const void *s1, const void *s2, unsigned n)
         dst[i] = src[i];
 }
 
+static void memset(const void *s1, const char c, unsigned n)
+{
+    int i = 0;
+    char *dst = (char *)s1;
+    for (; i < n; i++)
+        dst[i] = c;
+}
+
 static int strncmp(const char *s1, const char *s2, unsigned n)
 {
     if (n == 0)
