@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdint.h>
+#include <stdio.h>
 
 void HookEntryHook(uint32_t *patch, const uint32_t orig)
 {
@@ -79,7 +80,7 @@ static DWORD WINAPI elapsedTickProc(LARGE_INTEGER *count)
     else
         __sync_bool_compare_and_swap(&tick->run.u.LowPart, tick->run.u.LowPart, (tick->run.u.LowPart & 0xFF000000U) | t);
 
-    if (count)
+    if (!IsBadWritePtr(count, sizeof(LARGE_INTEGER)))
         __sync_bool_compare_and_swap(&count->QuadPart, count->QuadPart, (tick->run.QuadPart * tick->freq.QuadPart) / TICK_ACPI);
     return TRUE;
 }
@@ -159,8 +160,30 @@ void HookTimeGetTime(const uint32_t caddr)
 {
     uint32_t addr, *patch;
     SYSTEM_INFO si;
+    char buffer[MAX_PATH], dotstr[] = ".hook";
+    unsigned int len = GetModuleFileName(0, buffer, sizeof(char[MAX_PATH]));
+
     GetSystemInfo(&si);
     HookTimeTckRef(0);
+
+    if (len && len < (MAX_PATH - sizeof(dotstr))) {
+        strncat(buffer, dotstr, MAX_PATH-1);
+        FILE *fp = fopen(buffer, "r");
+        if (fp) {
+            int i;
+            char line[16];
+            while(fgets(line, 16, fp)) {
+                i = sscanf(line, "%x", &addr);
+                if (addr && (i == 1)) {
+                    addr &= ~(si.dwPageSize - 1);
+                    patch = (uint32_t *)addr;
+                    HookPatchTimer(addr, patch, si.dwPageSize);
+                }
+            }
+            fclose(fp);
+            return;
+        }
+    }
 
     if (caddr) {
         uint16_t *callOp = (uint16_t *)(caddr - 0x06);
