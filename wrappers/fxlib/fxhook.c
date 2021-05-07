@@ -60,10 +60,9 @@ static void HookTimeTckRef(struct tckRef **tick)
     if (!tick) {
         DWORD (WINAPI *mmTime)(void) = (DWORD (WINAPI *)(void))
             GetProcAddress(GetModuleHandle("winmm.dll"), "timeGetTime");
+        LONGLONG mmTick = (mmTime)? mmTime():0;
         QueryPerformanceFrequency(&ref.freq);
-        __sync_bool_compare_and_swap(&ref.run.QuadPart, ref.run.QuadPart, (mmTime)? mmTime():0);
-        __sync_bool_compare_and_swap(&ref.run.QuadPart, ref.run.QuadPart,
-            ((((ref.run.QuadPart * TICK_ACPI) / 1000) >> 24) + 1) << 24);
+        __atomic_store_n(&ref.run.QuadPart, (((((mmTick * TICK_ACPI) / 1000) >> 24) + 1) << 24), __ATOMIC_RELAXED);
     }
     else
         *tick = &ref;
@@ -76,12 +75,12 @@ static DWORD WINAPI elapsedTickProc(LARGE_INTEGER *count)
     HookTimeTckRef(&tick);
 
     if ((tick->run.u.LowPart & 0x00FFFFFFU) > t)
-        __sync_bool_compare_and_swap(&tick->run.QuadPart, tick->run.QuadPart, (((tick->run.QuadPart >> 24) + 1) << 24) | t);
+        __atomic_store_n(&tick->run.QuadPart, ((((tick->run.QuadPart >> 24) + 1) << 24) | t), __ATOMIC_RELAXED);
     else
-        __sync_bool_compare_and_swap(&tick->run.u.LowPart, tick->run.u.LowPart, (tick->run.u.LowPart & 0xFF000000U) | t);
+        __atomic_store_n(&tick->run.u.LowPart, ((tick->run.u.LowPart & 0xFF000000U) | t), __ATOMIC_RELAXED);
 
-    if (!IsBadWritePtr(count, sizeof(LARGE_INTEGER)))
-        __sync_bool_compare_and_swap(&count->QuadPart, count->QuadPart, (tick->run.QuadPart * tick->freq.QuadPart) / TICK_ACPI);
+    if (count)
+        __atomic_store_n(&count->QuadPart, ((tick->run.QuadPart * tick->freq.QuadPart) / TICK_ACPI), __ATOMIC_RELAXED);
     return TRUE;
 }
 
