@@ -35,6 +35,7 @@ typedef struct {
 void InitBufObj(void);
 mapbufo_t *LookupBufObj(const int);
 int FreeBufObj(const int);
+void MapBufObjGpa(mapbufo_t *);
 
 #endif //_MGL_MAPBO_H
 
