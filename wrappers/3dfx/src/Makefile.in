@@ -59,13 +59,13 @@ $(TARGET3): $(C_OBJS) gl301dll.o
 	@dlltool -U -d lib$(@:dll=def) -l lib$@.a
 
 fxlib:
+	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi
 	@echo "  CC  fxhook.o fxlib9x.o fxlibnt.o"
 	@$(CC) $(CFLAGS) -c -o fxhook.o $(FXLIB)/fxhook.c
 	@$(CC) $(CFLAGS) -c -o fxlib9x.o $(FXLIB)/fxlib9x.c
 	@$(CC) $(CFLAGS) -c -o fxlibnt.o $(FXLIB)/fxlibnt.c
 
 %.o: $(SRCDIR)/%.c
-	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi
 	@echo "  CC  $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
