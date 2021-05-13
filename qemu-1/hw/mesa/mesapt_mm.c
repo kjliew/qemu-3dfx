@@ -1968,6 +1968,10 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 }
                 break;
             case 0xD0320:
+                if (s->mglContext) {
+                    s->mglContext = 0;
+                    MGLDeleteContext(0);
+                }
                 if (s->MesaVer) {
                     MGLWndRelease();
                     DPRINTF("%-64s", "DLL unloaded");
@@ -2076,6 +2080,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xFF0:
                 DPRINTF_COND((GLFuncTrace() == 2), ">>>>>>>> wglSwapBuffers <<<<<<<<");
                 s->perfs.stat();
+                MGLActivateHandler(1);
                 do {
                     uint32_t *swapRet = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - ALIGNED(1)));
                     swapRet[0] = MGLSwapBuffers()? ((GetFpsLimit() << 8) | 1):0;
