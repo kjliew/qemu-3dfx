@@ -14,5 +14,5 @@ SRC=" \
 " \
 
 echo $REV
-sed -i "s/\(rev_\[\).*\].*/\1\]\ =\ \"$REV\"/" $SRC
+sed -i -e "s/\(rev_\[\).*\].*/\1\]\ =\ \"$REV\"/" $SRC
 grep "rev_\[" $SRC | sed "s/\(rev_\[\).*\].*/\1\]\ =\ \"$REV\"/"

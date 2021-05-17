@@ -32,9 +32,11 @@
 #define DPRINTF(fmt, ...)
 #endif
 
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
 #include <dlfcn.h>
-  #if defined(HOST_X86_64) && HOST_X86_64
+  #if (defined(HOST_X86_64) && HOST_X86_64) || \
+      (defined(HOST_AARCH64) && HOST_AARCH64)
   #define __stdcall
   #endif
 #endif
@@ -753,7 +755,8 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 static HINSTANCE hDll = 0;
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
 static void *hDll = 0;
 #endif
 void __stdcall (*setConfig)(const uint32_t flag);
@@ -772,7 +775,8 @@ void fini_glide2x(void)
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
         FreeLibrary(hDll);
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
 	dlclose(hDll);
 #endif
     }
@@ -797,12 +801,25 @@ int init_glide2x(const char *dllname)
     setConfig = (void *)(GetProcAddress(hDll, "_setConfig@4"));
     setConfigRes = (void *)(GetProcAddress(hDll, "_setConfigRes@4"));
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
     int enWrap3x = 0;
     if (!strncmp(dllname, "glide2x.dll", sizeof("glide2x.dll")))
+#if defined(CONFIG_LINUX) && CONFIG_LINUX
         hDll = dlopen("libglide2x.so", RTLD_NOW);
+#elif defined(CONFIG_DARWIN) && CONFIG_DARWIN
+        hDll = dlopen("libglide2x.dylib", RTLD_NOW);
+#else
+#error Unknown dynamic load library
+#endif
     if (!strncmp(dllname, "glide3x.dll", sizeof("glide3x.dll"))) {
+#if defined(CONFIG_LINUX) && CONFIG_LINUX
         hDll = dlopen("libglide3x.so", RTLD_NOW);
+#elif defined(CONFIG_DARWIN) && CONFIG_DARWIN
+        hDll = dlopen("libglide3x.dylib", RTLD_NOW);
+#else
+#error Unknown dynamic load library
+#endif
         enWrap3x = 1;
     }
     setConfig = (void *)(dlsym(hDll, "setConfig"));
@@ -817,7 +834,8 @@ int init_glide2x(const char *dllname)
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
         tblGlide2x[i].ptr = (void *)(GetProcAddress(hDll, tblGlide2x[i].sym));
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
 	char lnxsym[128], wrapsym[128] = "wrap3x_", *pws = wrapsym;
 	strncpy(lnxsym, tblGlide2x[i].sym + 1, sizeof(lnxsym)-1);
 	for (int i = 0; i < sizeof(lnxsym); i++) {

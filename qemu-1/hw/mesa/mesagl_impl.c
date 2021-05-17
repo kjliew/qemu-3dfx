@@ -32,9 +32,11 @@
 #define DPRINTF(fmt, ...)
 #endif
 
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
 #include <dlfcn.h>
-  #if defined(HOST_X86_64) && HOST_X86_64
+  #if (defined(HOST_X86_64) && HOST_X86_64) || \
+      (defined(HOST_AARCH64) && HOST_AARCH64)
   #define __stdcall
   #endif
 #endif
@@ -1415,7 +1417,8 @@ int GLFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 static HINSTANCE hDll = 0;
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
 static void *hDll = 0;
 #endif
 
@@ -1425,7 +1428,8 @@ void FiniMesaGL(void)
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
         FreeLibrary(hDll);
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
         dlclose(hDll);
 #endif
     }
@@ -1446,10 +1450,15 @@ int InitMesaGL(void)
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
     const char dllname[] = "opengl32.dll";
     hDll = LoadLibrary(dllname);
-#endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#elif defined(CONFIG_LINUX) && CONFIG_LINUX
     const char dllname[] = "libGL.so";
     hDll = dlopen(dllname, RTLD_NOW);
+#elif defined(CONFIG_DARWIN) && CONFIG_DARWIN
+    /* XQuartz/GLX/OpenGL */
+    const char dllname[] = "/opt/X11/lib/libGL.dylib";
+    hDll = dlopen(dllname, RTLD_NOW);
+#else
+#error Unknown dynamic load library
 #endif
     if (!hDll) {
         return 1;
@@ -1467,7 +1476,8 @@ int InitMesaGL(void)
 #if defined(CONFIG_WIN32) && CONFIG_WIN32        
         tblMesaGL[i].ptr = (void *)GetProcAddress(hDll, func);
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
         tblMesaGL[i].ptr = (void *)dlsym(hDll, func);
 #endif
     }

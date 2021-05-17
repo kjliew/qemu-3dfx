@@ -70,6 +70,9 @@ static int cfg_lfbMapBufo;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
 
+#if defined(CONFIG_DARWIN) && CONFIG_DARWIN
+int glide_mapbufo(mapbufo_t *bufo, int add) { return 0; }
+#endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
 #undef CONFIG_KVM_IS_POSSIBLE
 #define CONFIG_KVM_IS_POSSIBLE
@@ -207,7 +210,8 @@ int stat_window(const int res, const int activate)
 	}
 	else {
 	    stat = wndStat;
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
             if (stat)
                 glide_release_window();
 #endif
@@ -227,7 +231,8 @@ void fini_window(void)
         else
             glide_release_window();
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if defined(CONFIG_LINUX) && CONFIG_LINUX || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
         glide_release_window();
 #endif	    
     }
@@ -319,7 +324,8 @@ uint32_t init_window(const int res, const char *wndTitle)
     else
         hwnd = glide_prepare_window(tblRes[sel].w, tblRes[sel].h);
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
     hwnd = glide_prepare_window(tblRes[sel].w, tblRes[sel].h);
     cfg_createWnd = (hwnd)? 0:1;
 #endif	

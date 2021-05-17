@@ -28,13 +28,34 @@
 #define DPRINTF(fmt, ...) \
     do { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); } while(0)
 
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#include <GL/glx.h>
+#include <X11/extensions/xf86vmode.h>
+#if defined(CONFIG_DARWIN) && CONFIG_DARWIN
+int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
+#endif
+#if defined(CONFIG_LINUX) && CONFIG_LINX
 #undef CONFIG_KVM_IS_POSSIBLE
 #define CONFIG_KVM_IS_POSSIBLE
 #include "sysemu/kvm.h"
 #undef CONFIG_KVM_IS_POSSIBLE
-#include <GL/glx.h>
-#include <X11/extensions/xf86vmode.h>
+int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
+{
+    int ret = GetBufOAccelEN()? kvm_enabled():0;
+
+    if (ret && bufo) {
+        if (add)
+            MapBufObjGpa(bufo);
+        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_real_host_page_mask),
+            (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
+    }
+
+    return ret;
+}
+#endif
 
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
@@ -144,18 +165,18 @@ static const int iAttribs[] = {
     WGL_SUPPORT_OPENGL_ARB, 1,
     WGL_DOUBLE_BUFFER_ARB, 1,
     WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-    WGL_COLOR_BITS_ARB, pfd.cColorBits,
-    WGL_RED_BITS_ARB, pfd.cRedBits,
-    WGL_RED_SHIFT_ARB, pfd.cRedShift,
-    WGL_GREEN_BITS_ARB, pfd.cGreenBits,
-    WGL_GREEN_SHIFT_ARB, pfd.cGreenShift,
-    WGL_BLUE_BITS_ARB, pfd.cBlueBits,
-    WGL_BLUE_SHIFT_ARB, pfd.cBlueShift,
-    WGL_ALPHA_BITS_ARB, pfd.cAlphaBits,
-    WGL_ALPHA_SHIFT_ARB, pfd.cAlphaShift,
-    WGL_DEPTH_BITS_ARB, pfd.cDepthBits,
-    WGL_STENCIL_BITS_ARB, pfd.cStencilBits,
-    WGL_AUX_BUFFERS_ARB, pfd.cAuxBuffers,
+    WGL_COLOR_BITS_ARB, 32,
+    WGL_RED_BITS_ARB, 8,
+    WGL_RED_SHIFT_ARB, 16,
+    WGL_GREEN_BITS_ARB, 8,
+    WGL_GREEN_SHIFT_ARB, 8,
+    WGL_BLUE_BITS_ARB, 8,
+    WGL_BLUE_SHIFT_ARB, 0,
+    WGL_ALPHA_BITS_ARB, 8,
+    WGL_ALPHA_SHIFT_ARB, 24,
+    WGL_DEPTH_BITS_ARB, 24,
+    WGL_STENCIL_BITS_ARB, 8,
+    WGL_AUX_BUFFERS_ARB, 0,
     WGL_SAMPLE_BUFFERS_ARB, 0,
     WGL_SAMPLES_ARB, 0,
     0,0
@@ -284,22 +305,6 @@ void SetMesaFuncPtr(void *hDLL)
 void *MesaGLGetProc(const char *proc)
 {
     return (void *)glXGetProcAddress((const GLubyte *)proc);
-}
-
-int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
-{
-    int ret = GetBufOAccelEN()? kvm_enabled():0;
-
-    if (ret && bufo) {
-        if (add)
-            MapBufObjGpa(bufo);
-        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
-            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
-            (void *)(bufo->hva & qemu_real_host_page_mask),
-            (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
-    }
-
-    return ret;
 }
 
 void MGLTmpContext(void)
@@ -533,6 +538,12 @@ void MGLFuncHandler(const char *name)
         if (val != -1) {
             DPRINTF("wglSwapIntervalEXT(%u) %s %-24u", argsp[0], ((val)? "err":"ret"), ((val)? val:1));
             argsp[0] = (val)? 0:1;
+            return;
+        }
+        /* XQuartz/GLX quirk */
+        if (!find_xstr(xstr, "GLX_MESA_swap_control") &&
+            !find_xstr(xstr, "GLX_EXT_swap_control")) {
+            argsp[0] = 1;
             return;
         }
     }
