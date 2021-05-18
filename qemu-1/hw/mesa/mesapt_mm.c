@@ -1823,7 +1823,7 @@ static void processFRet(MesaPTState *s)
             if (s->FRet) {
                 size_t len = strnlen((char *)s->FRet, 3*PAGE_SIZE);
                 len++; /* '\0' */
-                if ((s->arg[0] & 0x03U) != 0x03U) {
+                if (s->arg[0] != GL_EXTENSIONS) {
                     strncpy((char *)outshm, (char *)s->FRet, len);
                     DPRINTF("%s [ %u ]", (char *)outshm, (uint32_t)len);
                 }
@@ -1835,29 +1835,47 @@ static void processFRet(MesaPTState *s)
                     stok = strtok(tmpstr, " ");
                     while (stok) {
                         size_t extnLength = strnlen(stok, PAGE_SIZE);
-                        for (int i = 0; i < MESA_EXTENSION_COUNT; i++) {
-                            if ((s->extnLength == 0) || (s->extnLength >= extnLength)) {
-                                if (!memcmp(_mesa_extension_table[i].name, stok, extnLength)) {
-                                    if (((s->extnYear == 0) || (s->extnYear >= _mesa_extension_table[i].year))) {
-                                        memcpy(xbuf, stok, extnLength);
-                                        xbuf += extnLength;
-                                        *xbuf = ' ';
-                                        xbuf++;
-                                        break;
+                        if ((s->extnYear == 0) && (s->extnLength == 0))
+                        {
+                            memcpy(xbuf, stok, extnLength);
+                            xbuf += extnLength;
+                            *xbuf = ' ';
+                            xbuf++;
+                        }
+                        else {
+                            for (int i = 0; i < MESA_EXTENSION_COUNT; i++) {
+                                if ((s->extnLength == 0) || (s->extnLength >= extnLength)) {
+                                    if (!memcmp(_mesa_extension_table[i].name, stok, extnLength)) {
+                                        if (((s->extnYear == 0) || (s->extnYear >= _mesa_extension_table[i].year))) {
+                                            memcpy(xbuf, stok, extnLength);
+                                            xbuf += extnLength;
+                                            *xbuf = ' ';
+                                            xbuf++;
+                                            break;
+                                        }
                                     }
                                 }
                             }
+                            //DPRINTF("  %s[ %u ]", stok, (uint32_t)extnLength);
                         }
-                        //DPRINTF("  %s[ %u ]", stok, (uint32_t)extnLength);
                         stok = strtok(NULL, " ");
                     }
+                    const char fxgamma[] =
+                        "WGL_3DFX_gamma_control "
+                        ;
                     const char wglext[] =
                         "GL_WIN_swap_hint "
                         "WGL_3DFX_gamma_control "
                         "WGL_EXT_swap_control "
                         ;
-                    memcpy(xbuf, wglext, sizeof(wglext));
-                    xbuf += sizeof(wglext);
+                    if ((s->extnYear == 0) && (s->extnLength == 0)) {
+                        memcpy(xbuf, fxgamma, sizeof(fxgamma));
+                        xbuf += sizeof(fxgamma);
+                    }
+                    else {
+                        memcpy(xbuf, wglext, sizeof(wglext));
+                        xbuf += sizeof(wglext);
+                    }
                     *xbuf = '\0';
                     g_free(tmpstr);
                 }

@@ -110,6 +110,7 @@ static char vendstr[64];
 static char rendstr[64];
 static char vernstr[64];
 static char extnstr[3*PAGE_SIZE];
+static char glslstr[64];
 static struct {
     vtxarry_t Color, EdgeFlag, Index, Normal, TexCoord[MAX_TEXUNIT], Vertex,
               SecondaryColor, FogCoord, Weight, GenAttrib[2];
@@ -5142,24 +5143,38 @@ void PT_CALL glGetStageIndexNV(uint32_t arg0) {
 }
 uint8_t * PT_CALL glGetString(uint32_t arg0) {
     static const char *cstrTbl[] = {
-        vendstr, rendstr, vernstr, extnstr,
+        vendstr, rendstr, vernstr, extnstr, glslstr,
     };
     static const int cstrsz[] = {
-        64, 64, 64, 3*PAGE_SIZE,
+        64, 64, 64, 3*PAGE_SIZE, 64,
     };
-    int nYear;
+    int nYear, sel;
 
     if (!currGLRC)
         return 0;
+    switch(arg0) {
+        case GL_VENDOR:
+        case GL_RENDERER:
+        case GL_VERSION:
+        case GL_EXTENSIONS:
+            sel = arg0 & 0x03U;
+            break;
+        case GL_SHADING_LANGUAGE_VERSION:
+            sel = 4;
+            break;
+        default:
+            return 0;
+    }
+
     nYear = xstrYear();
     fifoAddData(0, (uint32_t)&nYear, sizeof(int));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetString;
-    fifoOutData(0, (uint32_t)cstrTbl[arg0 & 0x03U], cstrsz[arg0 & 0x03U]);
-    if ((arg0 & 0x03U) == 0x03U)
-        fltrxstr(cstrTbl[arg0 & 0x03U]);
-    //DPRINTF("%s [ %04x ]", cstrTbl[arg0 & 0x03U], arg0);
-    return (uint8_t *)cstrTbl[arg0 & 0x03U];
+    fifoOutData(0, (uint32_t)cstrTbl[sel], cstrsz[sel]);
+    if (sel == 0x03U)
+        fltrxstr(cstrTbl[sel]);
+    //DPRINTF("%s [ %04x ]", cstrTbl[sel], arg0);
+    return (uint8_t *)cstrTbl[sel];
 }
 uint8_t * PT_CALL glGetStringi(uint32_t arg0, uint32_t arg1) {
     static char str[256];

@@ -35,7 +35,7 @@
 #if defined(CONFIG_DARWIN) && CONFIG_DARWIN
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINX
+#if defined(CONFIG_LINUX) && CONFIG_LINUX
 #undef CONFIG_KVM_IS_POSSIBLE
 #define CONFIG_KVM_IS_POSSIBLE
 #include "sysemu/kvm.h"
@@ -487,7 +487,7 @@ int NumPbuffer(void)
 static int LookupAttribArray(const int *attrib, const int attr)
 {
     int ret = 0;
-    for (int i = 0; (attrib[i] && attrib[i+1]); i+=2) {
+    for (int i = 0; attrib[i]; i+=2) {
         if (attrib[i] == attr) {
             ret = (attr == WGL_AUX_BUFFERS_ARB)? cAuxBuffers:attrib[i+1];
             ret = (attr == WGL_SAMPLE_BUFFERS_ARB)? cSampleBuf[0]:attrib[i+1];
