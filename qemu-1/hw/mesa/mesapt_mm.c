@@ -1860,6 +1860,9 @@ static void processFRet(MesaPTState *s)
                         }
                         stok = strtok(NULL, " ");
                     }
+                    const char debugMsg[] =
+                        "GL_ARB_debug_output "
+                        ;
                     const char fxgamma[] =
                         "WGL_3DFX_gamma_control "
                         ;
@@ -1868,6 +1871,10 @@ static void processFRet(MesaPTState *s)
                         "WGL_3DFX_gamma_control "
                         "WGL_EXT_swap_control "
                         ;
+                    if (MGLExtIsAvail(xbuf, debugMsg) == 0) {
+                        memcpy(xbuf, debugMsg, sizeof(debugMsg));
+                        xbuf += sizeof(debugMsg) - 1;
+                    }
                     if ((s->extnYear == 0) && (s->extnLength == 0)) {
                         memcpy(xbuf, fxgamma, sizeof(fxgamma));
                         xbuf += sizeof(fxgamma);
@@ -1876,7 +1883,6 @@ static void processFRet(MesaPTState *s)
                         memcpy(xbuf, wglext, sizeof(wglext));
                         xbuf += sizeof(wglext);
                     }
-                    *xbuf = '\0';
                     g_free(tmpstr);
                 }
             }

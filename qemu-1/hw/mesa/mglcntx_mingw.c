@@ -148,6 +148,9 @@ static struct {
     int (WINAPI *GetSwapIntervalEXT)(void);
 } wglFuncs;
 
+int MGLExtIsAvail(const char *xstr, const char *str)
+{ return 1; }
+
 static void MesaInitGammaRamp(void)
 {
     struct {

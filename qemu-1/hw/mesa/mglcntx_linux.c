@@ -233,22 +233,27 @@ static struct {
 
 static int find_xstr(const char *xstr, const char *str)
 {
-    int ret = 0;
-    char sbuf[1024], *stok;
-    if (xstr)
-        strncpy(sbuf, xstr, sizeof(sbuf)-1);
-    else
-        memset(sbuf, 0, sizeof(sbuf));
-    stok = strtok(sbuf, " ");
-    while (stok) {
-        if (!strncmp(stok, str, strnlen(str, 64))) {
-            ret = 1;
-            break;
+    int xlen, ret = 0;
+    char *xbuf, *stok;
+    if (xstr) {
+        xlen = strnlen(xstr, 3*PAGE_SIZE);
+        xbuf = g_new(char, xlen + 1);
+        strncpy(xbuf, xstr, xlen + 1);
+        stok = strtok(xbuf, " ");
+        while (stok) {
+            if (!strncmp(stok, str, strnlen(str, 64))) {
+                ret = 1;
+                break;
+            }
+            stok = strtok(NULL, " ");
         }
-        stok = strtok(NULL, " ");
+        g_free(xbuf);
     }
     return ret;
 }
+
+int MGLExtIsAvail(const char *xstr, const char *str)
+{ return find_xstr(xstr, str); }
 
 #define MAX_RAMP_SIZE 0x800
 struct wgamma {
@@ -298,7 +303,7 @@ static void MesaInitGammaRamp(void)
         GammaRamp.r, GammaRamp.g, GammaRamp.b);
 }
 
-void SetMesaFuncPtr(void *hDLL)
+void SetMesaFuncPtr(void *p)
 {
 }
 
