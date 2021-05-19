@@ -1,6 +1,6 @@
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
---- ../../../scratch/qemu/orig/qemu-5.2.0/accel/kvm/kvm-all.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./accel/kvm/kvm-all.c	2020-12-11 10:02:05.625671200 -0800
+diff -Nru ../orig/qemu-5.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
+--- ../orig/qemu-5.2.0/accel/kvm/kvm-all.c	2020-12-08 08:59:44.000000000 -0800
++++ ./accel/kvm/kvm-all.c	2021-05-18 22:41:04.163095546 -0700
 @@ -1216,6 +1216,41 @@
      kvm_slots_unlock(kml);
  }
@@ -43,9 +43,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/accel/kvm/kvm-all.c ./accel/kvm/
  static void kvm_region_add(MemoryListener *listener,
                             MemoryRegionSection *section)
  {
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/hw/i386/pc.c ./hw/i386/pc.c
---- ../../../scratch/qemu/orig/qemu-5.2.0/hw/i386/pc.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./hw/i386/pc.c	2020-12-11 05:59:22.720388900 -0800
+diff -Nru ../orig/qemu-5.2.0/hw/i386/pc.c ./hw/i386/pc.c
+--- ../orig/qemu-5.2.0/hw/i386/pc.c	2020-12-08 08:59:44.000000000 -0800
++++ ./hw/i386/pc.c	2021-05-18 22:41:04.263095563 -0700
 @@ -1190,6 +1190,28 @@
  
      /* Super I/O */
@@ -75,9 +75,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/hw/i386/pc.c ./hw/i386/pc.c
  }
  
  void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/hw/meson.build ./hw/meson.build
---- ../../../scratch/qemu/orig/qemu-5.2.0/hw/meson.build	2020-12-08 08:59:44.000000000 -0800
-+++ ./hw/meson.build	2020-12-11 06:06:28.946791500 -0800
+diff -Nru ../orig/qemu-5.2.0/hw/meson.build ./hw/meson.build
+--- ../orig/qemu-5.2.0/hw/meson.build	2020-12-08 08:59:44.000000000 -0800
++++ ./hw/meson.build	2021-05-18 22:41:04.289762234 -0700
 @@ -42,6 +42,9 @@
  subdir('xen')
  subdir('xenpv')
@@ -88,9 +88,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/hw/meson.build ./hw/meson.build
  subdir('alpha')
  subdir('arm')
  subdir('avr')
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
---- ../../../scratch/qemu/orig/qemu-5.2.0/include/hw/i386/pc.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/hw/i386/pc.h	2020-12-11 06:02:00.805820900 -0800
+diff -Nru ../orig/qemu-5.2.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
+--- ../orig/qemu-5.2.0/include/hw/i386/pc.h	2020-12-08 08:59:44.000000000 -0800
++++ ./include/hw/i386/pc.h	2021-05-18 22:41:04.496428935 -0700
 @@ -182,6 +182,22 @@
  
  #define TYPE_PORT92 "port92"
@@ -114,9 +114,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/include/hw/i386/pc.h ./include/h
  /* pc_sysfw.c */
  void pc_system_flash_create(PCMachineState *pcms);
  void pc_system_flash_cleanup_unused(PCMachineState *pcms);
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/include/sysemu/kvm.h ./include/sysemu/kvm.h
---- ../../../scratch/qemu/orig/qemu-5.2.0/include/sysemu/kvm.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/sysemu/kvm.h	2020-12-11 15:48:07.380276200 -0800
+diff -Nru ../orig/qemu-5.2.0/include/sysemu/kvm.h ./include/sysemu/kvm.h
+--- ../orig/qemu-5.2.0/include/sysemu/kvm.h	2020-12-08 08:59:44.000000000 -0800
++++ ./include/sysemu/kvm.h	2021-05-18 22:41:04.526428940 -0700
 @@ -480,6 +480,8 @@
  
  #endif /* NEED_CPU_H */
@@ -126,9 +126,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/include/sysemu/kvm.h ./include/s
  void kvm_cpu_synchronize_state(CPUState *cpu);
  
  void kvm_init_cpu_signals(CPUState *cpu);
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/include/sysemu/whpx.h ./include/sysemu/whpx.h
---- ../../../scratch/qemu/orig/qemu-5.2.0/include/sysemu/whpx.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/sysemu/whpx.h	2020-12-11 15:46:58.513767200 -0800
+diff -Nru ../orig/qemu-5.2.0/include/sysemu/whpx.h ./include/sysemu/whpx.h
+--- ../orig/qemu-5.2.0/include/sysemu/whpx.h	2020-12-08 08:59:44.000000000 -0800
++++ ./include/sysemu/whpx.h	2021-05-18 22:41:04.536428942 -0700
 @@ -15,6 +15,8 @@
 
  #ifdef CONFIG_WHPX
@@ -138,9 +138,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/include/sysemu/whpx.h ./include/
  int whpx_enabled(void);
 
  #else /* CONFIG_WHPX */
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/include/ui/console.h ./include/ui/console.h
---- ../../../scratch/qemu/orig/qemu-5.2.0/include/ui/console.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/ui/console.h	2020-12-11 05:56:43.356940900 -0800
+diff -Nru ../orig/qemu-5.2.0/include/ui/console.h ./include/ui/console.h
+--- ../orig/qemu-5.2.0/include/ui/console.h	2020-12-08 08:59:44.000000000 -0800
++++ ./include/ui/console.h	2021-05-18 22:41:04.566428947 -0700
 @@ -446,4 +446,21 @@
  /* input.c */
  int index_from_key(const char *key, size_t key_length);
@@ -163,20 +163,24 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/include/ui/console.h ./include/u
 +void mesa_enabled_reset(void);
 +
  #endif
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/meson.build ./meson.build
---- ../../../scratch/qemu/orig/qemu-5.2.0/meson.build	2020-12-08 08:59:44.000000000 -0800
-+++ ./meson.build	2020-12-11 15:56:26.438649200 -0800
-@@ -1740,6 +1740,7 @@
+diff -Nru ../orig/qemu-5.2.0/meson.build ./meson.build
+--- ../orig/qemu-5.2.0/meson.build	2020-12-08 08:59:44.000000000 -0800
++++ ./meson.build	2021-05-18 22:42:58.856469299 -0700
+@@ -1740,6 +1740,11 @@
    target_inc = [include_directories('target' / config_target['TARGET_BASE_ARCH'])]
    if targetos == 'linux'
      target_inc += include_directories('linux-headers', is_system: true)
-+    link_args += ['-ldl', '-lXxf86vm', '-lGLX']
++    link_args += ['-ldl', '-lX11', '-lXxf86vm', '-lGLX']
++  endif
++  if targetos == 'darwin'
++    c_args += ['-I/opt/X11/include']
++    link_args += ['-L/opt/X11/lib', '-lX11', '-lXxf86vm', '-lGL', '-Wl,-framework,OpenGL']
    endif
    if target.endswith('-softmmu')
      qemu_target_name = 'qemu-system-' + target_name
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/softmmu/vl.c ./softmmu/vl.c
---- ../../../scratch/qemu/orig/qemu-5.2.0/softmmu/vl.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./softmmu/vl.c	2021-03-28 14:23:08.906031500 -0700
+diff -Nru ../orig/qemu-5.2.0/softmmu/vl.c ./softmmu/vl.c
+--- ../orig/qemu-5.2.0/softmmu/vl.c	2020-12-08 08:59:44.000000000 -0800
++++ ./softmmu/vl.c	2021-05-18 22:41:04.596428952 -0700
 @@ -1682,6 +1682,13 @@
      }
  }
@@ -199,9 +203,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/softmmu/vl.c ./softmmu/vl.c
                  exit(0);
                  break;
              case QEMU_OPTION_m:
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/target/i386/whpx-all.c ./target/i386/whpx-all.c
---- ../../../scratch/qemu/orig/qemu-5.2.0/target/i386/whpx-all.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./target/i386/whpx-all.c	2020-12-24 17:15:09.333575500 -0800
+diff -Nru ../orig/qemu-5.2.0/target/i386/whpx-all.c ./target/i386/whpx-all.c
+--- ../orig/qemu-5.2.0/target/i386/whpx-all.c	2020-12-08 08:59:44.000000000 -0800
++++ ./target/i386/whpx-all.c	2021-05-18 22:41:04.603095620 -0700
 @@ -10,6 +10,7 @@
 
  #include "qemu/osdep.h"
@@ -210,7 +214,7 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/target/i386/whpx-all.c ./target/
  #include "exec/address-spaces.h"
  #include "exec/ioport.h"
  #include "qemu-common.h"
-@@ -1440,6 +1451,38 @@
+@@ -1440,6 +1441,38 @@
                          memory_region_is_rom(mr), mr->name);
  }
 
@@ -249,9 +253,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/target/i386/whpx-all.c ./target/
  static void whpx_region_add(MemoryListener *listener,
                             MemoryRegionSection *section)
  {
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/ui/console.c ./ui/console.c
---- ../../../scratch/qemu/orig/qemu-5.2.0/ui/console.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./ui/console.c	2020-12-11 06:04:16.209389100 -0800
+diff -Nru ../orig/qemu-5.2.0/ui/console.c ./ui/console.c
+--- ../orig/qemu-5.2.0/ui/console.c	2020-12-08 08:59:44.000000000 -0800
++++ ./ui/console.c	2021-05-18 22:41:04.603095620 -0700
 @@ -262,6 +262,16 @@
      ds->have_text = have_text;
  }
@@ -280,9 +284,9 @@ diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/ui/console.c ./ui/console.c
      if (con->hw_ops->gfx_update) {
          con->hw_ops->gfx_update(con->hw);
          async = con->hw_ops->gfx_update_async;
-diff -Nru ../../../scratch/qemu/orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
---- ../../../scratch/qemu/orig/qemu-5.2.0/ui/sdl2.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./ui/sdl2.c	2020-12-19 08:44:54.363578800 -0800
+diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
+--- ../orig/qemu-5.2.0/ui/sdl2.c	2020-12-08 08:59:44.000000000 -0800
++++ ./ui/sdl2.c	2021-05-18 22:41:04.609762288 -0700
 @@ -39,6 +39,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
