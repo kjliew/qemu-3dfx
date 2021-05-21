@@ -108,9 +108,9 @@ static uint32_t currDC, currGLRC;
 static uint32_t currPB[MAX_PBUFFER];
 static char vendstr[64];
 static char rendstr[64];
-static char vernstr[64];
+static char vernstr[80];
 static char extnstr[3*PAGE_SIZE];
-static char glslstr[64];
+static char glslstr[48];
 static struct {
     vtxarry_t Color, EdgeFlag, Index, Normal, TexCoord[MAX_TEXUNIT], Vertex,
               SecondaryColor, FogCoord, Weight, GenAttrib[2];
@@ -1034,7 +1034,7 @@ void PT_CALL glBufferPageCommitmentARB(uint32_t arg0, uint32_t arg1, uint32_t ar
 }
 void PT_CALL glBufferParameteriAPPLE(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferParameteriAPPLE;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBufferParameteriAPPLE, 3);
 }
 void PT_CALL glBufferStorage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -2247,8 +2247,9 @@ void PT_CALL glDeleteCommandListsNV(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteCommandListsNV;
 }
 void PT_CALL glDeleteFencesAPPLE(uint32_t arg0, uint32_t arg1) {
+    fifoAddData(0, arg1, arg0*sizeof(uint32_t));
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteFencesAPPLE;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteFencesAPPLE, 2);
 }
 void PT_CALL glDeleteFencesNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -3306,7 +3307,7 @@ void PT_CALL glFinishAsyncSGIX(uint32_t arg0) {
 }
 void PT_CALL glFinishFenceAPPLE(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFinishFenceAPPLE;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFinishFenceAPPLE, 1);
 }
 void PT_CALL glFinishFenceNV(uint32_t arg0) {
     pt[1] = arg0; 
@@ -3314,7 +3315,7 @@ void PT_CALL glFinishFenceNV(uint32_t arg0) {
 }
 void PT_CALL glFinishObjectAPPLE(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFinishObjectAPPLE;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFinishObjectAPPLE, 1);
 }
 void PT_CALL glFinishTextureSUNX(void) {
     
@@ -3330,7 +3331,7 @@ void PT_CALL glFlushMappedBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg
 }
 void PT_CALL glFlushMappedBufferRangeAPPLE(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glFlushMappedBufferRangeAPPLE;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFlushMappedBufferRangeAPPLE, 3);
 }
 void PT_CALL glFlushMappedNamedBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -3653,6 +3654,7 @@ void PT_CALL glGenBuffersARB(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glGenFencesAPPLE(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGenFencesAPPLE;
+    fifoOutData(0, arg1, arg0*sizeof(uint32_t));
 }
 void PT_CALL glGenFencesNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -5146,7 +5148,11 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
         vendstr, rendstr, vernstr, extnstr, glslstr,
     };
     static const int cstrsz[] = {
-        64, 64, 64, 3*PAGE_SIZE, 64,
+        sizeof(vendstr) - 1,
+        sizeof(rendstr) - 1,
+        sizeof(vernstr) - 1,
+        sizeof(extnstr) - 1,
+        sizeof(glslstr) - 1,
     };
     int nYear, sel;
 
@@ -6124,9 +6130,12 @@ uint32_t PT_CALL glIsEnabledi(uint32_t arg0, uint32_t arg1) {
     ret = *pt0;
     return ret;
 }
-void PT_CALL glIsFenceAPPLE(uint32_t arg0) {
+uint32_t PT_CALL glIsFenceAPPLE(uint32_t arg0) {
+    uint32_t ret;
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glIsFenceAPPLE;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glIsFenceNV(uint32_t arg0) {
     pt[1] = arg0; 
@@ -9804,7 +9813,7 @@ void PT_CALL glSeparableFilter2DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2,
 }
 void PT_CALL glSetFenceAPPLE(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glSetFenceAPPLE;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glSetFenceAPPLE, 1);
 }
 void PT_CALL glSetFenceNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -10104,17 +10113,23 @@ void PT_CALL glTessellationModeAMD(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTessellationModeAMD;
 }
-void PT_CALL glTestFenceAPPLE(uint32_t arg0) {
+uint32_t PT_CALL glTestFenceAPPLE(uint32_t arg0) {
+    uint32_t ret;
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTestFenceAPPLE;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glTestFenceNV(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTestFenceNV;
 }
-void PT_CALL glTestObjectAPPLE(uint32_t arg0, uint32_t arg1) {
+uint32_t PT_CALL glTestObjectAPPLE(uint32_t arg0, uint32_t arg1) {
+    uint32_t ret;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTestObjectAPPLE;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glTexAttachMemoryNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 

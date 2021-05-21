@@ -449,6 +449,7 @@ static int PArgsShouldAligned(MesaPTState *s)
         case FEnum_glBufferSubData:
         case FEnum_glBufferSubDataARB:
         case FEnum_glFlushMappedBufferRange:
+        case FEnum_glFlushMappedBufferRangeAPPLE:
         case FEnum_glFlushMappedNamedBufferRange:
         case FEnum_glGetBufferSubData:
         case FEnum_glGetBufferSubDataARB:
@@ -840,6 +841,7 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
+        case FEnum_glDeleteFencesAPPLE:
         case FEnum_glDeleteFramebuffers:
         case FEnum_glDeleteFramebuffersEXT:
         case FEnum_glDeleteProgramsARB:
@@ -993,6 +995,7 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glGenBuffers:
         case FEnum_glGenBuffersARB:
+        case FEnum_glGenFencesAPPLE:
         case FEnum_glGenFramebuffers:
         case FEnum_glGenFramebuffersEXT:
         case FEnum_glGenProgramsARB:
@@ -1280,6 +1283,7 @@ static void processArgs(MesaPTState *s)
             s->parg[2] = (s->arg[2])? VAL(s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->arg[1])):0;
             break;
         case FEnum_glFlushMappedBufferRange:
+        case FEnum_glFlushMappedBufferRangeAPPLE:
         case FEnum_glFlushMappedNamedBufferRange:
         case FEnum_glMapBufferRange:
             s->parg[1] = s->arg[1];
@@ -1293,6 +1297,8 @@ static void processArgs(MesaPTState *s)
                 s->BufObj->offst = s->arg[1];
                 s->BufObj->range = s->arg[2];
                 wrFlushBufObj(FEnum_glGetBufferParameteriv, s->arg[0], s->BufObj);
+                if (s->FEnum == FEnum_glFlushMappedBufferRangeAPPLE)
+                    s->BufObj->acc |= GL_MAP_FLUSH_EXPLICIT_BIT;
                 //DPRINTF("FlushMappedBufferRange %x %x %x idx %x", s->arg[0], s->arg[1], s->arg[2], s->BufIdx);
             }
             break;

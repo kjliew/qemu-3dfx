@@ -239,6 +239,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glAreTexturesResident:
         case FEnum_glAreTexturesResidentEXT:
         case FEnum_glFlushMappedBufferRange:
+        case FEnum_glFlushMappedBufferRangeAPPLE:
         case FEnum_glFlushMappedNamedBufferRange:
         case FEnum_glPrioritizeTextures:
         case FEnum_glPrioritizeTexturesEXT:
@@ -359,6 +360,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glClipPlane:
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
+        case FEnum_glDeleteFencesAPPLE:
         case FEnum_glDeleteFramebuffers:
         case FEnum_glDeleteFramebuffersEXT:
         case FEnum_glDeleteProgramsARB:
@@ -378,6 +380,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glFogiv:
         case FEnum_glGenBuffers:
         case FEnum_glGenBuffersARB:
+        case FEnum_glGenFencesAPPLE:
         case FEnum_glGenFramebuffers:
         case FEnum_glGenFramebuffersEXT:
         case FEnum_glGenProgramsARB:

@@ -76,9 +76,15 @@ static void MGLTmpContext(char **str, char **wstr)
           swap[] = "XCU",
           type[] = "f0rc";
 
-    printf("Vendor: %s\nRenderer: %s\nVersion: %s\nShading Language Version: %s\n\n",
-            glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION),
-            glGetString(GL_SHADING_LANGUAGE_VERSION));
+    char strbuf[1024];
+    strncpy(strbuf, (const char *)glGetString(GL_VENDOR), 1023);
+    printf("Vendor   : %s [ %d ]\n", strbuf, strlen(strbuf));
+    strncpy(strbuf, (const char *)glGetString(GL_RENDERER), 1023);
+    printf("Renderer : %s [ %d ]\n", strbuf, strlen(strbuf));
+    strncpy(strbuf, (const char *)glGetString(GL_VERSION), 1023);
+    printf("Version  : %s [ %d ]\n\n", strbuf, strlen(strbuf));
+    strncpy(strbuf, (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION), 1023);
+    printf("Shading Language Version : %s [ %d ]\n\n", strbuf, strlen(strbuf));
 
     wglGetPixelFormatAttribivARB(tmpDC, 1, 0, 1, na, &nPix);
     printf("Total pixel formats %d\n", nPix);
