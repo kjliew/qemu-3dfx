@@ -77,10 +77,10 @@ static void MGLTmpContext(char **str, char **wstr)
           type[] = "f0rc";
 
     char strbuf[1024];
-    strncpy(strbuf, (const char *)glGetString(GL_VENDOR), 1023);
-    printf("Vendor   : %s [ %d ]\n", strbuf, strlen(strbuf));
     strncpy(strbuf, (const char *)glGetString(GL_RENDERER), 1023);
     printf("Renderer : %s [ %d ]\n", strbuf, strlen(strbuf));
+    strncpy(strbuf, (const char *)glGetString(GL_VENDOR), 1023);
+    printf("Vendor   : %s [ %d ]\n", strbuf, strlen(strbuf));
     strncpy(strbuf, (const char *)glGetString(GL_VERSION), 1023);
     printf("Version  : %s [ %d ]\n\n", strbuf, strlen(strbuf));
     strncpy(strbuf, (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION), 1023);

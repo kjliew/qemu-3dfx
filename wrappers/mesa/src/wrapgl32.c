@@ -107,7 +107,7 @@ static int currPixFmt;
 static uint32_t currDC, currGLRC;
 static uint32_t currPB[MAX_PBUFFER];
 static char vendstr[64];
-static char rendstr[64];
+static char rendstr[128];
 static char vernstr[80];
 static char extnstr[3*PAGE_SIZE];
 static char glslstr[48];
