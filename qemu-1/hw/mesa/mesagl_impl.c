@@ -103,7 +103,7 @@ int wrTexSizeTexture(uint32_t target, uint32_t level, int compressed)
     return ret;
 }
 
-int wrGetParamIa1p2(uint32_t FEnum, uint32_t arg0, uint32_t arg1)
+int wrGetParamIa1p2(int FEnum, uint32_t arg0, uint32_t arg1)
 {
     int ret;
     void (__stdcall *fpa1p2)(uint32_t arg0, uint32_t arg1, uintptr_t arg2);
@@ -139,16 +139,15 @@ void wrFillBufObj(uint32_t target, void *dst, uint32_t offset, uint32_t range)
     }
 }
 
-void wrFlushBufObj(int FEnum, uint32_t target, mapbufo_t *bufo)
+void wrFlushBufObj(uint32_t target, mapbufo_t *bufo)
 {
-    uint32_t szBuf;
-
     if (MGLUpdateGuestBufo(0, 0))
         return;
 
-    szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum, target, GL_BUFFER_SIZE):bufo->range;
-    if (bufo->hva)
+    if (bufo->hva) {
+        uint32_t szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum_glGetBufferParameteriv, target, GL_BUFFER_SIZE):bufo->range;
         memcpy((void *)(bufo->hva + bufo->offst), (void *)(bufo->gpa - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
+    }
 }
 
 const char *getGLFuncStr(int FEnum)

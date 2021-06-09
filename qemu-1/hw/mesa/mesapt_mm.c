@@ -620,6 +620,19 @@ static void processArgs(MesaPTState *s)
             s->datacb = ALIGNED(sizeof(uint8_t));
             s->parg[0] = VAL(s->hshm);
             break;
+        case FEnum_glColor3ub:
+        case FEnum_glColor4ub:
+            do {
+                static uint32_t glColor __attribute__((aligned(sizeof(intptr_t))));
+                glColor = ((s->FEnum == FEnum_glColor4ub)?
+                          ((s->arg[3] & 0xFFU) << 24):0) |
+                          ((s->arg[2] & 0xFFU) << 16) |
+                          ((s->arg[1] & 0xFFU) <<  8) |
+                           (s->arg[0] & 0xFFU);
+                s->FEnum = (s->FEnum == FEnum_glColor4ub)? FEnum_glColor4ubv:FEnum_glColor3ubv;
+                s->parg[0] = VAL(&glColor);
+            } while(0);
+            break;
         case FEnum_glColor3bv:
         case FEnum_glColor3ubv:
         case FEnum_glNormal3bv:
@@ -1296,7 +1309,7 @@ static void processArgs(MesaPTState *s)
             else {
                 s->BufObj->offst = s->arg[1];
                 s->BufObj->range = s->arg[2];
-                wrFlushBufObj(FEnum_glGetBufferParameteriv, s->arg[0], s->BufObj);
+                wrFlushBufObj(s->arg[0], s->BufObj);
                 if (s->FEnum == FEnum_glFlushMappedBufferRangeAPPLE)
                     s->BufObj->acc |= GL_MAP_FLUSH_EXPLICIT_BIT;
                 //DPRINTF("FlushMappedBufferRange %x %x %x idx %x", s->arg[0], s->arg[1], s->arg[2], s->BufIdx);
@@ -1311,8 +1324,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glUnmapBufferARB:
             s->BufObj = LookupBufObj(s->BufIdx);
             if ((s->BufObj->acc & (GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT)) == GL_MAP_WRITE_BIT)
-                wrFlushBufObj((s->FEnum == FEnum_glUnmapBuffer)? FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB,
-                    s->arg[0], s->BufObj);
+                wrFlushBufObj(s->arg[0], s->BufObj);
             break;
         case FEnum_glGetTexImage:
             s->parg[0] = s->arg[4];
@@ -1750,8 +1762,7 @@ static void processFRet(MesaPTState *s)
                 s->BufObj->acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
                 s->BufObj->acc |= (s->arg[1] == GL_WRITE_ONLY)? GL_MAP_WRITE_BIT:0;
                 s->BufObj->acc |= (s->arg[1] == GL_READ_WRITE)? (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT):0;
-                s->BufObj->mapsz = wrGetParamIa1p2((s->FEnum == FEnum_glMapBuffer)?
-                    FEnum_glGetBufferParameteriv:FEnum_glGetBufferParameterivARB, s->arg[0], GL_BUFFER_SIZE);
+                s->BufObj->mapsz = wrGetParamIa1p2(FEnum_glGetBufferParameteriv, s->arg[0], GL_BUFFER_SIZE);
             }
             if (MGLUpdateGuestBufo(s->BufObj, 1))
                 s->FRet = s->BufObj->gpa;
