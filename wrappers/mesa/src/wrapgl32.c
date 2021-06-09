@@ -1597,31 +1597,34 @@ void PT_CALL glColorTableSGI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
 }
 void PT_CALL glCombinerInputNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCombinerInputNV;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerInputNV, 6);
 }
 void PT_CALL glCombinerOutputNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCombinerOutputNV;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerOutputNV, 10);
 }
 void PT_CALL glCombinerParameterfNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCombinerParameterfNV;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerParameterfNV, 2);
 }
 void PT_CALL glCombinerParameterfvNV(uint32_t arg0, uint32_t arg1) {
+    fifoAddData(0, arg1, szglname(arg0)*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCombinerParameterfvNV;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerParameterfvNV, 2);
 }
 void PT_CALL glCombinerParameteriNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCombinerParameteriNV;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerParameteriNV, 2);
 }
 void PT_CALL glCombinerParameterivNV(uint32_t arg0, uint32_t arg1) {
+    fifoAddData(0, arg1, szglname(arg0)*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCombinerParameterivNV;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerParameterivNV, 2);
 }
 void PT_CALL glCombinerStageParameterfvNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, szglname(arg1)*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glCombinerStageParameterfvNV;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerStageParameterfvNV, 3);
 }
 void PT_CALL glCommandListSegmentsNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -3999,24 +4002,39 @@ void PT_CALL glGetColorTableSGI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetColorTableSGI;
 }
 void PT_CALL glGetCombinerInputParameterfvNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCombinerInputParameterfvNV;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg4, n*sizeof(float));
 }
 void PT_CALL glGetCombinerInputParameterivNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCombinerInputParameterivNV;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg4, n*sizeof(int));
 }
 void PT_CALL glGetCombinerOutputParameterfvNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCombinerOutputParameterfvNV;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg3, n*sizeof(float));
 }
 void PT_CALL glGetCombinerOutputParameterivNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCombinerOutputParameterivNV;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg3, n*sizeof(int));
 }
 void PT_CALL glGetCombinerStageParameterfvNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetCombinerStageParameterfvNV;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(float));
 }
 void PT_CALL glGetCommandHeaderNV(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -4128,12 +4146,18 @@ void PT_CALL glGetFenceivNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetFenceivNV;
 }
 void PT_CALL glGetFinalCombinerInputParameterfvNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetFinalCombinerInputParameterfvNV;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(float));
 }
 void PT_CALL glGetFinalCombinerInputParameterivNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetFinalCombinerInputParameterivNV;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
 }
 void PT_CALL glGetFirstPerfQueryIdINTEL(uint32_t arg0) {
     pt[1] = arg0; 

@@ -1027,6 +1027,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glFeedbackBuffer:
             s->parg[2] = VAL(outshm);
             break;
+        case FEnum_glCombinerParameterfvNV:
+        case FEnum_glCombinerParameterivNV:
         case FEnum_glFogfv:
         case FEnum_glFogiv:
         case FEnum_glLightModelfv:
@@ -1050,13 +1052,16 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glGetBufferParameteriv:
         case FEnum_glGetBufferParameterivARB:
+        case FEnum_glGetCombinerStageParameterfvNV:
+        case FEnum_glGetFinalCombinerInputParameterfvNV:
+        case FEnum_glGetFinalCombinerInputParameterivNV:
         case FEnum_glGetLightfv:
         case FEnum_glGetLightiv:
         case FEnum_glGetMaterialfv:
         case FEnum_glGetMaterialiv:
-        case FEnum_glGetProgramiv:
         case FEnum_glGetObjectParameterfvARB:
         case FEnum_glGetObjectParameterivARB:
+        case FEnum_glGetProgramiv:
         case FEnum_glGetProgramivARB:
         case FEnum_glGetQueryiv:
         case FEnum_glGetQueryivARB:
@@ -1129,10 +1134,17 @@ static void processArgs(MesaPTState *s)
             }
             s->parg[2] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
             break;
+        case FEnum_glGetCombinerOutputParameterfvNV:
+        case FEnum_glGetCombinerOutputParameterivNV:
         case FEnum_glGetTexLevelParameterfv:
         case FEnum_glGetTexLevelParameteriv:
             *(int *)outshm = szglname(s->arg[2]);
             s->parg[3] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
+            break;
+        case FEnum_glGetCombinerInputParameterfvNV:
+        case FEnum_glGetCombinerInputParameterivNV:
+            *(int *)outshm = szglname(s->arg[3]);
+            s->parg[0] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
             break;
         case FEnum_glLoadMatrixd:
         case FEnum_glMultMatrixd:
@@ -1193,6 +1205,7 @@ static void processArgs(MesaPTState *s)
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(PTR(s->hshm, ALIGNED(sizeof(uint16_t))));
             break;
+        case FEnum_glCombinerStageParameterfvNV:
         case FEnum_glLightfv:
         case FEnum_glLightiv:
         case FEnum_glMaterialfv:

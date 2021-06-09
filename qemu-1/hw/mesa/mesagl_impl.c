@@ -257,6 +257,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glBindFragDataLocationIndexed:
         case FEnum_glColorPointer:
         case FEnum_glDrawElements:
+        case FEnum_glGetCombinerOutputParameterfvNV:
+        case FEnum_glGetCombinerOutputParameterivNV:
         case FEnum_glGetTexLevelParameterfv:
         case FEnum_glGetTexLevelParameteriv:
         case FEnum_glIndexPointerEXT:
@@ -320,6 +322,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glClearTexImage:
         case FEnum_glColorPointerEXT:
         case FEnum_glDrawPixels:
+        case FEnum_glGetCombinerInputParameterfvNV:
+        case FEnum_glGetCombinerInputParameterivNV:
         case FEnum_glGetInternalformativ:
         case FEnum_glGetTexImage:
         case FEnum_glTexCoordPointerEXT:
@@ -357,6 +361,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             *ret = (*usfp.rpfpa0p2a3)(arg[0], parg[1], parg[2], arg[3]);
             GLDONE();
         case FEnum_glClipPlane:
+        case FEnum_glCombinerParameterfvNV:
+        case FEnum_glCombinerParameterivNV:
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
         case FEnum_glDeleteFencesAPPLE:
@@ -621,6 +627,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glBindImageTextures:
         case FEnum_glBindSamplers:
         case FEnum_glCallLists:
+        case FEnum_glCombinerStageParameterfvNV:
         case FEnum_glDepthRangeArrayv:
         case FEnum_glDrawElementsIndirect:
         case FEnum_glEdgeFlagPointerEXT:
@@ -629,8 +636,11 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glFogCoordPointerEXT:
         case FEnum_glGetBufferParameteriv:
         case FEnum_glGetBufferParameterivARB:
+        case FEnum_glGetCombinerStageParameterfvNV:
         case FEnum_glGetCompressedTexImage:
         case FEnum_glGetCompressedTexImageARB:
+        case FEnum_glGetFinalCombinerInputParameterfvNV:
+        case FEnum_glGetFinalCombinerInputParameterivNV:
         case FEnum_glGetLightfv:
         case FEnum_glGetLightiv:
         case FEnum_glGetMapdv:
@@ -638,6 +648,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetMapiv:
         case FEnum_glGetMaterialfv:
         case FEnum_glGetMaterialiv:
+        case FEnum_glGetObjectParameterfvARB:
+        case FEnum_glGetObjectParameterivARB:
         case FEnum_glGetProgramiv:
         case FEnum_glGetProgramivARB:
         case FEnum_glGetQueryObjecti64v:
@@ -665,8 +677,6 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glMaterialfv:
         case FEnum_glMaterialiv:
         case FEnum_glNormalPointer:
-        case FEnum_glGetObjectParameterfvARB:
-        case FEnum_glGetObjectParameterivARB:
         case FEnum_glPixelMapfv:
         case FEnum_glPixelMapuiv:
         case FEnum_glPixelMapusv:
@@ -889,6 +899,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             GLDONE();
         case FEnum_glAccum:
         case FEnum_glAlphaFunc:
+        case FEnum_glCombinerParameterfNV:
         case FEnum_glFogf:
         case FEnum_glLightModelf:
         case FEnum_glMultiTexCoord1f:

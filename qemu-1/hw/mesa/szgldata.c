@@ -115,6 +115,8 @@ static int szpname(int pname) {
 { .pname = GL_BLEND_COLOR, .n = 4 },
 { .pname = GL_COLOR_CLEAR_VALUE, .n = 4 },
 { .pname = GL_COLOR_WRITEMASK, .n = 4 },
+{ .pname = GL_CONSTANT_COLOR0_NV, .n = 4 },
+{ .pname = GL_CONSTANT_COLOR1_NV, .n = 4 },
 { .pname = GL_CURRENT_COLOR, .n = 4 },
 { .pname = GL_CURRENT_RASTER_COLOR, .n = 4 },
 { .pname = GL_CURRENT_RASTER_POSITION, .n = 4 },
