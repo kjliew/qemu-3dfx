@@ -376,11 +376,11 @@ static void processArgs(GlidePTState *s)
 	    s->parg[2] = VAL(s->hshm);
 	    break;
         case FEnum_grLfbWriteRegion:
-            s->datacb = s->arg[5] * s->arg[6];
+            s->datacb = ALIGNED(s->arg[5] * s->arg[6]);
             s->parg[3] = VAL(s->hshm);
             break;
         case FEnum_grLfbWriteRegion3x:
-            s->datacb = s->arg[5] * s->arg[7];
+            s->datacb = ALIGNED(s->arg[5] * s->arg[7]);
             s->parg[0] = VAL(s->hshm);
             break;
 
@@ -641,7 +641,7 @@ static void processFRet(GlidePTState *s)
         case FEnum_grSstWinOpenExt:
 	    if (s->FRet != 0) {
                 char strFpsLimit[sizeof(", FpsLimit ...FPS")];
-                snprintf(strFpsLimit, sizeof(", FpsLimit ...FPS"), "FpsLimit %dFPS", glide_fpslimit());
+                snprintf(strFpsLimit, sizeof(", FpsLimit ...FPS"), ", FpsLimit %dFPS", glide_fpslimit());
 		s->lfbDev->origin = s->arg[4];
 		s->lfbDev->guestLfb = (s->FEnum == FEnum_grSstWinOpenExt)? s->arg[8]:s->arg[7];
 		s->GrContext = s->FRet;
