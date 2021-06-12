@@ -1851,10 +1851,13 @@ static void processFRet(MesaPTState *s)
 #endif
         case FEnum_glGetString:
             if (s->FRet) {
-                size_t len = strnlen((char *)s->FRet, 3*PAGE_SIZE);
+#define MAX_XSTR (3*PAGE_SIZE)
+#define MAX_IXSTR 256
+                size_t len = strnlen((const char *)s->FRet, MAX_XSTR - 1);
+#undef MAX_XSTR
                 len++; /* '\0' */
                 if (s->arg[0] != GL_EXTENSIONS) {
-                    strncpy((char *)outshm, (char *)s->FRet, len);
+                    strncpy((char *)outshm, (const char *)s->FRet, len);
                     DPRINTF("%s [ %u ]", (char *)outshm, (uint32_t)len);
                 }
                 else {
@@ -1864,13 +1867,11 @@ static void processFRet(MesaPTState *s)
                     //DPRINTF("Host GL Extensions:\n%s", tmpstr);
                     stok = strtok(tmpstr, " ");
                     while (stok) {
-                        size_t extnLength = strnlen(stok, PAGE_SIZE);
-                        if ((s->extnYear == 0) && (s->extnLength == 0))
-                        {
+                        size_t extnLength = strnlen(stok, MAX_IXSTR);
+                        if ((s->extnYear == 0) && (s->extnLength == 0)) {
                             memcpy(xbuf, stok, extnLength);
                             xbuf += extnLength;
-                            *xbuf = ' ';
-                            xbuf++;
+                            *(xbuf++) = ' ';
                         }
                         else {
                             for (int i = 0; i < MESA_EXTENSION_COUNT; i++) {
@@ -1879,54 +1880,72 @@ static void processFRet(MesaPTState *s)
                                         if (((s->extnYear == 0) || (s->extnYear >= _mesa_extension_table[i].year))) {
                                             memcpy(xbuf, stok, extnLength);
                                             xbuf += extnLength;
-                                            *xbuf = ' ';
-                                            xbuf++;
-                                            break;
+                                            *(xbuf++) = ' ';
                                         }
+                                        break;
                                     }
                                 }
                             }
-                            //DPRINTF("  %s[ %u ]", stok, (uint32_t)extnLength);
+                            //DPRINTF("  %s [ %u ]", stok, (uint32_t)extnLength);
                         }
                         stok = strtok(NULL, " ");
                     }
+                    const char packPixel[] =
+                        "GL_EXT_packed_pixels"
+                        ;
+                    const char texEnvCmbn[] =
+                        "GL_EXT_texture_env_combine"
+                        ;
                     const char debugMsg[] =
-                        "GL_ARB_debug_output "
+                        "GL_ARB_debug_output"
+                        ;
+                    const char swapHint[] =
+                        "GL_WIN_swap_hint"
+                        ;
+                    const char swapExt[] =
+                        "WGL_EXT_swap_control"
                         ;
                     const char fxgamma[] =
-                        "WGL_3DFX_gamma_control "
+                        "WGL_3DFX_gamma_control"
                         ;
-                    const char wglext[] =
-                        "GL_WIN_swap_hint "
-                        "WGL_3DFX_gamma_control "
-                        "WGL_EXT_swap_control "
-                        ;
-                    if (MGLExtIsAvail(xbuf, debugMsg) == 0) {
-                        memcpy(xbuf, debugMsg, sizeof(debugMsg));
-                        xbuf += sizeof(debugMsg) - 1;
-                    }
-                    if ((s->extnYear == 0) && (s->extnLength == 0)) {
-                        memcpy(xbuf, fxgamma, sizeof(fxgamma));
-                        xbuf += sizeof(fxgamma);
-                    }
-                    else {
-                        memcpy(xbuf, wglext, sizeof(wglext));
-                        xbuf += sizeof(wglext);
-                    }
+#define XSTR_ADD(s) { \
+    size_t len = strnlen(s, sizeof(s)); \
+    memcpy(xbuf, s, len); \
+    xbuf += len; \
+    *(xbuf++) = ' '; }
+                    *xbuf = '\0';
+                    if ((MGLExtIsAvail((const char *)outshm, "GL_APPLE_packed_pixels")) &&
+                        (MGLExtIsAvail((const char *)outshm, packPixel) == 0))
+                        XSTR_ADD(packPixel);
+                    *xbuf = '\0';
+                    if ((MGLExtIsAvail((const char *)outshm, "GL_ARB_texture_env_combine")) &&
+                        (MGLExtIsAvail((const char *)outshm, texEnvCmbn) == 0))
+                        XSTR_ADD(texEnvCmbn);
+                    *xbuf = '\0';
+                    if (MGLExtIsAvail((const char *)outshm, debugMsg) == 0)
+                        XSTR_ADD(debugMsg);
+                    *xbuf = '\0';
+                    if (MGLExtIsAvail((const char *)outshm, swapHint) == 0)
+                        XSTR_ADD(swapHint);
+                    *xbuf = '\0';
+                    if (MGLExtIsAvail((const char *)outshm, swapExt) == 0)
+                        XSTR_ADD(swapExt);
+                    if (1)
+                        XSTR_ADD(fxgamma);
+#undef XSTR_ADD
+                    *(--xbuf) = '\0';
                     g_free(tmpstr);
                 }
             }
             break;
         case FEnum_glGetStringi:
             if (s->FRet) {
-                size_t n;
-                char str[255];
-                //DPRINTF("GetStringi() %04x %s", s->arg[1], s->FRet);
-                memset(str, 0, sizeof(str));
-                strncpy(str, (char *)s->FRet, sizeof(str)-1);
-                n = strnlen(str, sizeof(str) - 1);
-                *(int *)outshm = ++n;
-                memcpy(PTR(outshm, sizeof(int)), str, n);
+                size_t len = strnlen((const char *)s->FRet, MAX_IXSTR - 1);
+#undef MAX_IXSTR
+                len++; /* '\0' */
+                *(int *)outshm = len;
+                strncpy((char *)PTR(outshm, sizeof(int)), (const char *)s->FRet, len);
+                //DPRINTF("GetStringi() %04x %s [ %u ]", s->arg[1], (char *)PTR(outshm, sizeof(int)), *(uint32_t *)outshm);
             }
             break;
         default:

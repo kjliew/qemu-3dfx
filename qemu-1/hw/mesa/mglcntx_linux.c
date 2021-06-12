@@ -567,7 +567,7 @@ void MGLFuncHandler(const char *name)
     FUNCP_HANDLER("wglGetExtensionsStringARB") {
         if (1 /* wglFuncs.GetExtensionsStringARB */) {
             //const char *str = wglFuncs.GetExtensionsStringARB(hDC);
-            const char *tmp = "WGL_3DFX_gamma_control "
+            const char wglext[] = "WGL_3DFX_gamma_control "
                 "WGL_ARB_create_context "
                 "WGL_ARB_create_context_profile "
                 "WGL_ARB_extensions_string "
@@ -578,7 +578,8 @@ void MGLFuncHandler(const char *name)
                 "WGL_EXT_extensions_string "
                 "WGL_EXT_swap_control "
                 ;
-            strncpy((char *)name, tmp, PAGE_SIZE);
+            memcpy((char *)name, wglext, sizeof(wglext));
+            *((char *)name + sizeof(wglext) - 2) = '\0';
             //DPRINTF("WGL extensions\nHost: %s [ %d ]\nGuest: %s [ %d ]", str, (uint32_t)strlen(str), name, (uint32_t)strlen(name));
             return;
         }
