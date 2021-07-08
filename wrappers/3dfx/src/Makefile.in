@@ -1,7 +1,8 @@
 QEMU_SRC_DIR=../../../qemu-0
 FXLIB=../../fxlib
 GIT=$(shell git rev-parse HEAD | sed "s/\(.......\).*/\1\-/")
-CC=gcc
+CROSS=i686-w64-mingw32-
+CC=$(CROSS)gcc
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -I$(FXLIB) -D__REV__=\"$(GIT)\" -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
@@ -10,6 +11,12 @@ TARGET1=glide.dll
 TARGET2=glide2x.dll
 TARGET3=glide3x.dll
 PEXPORTS=pexports
+RC=windres
+DLLTOOL=dlltool
+ifeq ($(shell uname),Linux)
+    RC=$(CROSS)windres
+    DLLTOOL=$(CROSS)dlltool
+endif
 
 C_OBJS:=\
     fxhook.o \
@@ -28,35 +35,35 @@ $(TARGET2): $(C_OBJS) glidedll.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  RC  $(@:.dll=_res.o)"
-	@windres -Jrc -Ocoff -DGLIDE2 -o $(@:.dll=_res.o) ../src/version.rc
+	@$(RC) -Jrc -Ocoff -DGLIDE2 -o $(@:.dll=_res.o) ../src/version.rc
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	@$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(PEXPORTS) $@ | grep -v -e "\.lto_priv" -e "\.part" | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" | grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:dll=def)
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
 	@$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
-	@dlltool -U -d lib$(@:dll=def) -l lib$@.a
+	@$(DLLTOOL) -U -d lib$(@:dll=def) -l lib$@.a
 
 $(TARGET1): $(C_OBJS) gl211dll.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  RC  $(@:.dll=_res.o)"
-	@windres -Jrc -Ocoff -DGLIDE1 -o $(@:.dll=_res.o) ../src/version.rc
+	@$(RC) -Jrc -Ocoff -DGLIDE1 -o $(@:.dll=_res.o) ../src/version.rc
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	@$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(PEXPORTS) $@ | grep -v -e "\.lto_priv" -e "\.part" | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" | grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:dll=def)
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
 
 $(TARGET3): $(C_OBJS) gl301dll.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  RC  $(@:.dll=_res.o)"
-	@windres -Jrc -Ocoff -DGLIDE3 -o $(@:.dll=_res.o) ../src/version.rc
+	@$(RC) -Jrc -Ocoff -DGLIDE3 -o $(@:.dll=_res.o) ../src/version.rc
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	@$(PEXPORTS) $@ | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" > $(@:dll=def)
+	@$(PEXPORTS) $@ | grep -v -e "\.lto_priv" -e "\.part" | sed "s/\(^.*@[0-9]*\)/_\1\ =\ \1/" | grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:dll=def)
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
 	@$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
-	@dlltool -U -d lib$(@:dll=def) -l lib$@.a
+	@$(DLLTOOL) -U -d lib$(@:dll=def) -l lib$@.a
 
 fxlib:
 	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi

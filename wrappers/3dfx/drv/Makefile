@@ -1,5 +1,6 @@
 FXLIB=../../fxlib
-CC=gcc
+CROSS=i686-w64-mingw32-
+CC=$(CROSS)gcc
 
 all: instdrv.exe fxmemmap.vxd fxptl.sys md5sum
 
@@ -17,4 +18,4 @@ fxptl.sys: fxptl.xxd
 	@xxd -r $< ../build/$@
 
 md5sum: md5sum.txt
-	@md5sum ../build/fxmemmap.vxd ../build/fxptl.sys | sed "s/\.\.\/build\///" | diff - $<
+	@md5sum ../build/fxmemmap.vxd ../build/fxptl.sys | sed "s/.\.\.\/build\///" | diff - $<

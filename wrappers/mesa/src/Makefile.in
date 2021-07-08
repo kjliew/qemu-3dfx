@@ -1,6 +1,7 @@
 QEMU_SRC_DIR=../../../qemu-1
 FXLIB=../../fxlib
-CC=gcc
+CROSS=i686-w64-mingw32-
+CC=$(CROSS)gcc
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -I$(FXLIB) -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
