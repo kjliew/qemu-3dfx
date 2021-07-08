@@ -130,7 +130,7 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWOR
     uint32_t addr = start, *patch = (uint32_t *)iat;
     HookTimeTckRef(&tick);
 
-    if ((addr == (uint32_t)patch) &&
+    if (addr && (addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
         DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), "timeGetTime"),
               hkPerf = (tick->freq.QuadPart < TICK_8254)?
@@ -200,6 +200,7 @@ void HookTimeGetTime(const uint32_t caddr)
         addr += 0x04; \
     } \
     addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
+    patch = (uint32_t *)addr; \
     HookParseRange(&addr, &patch, si.dwPageSize); \
     HookPatchTimer(addr, patch, si.dwPageSize - (((uint32_t)patch) & (si.dwPageSize - 1)));
     TICK_HOOK(0);

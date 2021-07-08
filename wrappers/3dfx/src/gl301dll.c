@@ -95,7 +95,6 @@ static int InitGlidePTMMBase(PDRVFUNC pDrv)
 
 static INLINE void forcedPageIn(const uint32_t addr, const uint32_t size, const char *func)
 {
-    (void *)func;
     int i;
     uint32_t *start = (uint32_t *)(addr & ~(PAGE_SIZE - 1));
     uint32_t cnt = (((addr + size) & ~(PAGE_SIZE - 1)) - (addr & ~(PAGE_SIZE - 1))) / PAGE_SIZE;
@@ -560,7 +559,7 @@ uint32_t PT_CALL grTexTextureMemRequired(uint32_t arg0, uint32_t arg1) {
 uint32_t PT_CALL gu3dfGetInfo(uint32_t arg0, uint32_t arg1) {
     int ret;
 #if PUSH_F3DF    
-    int i, fd;
+    int fd;
     uint32_t len;
 
     fd = open((char *)arg0, O_BINARY | O_RDONLY);

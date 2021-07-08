@@ -104,7 +104,6 @@ static int InitGlidePTMMBase(void)
 
 static INLINE void forcedPageIn(const uint32_t addr, const uint32_t size, const char *func)
 {
-    (void *)func;
     int i;
     uint32_t *start = (uint32_t *)(addr & ~(PAGE_SIZE - 1));
     uint32_t cnt = (((addr + size) & ~(PAGE_SIZE - 1)) - (addr & ~(PAGE_SIZE - 1))) / PAGE_SIZE;
@@ -190,13 +189,13 @@ static uint32_t guTexSize(const uint32_t mmid, const int lodLevel)
             texInfo.large = guTex[i].large;
             texInfo.aspect = guTex[i].aspect;
             texInfo.format = guTex[i].format;
-            oddEven = guTex[i].oddEven;
+            oddEven = GR_MIPMAPLEVELMASK_BOTH;
             if ((lodLevel < 0x00) || (lodLevel > 0x08)) { }
             else {
                 texInfo.small = lodLevel;
                 texInfo.large = lodLevel;
             }
-            texBytes = grTexTextureMemRequired(GR_MIPMAPLEVELMASK_BOTH, (uint32_t)&texInfo);
+            texBytes = grTexTextureMemRequired(oddEven, (uint32_t)&texInfo);
             break;
         }
     }
@@ -795,7 +794,7 @@ void PT_CALL grTriStats(uint32_t arg0, uint32_t arg1) {
 uint32_t PT_CALL gu3dfGetInfo(uint32_t arg0, uint32_t arg1) {
     int ret;
 #if PUSH_F3DF    
-    int i, fd;
+    int fd;
     uint32_t len;
 
     fd = open((char *)arg0, O_BINARY | O_RDONLY);

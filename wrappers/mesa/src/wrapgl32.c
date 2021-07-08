@@ -16608,7 +16608,7 @@ uint32_t PT_CALL mglGetProcAddress (uint32_t arg0)
 
 uint32_t PT_CALL mglCreateContext (uint32_t arg0)
 {
-    uint32_t i, currRC;
+    uint32_t i, currRC = 0;
     uint32_t *cntxDC = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     if (currPixFmt == 0)
         return 0;

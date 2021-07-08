@@ -168,7 +168,7 @@ static int read(int handle, void *buf, unsigned size)
     return retval;
 }
 
-static uint32_t f2u32(const float f)
+static INLINE uint32_t f2u32(const float f)
 {
     uint32_t u32;
     char *s = (char *)&f;

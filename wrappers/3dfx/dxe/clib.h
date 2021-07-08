@@ -128,14 +128,15 @@ static unsigned int _dxe_read(int handle, void *buffer, unsigned int count, unsi
 static int read(int handle, void *buf, unsigned size)
 {
     int retval, err;
+    (void)err;
 
-    err = _dxe_read(handle, buf, size, &retval);
+    err = _dxe_read(handle, buf, size, (unsigned int *)&retval);
     DPRINTF("_dxe_read %d\r\n", err);
 
     return retval;
 }
 
-static uint32_t f2u32(const float f)
+static INLINE uint32_t f2u32(const float f)
 {
     uint32_t u32;
     char *s = (char *)&f;
