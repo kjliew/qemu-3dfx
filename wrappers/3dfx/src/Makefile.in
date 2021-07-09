@@ -29,7 +29,7 @@ all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) fxdrv
 fxdrv:
 	@make -C ../dxe
 	@make -C ../ovl
-	@make -C ../drv
+	@make -C ../drv CROSS=$(CROSS)
 
 $(TARGET2): $(C_OBJS) glidedll.o
 	@echo "  CFLAGS  $(CFLAGS)"

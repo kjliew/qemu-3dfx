@@ -38,22 +38,22 @@ Simple guide to apply the patch:<br>
     $ ../qemu-5.2.0/configure && make
 
 ## Building Guest Wrappers
-**Requirements:**  
- - `base-devel` (make, sed, xxd)  
- - `pexports`  
- - `mingw32` cross-tools (binutils, gcc) for WIN32 DLL wrappers  
- - `Watcom C/C++ 11.0` for DOS OVL wrapper  
- - `i686-pc-msdosdjgpp` cross-tools (binutils, gcc, dxe3gen) for DJGPP DXE wrappers
+**Requirements:**
+ - `base-devel` (make, sed, xxd)
+ - `pexports, md5sum`
+ - `mingw32` cross toolchain (binutils, gcc, windres, dlltool) for WIN32 DLL wrappers
+ - `Watcom C/C++ 11.0` for DOS32 OVL wrapper
+ - `i686-pc-msdosdjgpp` cross toolchain (binutils, gcc, dxe3gen) for DJGPP DXE wrappers
 <br>
 
     $ cd ~/myqemu/qemu-3dfx/wrappers/3dfx
     $ mkdir build && cd build
-    $ cp ../src/Makefile.in ./Makefile
+    $ bash ../../../scripts/conf_wrapper
     $ make && make clean
 
     $ cd ~/myqemu/qemu-3dfx/wrappers/mesa
     $ mkdir build && cd build
-    $ cp ../src/Makefile.in ./Makefile
+    $ bash ../../../scripts/conf_wrapper
     $ make && make clean
 
 ## Installing Guest Wrappers

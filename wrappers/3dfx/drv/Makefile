@@ -1,5 +1,5 @@
 FXLIB=../../fxlib
-CROSS=i686-w64-mingw32-
+CROSS?=
 CC=$(CROSS)gcc
 
 all: instdrv.exe fxmemmap.vxd fxptl.sys md5sum
