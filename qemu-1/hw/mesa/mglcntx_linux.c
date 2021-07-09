@@ -36,10 +36,7 @@
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
-#undef CONFIG_KVM_IS_POSSIBLE
-#define CONFIG_KVM_IS_POSSIBLE
 #include "sysemu/kvm.h"
-#undef CONFIG_KVM_IS_POSSIBLE
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 {
     int ret = GetBufOAccelEN()? kvm_enabled():0;

@@ -147,15 +147,14 @@ diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/include/sysemu/kvm.h ./include
 diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/include/sysemu/whpx.h ./include/sysemu/whpx.h
 --- ../../../scratch/qemu/orig/qemu-3.1.1.1/include/sysemu/whpx.h	2019-10-01 15:31:45.000000000 -0700
 +++ ./include/sysemu/whpx.h	2020-12-11 15:46:58.466996300 -0800
-@@ -29,6 +29,8 @@
-
- #ifdef CONFIG_WHPX
+@@ -21,6 +21,7 @@
+ void whpx_destroy_vcpu(CPUState *cpu);
+ void whpx_vcpu_kick(CPUState *cpu);
 
 +void whpx_update_guest_pa_range(uint64_t start_pa, uint64_t size, void *host_va, int readonly, int add);
-+
- int whpx_enabled(void);
 
- #else /* CONFIG_WHPX */
+ void whpx_cpu_synchronize_state(CPUState *cpu);
+ void whpx_cpu_synchronize_post_reset(CPUState *cpu);
 diff -Nru ../../../scratch/qemu/orig/qemu-3.1.1.1/include/ui/console.h ./include/ui/console.h
 --- ../../../scratch/qemu/orig/qemu-3.1.1.1/include/ui/console.h	2019-10-01 15:31:45.000000000 -0700
 +++ ./include/ui/console.h	2020-10-06 22:57:11.337593800 -0700

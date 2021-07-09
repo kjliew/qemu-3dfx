@@ -30,10 +30,7 @@
 
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
-#undef CONFIG_WHPX
-#define CONFIG_WHPX
 #include "sysemu/whpx.h"
-#undef CONFIG_WHPX
 #include <GL/gl.h>
 #include <GL/wglext.h>
 

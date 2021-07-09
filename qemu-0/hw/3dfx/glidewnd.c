@@ -74,10 +74,7 @@ static int cfg_traceFunc;
 int glide_mapbufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
-#undef CONFIG_KVM_IS_POSSIBLE
-#define CONFIG_KVM_IS_POSSIBLE
 #include "sysemu/kvm.h"
-#undef CONFIG_KVM_IS_POSSIBLE
 int glide_mapbufo(mapbufo_t *bufo, int add)
 {
     int ret = (!cfg_lfbHandler && !cfg_lfbWriteMerge && cfg_lfbMapBufo)? kvm_enabled():0;
@@ -94,10 +91,7 @@ int glide_mapbufo(mapbufo_t *bufo, int add)
 }
 #endif
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
-#undef CONFIG_WHPX
-#define CONFIG_WHPX
 #include "sysemu/whpx.h"
-#undef CONFIG_WHPX
 int glide_mapbufo(mapbufo_t *bufo, int add)
 {
     int ret = (!cfg_lfbHandler && !cfg_lfbWriteMerge && cfg_lfbMapBufo)? whpx_enabled():0;

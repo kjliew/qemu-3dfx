@@ -1,4 +1,4 @@
-softmmu_ss.add(files(
+i386_ss.add(files(
   'extensions_table.c',
   'mesagl_impl.c',
   'mesapt_mm.c',

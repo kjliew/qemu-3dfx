@@ -1,3 +1,26 @@
+/*
+ * QEMU 3Dfx Glide Pass-Through
+ *
+ *  Copyright (c) 2018-2020
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this library;
+ * if not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef _VERTEX3X_H
+#define _VERTEX3X_H
+
 static const int slen[] = 
                     { 8, 4, 4, 4, 4, 4, 12, 4, 8, 4, 8, 4 };
 static int vlut[] = { 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0 };
@@ -19,4 +42,6 @@ static int size_vertex3x(void)
 
     return ret;
 }
+
+#endif //_VERTEX3X_H
 
