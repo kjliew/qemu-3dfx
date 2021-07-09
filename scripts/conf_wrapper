@@ -3,22 +3,38 @@
 MKFILE=Makefile
 CROSS=
 CC=gcc
+CHECK_DEPS=" \
+    make \
+    sed \
+    xxd \
+    pexports \
+    md5sum \
+" \
+
 CC_CHECK=0
 CHECK_CC=" \
     mingw32-$CC \
     i686-w64-mingw32-$CC \
 " \
 
+for i in $CHECK_DEPS; do
+    echo -n "checking for $i... "
+    if [ -z $(which $i 2>/dev/null) ]; then
+        echo not found
+        exit 1
+    fi
+    echo $(which $i)
+done
 if [ ! -z $1 ]; then
     MKFILE=$1
 fi
 if [ x`uname | sed "s/_.*//"` == xMINGW32 ]; then
-    echo MSYSTEM=$MSYSTEM
+    echo "  MSYSTEM=$MSYSTEM"
     CC_CHECK=1
 
 fi
 if [ x`uname` == xLinux ]; then
-    echo Linux cross build
+    echo "  Linux cross build"
     CC_CHECK=2
 fi
 if [ $CC_CHECK -eq 0 ]; then
@@ -28,8 +44,8 @@ fi
 for i in $CHECK_CC; do
     if [ ! -z $(which $i 2>/dev/null) ]; then
         CROSS=`which $i | sed "s/.*\///;s/$CC.*//"`
-        echo "CROSS=$CROSS"
-        echo "CC=$CC"
+        echo "  CROSS=$CROSS"
+        echo "  CC=$CC"
     fi
 done
 if [ ! -f ../src/Makefile.in ]; then
