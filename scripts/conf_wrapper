@@ -9,6 +9,7 @@ CHECK_DEPS=" \
     xxd \
     pexports \
     md5sum \
+    git \
 " \
 
 CC_CHECK=0
@@ -38,24 +39,32 @@ if [ x`uname` == xLinux ]; then
     CC_CHECK=2
 fi
 if [ $CC_CHECK -eq 0 ]; then
-    echo Unsupported cross build
+    echo "Error: Unsupported cross build"
     exit 1
 fi
-for i in $CHECK_CC; do
-    if [ ! -z $(which $i 2>/dev/null) ]; then
-        CROSS=`which $i | sed "s/.*\///;s/$CC.*//"`
-        echo "  CROSS=$CROSS"
-        echo "  CC=$CC"
+if [ $CC_CHECK -eq 2 ]; then
+    for i in $CHECK_CC; do
+        if [ ! -z $(which $i 2>/dev/null) ]; then
+            CROSS=`which $i | sed "s/.*\///;s/$CC.*//"`
+            echo "  CROSS=$CROSS"
+            echo "  CC=$CC"
+        fi
+    done
+    if [ -z $CROSS ]; then
+        echo "Error: Unknown Linux cross build"
+        exit 1
     fi
-done
+fi
 if [ ! -f ../src/Makefile.in ]; then
-    echo Missing ../src/Makefile.in
+    echo "Error: Missing ../src/Makefile.in"
     exit 1
 fi
 cat ../src/Makefile.in | sed "s/^\(CROSS=\).*/\1$CROSS/" > $MKFILE
 if [ $CC_CHECK -eq 2 ]; then
-    sed -i -e "/.*MSYSTEM\"\ !=\ \"MINGW32\".*/d" $MKFILE
+    sed -i -e "s/^\(RC=\)/\1\$(CROSS)/" $MKFILE
+    sed -i -e "s/^\(DLLTOOL=\)/\1\$(CROSS)/" $MKFILE
     sed -i -e "s/^\(TOOLS=\)wglinfo.exe.*/\1/" $MKFILE
+    sed -i -e "/.*MSYSTEM\"\ !=\ \"MINGW32\".*/d" $MKFILE
 fi
 if [ -z $(which wcc386 2>/dev/null) ]; then
     echo -- DOS32 OVL not supported --

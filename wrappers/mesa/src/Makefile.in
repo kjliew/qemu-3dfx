@@ -1,7 +1,9 @@
 QEMU_SRC_DIR=../../../qemu-1
 FXLIB=../../fxlib
-CROSS=i686-w64-mingw32-
+CROSS=
 CC=$(CROSS)gcc
+RC=windres
+DLLTOOL=dlltool
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -I$(FXLIB) -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
@@ -26,7 +28,7 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@$(PEXPORTS) $@ | grep -e ^LIB -e ^EXP -e ^gl -e ^[mw]g[dl] | grep -v -e "\.lto_priv" -e "\.part" | sed "s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/" | sed "s/^mgl/wgl/;s/^wgd//" > $(@:dll=def)
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 #	$(PEXPORTS) $@ | sed "s/^_//" > lib$(@:dll=def)
-#	dlltool -U -d lib$(@:dll=def) -l lib$@.a
+#	$(DLLTOOL) -U -d lib$(@:dll=def) -l lib$@.a
 
 $(TOOLS):
 	@echo "  LD  $@"
