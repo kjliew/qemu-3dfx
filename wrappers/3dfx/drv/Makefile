@@ -1,21 +1,22 @@
 FXLIB=../../fxlib
 CROSS?=
 CC=$(CROSS)gcc
+OUTDIR?=build
 
 all: instdrv.exe fxmemmap.vxd fxptl.sys md5sum
 
 instdrv.exe: instdrv.c
-	@if [ ! -d ../build ]; then exit 1; fi
+	@if [ ! -d ../$(OUTDIR) ]; then exit 1; fi
 	@echo "  LD  $@"
-	@$(CC) -I$(FXLIB) -Wall -Wextra -Werror -s -o ../build/$@ $< ../build/fxlibnt.o
+	@$(CC) -I$(FXLIB) -Wall -Wextra -Werror -s -o ../$(OUTDIR)/$@ $< ../$(OUTDIR)/fxlibnt.o
 
 fxmemmap.vxd: fxmemmap.xxd
 	@echo "  DRV $@"
-	@xxd -r $< ../build/$@
+	@xxd -r $< ../$(OUTDIR)/$@
 
 fxptl.sys: fxptl.xxd
 	@echo "  DRV $@"
-	@xxd -r $< ../build/$@
+	@xxd -r $< ../$(OUTDIR)/$@
 
 md5sum: md5sum.txt
-	@md5sum ../build/fxmemmap.vxd ../build/fxptl.sys | sed "s/.\.\.\/build\///" | diff - $<
+	@md5sum ../$(OUTDIR)/fxmemmap.vxd ../$(OUTDIR)/fxptl.sys | sed "s/.\.\.\/$(OUTDIR)\///" | diff - $<

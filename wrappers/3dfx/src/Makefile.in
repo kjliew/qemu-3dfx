@@ -13,6 +13,7 @@ TARGET1=glide.dll
 TARGET2=glide2x.dll
 TARGET3=glide3x.dll
 PEXPORTS=pexports
+OUTDIR=$(shell basename `pwd`)
 
 C_OBJS:=\
     fxhook.o \
@@ -23,9 +24,9 @@ C_OBJS:=\
 all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) fxdrv
 
 fxdrv:
-	@make -C ../dxe
-	@make -C ../ovl
-	@make -C ../drv CROSS=$(CROSS)
+	@make -C ../dxe OUTDIR=$(OUTDIR)
+	@make -C ../ovl OUTDIR=$(OUTDIR)
+	@make -C ../drv OUTDIR=$(OUTDIR) CROSS=$(CROSS)
 
 $(TARGET2): $(C_OBJS) glidedll.o
 	@echo "  CFLAGS  $(CFLAGS)"
@@ -81,7 +82,7 @@ clean:
 	    sh -c 'ls -l glide*'; fi
 
 distclean: clean
-	@make -C ../dxe $@
-	@make -C ../ovl $@
+	@make -C ../dxe $@ OUTDIR=$(OUTDIR)
+	@make -C ../ovl $@ OUTDIR=$(OUTDIR)
 	@rm -f $(TARGET1) $(TARGET2) $(TARGET3) *.a *.vxd *.sys *.exe *.zip
 
