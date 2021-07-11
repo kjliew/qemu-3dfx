@@ -6,7 +6,7 @@ diff -Nru ../orig/qemu-2.6.2/configure ./configure
    vhost_scsi="yes"
    QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$(pwd)/linux-headers $QEMU_INCLUDES"
 +# For MESA/Glide pass-through ##
-+  LIBS="-ldl -lXxf86vm -lGLX $LIBS"
++  LIBS="-ldl -lXxf86vm -lGL $LIBS"
  ;;
  esac
  
