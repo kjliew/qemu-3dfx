@@ -40,6 +40,9 @@ if [ x`uname` == xLinux ]; then
 fi
 if [ $CC_CHECK -eq 0 ]; then
     echo "Error: Unsupported cross build"
+    if [ ! -z $MSYSTEM ]; then
+        echo "  Invalid MSYSTEM=$MSYSTEM"
+    fi
     exit 1
 fi
 if [ $CC_CHECK -eq 2 ]; then
@@ -51,7 +54,10 @@ if [ $CC_CHECK -eq 2 ]; then
         fi
     done
     if [ -z $CROSS ]; then
-        echo "Error: Unknown Linux cross build"
+        echo "Error: Supported Linux build options not found"
+        for j in $CHECK_CC; do
+            echo "  $j" | sed "s/\-$CC//"
+        done
         exit 1
     fi
 fi
