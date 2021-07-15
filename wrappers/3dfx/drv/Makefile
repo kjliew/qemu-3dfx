@@ -3,7 +3,7 @@ CROSS?=
 CC=$(CROSS)gcc
 OUTDIR?=build
 
-all: instdrv.exe fxmemmap.vxd fxptl.sys md5sum
+all: instdrv.exe fxmemmap.vxd fxptl.sys shasum
 
 instdrv.exe: instdrv.c
 	@if [ ! -d ../$(OUTDIR) ]; then exit 1; fi
@@ -18,5 +18,5 @@ fxptl.sys: fxptl.xxd
 	@echo "  DRV $@"
 	@xxd -r $< ../$(OUTDIR)/$@
 
-md5sum: md5sum.txt
-	@md5sum ../$(OUTDIR)/fxmemmap.vxd ../$(OUTDIR)/fxptl.sys | sed "s/.\.\.\/$(OUTDIR)\///" | diff - $<
+shasum: shasum.txt
+	@shasum ../$(OUTDIR)/fxmemmap.vxd ../$(OUTDIR)/fxptl.sys | sed "s/.\.\.\/$(OUTDIR)\///" | diff - $<

@@ -8,7 +8,7 @@ CHECK_DEPS=" \
     sed \
     xxd \
     pexports \
-    md5sum \
+    shasum \
     git \
 " \
 
@@ -34,8 +34,8 @@ if [ x`uname | sed "s/_.*//"` == xMINGW32 ]; then
     CC_CHECK=1
 
 fi
-if [ x`uname` == xLinux ]; then
-    echo "  Linux cross build"
+if [ x`uname` == xDarwin ] || [ x`uname` == xLinux ]; then
+    echo "  `uname` cross build"
     CC_CHECK=2
 fi
 if [ $CC_CHECK -eq 0 ]; then
@@ -54,7 +54,7 @@ if [ $CC_CHECK -eq 2 ]; then
         fi
     done
     if [ -z $CROSS ]; then
-        echo "Error: Supported Linux build options not found"
+        echo "Error: Supported cross build options not found"
         for j in $CHECK_CC; do
             echo "  $j" | sed "s/\-$CC//"
         done

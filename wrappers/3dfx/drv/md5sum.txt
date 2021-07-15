@@ -1,2 +1,0 @@
-6aa3df9dd06a429a40b8904b2c76c34c fxmemmap.vxd
-caf6403c30bbd09006b32e0cc6305408 fxptl.sys
