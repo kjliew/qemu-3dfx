@@ -68,6 +68,7 @@ fi
 cat ../src/Makefile.in | sed "s/^\(CROSS=\).*/\1$CROSS/" > $MKFILE
 if [ $CC_CHECK -eq 2 ]; then
     sed -i -e "s/^\(RC=\)/\1\$(CROSS)/" $MKFILE
+    sed -i -e "s/^\(STRIP=\)/\1\$(CROSS)/" $MKFILE
     sed -i -e "s/^\(DLLTOOL=\)/\1\$(CROSS)/" $MKFILE
     sed -i -e "s/^\(TOOLS=\)wglinfo.exe.*/\1/" $MKFILE
     sed -i -e "/.*MSYSTEM\"\ !=\ \"MINGW32\".*/d" $MKFILE

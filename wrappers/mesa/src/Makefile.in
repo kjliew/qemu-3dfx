@@ -4,6 +4,7 @@ CROSS=
 CC=$(CROSS)gcc
 RC=windres
 DLLTOOL=dlltool
+STRIP=strip
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -I$(FXLIB) -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
@@ -53,7 +54,7 @@ fxlib:
 clean:
 	@rm -f *.o *.def
 	@if [ -f $(TARGET) ]; then \
-	    strip --strip-unneeded $(TARGET); \
+	    $(STRIP) --strip-unneeded $(TARGET); \
 	    sh -c 'ls -l $(TARGET)'; \
 	    strings $(TARGET) | grep "\ build\ "; fi
 

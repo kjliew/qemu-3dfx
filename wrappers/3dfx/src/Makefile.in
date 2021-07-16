@@ -5,6 +5,7 @@ CROSS=
 CC=$(CROSS)gcc
 RC=windres
 DLLTOOL=dlltool
+STRIP=strip
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -I$(FXLIB) -D__REV__=\"$(GIT)\" -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
@@ -77,8 +78,8 @@ clean:
 	@make -C ../dxe $@
 	@make -C ../ovl $@
 	@rm -f *.o *.def
-	@if [ ! -z "$$(find -iregex ".*\.dll\.a")" ]; then \
-	    strip --strip-unneeded *.dll *.a; \
+	@if [ ! -z "$$(find . | grep "\.dll\.a$$")" ]; then \
+	    $(STRIP) --strip-unneeded *.dll *.a; \
 	    sh -c 'ls -l glide*'; fi
 
 distclean: clean
