@@ -55,7 +55,10 @@ static struct tblGlideResolution tblRes[] = {
   { .w = 0, .h = 0},
 };
 
-static uintptr_t hwnd;
+#ifndef CONFIG_WIN32
+typedef void *HWND;
+#endif
+static HWND hwnd;
 static int cfg_createWnd;
 static int cfg_scaleGuiX;
 static int cfg_scaleX;
@@ -181,7 +184,7 @@ int glide_lfbmerge(void) { return (cfg_lfbMapBufo)? 0:cfg_lfbWriteMerge; }
 int glide_lfbdirty(void) { return (cfg_lfbMapBufo)? 0:cfg_lfbLockDirty; }
 int glide_lfbnoaux(void) { return cfg_lfbNoAux; }
 int glide_lfbmode(void) { return cfg_lfbHandler; }
-void glide_winres(const int res, uint32_t *w, uint32_t *h)
+void glide_winres(const int res, int *w, int *h)
 {
     *w = tblRes[res].w;
     *h = tblRes[res].h;
@@ -189,16 +192,18 @@ void glide_winres(const int res, uint32_t *w, uint32_t *h)
 
 int stat_window(const int res, const int activate)
 {
-    int stat, sel;
+    int stat, sel, glide_fullscreen;
     sel = (cfg_scaleX)? scaledRes(cfg_scaleX, ((float)tblRes[res].h) / tblRes[res].w):res;
     stat = (cfg_createWnd)? 0:1;
+    glide_fullscreen = glide_gui_fullscreen(0, 0);
 
     if (stat) {
-	uint32_t wndStat = (glide_gui_fullscreen())?
-            (((tblRes[sel].h & 0xFFFFU) << 0x10) | tblRes[sel].w) : glide_window_stat(activate);
+	int wndStat = (glide_fullscreen)?
+            (((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w) : glide_window_stat(activate);
 	if (activate) {
-	    if (wndStat == (((tblRes[sel].h & 0xFFFFU) << 0x10) | tblRes[sel].w)) {
-		DPRINTF("    window %ux%u %s", (wndStat & 0xFFFFU), (wndStat >> 0x10), (cfg_scaleX)? "(scaled)":"");
+	    if (wndStat == (((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w)) {
+		DPRINTF("    %s %ux%u %s", (glide_fullscreen)? "fullscreen":"window",
+                    (wndStat & 0xFFFFU), (wndStat >> 0x10), (cfg_scaleX)? "(scaled)":"");
 		stat = 0;
 	    }
 	}
@@ -209,7 +214,7 @@ int stat_window(const int res, const int activate)
             if (stat)
                 glide_release_window();
 #endif
-            if (glide_gui_fullscreen())
+            if (glide_fullscreen)
                 stat = 0;
         }
     }
@@ -221,7 +226,7 @@ void fini_window(void)
     if (hwnd) {
 #if defined(CONFIG_WIN32) && CONFIG_WIN32	    
         if (cfg_createWnd)
-            DestroyWindow((HWND)hwnd);
+            DestroyWindow(hwnd);
         else
             glide_release_window();
 #endif
@@ -291,15 +296,15 @@ uint32_t init_window(const int res, const char *wndTitle)
         fclose(fp);
     }
 
-    int gui_height = glide_gui_getheight();
-    cfg_scaleGuiX = (cfg_createWnd || cfg_scaleX)? 0:cfg_scaleGuiX;
+    int gui_height, glide_fullscreen = glide_gui_fullscreen(0, &gui_height);
+    cfg_scaleGuiX = (glide_fullscreen || cfg_createWnd || cfg_scaleX)? 0:cfg_scaleGuiX;
     cfg_scaleX = (cfg_scaleGuiX && (gui_height > 480) && (gui_height > tblRes[res].h))?
         (int)((1.f * tblRes[res].w * gui_height) / tblRes[res].h):cfg_scaleX;
 
 #define WRAPPER_FLAG_WINDOWED   0x01
 #define WRAPPER_FLAG_VSYNCOFF   0x40
 #define WRAPPER_FLAG_QEMU       0x80
-    uint32_t flags = (glide_gui_fullscreen())? WRAPPER_FLAG_QEMU:
+    uint32_t flags = (glide_fullscreen)? WRAPPER_FLAG_QEMU:
         (WRAPPER_FLAG_QEMU | WRAPPER_FLAG_WINDOWED);
     flags |= (cfg_cntxVsyncOff)? WRAPPER_FLAG_VSYNCOFF:0;
     flags |= cfg_cntxMSAA;
@@ -314,7 +319,7 @@ uint32_t init_window(const int res, const char *wndTitle)
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32	    
     if (cfg_createWnd)
-        hwnd = (uintptr_t)CreateGlideWindow(wndTitle, tblRes[sel].w, tblRes[sel].h);
+        hwnd = CreateGlideWindow(wndTitle, tblRes[sel].w, tblRes[sel].h);
     else
         hwnd = glide_prepare_window(tblRes[sel].w, tblRes[sel].h);
 #endif

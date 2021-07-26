@@ -84,7 +84,7 @@ typedef struct GlidePTState
     MemoryRegion glfb_ram;
     uint8_t *glfb_ptr;
     int lfb_dirty, lfb_real, lfb_noaux, lfb_merge;
-    uint32_t lfb_w, lfb_h;
+    int lfb_w, lfb_h;
 
     GlideLfbState *lfbDev;
     uint32_t szGrState;

@@ -434,8 +434,26 @@ void MGLActivateHandler(int i)
         switch (i) {
             case WA_ACTIVE:
                 mesa_enabled_set();
+                do {
+                    int w, h, fullscreen = mesa_gui_fullscreen(&w, &h);
+                    DEVMODE DevMode = { .dmSize = sizeof(DEVMODE) };
+
+                    for (int i = 0; fullscreen && EnumDisplaySettings(NULL, i, &DevMode); i++) {
+                        if ((DevMode.dmPelsWidth == w) && (DevMode.dmPelsHeight == h) &&
+                            (DevMode.dmBitsPerPel == GetDeviceCaps(hDC, BITSPIXEL))) {
+                            DevMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
+                            LONG ret = ChangeDisplaySettings(&DevMode, CDS_FULLSCREEN);
+                            DPRINTF("Mode 0x%02x Fullscreen %4dx%d %lubpp %dHz ret %d", i, w, h,
+                                DevMode.dmBitsPerPel, GetDeviceCaps(hDC, VREFRESH),
+                                (ret == DISP_CHANGE_SUCCESSFUL)? 1:0);
+                            break;
+                        }
+                    }
+                } while(0);
                 break;
             case WA_INACTIVE:
+                if (mesa_gui_fullscreen(0, 0))
+                    ChangeDisplaySettings(NULL, 0);
                 mesa_enabled_reset();
                 break;
         }

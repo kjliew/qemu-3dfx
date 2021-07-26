@@ -1,7 +1,16 @@
 diff -Nru ../orig/qemu-2.6.2/configure ./configure
 --- ../orig/qemu-2.6.2/configure	2016-09-29 12:59:38.000000000 -0700
-+++ ./configure	2021-04-01 11:51:40.062998800 -0700
-@@ -674,6 +674,8 @@
++++ ./configure	2021-07-26 04:12:28.431367800 -0700
+@@ -564,6 +564,8 @@
+   else
+     audio_drv_list=""
+   fi
++# For MESA/Glide pass-through ##
++  LIBS="-lgdi32 $LIBS"
+ ;;
+ GNU/kFreeBSD)
+   bsd="yes"
+@@ -674,6 +676,8 @@
    vhost_net="yes"
    vhost_scsi="yes"
    QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$(pwd)/linux-headers $QEMU_INCLUDES"
@@ -10,18 +19,9 @@ diff -Nru ../orig/qemu-2.6.2/configure ./configure
  ;;
  esac
  
-@@ -703,7 +705,7 @@
-   QEMU_CFLAGS="-D__USE_MINGW_ANSI_STDIO=1 $QEMU_CFLAGS"
-   # MinGW needs -mthreads for TLS and macro _MT.
-   QEMU_CFLAGS="-mthreads $QEMU_CFLAGS"
--  LIBS="-lwinmm -lws2_32 -liphlpapi $LIBS"
-+  LIBS="-lwinmm -lws2_32 -liphlpapi -lgdi32 $LIBS"
-   write_c_skeleton;
-   if compile_prog "" "-liberty" ; then
-     LIBS="-liberty $LIBS"
 diff -Nru ../orig/qemu-2.6.2/hw/Makefile.objs ./hw/Makefile.objs
 --- ../orig/qemu-2.6.2/hw/Makefile.objs	2016-09-29 12:59:39.000000000 -0700
-+++ ./hw/Makefile.objs	2021-04-01 01:04:28.894132000 -0700
++++ ./hw/Makefile.objs	2021-07-26 04:10:08.367661500 -0700
 @@ -6,6 +6,7 @@
  devices-dirs-$(CONFIG_SOFTMMU) += char/
  devices-dirs-$(CONFIG_SOFTMMU) += cpu/
@@ -40,7 +40,7 @@ diff -Nru ../orig/qemu-2.6.2/hw/Makefile.objs ./hw/Makefile.objs
  devices-dirs-$(CONFIG_SOFTMMU) += nvram/
 diff -Nru ../orig/qemu-2.6.2/hw/i386/pc.c ./hw/i386/pc.c
 --- ../orig/qemu-2.6.2/hw/i386/pc.c	2016-09-29 12:59:40.000000000 -0700
-+++ ./hw/i386/pc.c	2021-04-01 01:10:45.008780700 -0700
++++ ./hw/i386/pc.c	2021-07-26 04:15:14.066748500 -0700
 @@ -1537,6 +1537,28 @@
      if (create_fdctrl) {
          fdctrl_init_isa(isa_bus, fd);
@@ -94,7 +94,7 @@ diff -Nru ../orig/qemu-2.6.2/include/hw/i386/pc.h ./include/hw/i386/pc.h
  
 diff -Nru ../orig/qemu-2.6.2/include/sysemu/kvm.h ./include/sysemu/kvm.h
 --- ../orig/qemu-2.6.2/include/sysemu/kvm.h	2016-09-29 12:59:43.000000000 -0700
-+++ ./include/sysemu/kvm.h	2021-04-01 01:04:28.941139400 -0700
++++ ./include/sysemu/kvm.h	2021-07-26 04:10:08.404663300 -0700
 @@ -443,6 +443,8 @@
  
  #endif /* NEED_CPU_H */
@@ -106,31 +106,31 @@ diff -Nru ../orig/qemu-2.6.2/include/sysemu/kvm.h ./include/sysemu/kvm.h
  void kvm_cpu_synchronize_post_init(CPUState *cpu);
 diff -Nru ../orig/qemu-2.6.2/include/sysemu/whpx.h ./include/sysemu/whpx.h
 --- ../orig/qemu-2.6.2/include/sysemu/whpx.h	1969-12-31 16:00:00.000000000 -0800
-+++ ./include/sysemu/whpx.h	2021-04-01 01:29:12.947191700 -0700
++++ ./include/sysemu/whpx.h	2021-07-26 04:18:09.701086900 -0700
 @@ -0,0 +1,3 @@
 +#define whpx_update_guest_pa_range(...)
 +#define whpx_enabled() (0)
 +
 diff -Nru ../orig/qemu-2.6.2/include/ui/console.h ./include/ui/console.h
 --- ../orig/qemu-2.6.2/include/ui/console.h	2016-09-29 12:59:43.000000000 -0700
-+++ ./include/ui/console.h	2021-04-01 01:04:28.960117900 -0700
++++ ./include/ui/console.h	2021-07-26 04:10:08.424663100 -0700
 @@ -457,4 +457,21 @@
  void early_gtk_display_init(int opengl);
  void gtk_display_init(DisplayState *ds, bool full_screen, bool grab_on_hover);
  
 +/* glidewnd.c */
-+uintptr_t glide_prepare_window(int w, int h);
++void *glide_prepare_window(int, int);
 +void glide_release_window(void);
-+uint32_t glide_window_stat(int);
-+int glide_gui_getheight(void);
-+int glide_gui_fullscreen(void);
++int glide_window_stat(int);
++int glide_gui_fullscreen(int *, int *);
 +int is_glide_enabled(void);
 +void glide_enabled_set(void);
 +void glide_enabled_reset(void);
 +
 +/* mglcntx.c */
-+uintptr_t mesa_prepare_window(void);
++void *mesa_prepare_window(void);
 +void mesa_release_window(void);
++int mesa_gui_fullscreen(int *, int *);
 +int is_mesa_enabled(void);
 +void mesa_enabled_set(void);
 +void mesa_enabled_reset(void);
@@ -138,7 +138,7 @@ diff -Nru ../orig/qemu-2.6.2/include/ui/console.h ./include/ui/console.h
  #endif
 diff -Nru ../orig/qemu-2.6.2/ui/console.c ./ui/console.c
 --- ../orig/qemu-2.6.2/ui/console.c	2016-09-29 12:59:49.000000000 -0700
-+++ ./ui/console.c	2021-04-01 01:04:28.980118000 -0700
++++ ./ui/console.c	2021-07-26 04:10:08.446661300 -0700
 @@ -252,11 +252,25 @@
      ds->have_text = have_text;
  }
@@ -167,7 +167,7 @@ diff -Nru ../orig/qemu-2.6.2/ui/console.c ./ui/console.c
      }
 diff -Nru ../orig/qemu-2.6.2/ui/sdl.c ./ui/sdl.c
 --- ../orig/qemu-2.6.2/ui/sdl.c	2016-09-29 12:59:49.000000000 -0700
-+++ ./ui/sdl.c	2021-04-01 12:40:19.204876800 -0700
++++ ./ui/sdl.c	2021-07-26 04:37:43.430251900 -0700
 @@ -852,6 +852,10 @@
              break;
          case SDL_VIDEORESIZE:
@@ -179,24 +179,31 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl.c ./ui/sdl.c
              graphic_hw_invalidate(NULL);
              graphic_hw_update(NULL);
              break;
-@@ -922,6 +926,90 @@
+@@ -922,6 +926,112 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
-+uintptr_t glide_prepare_window(int w, int h)
++static void sdl_display_valid(const char *feat)
 +{
-+    uintptr_t hwndSDL = 0;
++    if (!guest_screen) {
++        error_report("%s: invalid sdl display. Use -display sdl", feat);
++        exit(1);
++    }
++}
++
++void *glide_prepare_window(int w, int h)
++{
++    void *hwndSDL = NULL;
 +    SDL_SysWMinfo wmi;
 +
-+    if (!guest_screen)
-+        return hwndSDL;
++    sdl_display_valid("glidept");
 +
 +    SDL_VERSION(&wmi.version);
 +    if(SDL_GetWMInfo(&wmi)) {
-+#if defined(SDL_VIDEO_DRIVER_X11)
-+	hwndSDL = (uintptr_t)wmi.info.x11.window;
-+#elif defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW)
-+	hwndSDL = (uintptr_t)wmi.window;
++#if defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW)
++	hwndSDL = (void *)wmi.window;
++#elif defined(SDL_VIDEO_DRIVER_X11)
++	hwndSDL = (void *)wmi.info.x11.window;
 +#else
 +#error Unsupported window binding
 +#endif
@@ -227,36 +234,41 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl.c ./ui/sdl.c
 +    SDL_PushEvent(ev);
 +}
 +
-+uint32_t glide_window_stat(int activate)
++int glide_window_stat(int activate)
 +{
-+    int scr_w, scr_h;
-+    uint32_t stat;
++    int scr_w, scr_h, stat;
 +    scr_w = real_screen->w;
 +    scr_h = real_screen->h;
 +    if (activate)
-+	stat = (uint32_t)(((scr_h & 0xFFFFU) << 0x10) | scr_w);
++	stat = (((scr_h & 0x7FFFU) << 0x10) | scr_w);
 +    else
-+	stat = (((gui_saved_height & 0xFFFFU) << 0x10) | gui_saved_width)? 1:0;
++	stat = (((gui_saved_height & 0x7FFFU) << 0x10) | gui_saved_width)? 1:0;
 +    return stat;
 +}
 +
-+int glide_gui_getheight(void) { return real_screen->h; }
-+int glide_gui_fullscreen(void) { return gui_fullscreen; }
-+
-+uintptr_t mesa_prepare_window(void)
++int glide_gui_fullscreen(int *width, int *height)
 +{
-+    uintptr_t hwndSDL = 0;
++    sdl_display_valid("glidept");
++    if (width)
++        *width = real_screen->w;
++    if (height)
++        *height = real_screen->h;
++    return gui_fullscreen;
++}
++
++void *mesa_prepare_window(void)
++{
++    void *hwndSDL = NULL;
 +    SDL_SysWMinfo wmi;
 +
-+    if (!guest_screen)
-+        return hwndSDL;
++    sdl_display_valid("mesapt");
 +
 +    SDL_VERSION(&wmi.version);
 +    if(SDL_GetWMInfo(&wmi)) {
-+#if defined(SDL_VIDEO_DRIVER_X11)
-+	hwndSDL = (uintptr_t)wmi.info.x11.window;
-+#elif defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW)
-+	hwndSDL = (uintptr_t)wmi.window;
++#if defined(SDL_VIDEO_DRIVER_WINDIB) || defined(SDL_VIDEO_DRIVER_DDRAW)
++	hwndSDL = (void *)wmi.window;
++#elif defined(SDL_VIDEO_DRIVER_X11)
++	hwndSDL = (void *)wmi.info.x11.window;
 +#else
 +#error Unsupported window binding
 +#endif
@@ -267,12 +279,22 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl.c ./ui/sdl.c
 +
 +void mesa_release_window(void) { }
 +
++int mesa_gui_fullscreen(int *width, int *height)
++{
++    sdl_display_valid("mesapt");
++    if (width)
++        *width = real_screen->w;
++    if (height)
++        *height = real_screen->h;
++    return gui_fullscreen;
++}
++
  static const DisplayChangeListenerOps dcl_ops = {
      .dpy_name             = "sdl",
      .dpy_gfx_update       = sdl_update,
 diff -Nru ../orig/qemu-2.6.2/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-2.6.2/ui/sdl2.c	2016-09-29 12:59:49.000000000 -0700
-+++ ./ui/sdl2.c	2021-04-01 01:04:29.007137000 -0700
++++ ./ui/sdl2.c	2021-07-26 04:10:08.474661400 -0700
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
@@ -297,26 +319,33 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl2.c ./ui/sdl2.c
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
-@@ -709,6 +719,101 @@
+@@ -709,6 +719,117 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
-+uintptr_t glide_prepare_window(int w, int h)
++static void sdl_display_valid(const char *feat)
 +{
-+    uintptr_t hwndSDL = 0;
++    if (!sdl2_console) {
++        error_report("%s: invalid sdl display. Use -display sdl", feat);
++        exit(1);
++    }
++}
++
++void *glide_prepare_window(int w, int h)
++{
++    void *hwndSDL = NULL;
 +    SDL_SysWMinfo wmi;
 +    SDL_Event ev1, *ev = &ev1;
 +    int scr_w, scr_h;
 +
-+    if (!sdl2_console)
-+        return hwndSDL;
++    sdl_display_valid("glidept");
 +
 +    SDL_VERSION(&wmi.version);
 +    if (SDL_GetWindowWMInfo(sdl2_console[0].real_window, &wmi)) {
 +#if defined(SDL_VIDEO_DRIVER_WINDOWS)	
-+	hwndSDL = (uintptr_t)wmi.info.win.window;
++	hwndSDL = (void *)wmi.info.win.window;
 +#elif defined(SDL_VIDEO_DRIVER_X11)
-+	hwndSDL = (uintptr_t)wmi.info.x11.window;
++	hwndSDL = (void *)wmi.info.x11.window;
 +#else
 +#error Unsupported window binding
 +#endif
@@ -351,41 +380,40 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl2.c ./ui/sdl2.c
 +    SDL_PushEvent(ev);
 +}
 +
-+uint32_t glide_window_stat(int activate)
++int glide_window_stat(int activate)
 +{
-+    int scr_w, scr_h;
-+    uint32_t stat;
++    int scr_w, scr_h, stat;
 +    SDL_GetWindowSize(sdl2_console[0].real_window, &scr_w, &scr_h);
 +    if (activate)
-+	stat = (uint32_t)(((scr_h & 0xFFFFU) << 0x10) | scr_w);
++	stat = (((scr_h & 0x7FFFU) << 0x10) | scr_w);
 +    else
-+	stat = (((gui_saved_height & 0xFFFFU) << 0x10) | gui_saved_width)? 1:0;
++	stat = (((gui_saved_height & 0x7FFFU) << 0x10) | gui_saved_width)? 1:0;
 +    return stat;
 +}
 +
-+int glide_gui_getheight(void)
++int glide_gui_fullscreen(int *width, int *height)
 +{
-+    int scr_w, scr_h;
-+    SDL_GetWindowSize(sdl2_console[0].real_window, &scr_w, &scr_h);
-+    return scr_h;
++    sdl_display_valid("glidept");
++    if (width)
++        *width = surface_width(sdl2_console[0].surface);
++    if (height)
++        *height = surface_height(sdl2_console[0].surface);
++    return gui_fullscreen;
 +}
 +
-+int glide_gui_fullscreen(void) { return gui_fullscreen; }
-+
-+uintptr_t mesa_prepare_window(void)
++void *mesa_prepare_window(void)
 +{
-+    uintptr_t hwndSDL = 0;
++    void *hwndSDL = NULL;
 +    SDL_SysWMinfo wmi;
 +
-+    if (!sdl2_console)
-+        return hwndSDL;
++    sdl_display_valid("mesapt");
 +
 +    SDL_VERSION(&wmi.version);
 +    if (SDL_GetWindowWMInfo(sdl2_console[0].real_window, &wmi)) {
 +#if defined(SDL_VIDEO_DRIVER_WINDOWS)	
-+	hwndSDL = (uintptr_t)wmi.info.win.window;
++	hwndSDL = (void *)wmi.info.win.window;
 +#elif defined(SDL_VIDEO_DRIVER_X11)
-+	hwndSDL = (uintptr_t)wmi.info.x11.window;
++	hwndSDL = (void *)wmi.info.x11.window;
 +#else
 +#error Unsupported window binding
 +#endif
@@ -396,12 +424,22 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl2.c ./ui/sdl2.c
 +
 +void mesa_release_window(void) { }
 +
++int mesa_gui_fullscreen(int *width, int *height)
++{
++    sdl_display_valid("mesapt");
++    if (width)
++        *width = surface_width(sdl2_console[0].surface);
++    if (height)
++        *height = surface_height(sdl2_console[0].surface);
++    return gui_fullscreen;
++}
++
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
 diff -Nru ../orig/qemu-2.6.2/vl.c ./vl.c
 --- ../orig/qemu-2.6.2/vl.c	2016-09-29 12:59:49.000000000 -0700
-+++ ./vl.c	2021-04-01 01:34:46.067063700 -0700
++++ ./vl.c	2021-07-26 04:35:11.178553700 -0700
 @@ -1943,6 +1943,13 @@
      } while (!main_loop_should_exit());
  }

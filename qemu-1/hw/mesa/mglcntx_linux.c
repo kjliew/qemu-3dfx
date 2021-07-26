@@ -410,7 +410,7 @@ int MGLSwapBuffers(void)
 static int MGLPresetPixelFormat(void)
 {
     dpy = XOpenDisplay(NULL);
-    win = mesa_prepare_window();
+    win = (Window)mesa_prepare_window();
     ImplMesaGLReset();
 
     int fbid, fbcnt, *attrib = iattribs_fb(GetContextMSAA());

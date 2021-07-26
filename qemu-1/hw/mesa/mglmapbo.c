@@ -19,6 +19,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "cpu.h"
 
 #include "mglfuncs.h"
 #include "mglmapbo.h"

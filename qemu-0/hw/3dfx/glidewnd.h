@@ -28,7 +28,7 @@ int glide_lfbmerge(void);
 int glide_lfbdirty(void);
 int glide_lfbnoaux(void);
 int glide_lfbmode(void);
-void glide_winres(const int, uint32_t *, uint32_t *);
+void glide_winres(const int, int *, int *);
 int stat_window(const int, const int);
 uint32_t init_window(const int, const char *);
 void fini_window(void);
