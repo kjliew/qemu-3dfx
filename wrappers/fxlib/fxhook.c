@@ -200,7 +200,7 @@ void HookTimeGetTime(const uint32_t caddr)
         addr += 0x04; \
     } \
     addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
-    patch = (uint32_t *)addr; \
+    patch = (uint32_t *)(addr & ~(si.dwPageSize - 1)); \
     HookParseRange(&addr, &patch, si.dwPageSize); \
     HookPatchTimer(addr, patch, si.dwPageSize - (((uint32_t)patch) & (si.dwPageSize - 1)));
     TICK_HOOK(0);
