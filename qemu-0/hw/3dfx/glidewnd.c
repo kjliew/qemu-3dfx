@@ -78,6 +78,7 @@ int glide_mapbufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
 #include "sysemu/kvm.h"
+
 int glide_mapbufo(mapbufo_t *bufo, int add)
 {
     int ret = (!cfg_lfbHandler && !cfg_lfbWriteMerge && cfg_lfbMapBufo)? kvm_enabled():0;
@@ -95,6 +96,7 @@ int glide_mapbufo(mapbufo_t *bufo, int add)
 #endif
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
 #include "sysemu/whpx.h"
+
 int glide_mapbufo(mapbufo_t *bufo, int add)
 {
     int ret = (!cfg_lfbHandler && !cfg_lfbWriteMerge && cfg_lfbMapBufo)? whpx_enabled():0;
@@ -375,7 +377,7 @@ static void profile_stat(void)
     if (p->last == 0) {
 	p->fcount = 0;
 	p->ftime = 0;
-	p->last = get_clock();
+	p->last = (glide_gui_fullscreen(0, 0))? 0:get_clock();
 	return;
     }
 

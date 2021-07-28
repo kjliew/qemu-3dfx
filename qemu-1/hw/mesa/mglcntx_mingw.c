@@ -30,9 +30,9 @@
 
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
-#include "sysemu/whpx.h"
 #include <GL/gl.h>
 #include <GL/wglext.h>
+#include "sysemu/whpx.h"
 
 static LONG WINAPI MGLWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -436,15 +436,20 @@ void MGLActivateHandler(int i)
                 mesa_enabled_set();
                 do {
                     int w, h, fullscreen = mesa_gui_fullscreen(&w, &h);
-                    DEVMODE DevMode = { .dmSize = sizeof(DEVMODE) };
+                    DEVMODE DevMode;
+                    memset(&DevMode, 0, sizeof(DEVMODE));
+                    DevMode.dmSize = sizeof(DEVMODE);
 
                     for (int i = 0; fullscreen && EnumDisplaySettings(NULL, i, &DevMode); i++) {
                         if ((DevMode.dmPelsWidth == w) && (DevMode.dmPelsHeight == h) &&
                             (DevMode.dmBitsPerPel == GetDeviceCaps(hDC, BITSPIXEL))) {
+                            DevMode.dmDisplayFrequency = GetDeviceCaps(hDC, VREFRESH);
                             DevMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
-                            LONG ret = ChangeDisplaySettings(&DevMode, CDS_FULLSCREEN);
-                            DPRINTF("Mode 0x%02x Fullscreen %4dx%d %lubpp %dHz ret %d", i, w, h,
-                                DevMode.dmBitsPerPel, GetDeviceCaps(hDC, VREFRESH),
+                            LONG ret = ChangeDisplaySettings(&DevMode, CDS_RESET | CDS_FULLSCREEN);
+                            Sleep(1000 / DevMode.dmDisplayFrequency);
+                            DPRINTF("Modeset 0x%02x Fullscreen %4lux%lu %lubpp %luHz ret %d", i,
+                                DevMode.dmPelsWidth, DevMode.dmPelsHeight,
+                                DevMode.dmBitsPerPel, DevMode.dmDisplayFrequency,
                                 (ret == DISP_CHANGE_SUCCESSFUL)? 1:0);
                             break;
                         }
@@ -452,8 +457,26 @@ void MGLActivateHandler(int i)
                 } while(0);
                 break;
             case WA_INACTIVE:
-                if (mesa_gui_fullscreen(0, 0))
-                    ChangeDisplaySettings(NULL, 0);
+                do {
+                    int w, h, fullscreen = mesa_gui_fullscreen(&w, &h);
+                    DEVMODE DevMode;
+                    memset(&DevMode, 0, sizeof(DEVMODE));
+                    DevMode.dmSize = sizeof(DEVMODE);
+                    DevMode.dmPelsWidth = w; DevMode.dmPelsHeight = h;
+                    DevMode.dmDisplayFrequency = GetDeviceCaps(hDC, VREFRESH);
+
+                    if (fullscreen && (ChangeDisplaySettings(NULL, 0) == DISP_CHANGE_SUCCESSFUL)) {
+                        Sleep(1000 / DevMode.dmDisplayFrequency);
+                        int ret = 1;
+                        while (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &DevMode) &&
+                                !(DevMode.dmPelsWidth - w) && !(DevMode.dmPelsHeight - h)) {
+                            ret++;
+                            Sleep(1000 / DevMode.dmDisplayFrequency);
+                        }
+                        DPRINTF("Restore mode %4lux%lu %lubpp %luHz ret %d", DevMode.dmPelsWidth, DevMode.dmPelsHeight,
+                            DevMode.dmBitsPerPel, DevMode.dmDisplayFrequency, ret);
+                    }
+                } while(0);
                 mesa_enabled_reset();
                 break;
         }
@@ -764,7 +787,7 @@ static void profile_stat(void)
     if (p->last == 0) {
 	p->fcount = 0;
 	p->ftime = 0;
-	p->last = get_clock();
+	p->last = (mesa_gui_fullscreen(0, 0))? 0:get_clock();
 	return;
     }
 

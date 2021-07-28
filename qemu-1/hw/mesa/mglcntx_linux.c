@@ -37,6 +37,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
 #include "sysemu/kvm.h"
+
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 {
     int ret = GetBufOAccelEN()? kvm_enabled():0;
@@ -214,6 +215,7 @@ static int *iattribs_fb(const int do_msaa)
 static Display     *dpy;
 static Window       win;
 static XVisualInfo *xvi;
+static int          xvidmode;
 static const char  *xstr;
 static GLXContext   ctx[MAX_LVLCNTX];
 
@@ -266,10 +268,11 @@ struct xgamma {
 
 static void MesaInitGammaRamp(void)
 {
-    int rampsz;
     struct xgamma GammaRamp;
-
-    XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+    int rampsz;
+    if (xvidmode)
+        XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+    else rampsz = 0;
     switch(rampsz) {
         case 0x100:
             for (int i = 0; i < rampsz; i++) {
@@ -426,6 +429,8 @@ static int MGLPresetPixelFormat(void)
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_SAMPLES, &cSampleBuf[1]);
     DPRINTF("FBConfig 0x%03x visual 0x%03lx nAux %d nSamples %d %d",
         fbid, xvi->visualid, cAuxBuffers, cSampleBuf[0], cSampleBuf[1]);
+    int major, minor;
+    xvidmode = XF86VidModeQueryExtension(dpy, &major, &minor)? 1:0;
     MesaInitGammaRamp();
     XFree(fbcnf);
     XFlush(dpy);
@@ -461,6 +466,8 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
 void MGLActivateHandler(int i)
 {
     static int last = 0;
+    static XF86VidModeModeInfo vidInfo;
+
 #define WA_ACTIVE 1
 #define WA_INACTIVE 0
     if (i != last) {
@@ -470,8 +477,55 @@ void MGLActivateHandler(int i)
         switch (i) {
             case WA_ACTIVE:
                 mesa_enabled_set();
+                do {
+                    int w, h, fullscreen = mesa_gui_fullscreen(&w, &h), modeset = 0, vidCount;
+                    XF86VidModeModeInfo **vidModes;
+                    if (xvidmode && XF86VidModeGetAllModeLines(dpy, DefaultScreen(dpy), &vidCount, &vidModes)) {
+                        memcpy(&vidInfo, vidModes[0], sizeof(XF86VidModeModeInfo));
+                        if ((vidInfo.hdisplay != w) && (vidInfo.vdisplay != h)) {
+                            int vidRef = (1000.f * vidInfo.dotclock) / (vidInfo.htotal * vidInfo.vtotal);
+                            for (int i = 0; fullscreen && (i < vidCount); i++) {
+                                int modeRef = (1000.f * vidModes[i]->dotclock) / (vidModes[i]->htotal * vidModes[i]->vtotal);
+                                if ((vidModes[i]->hdisplay == w) && (vidModes[i]->vdisplay == h) &&
+                                    (vidModes[i]->dotclock == vidInfo.dotclock) && /* VidModeExtension broken for XWayland & XQuartz */
+                                    (modeRef == vidRef)) {
+                                    if (XF86VidModeSwitchToMode(dpy, DefaultScreen(dpy), vidModes[i])) {
+                                        usleep((1000 * 1000) / vidRef);
+                                        modeset = XF86VidModeSetViewPort(dpy, DefaultScreen(dpy), 0, 0);
+                                    }
+                                    DPRINTF("Modeset 0x%02x Fullscreen %4dx%d %3dHz ret %d", i,
+                                        vidModes[i]->hdisplay, vidModes[i]->vdisplay, modeRef, (modeset)? 1:0);
+                                    break;
+                                }
+                            }
+                        }
+                        XFree(vidModes);
+                    }
+                    if (!modeset)
+                        memset(&vidInfo, 0, sizeof(XF86VidModeModeInfo));
+                } while(0);
                 break;
             case WA_INACTIVE:
+                do {
+                    int w, h, fullscreen = mesa_gui_fullscreen(&w, &h);
+                    XF86VidModeModeInfo **vidModes;
+                    if (fullscreen && vidInfo.dotclock &&
+                        XF86VidModeSwitchToMode(dpy, DefaultScreen(dpy), &vidInfo)) {
+                        int vidRef = (1000.f * vidInfo.dotclock) / (vidInfo.htotal * vidInfo.vtotal),
+                            vidCount;
+                        usleep((1000 * 1000) / vidRef);
+                        while (XF86VidModeGetAllModeLines(dpy, DefaultScreen(dpy), &vidCount, &vidModes)) {
+                            memcpy(&vidInfo, vidModes[0], sizeof(XF86VidModeModeInfo));
+                            XFree(vidModes);
+                            if ((!vidInfo.hdisplay - w) && !(vidInfo.vdisplay - h))
+                                usleep((1000 * 1000) / vidRef);
+                            else
+                                break;
+                        }
+                        DPRINTF("Restore mode %4dx%d %3dHz", vidInfo.hdisplay, vidInfo.vdisplay, vidRef);
+                        memset(&vidInfo, 0, sizeof(XF86VidModeModeInfo));
+                    }
+                } while(0);
                 mesa_enabled_reset();
                 break;
         }
@@ -718,7 +772,9 @@ void MGLFuncHandler(const char *name)
         struct xgamma xRamp;
         struct wgamma *wRamp = (struct wgamma *)&argsp[2];
         int rampsz;
-        XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+        if (xvidmode)
+            XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+        else rampsz = 0;
         if (rampsz)
             XF86VidModeGetGammaRamp(dpy, DefaultScreen(dpy), rampsz,
                 xRamp.r, xRamp.g, xRamp.b);
@@ -754,7 +810,9 @@ void MGLFuncHandler(const char *name)
         struct xgamma xRamp;
         struct wgamma *wRamp = (struct wgamma *)&argsp[0];
         int rampsz;
-        XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+        if (xvidmode)
+            XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
+        else rampsz = 0;
         switch(rampsz) {
             case 0x100:
                 memcpy(xRamp.r, wRamp->r, rampsz);
