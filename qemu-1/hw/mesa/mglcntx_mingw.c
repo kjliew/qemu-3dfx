@@ -191,7 +191,7 @@ static void MesaDisplayModeset(const int modeset)
                                 (DevMode.dmBitsPerPel == vidBpp)) {
                                 DevMode.dmDisplayFrequency = vidRef;
                                 DevMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
-                                LONG ret = ChangeDisplaySettings(&DevMode, CDS_FULLSCREEN);
+                                LONG ret = ChangeDisplaySettings(&DevMode, 0);
                                 Sleep(1000 / DevMode.dmDisplayFrequency);
                                 DPRINTF("Modeset 0x%02x Fullscreen %4lux%lu %lubpp %luHz ret %d", i,
                                     DevMode.dmPelsWidth, DevMode.dmPelsHeight,
@@ -500,8 +500,8 @@ void MGLActivateHandler(int i)
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
         switch (i) {
             case WA_ACTIVE:
-                mesa_enabled_set();
                 MesaDisplayModeset(i);
+                mesa_enabled_set();
                 break;
             case WA_INACTIVE:
                 mesa_enabled_reset();

@@ -475,6 +475,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
 
 int MGLSwapBuffers(void)
 {
+    MGLActivateHandler(1);
     glXSwapBuffers(dpy, win);
     return 1;
 }
@@ -543,8 +544,8 @@ void MGLActivateHandler(int i)
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
         switch (i) {
             case WA_ACTIVE:
-                mesa_enabled_set();
                 MesaDisplayModeset(i);
+                mesa_enabled_set();
                 break;
             case WA_INACTIVE:
                 mesa_enabled_reset();
@@ -617,7 +618,7 @@ void MGLFuncHandler(const char *name)
             argsp[0] = (val)? 0:1;
             return;
         }
-        /* XQuartz/GLX quirk */
+        /* XQuartz/GLX missing swap_control */
         if (!find_xstr(xstr, "GLX_MESA_swap_control") &&
             !find_xstr(xstr, "GLX_EXT_swap_control")) {
             argsp[0] = 1;
