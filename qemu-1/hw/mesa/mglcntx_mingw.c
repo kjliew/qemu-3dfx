@@ -216,7 +216,8 @@ static void MesaDisplayModeset(const int modeset)
                 if (fullscreen && (ChangeDisplaySettings(NULL, 0) == DISP_CHANGE_SUCCESSFUL)) {
                     Sleep(1000 / DevMode.dmDisplayFrequency);
                     int ret = 1;
-                    while (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &DevMode) &&
+                    while ((ret < (1000 / DevMode.dmDisplayFrequency)) &&
+                            EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &DevMode) &&
                             (DevMode.dmPelsWidth == w) && (DevMode.dmPelsHeight == h)) {
                         ret++;
                         Sleep(1000 / DevMode.dmDisplayFrequency);

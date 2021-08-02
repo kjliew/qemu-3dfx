@@ -352,7 +352,7 @@ static void MesaDisplayModeset(const int modeset)
                     XF86VidModeSwitchToMode(dpy, DefaultScreen(dpy), &vidInfo)) {
                     int ret = 0, vidRef = (1000.f * vidInfo.dotclock) / (vidInfo.htotal * vidInfo.vtotal), vidCount;
                     usleep((1000 * 1000) / vidRef);
-                    while (XF86VidModeGetAllModeLines(dpy, DefaultScreen(dpy), &vidCount, &vidModes)) {
+                    while ((ret < (1000 / vidRef)) && XF86VidModeGetAllModeLines(dpy, DefaultScreen(dpy), &vidCount, &vidModes)) {
                         memcpy(&vidInfo, vidModes[0], sizeof(XF86VidModeModeInfo));
                         XFree(vidModes);
                         ret++;

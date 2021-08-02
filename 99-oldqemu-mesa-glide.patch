@@ -1,6 +1,6 @@
 diff -Nru ../orig/qemu-2.6.2/configure ./configure
 --- ../orig/qemu-2.6.2/configure	2016-09-29 12:59:38.000000000 -0700
-+++ ./configure	2021-07-26 04:12:28.431367800 -0700
++++ ./configure	2021-08-02 15:37:16.958279400 -0700
 @@ -564,6 +564,8 @@
    else
      audio_drv_list=""
@@ -21,7 +21,7 @@ diff -Nru ../orig/qemu-2.6.2/configure ./configure
  
 diff -Nru ../orig/qemu-2.6.2/hw/Makefile.objs ./hw/Makefile.objs
 --- ../orig/qemu-2.6.2/hw/Makefile.objs	2016-09-29 12:59:39.000000000 -0700
-+++ ./hw/Makefile.objs	2021-07-26 04:10:08.367661500 -0700
++++ ./hw/Makefile.objs	2021-08-02 15:35:10.600469400 -0700
 @@ -6,6 +6,7 @@
  devices-dirs-$(CONFIG_SOFTMMU) += char/
  devices-dirs-$(CONFIG_SOFTMMU) += cpu/
@@ -40,7 +40,7 @@ diff -Nru ../orig/qemu-2.6.2/hw/Makefile.objs ./hw/Makefile.objs
  devices-dirs-$(CONFIG_SOFTMMU) += nvram/
 diff -Nru ../orig/qemu-2.6.2/hw/i386/pc.c ./hw/i386/pc.c
 --- ../orig/qemu-2.6.2/hw/i386/pc.c	2016-09-29 12:59:40.000000000 -0700
-+++ ./hw/i386/pc.c	2021-07-26 04:15:14.066748500 -0700
++++ ./hw/i386/pc.c	2021-08-02 15:39:06.830807600 -0700
 @@ -1537,6 +1537,28 @@
      if (create_fdctrl) {
          fdctrl_init_isa(isa_bus, fd);
@@ -72,8 +72,8 @@ diff -Nru ../orig/qemu-2.6.2/hw/i386/pc.c ./hw/i386/pc.c
  void pc_nic_init(ISABus *isa_bus, PCIBus *pci_bus)
 diff -Nru ../orig/qemu-2.6.2/include/hw/i386/pc.h ./include/hw/i386/pc.h
 --- ../orig/qemu-2.6.2/include/hw/i386/pc.h	2016-09-29 12:59:42.000000000 -0700
-+++ ./include/hw/i386/pc.h	2021-04-01 13:18:10.166090000 -0700
-@@ -198,6 +198,18 @@
++++ ./include/hw/i386/pc.h	2021-08-02 15:35:10.623470700 -0700
+@@ -198,6 +198,22 @@
  
  void gsi_handler(void *opaque, int n, int level);
  
@@ -94,7 +94,7 @@ diff -Nru ../orig/qemu-2.6.2/include/hw/i386/pc.h ./include/hw/i386/pc.h
  
 diff -Nru ../orig/qemu-2.6.2/include/sysemu/kvm.h ./include/sysemu/kvm.h
 --- ../orig/qemu-2.6.2/include/sysemu/kvm.h	2016-09-29 12:59:43.000000000 -0700
-+++ ./include/sysemu/kvm.h	2021-07-26 04:10:08.404663300 -0700
++++ ./include/sysemu/kvm.h	2021-08-02 15:35:10.637473600 -0700
 @@ -443,6 +443,8 @@
  
  #endif /* NEED_CPU_H */
@@ -113,7 +113,7 @@ diff -Nru ../orig/qemu-2.6.2/include/sysemu/whpx.h ./include/sysemu/whpx.h
 +
 diff -Nru ../orig/qemu-2.6.2/include/ui/console.h ./include/ui/console.h
 --- ../orig/qemu-2.6.2/include/ui/console.h	2016-09-29 12:59:43.000000000 -0700
-+++ ./include/ui/console.h	2021-07-26 04:10:08.424663100 -0700
++++ ./include/ui/console.h	2021-08-02 15:35:10.657473300 -0700
 @@ -457,4 +457,21 @@
  void early_gtk_display_init(int opengl);
  void gtk_display_init(DisplayState *ds, bool full_screen, bool grab_on_hover);
@@ -138,8 +138,8 @@ diff -Nru ../orig/qemu-2.6.2/include/ui/console.h ./include/ui/console.h
  #endif
 diff -Nru ../orig/qemu-2.6.2/ui/console.c ./ui/console.c
 --- ../orig/qemu-2.6.2/ui/console.c	2016-09-29 12:59:49.000000000 -0700
-+++ ./ui/console.c	2021-07-26 04:10:08.446661300 -0700
-@@ -252,11 +252,25 @@
++++ ./ui/console.c	2021-08-02 15:35:10.680474700 -0700
+@@ -252,12 +252,24 @@
      ds->have_text = have_text;
  }
  
@@ -158,17 +158,25 @@ diff -Nru ../orig/qemu-2.6.2/ui/console.c ./ui/console.c
      if (!con) {
          con = active_console;
      }
-+    if (is_glide_enabled())
-+        return;
-+    if (is_mesa_enabled())
-+        return;
      if (con && con->hw_ops->gfx_update) {
++        if (is_glide_enabled() || is_mesa_enabled()) { }
++        else
          con->hw_ops->gfx_update(con->hw);
      }
+ }
 diff -Nru ../orig/qemu-2.6.2/ui/sdl.c ./ui/sdl.c
 --- ../orig/qemu-2.6.2/ui/sdl.c	2016-09-29 12:59:49.000000000 -0700
-+++ ./ui/sdl.c	2021-07-26 04:37:43.430251900 -0700
-@@ -852,6 +852,10 @@
++++ ./ui/sdl.c	2021-08-02 15:35:10.694473200 -0700
+@@ -571,6 +571,8 @@
+         keycode = sdl_keyevent_to_keycode(&ev->key);
+         switch (keycode) {
+         case 0x21: /* 'f' key on US keyboard */
++            if (is_glide_enabled() || is_mesa_enabled())
++                break;
+             toggle_full_screen();
+             gui_keysym = 1;
+             break;
+@@ -852,6 +854,10 @@
              break;
          case SDL_VIDEORESIZE:
              sdl_scale(ev->resize.w, ev->resize.h);
@@ -179,7 +187,7 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl.c ./ui/sdl.c
              graphic_hw_invalidate(NULL);
              graphic_hw_update(NULL);
              break;
-@@ -922,6 +926,112 @@
+@@ -922,6 +928,112 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -294,7 +302,7 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl.c ./ui/sdl.c
      .dpy_gfx_update       = sdl_update,
 diff -Nru ../orig/qemu-2.6.2/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-2.6.2/ui/sdl2.c	2016-09-29 12:59:49.000000000 -0700
-+++ ./ui/sdl2.c	2021-07-26 04:10:08.474661400 -0700
++++ ./ui/sdl2.c	2021-08-02 15:35:10.707482000 -0700
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
@@ -304,7 +312,16 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl2.c ./ui/sdl2.c
  static int gui_saved_grab;
  static int gui_fullscreen;
  static int gui_noframe;
-@@ -546,6 +548,14 @@
+@@ -375,6 +377,8 @@
+             }
+             break;
+         case SDL_SCANCODE_F:
++            if (is_glide_enabled() || is_mesa_enabled())
++                break;
+             toggle_full_screen(scon);
+             gui_keysym = 1;
+             break;
+@@ -546,6 +550,14 @@
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_EXPOSED:
@@ -319,7 +336,7 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl2.c ./ui/sdl2.c
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
-@@ -709,6 +719,117 @@
+@@ -709,6 +721,117 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -439,7 +456,7 @@ diff -Nru ../orig/qemu-2.6.2/ui/sdl2.c ./ui/sdl2.c
      .dpy_gfx_update       = sdl2_2d_update,
 diff -Nru ../orig/qemu-2.6.2/vl.c ./vl.c
 --- ../orig/qemu-2.6.2/vl.c	2016-09-29 12:59:49.000000000 -0700
-+++ ./vl.c	2021-07-26 04:35:11.178553700 -0700
++++ ./vl.c	2021-08-02 15:35:10.722492200 -0700
 @@ -1943,6 +1943,13 @@
      } while (!main_loop_should_exit());
  }

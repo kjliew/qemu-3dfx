@@ -1,6 +1,6 @@
 diff -Nru ../orig/qemu-4.1.1/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
 --- ../orig/qemu-4.1.1/accel/kvm/kvm-all.c	2019-11-14 10:06:20.000000000 -0800
-+++ ./accel/kvm/kvm-all.c	2021-07-26 03:13:34.423157000 -0700
++++ ./accel/kvm/kvm-all.c	2021-08-02 15:25:09.025988600 -0700
 @@ -1023,6 +1023,41 @@
      kvm_slots_unlock(kml);
  }
@@ -45,7 +45,7 @@ diff -Nru ../orig/qemu-4.1.1/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
  {
 diff -Nru ../orig/qemu-4.1.1/configure ./configure
 --- ../orig/qemu-4.1.1/configure	2019-11-14 10:06:20.000000000 -0800
-+++ ./configure	2021-07-26 03:13:34.438154800 -0700
++++ ./configure	2021-08-02 15:25:09.040991000 -0700
 @@ -807,6 +807,8 @@
    else
      audio_drv_list=""
@@ -66,12 +66,12 @@ diff -Nru ../orig/qemu-4.1.1/configure ./configure
  ;;
 diff -Nru ../orig/qemu-4.1.1/hw/Makefile.objs ./hw/Makefile.objs
 --- ../orig/qemu-4.1.1/hw/Makefile.objs	2019-11-14 10:06:20.000000000 -0800
-+++ ./hw/Makefile.objs	2021-07-26 03:14:30.880806300 -0700
++++ ./hw/Makefile.objs	2021-08-02 15:26:38.262161000 -0700
 @@ -9,6 +9,7 @@
  devices-dirs-y += char/
  devices-dirs-y += cpu/
  devices-dirs-y += display/
-+devices-dirs-$(CONFIG_SOFTMMU) += 3dfx/
++devices-dirs-y += 3dfx/
  devices-dirs-y += dma/
  devices-dirs-y += gpio/
  devices-dirs-$(CONFIG_HYPERV) += hyperv/
@@ -79,13 +79,13 @@ diff -Nru ../orig/qemu-4.1.1/hw/Makefile.objs ./hw/Makefile.objs
  devices-dirs-$(CONFIG_IPACK) += ipack/
  devices-dirs-$(CONFIG_IPMI) += ipmi/
  devices-dirs-y += isa/
-+devices-dirs-$(CONFIG_SOFTMMU) += mesa/
++devices-dirs-y += mesa/
  devices-dirs-y += misc/
  devices-dirs-y += net/
  devices-dirs-y += rdma/
 diff -Nru ../orig/qemu-4.1.1/hw/i386/pc.c ./hw/i386/pc.c
 --- ../orig/qemu-4.1.1/hw/i386/pc.c	2019-11-14 10:06:20.000000000 -0800
-+++ ./hw/i386/pc.c	2021-07-26 03:13:34.463156700 -0700
++++ ./hw/i386/pc.c	2021-08-02 15:25:09.062995500 -0700
 @@ -2113,6 +2113,28 @@
  
      /* Super I/O */
@@ -117,7 +117,7 @@ diff -Nru ../orig/qemu-4.1.1/hw/i386/pc.c ./hw/i386/pc.c
  void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
 diff -Nru ../orig/qemu-4.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
 --- ../orig/qemu-4.1.1/include/hw/i386/pc.h	2019-11-14 10:06:20.000000000 -0800
-+++ ./include/hw/i386/pc.h	2021-07-26 03:13:34.477156500 -0700
++++ ./include/hw/i386/pc.h	2021-08-02 15:25:09.075992000 -0700
 @@ -173,6 +173,22 @@
  
  void gsi_handler(void *opaque, int n, int level);
@@ -143,7 +143,7 @@ diff -Nru ../orig/qemu-4.1.1/include/hw/i386/pc.h ./include/hw/i386/pc.h
  typedef uint32_t (VMPortReadFunc)(void *opaque, uint32_t address);
 diff -Nru ../orig/qemu-4.1.1/include/sysemu/kvm.h ./include/sysemu/kvm.h
 --- ../orig/qemu-4.1.1/include/sysemu/kvm.h	2019-11-14 10:06:20.000000000 -0800
-+++ ./include/sysemu/kvm.h	2021-07-26 03:13:34.490156400 -0700
++++ ./include/sysemu/kvm.h	2021-08-02 15:25:09.087989500 -0700
 @@ -475,6 +475,8 @@
 
  #endif /* NEED_CPU_H */
@@ -155,7 +155,7 @@ diff -Nru ../orig/qemu-4.1.1/include/sysemu/kvm.h ./include/sysemu/kvm.h
  void kvm_cpu_synchronize_post_init(CPUState *cpu);
 diff -Nru ../orig/qemu-4.1.1/include/sysemu/whpx.h ./include/sysemu/whpx.h
 --- ../orig/qemu-4.1.1/include/sysemu/whpx.h	2019-11-14 10:06:20.000000000 -0800
-+++ ./include/sysemu/whpx.h	2021-07-26 03:13:34.501156200 -0700
++++ ./include/sysemu/whpx.h	2021-08-02 15:25:09.099990900 -0700
 @@ -19,6 +19,7 @@
  void whpx_destroy_vcpu(CPUState *cpu);
  void whpx_vcpu_kick(CPUState *cpu);
@@ -166,7 +166,7 @@ diff -Nru ../orig/qemu-4.1.1/include/sysemu/whpx.h ./include/sysemu/whpx.h
  void whpx_cpu_synchronize_post_reset(CPUState *cpu);
 diff -Nru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
 --- ../orig/qemu-4.1.1/include/ui/console.h	2019-11-14 10:06:20.000000000 -0800
-+++ ./include/ui/console.h	2021-07-26 03:13:34.508157000 -0700
++++ ./include/ui/console.h	2021-08-02 15:25:09.105988600 -0700
 @@ -453,4 +453,21 @@
  /* input.c */
  int index_from_key(const char *key, size_t key_length);
@@ -191,7 +191,7 @@ diff -Nru ../orig/qemu-4.1.1/include/ui/console.h ./include/ui/console.h
  #endif
 diff -Nru ../orig/qemu-4.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
 --- ../orig/qemu-4.1.1/target/i386/whpx-all.c	2019-11-14 10:06:21.000000000 -0800
-+++ ./target/i386/whpx-all.c	2021-07-26 03:13:34.522157000 -0700
++++ ./target/i386/whpx-all.c	2021-08-02 15:25:09.117988300 -0700
 @@ -10,6 +10,7 @@
 
  #include "qemu/osdep.h"
@@ -241,8 +241,8 @@ diff -Nru ../orig/qemu-4.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
  {
 diff -Nru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
 --- ../orig/qemu-4.1.1/ui/console.c	2019-11-14 10:06:21.000000000 -0800
-+++ ./ui/console.c	2021-07-26 03:13:34.536156600 -0700
-@@ -259,11 +259,25 @@
++++ ./ui/console.c	2021-08-02 15:25:09.131989600 -0700
+@@ -259,12 +259,24 @@
      ds->have_text = have_text;
  }
  
@@ -261,16 +261,15 @@ diff -Nru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
      if (!con) {
          con = active_console;
      }
-+    if (is_glide_enabled())
-+        return;
-+    if (is_mesa_enabled())
-+        return;
      if (con && con->hw_ops->gfx_update) {
++        if (is_glide_enabled() || is_mesa_enabled()) { }
++        else
          con->hw_ops->gfx_update(con->hw);
      }
+ }
 diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-4.1.1/ui/sdl2.c	2019-11-14 10:06:21.000000000 -0800
-+++ ./ui/sdl2.c	2021-07-26 03:13:34.559156500 -0700
++++ ./ui/sdl2.c	2021-08-02 15:25:09.152988100 -0700
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
@@ -280,7 +279,16 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
  static int gui_saved_grab;
  static int gui_fullscreen;
  static int gui_grab_code = KMOD_LALT | KMOD_LCTRL;
-@@ -528,6 +530,14 @@
+@@ -359,6 +361,8 @@
+             }
+             break;
+         case SDL_SCANCODE_F:
++            if (is_glide_enabled() || is_mesa_enabled())
++                break;
+             toggle_full_screen(scon);
+             gui_keysym = 1;
+             break;
+@@ -528,6 +532,14 @@
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_EXPOSED:
@@ -295,7 +303,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
-@@ -712,6 +722,117 @@
+@@ -712,6 +724,117 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -415,7 +423,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
      .dpy_gfx_update       = sdl2_2d_update,
 diff -Nru ../orig/qemu-4.1.1/vl.c ./vl.c
 --- ../orig/qemu-4.1.1/vl.c	2019-11-14 10:06:21.000000000 -0800
-+++ ./vl.c	2021-07-26 03:13:34.575156700 -0700
++++ ./vl.c	2021-08-02 15:25:09.167988700 -0700
 @@ -1795,6 +1795,13 @@
      }
  }

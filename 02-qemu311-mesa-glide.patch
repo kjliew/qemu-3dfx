@@ -241,8 +241,8 @@ diff -Nru ../orig/qemu-3.1.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
  {
 diff -Nru ../orig/qemu-3.1.1.1/ui/console.c ./ui/console.c
 --- ../orig/qemu-3.1.1.1/ui/console.c	2019-10-01 15:31:46.000000000 -0700
-+++ ./ui/console.c	2020-11-05 02:56:13.405910500 -0800
-@@ -258,11 +258,25 @@
++++ ./ui/console.c	2021-08-02 15:06:30.972250800 -0700
+@@ -258,12 +258,24 @@
      ds->have_text = have_text;
  }
  
@@ -261,17 +261,25 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/console.c ./ui/console.c
      if (!con) {
          con = active_console;
      }
-+    if (is_glide_enabled())
-+        return;
-+    if (is_mesa_enabled())
-+        return;
      if (con && con->hw_ops->gfx_update) {
++        if (is_glide_enabled() || is_mesa_enabled()) { }
++        else
          con->hw_ops->gfx_update(con->hw);
      }
+ }
 diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
 --- ../orig/qemu-3.1.1.1/ui/sdl.c	2019-10-01 15:31:46.000000000 -0700
-+++ ./ui/sdl.c	2021-07-26 01:42:59.079422300 -0700
-@@ -822,6 +822,10 @@
++++ ./ui/sdl.c	2021-08-02 15:14:16.596986400 -0700
+@@ -541,6 +541,8 @@
+         keycode = sdl_keyevent_to_keycode(&ev->key);
+         switch (keycode) {
+         case 0x21: /* 'f' key on US keyboard */
++            if (is_glide_enabled() || is_mesa_enabled())
++                break;
+             toggle_full_screen();
+             gui_keysym = 1;
+             break;
+@@ -822,6 +824,10 @@
              break;
          case SDL_VIDEORESIZE:
              sdl_scale(ev->resize.w, ev->resize.h);
@@ -282,7 +290,7 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
              graphic_hw_invalidate(NULL);
              graphic_hw_update(NULL);
              break;
-@@ -892,6 +896,112 @@
+@@ -892,6 +898,112 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -397,7 +405,7 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl.c ./ui/sdl.c
      .dpy_gfx_update       = sdl_update,
 diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-3.1.1.1/ui/sdl2.c	2019-10-01 15:31:46.000000000 -0700
-+++ ./ui/sdl2.c	2021-07-26 01:29:43.018541700 -0700
++++ ./ui/sdl2.c	2021-08-02 15:07:26.817890200 -0700
 @@ -36,6 +36,8 @@
  static SDL_Surface *guest_sprite_surface;
  static int gui_grab; /* if true, all keyboard/mouse events are grabbed */
@@ -407,7 +415,16 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
  static int gui_saved_grab;
  static int gui_fullscreen;
  static int gui_keysym;
-@@ -535,6 +537,14 @@
+@@ -359,6 +361,8 @@
+             }
+             break;
+         case SDL_SCANCODE_F:
++            if (is_glide_enabled() || is_mesa_enabled())
++                break;
+             toggle_full_screen(scon);
+             gui_keysym = 1;
+             break;
+@@ -535,6 +539,14 @@
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_EXPOSED:
@@ -422,7 +439,7 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
-@@ -719,6 +729,117 @@
+@@ -719,6 +731,117 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -542,7 +559,7 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
      .dpy_gfx_update       = sdl2_2d_update,
 diff -Nru ../orig/qemu-3.1.1.1/vl.c ./vl.c
 --- ../orig/qemu-3.1.1.1/vl.c	2019-10-01 15:31:47.000000000 -0700
-+++ ./vl.c	2021-07-08 23:17:20.943367200 -0700
++++ ./vl.c	2021-07-29 17:27:27.411089200 -0700
 @@ -1896,6 +1896,13 @@
      }
  }
@@ -557,7 +574,7 @@ diff -Nru ../orig/qemu-3.1.1.1/vl.c ./vl.c
  static void version(void)
  {
      printf("QEMU emulator version " QEMU_FULL_VERSION "\n"
-@@ -3292,6 +3299,7 @@
+@@ -3292,6 +3308,7 @@
                  break;
              case QEMU_OPTION_version:
                  version();
