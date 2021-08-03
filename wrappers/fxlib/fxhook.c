@@ -79,7 +79,7 @@ static DWORD WINAPI elapsedTickProc(LARGE_INTEGER *count)
     else
         __atomic_store_n(&tick->run.u.LowPart, ((tick->run.u.LowPart & 0xFF000000U) | t), __ATOMIC_RELAXED);
 
-    if (count)
+    if (count && !IsBadWritePtr(count, sizeof(LARGE_INTEGER)))
         __atomic_store_n(&count->QuadPart, ((tick->run.QuadPart * tick->freq.QuadPart) / TICK_ACPI), __ATOMIC_RELAXED);
     return TRUE;
 }
