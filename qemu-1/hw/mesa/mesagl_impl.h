@@ -33,7 +33,7 @@ int ExtFuncIsValid(char *);
 int wrMapOrderPoints(uint32_t);
 int wrTexSizeTexture(uint32_t, uint32_t, int);
 int wrGetParamIa1p2(int, uint32_t, uint32_t);
-void wrFillBufObj(uint32_t, void *, uint32_t, uint32_t);
+void wrFillBufObj(uint32_t, void *, mapbufo_t *);
 void wrFlushBufObj(uint32_t, mapbufo_t *);
 const char *getGLFuncStr(int);
 void doMesaFunc(int, uint32_t *, uintptr_t *, uintptr_t *);
