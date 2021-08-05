@@ -68,20 +68,29 @@ static void HookTimeTckRef(struct tckRef **tick)
         *tick = &ref;
 }
 
-static DWORD WINAPI elapsedTickProc(LARGE_INTEGER *count)
+static BOOL WINAPI elapsedTickProc(LARGE_INTEGER *count)
 {
     struct tckRef *tick;
-    DWORD t = acpi_tick_asm();
+    uintptr_t aligned = (uintptr_t)count;
     HookTimeTckRef(&tick);
 
-    if ((tick->run.u.LowPart & 0x00FFFFFFU) > t)
-        __atomic_store_n(&tick->run.QuadPart, ((((tick->run.QuadPart >> 24) + 1) << 24) | t), __ATOMIC_RELAXED);
-    else
-        __atomic_store_n(&tick->run.u.LowPart, ((tick->run.u.LowPart & 0xFF000000U) | t), __ATOMIC_RELAXED);
+    if (tick->freq.QuadPart < TICK_8254) {
+        DWORD t = acpi_tick_asm();
+        if ((tick->run.u.LowPart & 0x00FFFFFFU) > t)
+            __atomic_store_n(&tick->run.QuadPart, ((((tick->run.QuadPart >> 24) + 1) << 24) | t), __ATOMIC_RELAXED);
+        else
+            __atomic_store_n(&tick->run.u.LowPart, ((tick->run.u.LowPart & 0xFF000000U) | t), __ATOMIC_RELAXED);
 
-    if (count && !IsBadWritePtr(count, sizeof(LARGE_INTEGER)))
-        __atomic_store_n(&count->QuadPart, ((tick->run.QuadPart * tick->freq.QuadPart) / TICK_ACPI), __ATOMIC_RELAXED);
-    return TRUE;
+        if (count && !(aligned & (sizeof(uintptr_t)-1)) && !IsBadWritePtr(count, sizeof(LARGE_INTEGER))) {
+            __atomic_store_n(&count->QuadPart, ((tick->run.QuadPart * tick->freq.QuadPart) / TICK_ACPI), __ATOMIC_RELAXED);
+            SetLastError(0);
+            return TRUE;
+        }
+    }
+    else if (count && !(aligned & (sizeof(uintptr_t)-1)) && !IsBadWritePtr(count, sizeof(LARGE_INTEGER)))
+        return QueryPerformanceCounter(count);
+    SetLastError(ERROR_NOACCESS);
+    return FALSE;
 }
 
 static DWORD WINAPI TimeHookProc(void)
@@ -95,6 +104,8 @@ static DWORD WINAPI TimeHookProc(void)
         QueryPerformanceCounter(&li);
     return (li.QuadPart * 1000) / tick->freq.QuadPart;
 }
+#undef TICK_8254
+#undef TICK_ACPI
 
 void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
 {
@@ -125,18 +136,13 @@ void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
 
 static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWORD range)
 {
-    struct tckRef *tick;
     DWORD oldProt;
     uint32_t addr = start, *patch = (uint32_t *)iat;
-    HookTimeTckRef(&tick);
 
     if (addr && (addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
         DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), "timeGetTime"),
-              hkPerf = (tick->freq.QuadPart < TICK_8254)?
-              (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), "QueryPerformanceCounter"):0;
-#undef TICK_8254
-#undef TICK_ACPI
+              hkPerf = (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), "QueryPerformanceCounter");
         for (int i = 0; i < (range >> 2); i++) {
             if (hkTime && (hkTime == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);
