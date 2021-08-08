@@ -16483,21 +16483,24 @@ static void HookPatchGamma(const uint32_t start, const uint32_t *iat, const DWOR
 {
     DWORD oldProt;
     uint32_t addr = start, *patch = (uint32_t *)iat;
+    const char fnGetGamma[] = "GetDeviceGammaRamp", fnSetGamma[] = "SetDeviceGammaRamp";
 
     if ((addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
-        DWORD hkGet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDeviceGammaRamp"),
-              hkSet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), "SetDeviceGammaRamp");
+        DWORD hkGet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), fnGetGamma),
+              hkSet = (DWORD)GetProcAddress(GetModuleHandle("gdi32.dll"), fnSetGamma);
         for (int i = 0; i < (PAGE_SIZE >> 2); i++) {
             if (hkGet && (hkGet == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);
                 patch[i] = (uint32_t)&wglGetDeviceGammaRamp3DFX;
                 hkGet = 0;
+                OHST_DMESG("..hooked %s", fnGetGamma);
             }
             if (hkSet && (hkSet == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);
                 patch[i] = (uint32_t)&wglSetDeviceGammaRamp3DFX;
                 hkSet = 0;
+                OHST_DMESG("..hooked %s", fnSetGamma);
             }
             if (!hkGet && !hkSet)
                 break;
@@ -16521,11 +16524,12 @@ void HookDeviceGammaRamp(const uint32_t caddr)
     }
 #define GLGAMMA_HOOK(mod) \
     addr = (uint32_t)GetModuleHandle(mod); \
-    for (int i = 0; addr && (i < (PAGE_SIZE >> 2)); i++) { \
+    for (int i = 0; addr && (i < PAGE_SIZE); i+=0x04) { \
         if (0x4550U == *(uint32_t *)addr) break; \
         addr += 0x04; \
     } \
     addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
+    patch = (uint32_t *)(addr & ~(PAGE_SIZE - 1)); \
     HookParseRange(&addr, &patch, PAGE_SIZE); \
     HookPatchGamma(addr, patch, PAGE_SIZE - (((uint32_t)patch) & (PAGE_SIZE - 1)));
     GLGAMMA_HOOK("opengldrv.dll");

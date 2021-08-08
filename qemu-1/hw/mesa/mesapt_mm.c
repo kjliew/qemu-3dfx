@@ -1792,9 +1792,10 @@ static void processFRet(MesaPTState *s)
             break;
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
-            if (!MGLUpdateGuestBufo(s->BufObj, 0)) {
-                if (s->szUsedBuf == s->BufObj->mused + ALIGNBO(s->BufObj->mapsz))
-                    s->szUsedBuf -= ALIGNBO(s->BufObj->mapsz);
+            if (MGLUpdateGuestBufo(s->BufObj, 0)) { }
+            else {
+                s->szUsedBuf -= (s->szUsedBuf == (s->BufObj->mused + ALIGNBO(s->BufObj->mapsz)))?
+                    ALIGNBO(s->BufObj->mapsz):0;
             }
             s->szUsedBuf = FreeBufObj(s->BufIdx)? s->szUsedBuf:0;
             //DPRINTF("UnmapBuffer %x used %x idx %x", s->arg[0], s->szUsedBuf, s->BufIdx);
@@ -2059,7 +2060,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
         }
     }
     else if (addr == 0xFC0) {
-        if (s->mglContext && s->mglCntxCurrent) {
+        if ((s->mglContext && s->mglCntxCurrent) ||
+            (FEnum_glDebugMessageInsertARB == val)) {
             s->FEnum = val;
             processFifo(s);
             processArgs(s);

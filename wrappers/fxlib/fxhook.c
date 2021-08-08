@@ -115,7 +115,7 @@ void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
     if (addr && (0x4550U == *(uint32_t *)addr)) {
         for (int i = 0; i < range; i += 0x04) {
             if (!memcmp((void *)(addr + i), idata, sizeof(idata))) {
-                addr += ((uint32_t *)(addr + i))[3];
+                addr = (addr & ~(range - 1)) + ((uint32_t *)(addr + i))[3];
                 *iat = (uint32_t *)addr;
                 *start = addr;
                 break;
@@ -125,7 +125,7 @@ void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
             if (addr == (uint32_t)(*iat))
                 break;
             if (!memcmp((void *)(addr + i), rdata, sizeof(rdata))) {
-                addr += ((uint32_t *)(addr + i))[3];
+                addr = (addr & ~(range - 1)) + ((uint32_t *)(addr + i))[3];
                 *iat = (uint32_t *)addr;
                 *start = addr;
                 break;
@@ -134,25 +134,39 @@ void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
     }
 }
 
+#define PT_CALL __stdcall
+#define ALIGNED(x) ((x%8)?(((x>>3)+1)<<3):x)
+#include "mgldefs.h"
+#define OHST_DMESG(fmt, ...) \
+    do { void PT_CALL glDebugMessageInsertARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5); \
+        FILE *f = fopen("NUL", "w"); int c = fprintf(f, fmt, ##__VA_ARGS__); fclose(f); \
+        char *str = HeapAlloc(GetProcessHeap(), 0, ALIGNED((c+1))); \
+        sprintf(str, fmt, ##__VA_ARGS__); \
+        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW, -1, (c+1), (uint32_t)str); \
+        HeapFree(GetProcessHeap(), 0, str); \
+    } while(0)
 static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWORD range)
 {
     DWORD oldProt;
     uint32_t addr = start, *patch = (uint32_t *)iat;
+    const char funcTime[] = "timeGetTime", funcPerf[] = "QueryPerformanceCounter";
 
     if (addr && (addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
-        DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), "timeGetTime"),
-              hkPerf = (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), "QueryPerformanceCounter");
+        DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcTime),
+              hkPerf = (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf);
         for (int i = 0; i < (range >> 2); i++) {
             if (hkTime && (hkTime == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);
                 patch[i] = (uint32_t)&TimeHookProc;
                 hkTime = 0;
+                OHST_DMESG("..hooked %s", funcTime);
             }
             if (hkPerf && (hkPerf == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);
                 patch[i] = (uint32_t)&elapsedTickProc;
                 hkPerf = 0;
+                OHST_DMESG("..hooked %s", funcPerf);
             }
             if (!hkTime && !hkPerf)
                 break;
