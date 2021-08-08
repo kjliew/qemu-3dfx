@@ -355,7 +355,7 @@ static void InitClientStates(void)
         FILE *f = fopen("NUL", "w"); int c = fprintf(f, fmt, ##__VA_ARGS__); fclose(f); \
         char *str = HeapAlloc(GetProcessHeap(), 0, ALIGNED((c+1))); \
         sprintf(str, fmt, ##__VA_ARGS__); \
-        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW, -1, (c+1), (uint32_t)str); \
+        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW_ARB, -1, (c+1), (uint32_t)str); \
         HeapFree(GetProcessHeap(), 0, str); \
     } while(0)
 

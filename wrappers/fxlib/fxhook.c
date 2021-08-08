@@ -134,17 +134,23 @@ void HookParseRange(uint32_t *start, uint32_t **iat, const DWORD range)
     }
 }
 
+#ifdef __REV__
+#define OHST_DMESG(fmt, ...)
+#else
 #define PT_CALL __stdcall
 #define ALIGNED(x) ((x%8)?(((x>>3)+1)<<3):x)
-#include "mgldefs.h"
+#define GL_DEBUG_SOURCE_OTHER_ARB         0x824B
+#define GL_DEBUG_TYPE_OTHER_ARB           0x8251
+#define GL_DEBUG_SEVERITY_LOW_ARB         0x9148
 #define OHST_DMESG(fmt, ...) \
     do { void PT_CALL glDebugMessageInsertARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5); \
         FILE *f = fopen("NUL", "w"); int c = fprintf(f, fmt, ##__VA_ARGS__); fclose(f); \
         char *str = HeapAlloc(GetProcessHeap(), 0, ALIGNED((c+1))); \
         sprintf(str, fmt, ##__VA_ARGS__); \
-        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW, -1, (c+1), (uint32_t)str); \
+        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW_ARB, -1, (c+1), (uint32_t)str); \
         HeapFree(GetProcessHeap(), 0, str); \
     } while(0)
+#endif
 static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWORD range)
 {
     DWORD oldProt;
