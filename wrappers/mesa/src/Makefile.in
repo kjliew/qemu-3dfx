@@ -7,7 +7,7 @@ DLLTOOL=dlltool
 STRIP=strip
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -I$(FXLIB) -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
-LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--dynamicbase -Wl,--nxcompat
+LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--no-seh -Wl,--dynamicbase -Wl,--nxcompat
 SRCDIR=../src
 TARGET=opengl32.dll
 TOOLS=wglinfo.exe
@@ -36,8 +36,8 @@ $(TOOLS):
 	@$(CC) $(CFLAGS) -s -o $@ $(SRCDIR)/wglinfo.c $(LDFLAGS) -lgdi32 -lopengl32
 
 stamp.o:
-	@echo "  REV stamp"
 	@git rev-parse HEAD | sed "s/\(.......\).*/const\ char\ rev_\[\]\ =\ \"\1\-\";/" > /tmp/$(@:o=c)
+	@echo -n "  REV $@"; cat /tmp/$(@:o=c) | sed "s/.*rev_\[\]\ =//;s/;//"
 	@$(CC) -c -o $@ /tmp/$(@:o=c)
 
 fxlib:
