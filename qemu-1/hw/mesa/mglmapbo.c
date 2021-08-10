@@ -94,27 +94,32 @@ int FreeBufObj(const int idx)
     return cnt;
 }
 
-void MapBufObjGpa(mapbufo_t *bufo)
+int MapBufObjGpa(mapbufo_t *bufo)
 {
     PMAPBO curr = pbufo;
+    int ret = 0;
 
     bufo->gpa = bufo->hva & (MBUFO_SIZE - 1);
     if (bufo != &curr->bo) {
         uintptr_t addr_lo = MBUFO_SIZE - 1, addr_hi = 0;
-        uint32_t bufo_sz = bufo->mapsz + (uint32_t)(bufo->hva & (qemu_real_host_page_size - 1));
+        uint32_t bufo_sz = ALIGNBO(bufo->mapsz) + (uint32_t)(bufo->hva & (qemu_real_host_page_size - 1));
         while (bufo != &curr->bo) {
             uint32_t curr_sz = curr->bo.mapsz + (uint32_t)(curr->bo.hva & (qemu_real_host_page_size - 1));
-            addr_lo = (curr->bo.gpa < addr_lo)? curr->bo.gpa:addr_lo;
-            addr_hi = ((curr->bo.gpa + curr_sz) > addr_hi)? ((curr->bo.gpa) + curr_sz):addr_hi;
+            addr_lo = ((curr->bo.gpa & qemu_real_host_page_mask) < addr_lo)?
+                (curr->bo.gpa & qemu_real_host_page_mask):addr_lo;
+            addr_hi = (((curr->bo.gpa + curr_sz) & qemu_real_host_page_mask) > addr_hi)?
+                ((curr->bo.gpa + curr_sz) & qemu_real_host_page_mask):addr_hi;
             curr = curr->next;
+            ret++;
         }
         if (((bufo->gpa + bufo_sz) < addr_lo) || (bufo->gpa >= addr_hi))
-            return;
+            return ret;
         bufo->gpa = 0;
         if (!bufo->gpa && (addr_lo > bufo_sz))
             bufo->gpa = addr_lo - bufo_sz;
         if (!bufo->gpa && ((addr_hi + bufo_sz) < MBUFO_SIZE))
             bufo->gpa = addr_hi;
     }
+    return ret;
 }
 

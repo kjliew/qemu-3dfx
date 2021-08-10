@@ -45,8 +45,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
     int ret = GetBufOAccelEN()? kvm_enabled():0;
 
     if (ret && bufo) {
-        if (add)
-            MapBufObjGpa(bufo);
+        bufo->lvl = (add)? MapBufObjGpa(bufo):0;
         kvm_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
             bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
             (void *)(bufo->hva & qemu_real_host_page_mask),

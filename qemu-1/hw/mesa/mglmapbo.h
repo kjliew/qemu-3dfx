@@ -23,6 +23,7 @@
 
 typedef struct {
     int idx;
+    int lvl;
     uintptr_t hva;
     uintptr_t gpa;
     uint32_t mused;
@@ -35,7 +36,7 @@ typedef struct {
 void InitBufObj(void);
 mapbufo_t *LookupBufObj(const int);
 int FreeBufObj(const int);
-void MapBufObjGpa(mapbufo_t *);
+int MapBufObjGpa(mapbufo_t *);
 
 #endif //_MGL_MAPBO_H
 

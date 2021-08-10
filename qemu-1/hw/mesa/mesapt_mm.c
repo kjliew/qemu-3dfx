@@ -1312,6 +1312,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glFlushMappedBufferRangeAPPLE:
         case FEnum_glFlushMappedNamedBufferRange:
         case FEnum_glMapBufferRange:
+#define MGL_BUFO_TRACE 0
             s->parg[1] = s->arg[1];
             s->parg[2] = s->arg[2];
             s->BufObj = LookupBufObj(s->BufIdx);
@@ -1320,13 +1321,17 @@ static void processArgs(MesaPTState *s)
             if (s->FEnum == FEnum_glMapBufferRange) {
                 s->BufObj->acc = s->arg[3];
                 wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE - s->szUsedBuf), s->BufObj);
-                //DPRINTF("MapBufferRange %x %x %x %x idx %x used %x", s->arg[0], s->arg[1], s->arg[2], s->arg[3], s->BufIdx, s->szUsedBuf);
+                DPRINTF_COND(MGL_BUFO_TRACE, "Target %04x offst %08x range %08x acc %04x used %x %s",
+                    s->arg[0], s->arg[1], s->arg[2], s->arg[3], s->szUsedBuf, "mapped");
             }
             else {
                 wrFlushBufObj(s->arg[0], s->BufObj);
                 if (s->FEnum == FEnum_glFlushMappedBufferRangeAPPLE)
                     s->BufObj->acc |= GL_MAP_FLUSH_EXPLICIT_BIT;
-                //DPRINTF("FlushMappedBufferRange %x %x %x idx %x", s->arg[0], s->arg[1], s->arg[2], s->BufIdx);
+                DPRINTF_COND(MGL_BUFO_TRACE, "Gpa %p Hva %p target %04x offst %08x range %08x %s",
+                    (void *)(s->BufObj->gpa - ALIGNBO(s->BufObj->mapsz) + s->BufObj->offst),
+                    (void *)(s->BufObj->hva + s->BufObj->offst),
+                    s->arg[0], s->arg[1], s->arg[2], "flushed");
             }
             break;
         case FEnum_glMapBuffer:
@@ -1343,6 +1348,8 @@ static void processArgs(MesaPTState *s)
             s->BufObj = LookupBufObj(s->BufIdx);
             if ((s->BufObj->acc & (GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT)) == GL_MAP_WRITE_BIT)
                 wrFlushBufObj(s->arg[0], s->BufObj);
+            DPRINTF_COND(MGL_BUFO_TRACE, "Target %04x acc %04x used %x %x %s", s->arg[0], s->BufObj->acc,
+                (s->BufObj->mused + ALIGNBO(s->BufObj->mapsz)), s->szUsedBuf, "unmapped");
             break;
         case FEnum_glGetTexImage:
             s->parg[0] = s->arg[4];
@@ -1788,7 +1795,8 @@ static void processFRet(MesaPTState *s)
                 s->szUsedBuf += ALIGNBO(s->BufObj->mapsz);
                 s->FRet = s->szUsedBuf + 1;
             }
-            //DPRINTF("MapBuffer hva %p gpa %p sz %x", (void *)s->BufObj->hva, (void *)(s->BufObj->gpa - ALIGNED(s->BufObj->mapsz)), (((uint32_t)s->FRet) & (~0xFU)));
+            DPRINTF_COND(MGL_BUFO_TRACE, "Gpa %p Hva %p target %04x offst %08x range %08x lvl %d",
+                (void *)(s->FRet & (uint64_t)~(1)), (void *)s->BufObj->hva, s->arg[0], s->arg[1], s->arg[2], s->BufObj->lvl);
             break;
         case FEnum_glUnmapBuffer:
         case FEnum_glUnmapBufferARB:
@@ -1798,7 +1806,6 @@ static void processFRet(MesaPTState *s)
                     ALIGNBO(s->BufObj->mapsz):0;
             }
             s->szUsedBuf = FreeBufObj(s->BufIdx)? s->szUsedBuf:0;
-            //DPRINTF("UnmapBuffer %x used %x idx %x", s->arg[0], s->szUsedBuf, s->BufIdx);
             break;
         case FEnum_glPixelStorei:
             s->szPackWidth = (s->arg[0] == GL_PACK_ROW_LENGTH)? s->arg[1]:s->szPackWidth;
@@ -1807,6 +1814,7 @@ static void processFRet(MesaPTState *s)
             s->szUnpackHeight = (s->arg[0] == GL_UNPACK_IMAGE_HEIGHT)? s->arg[1]:s->szUnpackHeight;
             //DPRINTF("PixelStorei %x %x", s->arg[0], s->arg[1]);
             break;
+#undef MGL_BUFO_TRACE
 #define MGL_TRACE 0
 #if defined(MGL_TRACE) && MGL_TRACE
         case FEnum_glGetBooleanv:
@@ -2189,7 +2197,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 do {
                     uint8_t *name = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
                     s->procRet = (ExtFuncIsValid((char *)name))? MESAGL_MAGIC:0;
-                    DPRINTF_COND((s->procRet == 0),
+                    DPRINTF_COND(((s->procRet == 0) && GLFuncTrace()),
                         "  query_ext: %s -- %s", name, (s->procRet)? "OK":"Missing");
                 } while (0);
                 break;
