@@ -185,29 +185,55 @@ void HookTimeGetTime(const uint32_t caddr)
 {
     uint32_t addr, *patch;
     SYSTEM_INFO si;
-    char buffer[MAX_PATH], dotstr[] = ".hook";
-    unsigned int len = GetModuleFileName(0, buffer, sizeof(char[MAX_PATH]));
+    char buffer[MAX_PATH + 1], dotstr[] = ".hook";
+    unsigned int len = GetModuleFileName(0, buffer, sizeof(buffer));
+    struct {
+        int modNum;
+        char *modName[9];
+    } modList = {
+        .modNum = 0,
+        .modName = {
+            &buffer[(0 * (MAX_PATH / 8))],
+            &buffer[(1 * (MAX_PATH / 8))],
+            &buffer[(2 * (MAX_PATH / 8))],
+            &buffer[(3 * (MAX_PATH / 8))],
+            &buffer[(4 * (MAX_PATH / 8))],
+            &buffer[(5 * (MAX_PATH / 8))],
+            &buffer[(6 * (MAX_PATH / 8))],
+            &buffer[(7 * (MAX_PATH / 8))],
+            NULL,
+        }
+    };
 
     GetSystemInfo(&si);
     HookTimeTckRef(0);
 
     if (len && len < (MAX_PATH - sizeof(dotstr))) {
-        strncat(buffer, dotstr, MAX_PATH-1);
+        strncat(buffer, dotstr, MAX_PATH);
         FILE *fp = fopen(buffer, "r");
         if (fp) {
             int i;
-            char line[16];
-            while(fgets(line, 16, fp)) {
-                i = sscanf(line, "%x", &addr);
+            char line[32], name[(MAX_PATH / 8)];
+            while(fgets(line, sizeof(line), fp)) {
+                i = sscanf(line, "0x%x", &addr);
                 if (addr && (i == 1)) {
                     addr &= ~(si.dwPageSize - 1);
                     patch = (uint32_t *)addr;
                     HookPatchTimer(addr, patch, si.dwPageSize);
                 }
+                else {
+                    i = sscanf(line, "0x%x,%s", &addr, name);
+                    if (!addr && (i == 2) && modList.modName[modList.modNum]) {
+                        strncpy(modList.modName[modList.modNum], name, sizeof(name) - 1);
+                        modList.modNum++;
+                    }
+                }
             }
             fclose(fp);
-            return;
+            if (modList.modNum == 0)
+                return;
         }
+        modList.modName[modList.modNum] = NULL;
     }
 
     if (caddr) {
@@ -229,7 +255,9 @@ void HookTimeGetTime(const uint32_t caddr)
     patch = (uint32_t *)(addr & ~(si.dwPageSize - 1)); \
     HookParseRange(&addr, &patch, si.dwPageSize); \
     HookPatchTimer(addr, patch, si.dwPageSize - (((uint32_t)patch) & (si.dwPageSize - 1)));
-    TICK_HOOK(0);
+    for (int i = 0; i <= modList.modNum; i++) {
+        TICK_HOOK(modList.modName[i]);
+    }
 #undef TICK_HOOK
 }
 
