@@ -700,6 +700,8 @@ static void processFRet(GlidePTState *s)
             s->fifoMax = 0; s->dataMax = 0;
 	    break;
 	case FEnum_grGlideShutdown:
+            if (!s->perfs.last && !s->perfs.stat)
+                break;
 	    s->perfs.last();
 	    /* TODO - Window management */
 	    DPRINTF("grGlideShutdown called, fifo 0x%04x data 0x%04x shm 0x%07x lfb 0x%07x",
