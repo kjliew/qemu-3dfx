@@ -207,7 +207,7 @@ static int *iattribs_fb(Display *dpy, const int do_msaa)
     for (int i = 0; ia[i]; i+=2) {
         switch(ia[i]) {
             case GLX_BUFFER_SIZE:
-                ia[i+1] = (cBufsz)? cBufsz:ia[i+1];
+                ia[i+1] = (cBufsz >= 24)? cBufsz:ia[i+1];
                 break;
             case GLX_SAMPLE_BUFFERS:
                 ia[i+1] = (do_msaa && GetContextMSAA())? 1:0;
