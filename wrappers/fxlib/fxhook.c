@@ -236,7 +236,7 @@ void HookTimeGetTime(const uint32_t caddr)
         modList.modName[modList.modNum] = NULL;
     }
 
-    if (caddr) {
+    if (caddr && !IsBadReadPtr((void *)(caddr - 0x06), 0x06)) {
         uint16_t *callOp = (uint16_t *)(caddr - 0x06);
         if (0x15ff == (*callOp)) {
             addr = *(uint32_t *)(caddr - 0x04);
