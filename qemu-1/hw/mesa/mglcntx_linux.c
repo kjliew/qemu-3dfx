@@ -626,9 +626,17 @@ void MGLFuncHandler(const char *name)
         return;
     }
     FUNCP_HANDLER("wglUseFontBitmapsA") {
-       DPRINTF("wglUseFontBitmapsA() %x %x %x", argsp[1], argsp[2], argsp[3]);
-       argsp[0] = 0;
-       return;
+        uint32_t ret = 0;
+        XFontStruct *fi = XLoadQueryFont(dpy, "fixed");
+        if (fi) {
+            int minchar = fi->min_char_or_byte2;
+            int maxchar = fi->max_char_or_byte2;
+            glXUseXFont(fi->fid, minchar, maxchar - minchar + 1, argsp[3] + minchar);
+            XFreeFont(dpy, fi);
+            ret = 1;
+        }
+        argsp[0] = ret;
+        return;
     }
     FUNCP_HANDLER("wglSwapIntervalEXT") {
         int val = -1;
