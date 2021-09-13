@@ -259,6 +259,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glDrawElements:
         case FEnum_glGetCombinerOutputParameterfvNV:
         case FEnum_glGetCombinerOutputParameterivNV:
+        case FEnum_glGetFramebufferAttachmentParameteriv:
+        case FEnum_glGetFramebufferAttachmentParameterivEXT:
         case FEnum_glGetTexLevelParameterfv:
         case FEnum_glGetTexLevelParameteriv:
         case FEnum_glIndexPointerEXT:
@@ -662,6 +664,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetQueryObjectuivARB:
         case FEnum_glGetQueryiv:
         case FEnum_glGetQueryivARB:
+        case FEnum_glGetRenderbufferParameteriv:
+        case FEnum_glGetRenderbufferParameterivEXT:
         case FEnum_glGetShaderiv:
         case FEnum_glGetTexEnvfv:
         case FEnum_glGetTexEnviv:

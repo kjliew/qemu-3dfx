@@ -4222,12 +4222,18 @@ void PT_CALL glGetFragmentMaterialivSGIX(uint32_t arg0, uint32_t arg1, uint32_t 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetFragmentMaterialivSGIX;
 }
 void PT_CALL glGetFramebufferAttachmentParameteriv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetFramebufferAttachmentParameteriv;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg3, n*sizeof(float));
 }
 void PT_CALL glGetFramebufferAttachmentParameterivEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetFramebufferAttachmentParameterivEXT;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg3, n*sizeof(float));
 }
 void PT_CALL glGetFramebufferParameterfvAMD(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
@@ -5089,12 +5095,18 @@ void PT_CALL glGetQueryivARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
 }
 void PT_CALL glGetRenderbufferParameteriv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetRenderbufferParameteriv;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
 }
 void PT_CALL glGetRenderbufferParameterivEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetRenderbufferParameterivEXT;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg2, n*sizeof(int));
 }
 void PT_CALL glGetSamplerParameterIiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 

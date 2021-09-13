@@ -1065,6 +1065,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetProgramivARB:
         case FEnum_glGetQueryiv:
         case FEnum_glGetQueryivARB:
+        case FEnum_glGetRenderbufferParameteriv:
+        case FEnum_glGetRenderbufferParameterivEXT:
         case FEnum_glGetShaderiv:
         case FEnum_glGetTexEnvfv:
         case FEnum_glGetTexEnviv:
@@ -1136,6 +1138,8 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glGetCombinerOutputParameterfvNV:
         case FEnum_glGetCombinerOutputParameterivNV:
+        case FEnum_glGetFramebufferAttachmentParameteriv:
+        case FEnum_glGetFramebufferAttachmentParameterivEXT:
         case FEnum_glGetTexLevelParameterfv:
         case FEnum_glGetTexLevelParameteriv:
             *(int *)outshm = szglname(s->arg[2]);
