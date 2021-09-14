@@ -150,6 +150,15 @@ void wrFlushBufObj(uint32_t target, mapbufo_t *bufo)
     }
 }
 
+void wrContextSRGB(int use_srgb)
+{
+    void *(__stdcall *wrEnable)(uint32_t arg0);
+    if (use_srgb) {
+        wrEnable = tblMesaGL[FEnum_glEnable].ptr;
+        wrEnable(GL_FRAMEBUFFER_SRGB);
+    }
+}
+
 const char *getGLFuncStr(int FEnum)
 {
     if (tblMesaGL[FEnum].impl == 0) {
@@ -1366,6 +1375,7 @@ static int cfg_vertCacheMB;
 static int cfg_dispTimerMS;
 static int cfg_bufoAccelEN;
 static int cfg_cntxMSAA;
+static int cfg_cntxSRGB;
 static int cfg_cntxVsyncOff;
 static int cfg_fpsLimit;
 static int cfg_createWnd;
@@ -1379,6 +1389,7 @@ static void conf_MGLOptions(void)
     cfg_dispTimerMS = 2000;
     cfg_bufoAccelEN = 0;
     cfg_cntxMSAA = 0;
+    cfg_cntxSRGB = 0;
     cfg_cntxVsyncOff = 0;
     cfg_fpsLimit = 0;
     cfg_createWnd = 0;
@@ -1401,6 +1412,8 @@ static void conf_MGLOptions(void)
             cfg_bufoAccelEN = ((i == 1) && v)? 1:cfg_bufoAccelEN;
             i = sscanf(line, "ContextMSAA,%d", &v);
             cfg_cntxMSAA = (i == 1)? v:cfg_cntxMSAA;
+            i = sscanf(line, "ContextSRGB,%d", &v);
+            cfg_cntxSRGB = ((i == 1) && v)? 1:cfg_cntxSRGB;
             i = sscanf(line, "ContextVsyncOff,%d", &v);
             cfg_cntxVsyncOff = ((i == 1) && v)? 1:cfg_cntxVsyncOff;
             i = sscanf(line, "FpsLimit,%d", &v);
@@ -1425,6 +1438,7 @@ int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
 int GetContextMSAA(void) { return cfg_cntxMSAA; }
+int ContextUseSRGB(void) { return cfg_cntxSRGB; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GetCreateWindow(void) { return cfg_createWnd; }

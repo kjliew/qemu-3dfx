@@ -106,15 +106,19 @@ static int *iattribs_fb(const int do_msaa)
         WGL_STENCIL_BITS_ARB, 8,
         WGL_SAMPLE_BUFFERS_ARB, 0,
         WGL_SAMPLES_ARB, 0,
+        WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB, 0,
         0,0,
     };
     for (int i = 0; ia[i]; i+=2) {
         switch(ia[i]) {
             case WGL_SAMPLE_BUFFERS_ARB:
-                ia[i+1] = (do_msaa && GetContextMSAA())? 1:0;
+                ia[i+1] = (do_msaa)? 1:0;
                 break;
             case WGL_SAMPLES_ARB:
-                ia[i+1] = (do_msaa)? GetContextMSAA():0;
+                ia[i+1] = (do_msaa)? do_msaa:0;
+                break;
+            case WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB:
+                ia[i+1] = ContextUseSRGB()? 1:0;
                 break;
             default:
                 break;
@@ -366,6 +370,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         wglFuncs.MakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();
+        wrContextSRGB(ContextUseSRGB());
         if (ContextVsyncOff()) {
             const int val = 0;
             if (wglFuncs.SwapIntervalEXT)
@@ -448,11 +453,12 @@ int MGLSetPixelFormat(int fmt, const void *p)
             WGL_AUX_BUFFERS_ARB,
             WGL_SAMPLE_BUFFERS_ARB,
             WGL_SAMPLES_ARB,
+            WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB,
         };
-        int cattr[3];
-        wglFuncs.GetPixelFormatAttribivARB(hDC, curr, 0, 3, iattr, cattr);
-        DPRINTF("PixFmt 0x%02x nAux %d nSamples %d %d", curr,
-            cattr[0], cattr[1], cattr[2]);
+        int cattr[4];
+        wglFuncs.GetPixelFormatAttribivARB(hDC, curr, 0, 4, iattr, cattr);
+        DPRINTF("PixFmt 0x%02x nAux %d nSamples %d %d %s", curr,
+            cattr[0], cattr[1], cattr[2], (cattr[3])? "sRGB":"");
     }
     ret = SetPixelFormat(hDC, curr, (ppfd->nSize)? ppfd:0);
     DPRINTF("SetPixelFormat() fmt 0x%02x ret %d", curr, (ret)? 1:0);
@@ -478,7 +484,7 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
         }
         DescribePixelFormat(hDC, curr, sizeof(PIXELFORMATDESCRIPTOR), ppfd);
         ppfd->dwFlags |= (cattr[0] && (cattr[1] == WGL_FULL_ACCELERATION_ARB))? PFD_SUPPORT_OPENGL:0;
-        DPRINTF("DescribePixelFormat() dwFlags:%08lx\n"
+        DPRINTF_COND(GLFuncTrace(), "DescribePixelFormat() dwFlags:%08lx\n"
             "  cColorbits:%02d cDepthBits:%02d cStencilBits:%02d ARGB%d%d%d%d\n"
             "  cAlphaShift:%02d cRedShift:%02d cGreenShift:%02d cBlueShift:%02d",
             ppfd->dwFlags,
@@ -754,13 +760,13 @@ void MGLFuncHandler(const char *name)
     }
     FUNCP_HANDLER("wglGetDeviceGammaRamp3DFX") {
         uint32_t ret;
-        ret = GetDeviceGammaRamp(hDC, &argsp[2]);
+        ret = ContextUseSRGB()? 0:GetDeviceGammaRamp(hDC, &argsp[2]);
         argsp[0] = ret;
         return;
     }
     FUNCP_HANDLER("wglSetDeviceGammaRamp3DFX") {
         uint32_t ret;
-        ret = SetDeviceGammaRamp(hDC, &argsp[0]);
+        ret = ContextUseSRGB()? 0:SetDeviceGammaRamp(hDC, &argsp[0]);
         argsp[0] = ret;
         return;
     }

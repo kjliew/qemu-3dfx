@@ -63,6 +63,7 @@ static int cfg_createWnd;
 static int cfg_scaleGuiX;
 static int cfg_scaleX;
 static int cfg_cntxMSAA;
+static int cfg_cntxSRGB;
 static int cfg_cntxVsyncOff;
 static int cfg_fpsLimit;
 static int cfg_lfbHandler;
@@ -70,6 +71,7 @@ static int cfg_lfbNoAux;
 static int cfg_lfbLockDirty;
 static int cfg_lfbWriteMerge;
 static int cfg_lfbMapBufo;
+static int cfg_MipMaps;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
 
@@ -253,6 +255,7 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_scaleGuiX = 1;
     cfg_scaleX = 0;
     cfg_cntxMSAA = 0;
+    cfg_cntxSRGB = 0;
     cfg_cntxVsyncOff = 0;
     cfg_fpsLimit = 0;
     cfg_lfbHandler = 0;
@@ -260,6 +263,7 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_lfbLockDirty = 0;
     cfg_lfbWriteMerge = 0;
     cfg_lfbMapBufo = 0;
+    cfg_MipMaps = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
 
@@ -275,7 +279,9 @@ uint32_t init_window(const int res, const char *wndTitle)
             i = sscanf(line, "ScaleWidth,%d", &c);
             cfg_scaleX = ((i == 1) && c)? c:cfg_scaleX;
             i = sscanf(line, "ContextMSAA,%d", &c);
-            cfg_cntxMSAA = (i == 1)? ((c << 3) & 0x30U):cfg_cntxMSAA;
+            cfg_cntxMSAA = (i == 1)? ((c & 0x03U) << 2):cfg_cntxMSAA;
+            i = sscanf(line, "ContextSRGB,%d", &c);
+            cfg_cntxSRGB = ((i == 1) && c)? 1:cfg_cntxSRGB;
             i = sscanf(line, "ContextVsyncOff,%d", &c);
             cfg_cntxVsyncOff = ((i == 1) && c)? 1:cfg_cntxVsyncOff;
             i = sscanf(line, "FpsLimit,%d", &c);
@@ -290,6 +296,8 @@ uint32_t init_window(const int res, const char *wndTitle)
             cfg_lfbWriteMerge = ((i == 1) && c)? 1:cfg_lfbWriteMerge;
             i = sscanf(line, "LfbMapBufo,%d", &c);
             cfg_lfbMapBufo = ((i == 1) && c)? 1:cfg_lfbMapBufo;
+            i = sscanf(line, "MipMaps,%d", &c);
+            cfg_MipMaps = ((i == 1) && c)? 1:cfg_MipMaps;
             i = sscanf(line, "FifoTrace,%d", &c);
             cfg_traceFifo = ((i == 1) && c)? 1:cfg_traceFifo;
             i = sscanf(line, "FuncTrace,%d", &c);
@@ -303,12 +311,16 @@ uint32_t init_window(const int res, const char *wndTitle)
     cfg_scaleX = (cfg_scaleGuiX && (gui_height > 480) && (gui_height > tblRes[res].h))?
         (int)((1.f * tblRes[res].w * gui_height) / tblRes[res].h):cfg_scaleX;
 
-#define WRAPPER_FLAG_WINDOWED   0x01
-#define WRAPPER_FLAG_VSYNCOFF   0x40
-#define WRAPPER_FLAG_QEMU       0x80
+#define WRAPPER_FLAG_WINDOWED           0x01
+#define WRAPPER_FLAG_MIPMAPS            0x02
+#define WRAPPER_FLAG_FRAMEBUFFER_SRGB   0x20
+#define WRAPPER_FLAG_VSYNCOFF           0x40
+#define WRAPPER_FLAG_QEMU               0x80
     uint32_t flags = (glide_fullscreen)? WRAPPER_FLAG_QEMU:
         (WRAPPER_FLAG_QEMU | WRAPPER_FLAG_WINDOWED);
+    flags |= (cfg_MipMaps)? WRAPPER_FLAG_MIPMAPS:0;
     flags |= (cfg_cntxVsyncOff)? WRAPPER_FLAG_VSYNCOFF:0;
+    flags |= (cfg_cntxSRGB)? WRAPPER_FLAG_FRAMEBUFFER_SRGB:0;
     flags |= cfg_cntxMSAA;
 
     int sel = res;

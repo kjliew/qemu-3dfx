@@ -210,10 +210,10 @@ static int *iattribs_fb(Display *dpy, const int do_msaa)
                 ia[i+1] = (cBufsz >= 24)? cBufsz:ia[i+1];
                 break;
             case GLX_SAMPLE_BUFFERS:
-                ia[i+1] = (do_msaa && GetContextMSAA())? 1:0;
+                ia[i+1] = (do_msaa)? 1:0;
                 break;
             case GLX_SAMPLES:
-                ia[i+1] = (do_msaa)? GetContextMSAA():0;
+                ia[i+1] = (do_msaa)? do_msaa:0;
                 break;
             default:
                 break;
@@ -463,6 +463,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
     if (cntxRC == (MESAGL_MAGIC - n)) {
         glXMakeContextCurrent(dpy, win, win, ctx[n]);
         InitMesaGLExt();
+        wrContextSRGB(ContextUseSRGB());
         if (ContextVsyncOff()) {
             const int val = 0;
             if (xglFuncs.SwapIntervalEXT)
@@ -509,8 +510,9 @@ static int MGLPresetPixelFormat(void)
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_SAMPLES, &cSampleBuf[1]);
     int major, minor;
     xvidmode = XF86VidModeQueryExtension(dpy, &major, &minor)? 1:0;
-    DPRINTF("FBConfig 0x%03x visual 0x%03lx nAux %d nSamples %d %d vidMode %d",
-        fbid, xvi->visualid, cAuxBuffers, cSampleBuf[0], cSampleBuf[1], xvidmode);
+    DPRINTF("FBConfig 0x%03x visual 0x%03lx nAux %d nSamples %d %d vidMode %d %s",
+        fbid, xvi->visualid, cAuxBuffers, cSampleBuf[0], cSampleBuf[1], xvidmode,
+        ContextUseSRGB()? "sRGB":"");
     MesaInitGammaRamp();
     XFree(fbcnf);
     XFlush(dpy);
@@ -831,7 +833,7 @@ void MGLFuncHandler(const char *name)
         struct xgamma xRamp;
         struct wgamma *wRamp = (struct wgamma *)&argsp[2];
         int rampsz;
-        if (xvidmode)
+        if (xvidmode && !ContextUseSRGB())
             XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
         else rampsz = 0;
         if (rampsz)
@@ -869,7 +871,7 @@ void MGLFuncHandler(const char *name)
         struct xgamma xRamp;
         struct wgamma *wRamp = (struct wgamma *)&argsp[0];
         int rampsz;
-        if (xvidmode)
+        if (xvidmode && !ContextUseSRGB())
             XF86VidModeGetGammaRampSize(dpy, DefaultScreen(dpy), &rampsz);
         else rampsz = 0;
         switch(rampsz) {
