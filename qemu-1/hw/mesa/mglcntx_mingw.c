@@ -55,20 +55,17 @@ static HWND CreateMesaWindow(const char *title, int w, int h, int show)
 {
     HWND 	hWnd;
     WNDCLASS 	wc;
-    static HINSTANCE hInstance = 0;
+    HINSTANCE   hInstance = GetModuleHandle(0);
 
-    if (!hInstance) {
-	memset(&wc, 0, sizeof(WNDCLASS));
-	hInstance = GetModuleHandle(NULL);
-        wc.hInstance = hInstance;
-	wc.style	= CS_OWNDC;
-	wc.lpfnWndProc	= (WNDPROC)MGLWndProc;
-	wc.lpszClassName = "MGLWnd";
+    memset(&wc, 0, sizeof(WNDCLASS));
+    wc.hInstance = hInstance;
+    wc.style	= CS_OWNDC;
+    wc.lpfnWndProc	= (WNDPROC)MGLWndProc;
+    wc.lpszClassName = title;
 
-	if (!RegisterClass(&wc)) {
-	    DPRINTF("RegisterClass() faled, Error %08lx", GetLastError());
-	    return NULL;
-	}
+    if (!RegisterClass(&wc)) {
+        DPRINTF("RegisterClass() faled, Error %08lx", GetLastError());
+        return NULL;
     }
     
     RECT rect;
@@ -78,7 +75,7 @@ static HWND CreateMesaWindow(const char *title, int w, int h, int show)
     rect.right  -= rect.left;
     rect.bottom -= rect.top;
     hWnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_NOACTIVATE,
-	    "MGLWnd", title, 
+	    title, title,
 	    WS_CAPTION | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
 	    CW_USEDEFAULT, CW_USEDEFAULT, rect.right, rect.bottom,
 	    NULL, NULL, hInstance, NULL);
@@ -301,6 +298,7 @@ void MGLTmpContext(void)
     wglFuncs.DeleteContext(tmpGL);
     ReleaseDC(tmpWin, tmpDC);
     DestroyWindow(tmpWin);
+    UnregisterClass("dummy", GetModuleHandle(0));
 }
 
 #define GLWINDOW_INIT() \
@@ -403,9 +401,7 @@ static int MGLPresetPixelFormat(void)
             ia = iattribs_fb(0);
             status = wglFuncs.ChoosePixelFormatARB(hDC, ia, fa, 64, pi, &nFmts);
         }
-        if (status && nFmts)
-            ipixfmt = (nFmts)? pi[0]:0;
-
+        ipixfmt = (status && nFmts)? pi[0]:0;
     }
 
     if (ipixfmt == 0) {
@@ -457,6 +453,7 @@ int MGLSetPixelFormat(int fmt, const void *p)
         };
         int cattr[4];
         wglFuncs.GetPixelFormatAttribivARB(hDC, curr, 0, 4, iattr, cattr);
+        cattr[3] = (cattr[3] && ContextUseSRGB())? 1:0;
         DPRINTF("PixFmt 0x%02x nAux %d nSamples %d %d %s", curr,
             cattr[0], cattr[1], cattr[2], (cattr[3])? "sRGB":"");
     }
