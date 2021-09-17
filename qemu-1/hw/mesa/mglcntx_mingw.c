@@ -103,7 +103,6 @@ static int *iattribs_fb(const int do_msaa)
         WGL_STENCIL_BITS_ARB, 8,
         WGL_SAMPLE_BUFFERS_ARB, 0,
         WGL_SAMPLES_ARB, 0,
-        WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB, 0,
         0,0,
     };
     for (int i = 0; ia[i]; i+=2) {
@@ -113,9 +112,6 @@ static int *iattribs_fb(const int do_msaa)
                 break;
             case WGL_SAMPLES_ARB:
                 ia[i+1] = (do_msaa)? do_msaa:0;
-                break;
-            case WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB:
-                ia[i+1] = ContextUseSRGB()? 1:0;
                 break;
             default:
                 break;
@@ -444,6 +440,8 @@ int MGLSetPixelFormat(int fmt, const void *p)
     curr = GetPixelFormat(hDC);
     if (curr == 0)
         curr = MGLPresetPixelFormat();
+    else
+        ImplMesaGLReset();
     if (wglFuncs.GetPixelFormatAttribivARB) {
         static const int iattr[] = {
             WGL_AUX_BUFFERS_ARB,
