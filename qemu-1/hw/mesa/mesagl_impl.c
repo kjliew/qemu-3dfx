@@ -105,9 +105,19 @@ int wrTexSizeTexture(uint32_t target, uint32_t level, int compressed)
 
 int wrGetParamIa1p2(int FEnum, uint32_t arg0, uint32_t arg1)
 {
-    int ret;
+    int ret, sel;
     void (__stdcall *fpa1p2)(uint32_t arg0, uint32_t arg1, uintptr_t arg2);
-    fpa1p2 = tblMesaGL[FEnum].ptr;
+    switch (FEnum) {
+        case FEnum_glMapBuffer:
+            sel = FEnum_glGetBufferParameteriv;
+                break;
+        case FEnum_glMapBufferARB:
+            sel = FEnum_glGetBufferParameterivARB;
+                break;
+        default:
+            return 0;
+    }
+    fpa1p2 = tblMesaGL[sel].ptr;
     fpa1p2(arg0, arg1, (uintptr_t)&ret);
     return ret;
 }
@@ -129,9 +139,9 @@ void wrFillBufObj(uint32_t target, void *dst, mapbufo_t *bufo)
             wrMapRange = tblMesaGL[FEnum_glMapBufferRange].ptr;
             wrMap = tblMesaGL[FEnum_glMapBuffer].ptr;
             wrUnmap = tblMesaGL[FEnum_glUnmapBuffer].ptr;
-            src = (bufo->range == 0)? wrMap(target, GL_READ_ONLY):wrMapRange(target, bufo->offst, bufo->range, GL_MAP_READ_BIT);
+            src = (bufo->range)? wrMapRange(target, bufo->offst, bufo->range, GL_MAP_READ_BIT):wrMap(target, GL_READ_ONLY);
             if (src) {
-                uint32_t szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum_glGetBufferParameteriv, target, GL_BUFFER_SIZE):bufo->range;
+                uint32_t szBuf = (bufo->range)? bufo->range:bufo->mapsz;
                 memcpy((dst - ALIGNBO(szBuf)), src, szBuf);
                 wrUnmap(target);
             }
@@ -145,7 +155,7 @@ void wrFlushBufObj(uint32_t target, mapbufo_t *bufo)
         return;
 
     if (bufo->hva) {
-        uint32_t szBuf = (bufo->range == 0)? wrGetParamIa1p2(FEnum_glGetBufferParameteriv, target, GL_BUFFER_SIZE):bufo->range;
+        uint32_t szBuf = (bufo->range)? bufo->range:bufo->mapsz;
         memcpy((void *)(bufo->hva + bufo->offst), (void *)(bufo->gpa - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
     }
 }
