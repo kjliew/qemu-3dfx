@@ -46,15 +46,17 @@
 #define GR_RESOLUTION_1600x1200 0xE
 #define GR_RESOLUTION_400x300   0xF
 
-#define GR_TEXTABLE_PALETTE 0x2
+#define GR_TEXTABLE_PALETTE     0x2
 
-#define GR_TEXFMT_YIQ_422               0x1
-#define GR_TEXFMT_P_8                   0x5 /* 8-bit palette */
-#define GR_TEXFMT_AYIQ_8422             0x9
-#define GR_TEXFMT_AP_88                 0xe /* 8-bit alpha 8-bit palette */
+#define GR_TEXFMT_YIQ_422       0x1
+#define GR_TEXFMT_P_8           0x5 /* 8-bit palette */
+#define GR_TEXFMT_AYIQ_8422     0x9
+#define GR_TEXFMT_AP_88         0xe /* 8-bit alpha 8-bit palette */
 
-#define GR_CONTROL_ACTIVATE             0x1
-#define GR_CONTROL_DEACTIVATE           0x2
+#define GR_CONTROL_ACTIVATE     0x1
+#define GR_CONTROL_DEACTIVATE   0x2
+#define GR_PASSTHRU_SHOW_SST1   0x1
+#define GR_PASSTHRU_SHOW_VGA    0x0
 
 typedef struct {
     uint32_t small;
@@ -125,12 +127,11 @@ const char *wrGetString(uint32_t);
 const char *getGRFuncStr(int);
 
 #ifndef CONSOLE_H
-void glide_enabled_set(void);
-void glide_enabled_reset(void);
+void glide_renderer_stat(const int);
 #endif //CONSOLE_H
-
-void doGlideFunc(int, uint32_t *, uintptr_t *, uint32_t *, int);
+void doGlideFunc(int, uint32_t *, uintptr_t *, uintptr_t *, int);
 void conf_glide2x(const uint32_t, const int);
+void cwnd_glide2x(void *, void *, void *);
 int init_glide2x(const char *);
 void fini_glide2x(void);
 int init_g3ext(void);

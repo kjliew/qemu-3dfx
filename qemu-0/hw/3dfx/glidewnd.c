@@ -55,11 +55,7 @@ static struct tblGlideResolution tblRes[] = {
   { .w = 0, .h = 0},
 };
 
-#ifndef CONFIG_WIN32
-typedef void *HWND;
-#endif
-static HWND hwnd;
-static int cfg_createWnd;
+static int cfg_ovrdHwnd;
 static int cfg_scaleGuiX;
 static int cfg_scaleX;
 static int cfg_cntxMSAA;
@@ -166,6 +162,8 @@ static HWND CreateGlideWindow(const char *title, int w, int h)
 
     return hWnd;
 }
+static HWND hwnd;
+static int cfg_createWnd;
 #endif // defined(CONFIG_WIN32) && CONFIG_WIN32
 
 static int scaledRes(int w, float r)
@@ -194,64 +192,56 @@ void glide_winres(const int res, int *w, int *h)
     *h = tblRes[res].h;
 }
 
-int stat_window(const int res, const int activate)
+int othr_hwnd(void) { return cfg_ovrdHwnd; }
+
+int stat_window(const int res, void *opaque)
 {
     int stat, sel, glide_fullscreen;
+    window_cb *disp_cb = opaque;
     sel = (cfg_scaleX)? scaledRes(cfg_scaleX, ((float)tblRes[res].h) / tblRes[res].w):res;
-    stat = (cfg_createWnd)? 0:1;
+    stat = 1;
     glide_fullscreen = glide_gui_fullscreen(0, 0);
 
     if (stat) {
-	int wndStat = (glide_fullscreen)?
-            (((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w) : glide_window_stat(activate);
-	if (activate) {
+	int wndStat = glide_window_stat(disp_cb->activate);
+	if (disp_cb->activate) {
+            wndStat = ((wndStat > 1) && glide_fullscreen)?
+                (((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w):wndStat;
 	    if (wndStat == (((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w)) {
 		DPRINTF("    %s %ux%u %s", (glide_fullscreen)? "fullscreen":"window",
                     (wndStat & 0xFFFFU), (wndStat >> 0x10), (cfg_scaleX)? "(scaled)":"");
 		stat = 0;
 	    }
 	}
-	else {
+	else
 	    stat = wndStat;
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
-            if (stat)
-                glide_release_window();
-#endif
-            if (glide_fullscreen)
-                stat = 0;
-        }
     }
     return stat;
 }
 
-void fini_window(void)
+void fini_window(void *opaque)
 {
-    if (hwnd) {
+    window_cb *disp_cb = opaque;
+    disp_cb->activate = 0;
 #if defined(CONFIG_WIN32) && CONFIG_WIN32	    
-        if (cfg_createWnd)
-            DestroyWindow(hwnd);
-        else
-            glide_release_window();
+    if (cfg_createWnd)
+        DestroyWindow(hwnd);
+    hwnd = 0;
+    glide_release_window(&disp_cb, &cwnd_glide2x);
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX || \
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
-        glide_release_window();
+    glide_release_window(&disp_cb, &cwnd_glide2x);
 #endif	    
-    }
-    hwnd = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
 }
 
-uint32_t init_window(const int res, const char *wndTitle)
+void init_window(const int res, const char *wndTitle, void *opaque)
 {
-    union {
-	uint32_t u32;
-	uintptr_t uptr;
-    } cvHWnd;
+    window_cb *disp_cb = opaque;
 
-    cfg_createWnd = 0;
+    cfg_ovrdHwnd = 0;
     cfg_scaleGuiX = 1;
     cfg_scaleX = 0;
     cfg_cntxMSAA = 0;
@@ -272,8 +262,8 @@ uint32_t init_window(const int res, const char *wndTitle)
         char line[32];
         int i, c;
         while (fgets(line, 32, fp)) {
-            i = sscanf(line, "CreateWindow,%d", &c);
-            cfg_createWnd = ((i == 1) && c)? 1:cfg_createWnd;
+            i = sscanf(line, "OverrideHwnd,%d", &c);
+            cfg_ovrdHwnd = ((i == 1) && c)? 1:cfg_ovrdHwnd;
             i = sscanf(line, "ScaleGuiX,%d", &c);
             cfg_scaleGuiX = ((i == 1) && (c == 0))? 0:cfg_scaleGuiX;
             i = sscanf(line, "ScaleWidth,%d", &c);
@@ -307,7 +297,7 @@ uint32_t init_window(const int res, const char *wndTitle)
     }
 
     int gui_height, glide_fullscreen = glide_gui_fullscreen(0, &gui_height);
-    cfg_scaleGuiX = (glide_fullscreen || cfg_createWnd || cfg_scaleX)? 0:cfg_scaleGuiX;
+    cfg_scaleGuiX = (glide_fullscreen || cfg_scaleX)? 0:cfg_scaleGuiX;
     cfg_scaleX = (cfg_scaleGuiX && (gui_height > 480) && (gui_height > tblRes[res].h))?
         (int)((1.f * tblRes[res].w * gui_height) / tblRes[res].h):cfg_scaleX;
 
@@ -331,21 +321,18 @@ uint32_t init_window(const int res, const char *wndTitle)
     else
         conf_glide2x(flags, 0);
 
+    disp_cb->activate = 1;
 #if defined(CONFIG_WIN32) && CONFIG_WIN32	    
     if (cfg_createWnd)
         hwnd = CreateGlideWindow(wndTitle, tblRes[sel].w, tblRes[sel].h);
-    else
-        hwnd = glide_prepare_window(tblRes[sel].w, tblRes[sel].h);
+    glide_prepare_window(((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w,
+            disp_cb, &cwnd_glide2x);
 #endif
 #if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
-    hwnd = glide_prepare_window(tblRes[sel].w, tblRes[sel].h);
-    cfg_createWnd = (hwnd)? 0:1;
+    glide_prepare_window(((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w,
+            disp_cb, &cwnd_glide2x);
 #endif	
-
-    cvHWnd.uptr = (uintptr_t)hwnd;
-
-    return cvHWnd.u32;
 }
 
 typedef struct {

@@ -320,7 +320,7 @@ const char *getGRFuncStr(int FEnum)
     return 0;
 }
 
-void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int emu211)
+void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret, int emu211)
 {
     static int glidePostInit = 0;
     int numArgs = getNumArgs(tblGlide2x[FEnum].sym);
@@ -352,6 +352,30 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
     }
     if (FEnum == FEnum_grGlideShutdown)
 	glidePostInit = 0;
+
+    switch (FEnum) {
+	case FEnum_grLfbBegin:
+	case FEnum_grLfbEnd:
+	case FEnum_grLfbOrigin:
+	case FEnum_grLfbWriteMode:
+	case FEnum_grLfbBypassMode:
+	case FEnum_grLfbGetReadPtr:
+	case FEnum_grLfbGetWritePtr:
+	case FEnum_grSstPassthruMode:
+	case FEnum_grSplash0:
+	    if (emu211) {
+		numArgs = -1;
+                break;
+            }
+            /* fall through */
+        default:
+            if (tblGlide2x[FEnum].ptr == 0) {
+                fprintf(stderr, "WARN: %s nullptr call blocked\n", tblGlide2x[FEnum].sym);
+                *ret = 0;
+                return;
+            }
+            break;
+    }
 
     typedef union {
     uint32_t __stdcall (*fprp0)(uintptr_t arg0);
@@ -401,6 +425,14 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
 	case FEnum_grFogTable:
             sfp.fprp0 = tblGlide2x[FEnum].ptr;
             *ret = (*(sfp.fprp0))(parg[0]);
+            numArgs = -1;
+            break;
+        case FEnum_grSstOpen:
+        case FEnum_grSstWinClose3x:
+        case FEnum_grSstWinClose:
+        case FEnum_grSstWinOpen:
+        case FEnum_grSstWinOpenExt:
+            *ret = 1;
             numArgs = -1;
             break;
 	case FEnum_grDrawLine:
@@ -635,19 +667,6 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uint32_t *ret, int e
 	    numArgs = -1;
 	    break;
 
-	case FEnum_grLfbBegin:
-	case FEnum_grLfbEnd:
-	case FEnum_grLfbOrigin:
-	case FEnum_grLfbWriteMode:
-	case FEnum_grLfbBypassMode:
-	case FEnum_grLfbGetReadPtr:
-	case FEnum_grLfbGetWritePtr:
-	case FEnum_grSstPassthruMode:
-	case FEnum_grSplash0:
-	    if (emu211)
-		numArgs = -1;
-	    break;
-
     }
 
 
@@ -767,6 +786,53 @@ void conf_glide2x(const uint32_t flags, const int res)
         (*setConfig)(flags);
     if (res && setConfigRes)
         (*setConfigRes)(res);
+}
+
+void cwnd_glide2x(void *swnd, void *nwnd, void *opaque)
+{
+    union {
+        uintptr_t (__stdcall *SstOpen)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+        uintptr_t (__stdcall *SstWinOpen)(uintptr_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+        uintptr_t (__stdcall *SstWinOpenExt)(uintptr_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+        void (__stdcall *SstWinClose)(void);
+        void (__stdcall *SstWinClose3x)(uintptr_t arg0);
+    } GrWndFunc;
+
+#if defined(CONFIG_WIN32) && CONFIG_WIN32
+    uintptr_t wnd = othr_hwnd()? (uintptr_t)swnd:(uintptr_t)nwnd;
+#endif
+#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
+    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+    uintptr_t wnd = othr_hwnd()? (uintptr_t)nwnd:(uintptr_t)swnd;
+#endif
+    window_cb *s = opaque;
+
+    switch (s->FEnum) {
+        case FEnum_grSstWinClose3x:
+            GrWndFunc.SstWinClose3x = tblGlide2x[s->FEnum].ptr;
+            GrWndFunc.SstWinClose3x(s->GrContext);
+            break;
+        case FEnum_grSstWinClose:
+            GrWndFunc.SstWinClose = tblGlide2x[s->FEnum].ptr;
+            GrWndFunc.SstWinClose();
+            break;
+        case FEnum_grSstOpen:
+            GrWndFunc.SstOpen = tblGlide2x[s->FEnum].ptr;
+            s->GrContext = GrWndFunc.SstOpen(s->arg[0], s->arg[1], s->arg[2], s->arg[3], s->arg[4], s->arg[5]);
+            break;
+        case FEnum_grSstWinOpen:
+            GrWndFunc.SstWinOpen = tblGlide2x[s->FEnum].ptr;
+            s->GrContext = GrWndFunc.SstWinOpen(wnd, s->arg[1], s->arg[2], s->arg[3], s->arg[4], s->arg[5], s->arg[6]);
+            break;
+        case FEnum_grSstWinOpenExt:
+            GrWndFunc.SstWinOpenExt = tblGlide2x[s->FEnum].ptr;
+            s->GrContext = GrWndFunc.SstWinOpenExt(wnd, s->arg[1], s->arg[2], s->arg[3], s->arg[4], s->arg[5], s->arg[6],s->arg[7]);
+            break;
+        default:
+            if (!s->FEnum)
+                fini_glide2x();
+            break;
+    }
 }
 
 void fini_glide2x(void)

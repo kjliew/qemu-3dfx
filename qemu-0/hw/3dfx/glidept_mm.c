@@ -90,13 +90,12 @@ typedef struct GlidePTState
     uint32_t szGrState;
     uint32_t szVtxLayout;
     uint8_t *vtxCache;
-    uint32_t reg[4];
     uintptr_t parg[4];
+    window_cb disp_cb;
     char version[80];
     uint32_t FEnum;
-    uint32_t FRet;
+    uintptr_t FRet;
     uint32_t initDLL;
-    uint32_t GrContext;
     uint32_t GrRes;
     wrTexStruct GrTex;
     PERFSTAT perfs;
@@ -105,14 +104,11 @@ typedef struct GlidePTState
 static uint64_t glidept_read(void *opaque, hwaddr addr, unsigned size)
 {
     GlidePTState *s = opaque;
-    uint32_t val = 0;
+    uint64_t val;
 
     switch (addr) {
 	case 0xfb8:
-	    if ((s->initDLL == 0x211a0) && (s->lfbDev->emu211 == 0))
-		val = 0;
-	    else
-		val = stat_window(s->GrRes, s->reg[0]);
+            val = stat_window(s->GrRes, &s->disp_cb);
 	    break;
 	case 0xfbc:
 	    val = s->initDLL;
@@ -120,8 +116,8 @@ static uint64_t glidept_read(void *opaque, hwaddr addr, unsigned size)
         case 0xfc0:
             val = s->FRet;
             break;
-
         default:
+            val = 0;
             break;
     }
     
@@ -235,10 +231,6 @@ static void processArgs(GlidePTState *s)
         case FEnum_grGlideGetVersion:
             s->parg[0] = VAL(outshm);
             break;
-        case FEnum_grSstControl:
-            if (s->arg[0] == GR_CONTROL_ACTIVATE)
-                glide_enabled_set();
-            break;
         case FEnum_grSstPerfStats:
             s->datacb = ALIGNED(SIZE_GRSSTPERFSTATS);
             memcpy(outshm, s->hshm, SIZE_GRSSTPERFSTATS);
@@ -258,23 +250,16 @@ static void processArgs(GlidePTState *s)
 	    s->parg[1] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
 	    break;
 	case FEnum_grSstOpen:
-	    DPRINTF("grSstOpen called");
-	    if (s->lfbDev->emu211 == 0) {
-		s->reg[0] = init_window(s->arg[0], s->version);
-	    }
-	    else {
+	    if (s->lfbDev->emu211) {
 		s->arg[4] = s->arg[3];
 		s->arg[3] = s->arg[2];
 		s->arg[2] = s->arg[1];
 		s->arg[1] = s->arg[0];
 		s->arg[7] = s->arg[6];
 		s->arg[6] = 1;
-		s->arg[0] = init_window(s->arg[1], s->version);
 		s->FEnum = FEnum_grSstWinOpen;
 	    }
-	    break;
-	case FEnum_grSstWinClose3x:
-	    s->arg[0] = s->GrContext;
+	    DPRINTF("grSstOpen called");
 	    break;
         case FEnum_grSstWinOpen:
         case FEnum_grSstWinOpenExt:
@@ -286,8 +271,6 @@ static void processArgs(GlidePTState *s)
                 DPRINTF("grSstWinOpen called, fmt %d org %d buf %u aux %u gLfb 0x%08x",
                         s->arg[3], s->arg[4], s->arg[5], s->arg[6], s->arg[7]);
             }
-	    /* TODO - Window management */
-	    s->arg[0] = init_window(s->arg[1], s->version);
 	    break;
         case FEnum_grTexSource:
         case FEnum_grTexDownloadMipMap:
@@ -518,7 +501,7 @@ static void processArgs(GlidePTState *s)
             s->lfbDev->grLock = (s->FEnum == FEnum_grLfbGetReadPtr)? 0:1;
 	    if (s->lfbDev->emu211 == 1) {
 		s->lfbDev->grBuffer = s->arg[0];
-		s->FRet = (s->lfb_real)? s->lfbDev->guestLfb : 0;
+		s->FRet = (s->lfb_real)? s->lfbDev->guestLfb:0;
 	    }
 	    break;
 	case FEnum_grLfbBegin:
@@ -552,12 +535,13 @@ static void processArgs(GlidePTState *s)
 	    }
 	    break;
         case FEnum_grSstPassthruMode:
-            if (s->arg[0] == GR_CONTROL_ACTIVATE)
-                glide_enabled_set();
             if (s->lfbDev->emu211 == 1) {
-                s->arg[0] = (s->arg[0])? GR_CONTROL_ACTIVATE:GR_CONTROL_DEACTIVATE;
+                s->arg[0] = (s->arg[0] == GR_PASSTHRU_SHOW_VGA)?
+                    GR_CONTROL_DEACTIVATE:GR_CONTROL_ACTIVATE;
                 s->FEnum = FEnum_grSstControl;
             }
+            else
+                glide_renderer_stat(s->arg[0]);
             break;
 
         case FEnum_grLoadGammaTable:
@@ -624,29 +608,26 @@ static void processFRet(GlidePTState *s)
             DPRINTF("grGlideGetVersion  %s", s->version);
             break;
         case FEnum_grSstControl:
-            if (s->arg[0] == GR_CONTROL_DEACTIVATE)
-                glide_enabled_reset();
-            break;
         case FEnum_grSstPassthruMode:
-            if (s->arg[0] == 0)
-                glide_enabled_reset();
+            glide_renderer_stat(s->arg[0] & 0x01U);
             break;
 	case FEnum_grSstOpen:
-	    if (s->FRet == 1)
-		s->lfbDev->guestLfb = s->arg[6];
-	    else
-		DPRINTF("grSstOpen failed");
+            s->disp_cb.arg = s->arg;
+            s->disp_cb.FEnum = s->FEnum;
+            init_window(s->arg[0], s->version, &s->disp_cb);
+            s->lfbDev->guestLfb = s->arg[6];
 	    break;
 	case FEnum_grSstWinOpen:
         case FEnum_grSstWinOpenExt:
-	    if (s->FRet != 0) {
+            s->disp_cb.arg = s->arg;
+            s->disp_cb.FEnum = s->FEnum;
+            init_window(s->arg[1], s->version, &s->disp_cb);
+	    do {
                 char strFpsLimit[sizeof(", FpsLimit ...FPS")];
                 snprintf(strFpsLimit, sizeof(", FpsLimit ...FPS"), ", FpsLimit %dFPS", glide_fpslimit());
 		s->lfbDev->origin = s->arg[4];
 		s->lfbDev->guestLfb = (s->FEnum == FEnum_grSstWinOpenExt)? s->arg[8]:s->arg[7];
-		s->GrContext = s->FRet;
                 s->GrRes = s->arg[1];
-		s->reg[0] = 1;
                 s->lfb_real = glide_lfbmode();
                 s->lfb_noaux = glide_lfbnoaux();
                 s->lfb_merge = ((s->initDLL == 0x243a0) && (s->lfb_real == 0))? glide_lfbmerge():0;
@@ -656,23 +637,21 @@ static void processFRet(GlidePTState *s)
                     s->lfb_h = (s->lfb_h > 0x300)? 0x300:s->lfb_h;
                     memset(s->glfb_ptr + (s->lfb_h * 0x800), 0, (s->lfb_h * 0x800));
                 }
-                DPRINTF("LFB mode is %s%s-copy%s%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
+                DPRINTF("LFB mode is %s%s-copy%s%s%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
                         (s->lfb_real || glide_mapbufo(0, 0))? ", Zero":", One",
+                        (othr_hwnd())? ", othr-hwnd":"",
                         (glide_fpslimit())? strFpsLimit:"",
                         (glide_lfbdirty())? ", LfbLockDirty":"",
                         (s->lfb_noaux)? ", LfbNoAux":"", (s->lfb_merge)? ", LfbWriteMerge":"");
-	    }
-	    else
-		DPRINTF("grSstWinOpen failed");
+	    } while(0);
 	    break;
 	case FEnum_grSstWinClose:
         case FEnum_grSstWinClose3x:
+            s->disp_cb.arg = s->arg;
+            s->disp_cb.FEnum = s->FEnum;
+	    fini_window(&s->disp_cb);
 	    s->perfs.last();
-	    /* TODO - Window management */
 	    DPRINTF("%-64s", "grSstWinClose called");
-	    s->GrContext = 0;
-	    s->reg[0] = 0;
-	    fini_window();
 	    break;
 	case FEnum_grGlideInit:
             s->szGrState = ALIGNED(SIZE_GRSTATE);
@@ -707,7 +686,6 @@ static void processFRet(GlidePTState *s)
 	    DPRINTF("grGlideShutdown called, fifo 0x%04x data 0x%04x shm 0x%07x lfb 0x%07x",
                     s->fifoMax, s->dataMax, (MAX_FIFO + s->dataMax) << 2, GLIDE_LFB_BASE + s->lfbDev->lfbMax);
             DPRINTF("  GrState %d VtxLayout %d", FreeGrState(), FreeVtxLayout());
-	    memset(s->reg, 0, sizeof(uint32_t [4]));
 	    memset(s->arg, 0, sizeof(uint32_t [16]));
 	    strncpy(s->version, "Glide2x", sizeof(char [80])-1);
 	    break;
@@ -849,12 +827,7 @@ static void processFRet(GlidePTState *s)
 	case FEnum_grLfbGetReadPtr:
 	case FEnum_grLfbGetWritePtr:
 	    if (s->lfbDev->emu211 == 0) {
-		union {
-		    uint32_t u32;
-		    uintptr_t uptr;
-		} uniptr;
-		uniptr.u32 = s->FRet;
-		s->lfbDev->lfbPtr[s->lfbDev->grLock] = (uint8_t *)(uniptr.uptr);
+		s->lfbDev->lfbPtr[s->lfbDev->grLock] = (uint8_t *)(s->FRet);
 		s->FRet = s->lfbDev->guestLfb;
 	    }
 	    if (s->arg[0] > 1) {
@@ -900,7 +873,7 @@ static void processFifo(GlidePTState *s)
             s->arg = &fifoptr[i];
             s->hshm = &dataptr[j];
             processArgs(s);
-            doGlideFunc(s->FEnum, s->arg, s->parg, &(s->FRet), s->lfbDev->emu211);
+            doGlideFunc(s->FEnum, s->arg, s->parg, &s->FRet, s->lfbDev->emu211);
             processFRet(s);
             numData = (s->datacb & 0x03)? ((s->datacb >> 2) + 1):(s->datacb >> 2);
             i += numArgs;
@@ -984,8 +957,8 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 	    if ((val == 0xd0243) || (val == 0xd0211) || (val == 0xd0301)) {
                 if (s->initDLL) {
                     s->initDLL = 0;
-                    fini_window();
-                    fini_glide2x();
+                    s->disp_cb.FEnum = 0;
+                    fini_window(&s->disp_cb);
                     memset(s->version, 0, sizeof(char [80]));
                     DPRINTF("DLL unloaded");
                 }
@@ -996,7 +969,7 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
             s->FEnum = val;
             processFifo(s);
             processArgs(s);
-            doGlideFunc(s->FEnum, s->arg, s->parg, &(s->FRet), s->lfbDev->emu211);
+            doGlideFunc(s->FEnum, s->arg, s->parg, &s->FRet, s->lfbDev->emu211);
             processFRet(s);
             do {
                 uint32_t *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));

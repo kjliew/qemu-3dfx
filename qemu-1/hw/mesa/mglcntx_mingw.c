@@ -64,7 +64,7 @@ static HWND CreateMesaWindow(const char *title, int w, int h, int show)
     wc.lpszClassName = title;
 
     if (!RegisterClass(&wc)) {
-        DPRINTF("RegisterClass() faled, Error %08lx", GetLastError());
+        DPRINTF("RegisterClass() failed, Error %08lx", GetLastError());
         return NULL;
     }
     
@@ -227,6 +227,14 @@ static void MesaDisplayModeset(const int modeset)
     }
 }
 
+static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
+{
+    ReleaseDC(hwnd, hDC);
+    hwnd = (HWND)nwnd;
+    hDC = GetDC(hwnd);
+    DPRINTF("MESAGL window [native %p] ready", nwnd);
+}
+
 void SetMesaFuncPtr(void *p)
 {
     HINSTANCE hDLL = (HINSTANCE)p;
@@ -293,17 +301,16 @@ void MGLTmpContext(void)
     wglFuncs.MakeCurrent(NULL, NULL);
     wglFuncs.DeleteContext(tmpGL);
     ReleaseDC(tmpWin, tmpDC);
-    DestroyWindow(tmpWin);
-    UnregisterClass("dummy", GetModuleHandle(0));
+    hwnd = tmpWin;
 }
 
 #define GLWINDOW_INIT() \
-    if (hDC == 0) { hwnd = GetCreateWindow()? \
-    CreateMesaWindow("MesaGL",640,480,1): \
-    ((HWND)mesa_prepare_window()); hDC = GetDC(hwnd); }
+    if (hDC == 0) { if (0) \
+    CreateMesaWindow("MesaGL", 640, 480, 1); \
+    mesa_prepare_window(&cwnd_mesagl); hDC = GetDC(hwnd); }
 
 #define GLWINDOW_FINI() \
-    if (GetCreateWindow()) DestroyWindow(hwnd); \
+    if (0) { } \
     else mesa_release_window()
 
 void MGLDeleteContext(int level)
@@ -320,7 +327,7 @@ void MGLDeleteContext(int level)
     }
     wglFuncs.DeleteContext(hRC[n]);
     hRC[n] = 0;
-    if (!GetCreateWindow())
+    if (!n)
         MGLActivateHandler(0);
 }
 
@@ -370,6 +377,8 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
             if (wglFuncs.SwapIntervalEXT)
                 wglFuncs.SwapIntervalEXT(val);
         }
+        if (!n)
+            MGLActivateHandler(1);
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         wglFuncs.MakeCurrent(hPBDC[i], hPBRC[i]);
@@ -440,8 +449,15 @@ int MGLSetPixelFormat(int fmt, const void *p)
     curr = GetPixelFormat(hDC);
     if (curr == 0)
         curr = MGLPresetPixelFormat();
-    else
+    else {
+        HWND tmpWin = FindWindow("dummy", "dummy");
+        if (tmpWin) {
+            DestroyWindow(tmpWin);
+            if (!UnregisterClass("dummy", GetModuleHandle(0)))
+                DPRINTF("UnregisterClass() failed, Error  %08lx", GetLastError());
+        }
         ImplMesaGLReset();
+    }
     if (wglFuncs.GetPixelFormatAttribivARB) {
         static const int iattr[] = {
             WGL_AUX_BUFFERS_ARB,
@@ -497,15 +513,7 @@ void MGLActivateHandler(int i)
     if (i != last) {
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
-        switch (i) {
-            case WA_ACTIVE:
-                MesaDisplayModeset(i);
-                mesa_enabled_set();
-                break;
-            case WA_INACTIVE:
-                mesa_enabled_reset();
-                break;
-        }
+        mesa_renderer_stat(i);
     }
 }
 

@@ -29,9 +29,17 @@ int glide_lfbdirty(void);
 int glide_lfbnoaux(void);
 int glide_lfbmode(void);
 void glide_winres(const int, int *, int *);
-int stat_window(const int, const int);
-uint32_t init_window(const int, const char *);
-void fini_window(void);
+int othr_hwnd(void);
+int stat_window(const int, void *);
+void init_window(const int, const char *, void *);
+void fini_window(void *);
+
+typedef struct {
+    int activate;
+    uint32_t *arg;
+    uint32_t FEnum;
+    uintptr_t GrContext;
+} window_cb;
 
 typedef struct {
     uintptr_t hva;

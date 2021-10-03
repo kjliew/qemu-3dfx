@@ -2136,6 +2136,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
                                 (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
                         s->dispTimer = (disptmr)? timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, 0):0;
+                        dispTimerSched(s->dispTimer);
                     }
                     else {
                         DPRINTF_COND((ptVer[0] && (0 == NumPbuffer())),

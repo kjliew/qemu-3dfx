@@ -35,6 +35,7 @@
 #include <GL/glx.h>
 #include <X11/extensions/xf86vmode.h>
 #if defined(CONFIG_DARWIN) && CONFIG_DARWIN
+const char dllname[] = "/opt/X11/lib/libGL.dylib";
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
@@ -379,6 +380,12 @@ static void MesaDisplayModeset(const int modeset)
     }
 }
 
+static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
+{
+    win = (Window)nwnd;
+    DPRINTF("MESAGL window [native %p] ready", nwnd);
+}
+
 void SetMesaFuncPtr(void *p)
 {
 }
@@ -419,7 +426,8 @@ void MGLDeleteContext(int level)
     }
     glXDestroyContext(dpy, ctx[n]);
     ctx[n] = 0;
-    MGLActivateHandler(0);
+    if (!n)
+        MGLActivateHandler(0);
 }
 
 void MGLWndRelease(void)
@@ -475,6 +483,8 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
                     p_glXSwapIntervalEXT(dpy, win, val);
             }
         }
+        if (!n)
+            MGLActivateHandler(1);
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         glXMakeContextCurrent(dpy, PBDC[i], PBDC[i], PBRC[i]);
@@ -492,7 +502,7 @@ int MGLSwapBuffers(void)
 static int MGLPresetPixelFormat(void)
 {
     dpy = XOpenDisplay(NULL);
-    win = (Window)mesa_prepare_window();
+    mesa_prepare_window(&cwnd_mesagl);
     ImplMesaGLReset();
 
     int fbid, fbcnt, *attrib = iattribs_fb(dpy, GetContextMSAA());
@@ -556,15 +566,7 @@ void MGLActivateHandler(int i)
     if (i != last) {
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
-        switch (i) {
-            case WA_ACTIVE:
-                MesaDisplayModeset(i);
-                mesa_enabled_set();
-                break;
-            case WA_INACTIVE:
-                mesa_enabled_reset();
-                break;
-        }
+        mesa_renderer_stat(i);
     }
 }
 

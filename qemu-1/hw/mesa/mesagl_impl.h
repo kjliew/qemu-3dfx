@@ -48,7 +48,6 @@ int GetContextMSAA(void);
 int ContextUseSRGB(void);
 int ContextVsyncOff(void);
 int GetFpsLimit(void);
-int GetCreateWindow(void);
 int GLFifoTrace(void);
 int GLFuncTrace(void);
 void FiniMesaGL(void);

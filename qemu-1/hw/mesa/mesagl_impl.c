@@ -1388,7 +1388,6 @@ static int cfg_cntxMSAA;
 static int cfg_cntxSRGB;
 static int cfg_cntxVsyncOff;
 static int cfg_fpsLimit;
-static int cfg_createWnd;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
 static void conf_MGLOptions(void)
@@ -1402,7 +1401,6 @@ static void conf_MGLOptions(void)
     cfg_cntxSRGB = 0;
     cfg_cntxVsyncOff = 0;
     cfg_fpsLimit = 0;
-    cfg_createWnd = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
     FILE *fp = fopen(MESAGLCFG, "r");
@@ -1428,10 +1426,6 @@ static void conf_MGLOptions(void)
             cfg_cntxVsyncOff = ((i == 1) && v)? 1:cfg_cntxVsyncOff;
             i = sscanf(line, "FpsLimit,%d", &v);
             cfg_fpsLimit = (i == 1)? (v & 0x3FU):cfg_fpsLimit;
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
-            i = sscanf(line, "CreateWindow,%d", &v);
-            cfg_createWnd = (i == 1)? v:cfg_createWnd;
-#endif
             i = sscanf(line, "FifoTrace,%d", &v);
             cfg_traceFifo = ((i == 1) && v)? 1:cfg_traceFifo;
             i = sscanf(line, "FuncTrace,%d", &v);
@@ -1451,7 +1445,6 @@ int GetContextMSAA(void) { return cfg_cntxMSAA; }
 int ContextUseSRGB(void) { return cfg_cntxSRGB; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
-int GetCreateWindow(void) { return cfg_createWnd; }
 int GLFifoTrace(void) { return cfg_traceFifo; }
 int GLFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }
 
@@ -1495,8 +1488,13 @@ int InitMesaGL(void)
     const char dllname[] = "libGL.so";
     hDll = dlopen(dllname, RTLD_NOW);
 #elif defined(CONFIG_DARWIN) && CONFIG_DARWIN
-    /* XQuartz/GLX/OpenGL */
-    const char dllname[] = "/opt/X11/lib/libGL.dylib";
+/*
+    -- XQuartz/GLX/OpenGL --
+#define DEFAULT_OPENGL  "/opt/X11/lib/libGL.dylib"
+    -- SDL2/NSOpenGL --
+#define DEFAULT_OPENGL  "/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
+*/
+    extern const char dllname[];
     hDll = dlopen(dllname, RTLD_NOW);
 #else
 #error Unknown dynamic load library
