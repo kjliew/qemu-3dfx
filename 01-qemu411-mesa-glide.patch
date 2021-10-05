@@ -237,8 +237,8 @@ diff -Nru ../orig/qemu-4.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
  {
 diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-4.1.1/ui/sdl2.c	2019-11-14 10:06:21.000000000 -0800
-+++ ./ui/sdl2.c	2021-10-02 22:46:11.810347800 -0700
-@@ -712,6 +712,240 @@
++++ ./ui/sdl2.c	2021-10-04 21:36:37.737823500 -0700
+@@ -712,6 +712,246 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -311,15 +311,17 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        }
 +        SDL_DestroyRenderer(s->scon->real_renderer);
 +        s->scon->real_renderer = 0;
-+        s->scon->winctx = SDL_GL_CreateContext(s->scon->real_window);
 +        s->render_pause = 1;
++        s->scon->winctx = SDL_GL_GetCurrentContext();
++        if (!s->scon->winctx)
++            s->scon->winctx = SDL_GL_CreateContext(s->scon->real_window);
 +        if (!s->opaque)
 +            s->cwnd_fn(s->scon->real_window, s->hnwnd, 0);
 +    }
 +    else {
 +        s->render_pause = 0;
 +        s->scon->winctx = 0;
-+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, 0);
++        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "0");
 +        SDL_DestroyRenderer(s->scon->real_renderer);
 +        s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1, 0);
 +        if (!s->scon->real_renderer) {
@@ -334,6 +336,21 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    }
 +    if (s->opaque && (s->res > 0))
 +        SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
++}
++
++static int sdl_gui_fullscreen(int *width, int *height, const char *feat)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    sdl_display_valid(feat);
++    s->scon = &sdl2_console[0];
++    if (width)
++        *width = surface_width(s->scon->surface);
++    if (height)
++        *height = surface_height(s->scon->surface);
++    return (memcmp(feat, "mesapt", sizeof("mesapt")))?
++        gui_fullscreen:((modeset)? 0:gui_fullscreen);
++
 +}
 +
 +static void sdl_renderer_stat(const int activate, const char *feat)
@@ -396,8 +413,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        if (s->scon->winctx) {
 +            int scr_w, scr_h;
 +            SDL_GetWindowSize(s->scon->real_window, &scr_w, &scr_h);
-+            stat = SDL_GL_MakeCurrent(s->scon->real_window, s->scon->winctx);
-+            if (stat)
++            if (SDL_GL_MakeCurrent(s->scon->real_window, s->scon->winctx))
 +                fprintf(stderr, "%s", SDL_GetError());
 +            stat = ((scr_h & 0x7FFFU) << 0x10) | scr_w;
 +            s->cwnd_fn(s->scon->real_window, s->hnwnd, s->opaque);
@@ -414,12 +430,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +
 +int glide_gui_fullscreen(int *width, int *height)
 +{
-+    sdl_display_valid("glidept");
-+    if (width)
-+        *width = surface_width(sdl2_console[0].surface);
-+    if (height)
-+        *height = surface_height(sdl2_console[0].surface);
-+    return gui_fullscreen;
++    return sdl_gui_fullscreen(width, height, "glidept");
 +}
 +
 +void glide_renderer_stat(const int activate)
@@ -468,12 +479,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +
 +int mesa_gui_fullscreen(int *width, int *height)
 +{
-+    sdl_display_valid("mesapt");
-+    if (width)
-+        *width = surface_width(sdl2_console[0].surface);
-+    if (height)
-+        *height = surface_height(sdl2_console[0].surface);
-+    return gui_fullscreen;
++    return sdl_gui_fullscreen(width, height, "mesapt");
 +}
 +
  static const DisplayChangeListenerOps dcl_2d_ops = {

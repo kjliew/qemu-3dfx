@@ -265,6 +265,7 @@ void MGLTmpContext(void)
 void MGLDeleteContext(int level)
 {
     int n = (level >= MAX_LVLCNTX)? (MAX_LVLCNTX - 1):level;
+    SDL_GL_MakeCurrent(window, NULL);
     if (n == 0) {
         for (int i = MAX_LVLCNTX; i > 1;) {
             if (ctx[--i]) {
@@ -294,6 +295,7 @@ int MGLCreateContext(uint32_t gDC)
         ret = 0;
     }
     else {
+        SDL_GL_MakeCurrent(window, NULL);
         for (i = MAX_LVLCNTX; i > 1;) {
             if (ctx[--i]) {
                 SDL_GL_DeleteContext(ctx[i]);
@@ -479,6 +481,7 @@ void MGLFuncHandler(const char *name)
         if (1 /* wglFuncs.GetExtensionsStringARB */) {
             //const char *str = wglFuncs.GetExtensionsStringARB(hDC);
             const char wglext[] = "WGL_3DFX_gamma_control "
+                "WGL_ARB_create_context "
                 "WGL_ARB_extensions_string "
                 "WGL_ARB_pixel_format "
                 "WGL_EXT_extensions_string "
@@ -491,10 +494,24 @@ void MGLFuncHandler(const char *name)
         }
     }
     FUNCP_HANDLER("wglCreateContextAttribsARB") {
-        DPRINTF("Unsupported wglCreateContextAttribsARB");
-        argsp[1] = 0;
-        argsp[0] = 0;
-        return;
+        do {
+            uint32_t i, ret;
+            for (i = 0; ((i < MAX_LVLCNTX) && ctx[i]); i++);
+            argsp[1] = (argsp[0])? i:0;
+            if (argsp[1] == 0) {
+                ret = (ctx[0])? 1:0;
+            }
+            else {
+                if (i == MAX_LVLCNTX) {
+                    for (i = 1; i < (MAX_LVLCNTX - 1); i++)
+                        ctx[i] = ctx[i + 1];
+                    argsp[1] = i;
+                }
+                ret = (ctx[0])? 1:0;
+            }
+            argsp[0] = ret;
+            return;
+        } while(0);
     }
     FUNCP_HANDLER("wglGetPixelFormatAttribfvARB") {
         const int *ia = (const int *)&argsp[4], n = argsp[2];

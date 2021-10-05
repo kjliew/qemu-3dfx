@@ -16611,6 +16611,10 @@ uint32_t PT_CALL mglGetProcAddress (uint32_t arg0)
     /* WGL_3DFX_gamma_control */
     FUNC_WGL_EXT(wglGetDeviceGammaRamp3DFX);
     FUNC_WGL_EXT(wglSetDeviceGammaRamp3DFX);
+    /* GL_ARB_debug_output */
+    FUNC_WGL_EXT(glDebugMessageCallbackARB);
+    FUNC_WGL_EXT(glDebugMessageControlARB);
+    FUNC_WGL_EXT(glDebugMessageInsertARB);
 #undef FUNC_WGL_EXT
 
     ret = (uint32_t)fptr;
