@@ -251,8 +251,8 @@ diff -Nru ../orig/qemu-5.2.0/target/i386/whpx-all.c ./target/i386/whpx-all.c
  {
 diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-5.2.0/ui/sdl2.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./ui/sdl2.c	2021-10-04 21:35:25.935086400 -0700
-@@ -755,6 +755,246 @@
++++ ./ui/sdl2.c	2021-10-11 18:53:40.469192000 -0700
+@@ -755,6 +755,248 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -333,8 +333,10 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +            s->cwnd_fn(s->scon->real_window, s->hnwnd, 0);
 +    }
 +    else {
-+        s->render_pause = 0;
++        SDL_GL_MakeCurrent(s->scon->real_window, NULL);
++        SDL_GL_DeleteContext(s->scon->winctx);
 +        s->scon->winctx = 0;
++        s->render_pause = 0;
 +        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "0");
 +        SDL_DestroyRenderer(s->scon->real_renderer);
 +        s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1, 0);

@@ -36,6 +36,8 @@
 #if defined(CONFIG_DARWIN) && CONFIG_DARWIN
 const char dllname[] = "/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib";
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
+#define GL_DELETECONTEXT(x)
+#define GL_CREATECONTEXT(x)
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
 #include "sysemu/kvm.h"
@@ -54,6 +56,10 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 
     return ret;
 }
+#define GL_DELETECONTEXT(x) \
+    do { SDL_GL_DeleteContext(x); x = 0; } while(0)
+#define GL_CREATECONTEXT(x) \
+    do { x = SDL_GL_CreateContext(window); } while(0)
 #endif
 #else
 #define MESAGL_SDLGL 0
@@ -251,7 +257,9 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
     }
 }
 
-void SetMesaFuncPtr(void *p) { }
+void SetMesaFuncPtr(void *p)
+{
+}
 
 void *MesaGLGetProc(const char *proc)
 {
@@ -269,11 +277,11 @@ void MGLDeleteContext(int level)
     if (n == 0) {
         for (int i = MAX_LVLCNTX; i > 1;) {
             if (ctx[--i]) {
-                SDL_GL_DeleteContext(ctx[i]);
-                ctx[i] = 0;
+                GL_DELETECONTEXT(ctx[i]);
             }
         }
     }
+    GL_DELETECONTEXT(ctx[n]);
     if (!n)
         MGLActivateHandler(0);
 }
@@ -298,10 +306,10 @@ int MGLCreateContext(uint32_t gDC)
         SDL_GL_MakeCurrent(window, NULL);
         for (i = MAX_LVLCNTX; i > 1;) {
             if (ctx[--i]) {
-                SDL_GL_DeleteContext(ctx[i]);
-                ctx[i] = 0;
+                GL_DELETECONTEXT(ctx[i]);
             }
         }
+        GL_CREATECONTEXT(ctx[0]);
         ret = (ctx[0])? 0:1;
     }
     return ret;
@@ -357,17 +365,19 @@ int MGLSetPixelFormat(int fmt, const void *p)
     if (!window)
         MGLPresetPixelFormat();
     else {
-        int cColors[4];
-        SDL_GL_MakeCurrent(window, ctx[0]);
-        SDL_GL_GetAttribute(SDL_GL_ALPHA_SIZE, &cColors[0]);
-        SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &cColors[1]);
-        SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &cColors[2]);
-        SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &cColors[3]);
-        glGetIntegerv(GL_AUX_BUFFERS, &cAuxBuffers);
-        DPRINTF("%s OpenGL %s", glGetString(GL_RENDERER), glGetString(GL_VERSION));
-        DPRINTF("Pixel Format ABGR%d%d%d%d D%2dS%d nAux %d nSamples %d %d",
-                cColors[0], cColors[1], cColors[2], cColors[3], cDepthBits, cStencilBits,
-                cAuxBuffers, cSampleBuf[0], cSampleBuf[1]);
+        if (ctx[0]) {
+            int cColors[4];
+            SDL_GL_MakeCurrent(window, ctx[0]);
+            SDL_GL_GetAttribute(SDL_GL_ALPHA_SIZE, &cColors[0]);
+            SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &cColors[1]);
+            SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &cColors[2]);
+            SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &cColors[3]);
+            glGetIntegerv(GL_AUX_BUFFERS, &cAuxBuffers);
+            DPRINTF("%s OpenGL %s", glGetString(GL_RENDERER), glGetString(GL_VERSION));
+            DPRINTF("Pixel Format ABGR%d%d%d%d D%2dS%d nAux %d nSamples %d %d",
+                    cColors[0], cColors[1], cColors[2], cColors[3], cDepthBits, cStencilBits,
+                    cAuxBuffers, cSampleBuf[0], cSampleBuf[1]);
+        }
     }
     return 1;
 }
@@ -499,6 +509,9 @@ void MGLFuncHandler(const char *name)
             for (i = 0; ((i < MAX_LVLCNTX) && ctx[i]); i++);
             argsp[1] = (argsp[0])? i:0;
             if (argsp[1] == 0) {
+                SDL_GL_MakeCurrent(window, NULL);
+                GL_DELETECONTEXT(ctx[0]);
+                GL_CREATECONTEXT(ctx[0]);
                 ret = (ctx[0])? 1:0;
             }
             else {

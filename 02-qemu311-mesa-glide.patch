@@ -237,8 +237,8 @@ diff -Nru ../orig/qemu-3.1.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
  {
 diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-3.1.1.1/ui/sdl2.c	2019-10-01 15:31:46.000000000 -0700
-+++ ./ui/sdl2.c	2021-10-04 20:32:36.115381800 -0700
-@@ -719,6 +719,246 @@
++++ ./ui/sdl2.c	2021-10-11 19:00:13.864847700 -0700
+@@ -719,6 +719,248 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -319,8 +319,10 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
 +            s->cwnd_fn(s->scon->real_window, s->hnwnd, 0);
 +    }
 +    else {
-+        s->render_pause = 0;
++        SDL_GL_MakeCurrent(s->scon->real_window, NULL);
++        SDL_GL_DeleteContext(s->scon->winctx);
 +        s->scon->winctx = 0;
++        s->render_pause = 0;
 +        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "0");
 +        SDL_DestroyRenderer(s->scon->real_renderer);
 +        s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1, 0);
@@ -487,7 +489,7 @@ diff -Nru ../orig/qemu-3.1.1.1/ui/sdl2.c ./ui/sdl2.c
      .dpy_gfx_update       = sdl2_2d_update,
 diff -Nru ../orig/qemu-3.1.1.1/vl.c ./vl.c
 --- ../orig/qemu-3.1.1.1/vl.c	2019-10-01 15:31:47.000000000 -0700
-+++ ./vl.c	2021-10-02 21:50:08.139963000 -0700
++++ ./vl.c	2021-10-04 22:09:18.622951300 -0700
 @@ -1896,6 +1896,13 @@
      }
  }
