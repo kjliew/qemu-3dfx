@@ -57,6 +57,7 @@
 #define GR_CONTROL_DEACTIVATE   0x2
 #define GR_PASSTHRU_SHOW_SST1   0x1
 #define GR_PASSTHRU_SHOW_VGA    0x0
+#define GR_PASSTHRU             0x3
 
 typedef struct {
     uint32_t small;

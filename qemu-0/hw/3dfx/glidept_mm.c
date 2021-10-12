@@ -607,6 +607,11 @@ static void processFRet(GlidePTState *s)
             strncpy(s->version, (const char *)outshm, sizeof(char [80])-1);
             DPRINTF("grGlideGetVersion  %s", s->version);
             break;
+        case FEnum_grDisable:
+        case FEnum_grEnable:
+            if (s->arg[0] == GR_PASSTHRU)
+                glide_renderer_stat((s->FEnum == FEnum_grEnable)? 1:0);
+            break;
         case FEnum_grSstControl:
         case FEnum_grSstPassthruMode:
             glide_renderer_stat(s->arg[0] & 0x01U);
