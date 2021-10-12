@@ -64,7 +64,7 @@ static HWND CreateMesaWindow(const char *title, int w, int h, int show)
     wc.lpszClassName = title;
 
     if (!RegisterClass(&wc)) {
-        DPRINTF("RegisterClass() failed, Error %08lx", GetLastError());
+        DPRINTF("RegisterClass() failed, Error 0x%08lx", GetLastError());
         return NULL;
     }
     
@@ -235,6 +235,16 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
     DPRINTF("MESAGL window [native %p] ready", nwnd);
 }
 
+static void TmpContextPurge(void)
+{
+    HWND tmpWin = FindWindow("dummy", "dummy");
+    if (tmpWin) {
+        DestroyWindow(tmpWin);
+        if (!UnregisterClass("dummy", GetModuleHandle(0)))
+            DPRINTF("UnregisterClass() failed, Error 0x%08lx", GetLastError());
+    }
+}
+
 void SetMesaFuncPtr(void *p)
 {
     HINSTANCE hDLL = (HINSTANCE)p;
@@ -337,6 +347,7 @@ void MGLWndRelease(void)
         MesaDisplayModeset(0);
         MesaInitGammaRamp();
         ReleaseDC(hwnd, hDC);
+        TmpContextPurge();
         GLWINDOW_FINI();
         hDC = 0;
         hwnd = 0;
@@ -450,12 +461,7 @@ int MGLSetPixelFormat(int fmt, const void *p)
     if (curr == 0)
         curr = MGLPresetPixelFormat();
     else {
-        HWND tmpWin = FindWindow("dummy", "dummy");
-        if (tmpWin) {
-            DestroyWindow(tmpWin);
-            if (!UnregisterClass("dummy", GetModuleHandle(0)))
-                DPRINTF("UnregisterClass() failed, Error  %08lx", GetLastError());
-        }
+        TmpContextPurge();
         ImplMesaGLReset();
     }
     if (wglFuncs.GetPixelFormatAttribivARB) {

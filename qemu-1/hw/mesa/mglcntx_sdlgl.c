@@ -374,9 +374,9 @@ int MGLSetPixelFormat(int fmt, const void *p)
             SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &cColors[3]);
             glGetIntegerv(GL_AUX_BUFFERS, &cAuxBuffers);
             DPRINTF("%s OpenGL %s", glGetString(GL_RENDERER), glGetString(GL_VERSION));
-            DPRINTF("Pixel Format ABGR%d%d%d%d D%2dS%d nAux %d nSamples %d %d",
+            DPRINTF("Pixel Format ABGR%d%d%d%d D%2dS%d nAux %d nSamples %d %d %s",
                     cColors[0], cColors[1], cColors[2], cColors[3], cDepthBits, cStencilBits,
-                    cAuxBuffers, cSampleBuf[0], cSampleBuf[1]);
+                    cAuxBuffers, cSampleBuf[0], cSampleBuf[1], ContextUseSRGB()? "sRGB":"");
         }
     }
     return 1;
@@ -583,14 +583,14 @@ void MGLFuncHandler(const char *name)
     FUNCP_HANDLER("wglGetDeviceGammaRamp3DFX") {
         uint32_t ret;
         struct GammaRamp *pRamp = (struct GammaRamp *)&argsp[2];
-        ret = (SDL_GetWindowGammaRamp(window, pRamp->r, pRamp->g, pRamp->b))? 0:1;
+        ret = ContextUseSRGB()? 0:((SDL_GetWindowGammaRamp(window, pRamp->r, pRamp->g, pRamp->b))? 0:1);
         argsp[0] = ret;
         return;
     }
     FUNCP_HANDLER("wglSetDeviceGammaRamp3DFX") {
         uint32_t ret;
         struct GammaRamp *pRamp = (struct GammaRamp *)&argsp[0];
-        ret = (SDL_SetWindowGammaRamp(window, pRamp->r, pRamp->g, pRamp->b))? 0:1;
+        ret = ContextUseSRGB()? 0:((SDL_SetWindowGammaRamp(window, pRamp->r, pRamp->g, pRamp->b))? 0:1);
         argsp[0] = ret;
         return;
     }
