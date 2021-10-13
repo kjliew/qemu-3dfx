@@ -374,7 +374,8 @@ static void fltrxstr(const char *xstr)
             size_t xlen = strnlen(stok, MAX_XSTR);
             int fltr = 0;
             while(fgets(line, MAX_XSTR, f)) {
-                if (!strncmp(stok, line, strnlen(line, MAX_XSTR) - 1)) {
+                size_t slen = strnlen(line, MAX_XSTR) - 1;
+                if ((slen == xlen) && !strncmp(stok, line, xlen)) {
                     fltr = 1;
                     OHST_DMESG("..ignoring %s", stok);
                     break;
