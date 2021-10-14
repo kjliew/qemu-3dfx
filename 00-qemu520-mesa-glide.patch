@@ -364,8 +364,8 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +        *width = surface_width(s->scon->surface);
 +    if (height)
 +        *height = surface_height(s->scon->surface);
-+    return (memcmp(feat, "mesapt", sizeof("mesapt")))?
-+        gui_fullscreen:((modeset)? 0:gui_fullscreen);
++    return gui_fullscreen;
++
 +
 +}
 +
