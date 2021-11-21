@@ -1,0 +1,37 @@
+diff -Nru ../orig/qemu-6.1.0/ui/sdl2-gl.c ./ui/sdl2-gl.c
+--- ../orig/qemu-6.1.0/ui/sdl2-gl.c	2021-08-25 14:40:07.000000000 -0700
++++ ./ui/sdl2-gl.c	2021-11-20 21:49:40.000000000 -0800
+@@ -170,6 +170,13 @@
+ 
+ void sdl2_gl_destroy_context(DisplayChangeListener *dcl, QEMUGLContext ctx)
+ {
++#ifdef CONFIG_DARWIN
++    /* Apple OpenGL FBO blit quirk
++     * Require SDL2 fix in https://github.com/libsdl-org/SDL/issues/4986
++     */
++    struct sdl2_console *scon = container_of(dcl, struct sdl2_console, dcl);
++    SDL_SetWindowPosition(scon->real_window, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED);
++#endif
+     SDL_GLContext sdlctx = (SDL_GLContext)ctx;
+ 
+     SDL_GL_DeleteContext(sdlctx);
+diff -Nru ../orig/qemu-6.1.0/ui/sdl2.c ./ui/sdl2.c
+--- ../orig/qemu-6.1.0/ui/sdl2.c	2021-11-19 22:46:52.000000000 -0800
++++ ./ui/sdl2.c	2021-11-20 22:00:55.000000000 -0800
+@@ -87,6 +87,16 @@
+     }
+ #ifdef CONFIG_OPENGL
+     if (scon->opengl) {
++#if defined(CONFIG_WIN32) || defined(CONFIG_DARWIN)
++        /* On Windows 10 & macOS, SDL2 window with SDL_WINDOW_OPENGL does not
++         * default to OpenGL backend.
++         */
++        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
++#ifdef CONFIG_DARWIN
++        /* Apple OpenGL quirk */
++        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
++#endif
++#endif
+         flags |= SDL_WINDOW_OPENGL;
+     }
+ #endif

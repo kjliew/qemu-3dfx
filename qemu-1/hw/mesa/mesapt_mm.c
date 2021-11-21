@@ -1779,6 +1779,7 @@ static void processFRet(MesaPTState *s)
             DPRINTF_COND((s->FRet == 0), "  *!ERR* MapBuffer failed");
             s->BufObj->hva = s->FRet;
             s->BufObj->mused = s->szUsedBuf;
+            s->BufObj->offst = 0;
             SZFBT_VALID(s->szUsedBuf, s->FRet);
             s->BufObj->gpa = (uintptr_t)s->fbtm_ptr + MGLFBT_SIZE - s->szUsedBuf;
             if (MGLUpdateGuestBufo(s->BufObj, 1))
