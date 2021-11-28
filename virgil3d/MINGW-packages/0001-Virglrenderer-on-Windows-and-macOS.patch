@@ -68,6 +68,19 @@ index 575b7a3..118024b 100644
  endif
  
  if have_glx
+diff --git a/src/vrend_blitter.h b/src/vrend_blitter.h
+index c4a7adb..26c3f37 100644
+--- a/src/vrend_blitter.h
++++ b/src/vrend_blitter.h
+@@ -27,7 +27,7 @@
+ /* shaders for blitting */
+
+ #define HEADER_GL                               \
+-   "#version 130\n"                             \
++   "#version 140\n"                             \
+    "// Blitter\n"                               \
+
+ #define HEADER_GLES                             \
 diff --git a/src/vrend_debug.c b/src/vrend_debug.c
 index b888ad2..ef2b51d 100644
 --- a/src/vrend_debug.c
@@ -85,7 +98,7 @@ index b888ad2..ef2b51d 100644
  #include <stdio.h>
  
 diff --git a/src/vrend_renderer.c b/src/vrend_renderer.c
-index b8b2a36..cb7b465 100644
+index b8b2a36..8414a38 100644
 --- a/src/vrend_renderer.c
 +++ b/src/vrend_renderer.c
 @@ -313,6 +313,7 @@ struct global_renderer_state {
@@ -167,7 +180,15 @@ index b8b2a36..cb7b465 100644
     vrend_state.use_integer = use_integer();
  
     init_features(gles ? 0 : gl_ver,
-@@ -6952,6 +6954,7 @@ static int vrend_resource_alloc_texture(struct vrend_resource *gr,
+@@ -6458,6 +6460,7 @@ struct vrend_context *vrend_create_context(int id, uint32_t nlen, const char *de
+    grctx->shader_cfg.has_es31_compat = has_feature(feat_gles31_compatibility);
+    grctx->shader_cfg.has_conservative_depth = has_feature(feat_conservative_depth);
+    grctx->shader_cfg.use_integer = vrend_state.use_integer;
++   grctx->shader_cfg.gl_apple = vrend_state.gl_apple;
+    grctx->shader_cfg.has_dual_src_blend = has_feature(feat_dual_src_blend);
+
+    vrend_renderer_create_sub_ctx(grctx, 0);
+@@ -6952,6 +6955,7 @@ static int vrend_resource_alloc_texture(struct vrend_resource *gr,
  
     const bool format_can_texture_storage = has_feature(feat_texture_storage) &&
          (tex_conv_table[format].flags & VIRGL_TEXTURE_CAN_TEXTURE_STORAGE);
@@ -175,7 +196,7 @@ index b8b2a36..cb7b465 100644
  
     if (format_can_texture_storage)
        gr->storage_bits |= VREND_STORAGE_GL_IMMUTABLE;
-@@ -7015,7 +7018,7 @@ static int vrend_resource_alloc_texture(struct vrend_resource *gr,
+@@ -7015,7 +7019,7 @@ static int vrend_resource_alloc_texture(struct vrend_resource *gr,
        }
  
        if (pr->nr_samples > 0) {
@@ -184,7 +205,7 @@ index b8b2a36..cb7b465 100644
              if (gr->target == GL_TEXTURE_2D_MULTISAMPLE) {
                 glTexStorage2DMultisample(gr->target, pr->nr_samples,
                                           internalformat, pr->width0, pr->height0,
-@@ -7879,7 +7882,7 @@ static void do_readpixels(struct vrend_resource *res,
+@@ -7879,7 +7883,7 @@ static void do_readpixels(struct vrend_resource *res,
  
     if (has_feature(feat_arb_robustness))
        glReadnPixelsARB(x, y, width, height, format, type, bufSize, data);
@@ -193,15 +214,35 @@ index b8b2a36..cb7b465 100644
        glReadnPixelsKHR(x, y, width, height, format, type, bufSize, data);
     else
        glReadPixels(x, y, width, height, format, type, data);
-@@ -10005,7 +10008,7 @@ static void vrend_renderer_fill_caps_v1(int gl_ver, int gles_ver, union virgl_ca
-       caps->v1.bset.depth_clip_disable = 1;
- 
-    if (gl_ver >= 32) {
--      caps->v1.bset.fragment_coord_conventions = 1;
-+      caps->v1.bset.fragment_coord_conventions = (vrend_state.gl_apple)? 0:1;
-       caps->v1.bset.seamless_cube_map = 1;
-    } else {
-       if (epoxy_has_gl_extension("GL_ARB_fragment_coord_conventions"))
+diff --git a/src/vrend_shader.c b/src/vrend_shader.c
+index f7ace6f..f5d6df4 100644
+--- a/src/vrend_shader.c
++++ b/src/vrend_shader.c
+@@ -5518,10 +5518,10 @@ static void emit_header(const struct dump_ctx *ctx, struct vrend_glsl_strbufs *g
+
+       if (ctx->prog_type == TGSI_PROCESSOR_VERTEX && ctx->cfg->use_explicit_locations)
+          emit_ext(glsl_strbufs, "ARB_explicit_attrib_location", "require");
+-      if (ctx->prog_type == TGSI_PROCESSOR_FRAGMENT && fs_emit_layout(ctx))
++      if (ctx->prog_type == TGSI_PROCESSOR_FRAGMENT && fs_emit_layout(ctx) && !ctx->cfg->gl_apple)
+          emit_ext(glsl_strbufs, "ARB_fragment_coord_conventions", "require");
+
+-      if (ctx->ubo_used_mask)
++      if (ctx->ubo_used_mask && !ctx->cfg->gl_apple)
+          emit_ext(glsl_strbufs, "ARB_uniform_buffer_object", "require");
+
+       if (ctx->num_cull_dist_prop || ctx->key->prev_stage_num_cull_out)
+diff --git a/src/vrend_shader.h b/src/vrend_shader.h
+index fd2356b..c8941c4 100644
+--- a/src/vrend_shader.h
++++ b/src/vrend_shader.h
+@@ -162,6 +162,7 @@ struct vrend_shader_key {
+ struct vrend_shader_cfg {
+    int glsl_version;
+    int max_draw_buffers;
++   bool gl_apple;
+    bool use_gles;
+    bool use_core_profile;
+    bool use_explicit_locations;
 diff --git a/src/vrend_winsys.c b/src/vrend_winsys.c
 index bf2d9ef..bf84102 100644
 --- a/src/vrend_winsys.c
