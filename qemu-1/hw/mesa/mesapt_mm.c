@@ -446,6 +446,7 @@ static int PArgsShouldAligned(MesaPTState *s)
             break;
         case FEnum_glBufferData:
         case FEnum_glBufferDataARB:
+        case FEnum_glBufferStorage:
         case FEnum_glBufferSubData:
         case FEnum_glBufferSubDataARB:
         case FEnum_glFlushMappedBufferRange:
@@ -454,6 +455,10 @@ static int PArgsShouldAligned(MesaPTState *s)
         case FEnum_glGetBufferSubData:
         case FEnum_glGetBufferSubDataARB:
         case FEnum_glMapBufferRange:
+        case FEnum_glNamedBufferData:
+        case FEnum_glNamedBufferDataEXT:
+        case FEnum_glNamedBufferStorage:
+        case FEnum_glNamedBufferStorageEXT:
         case FEnum_glNamedBufferSubData:
         case FEnum_glNamedBufferSubDataEXT:
             /* return 0; */
@@ -472,6 +477,10 @@ static int PArgsShouldAligned(MesaPTState *s)
         case FEnum_glSecondaryColorPointerEXT:
         case FEnum_glTexCoordPointer:
         case FEnum_glTexCoordPointerEXT:
+        case FEnum_glVertexAttribIPointer:
+        case FEnum_glVertexAttribIPointerEXT:
+        case FEnum_glVertexAttribLPointer:
+        case FEnum_glVertexAttribLPointerEXT:
         case FEnum_glVertexAttribPointer:
         case FEnum_glVertexAttribPointerARB:
         case FEnum_glVertexPointer:
@@ -518,6 +527,12 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glCallLists:
             s->datacb = ALIGNED(s->arg[0] * szgldata(0, s->arg[1]));
+            s->parg[2] = VAL(s->hshm);
+            break;
+        case FEnum_glClearBufferfv:
+        case FEnum_glClearBufferiv:
+        case FEnum_glClearBufferuiv:
+            s->datacb = (s->arg[0] == GL_COLOR)? 4*sizeof(uint32_t):sizeof(uint32_t);
             s->parg[2] = VAL(s->hshm);
             break;
         case FEnum_glScissorIndexedv:
@@ -601,6 +616,17 @@ static void processArgs(MesaPTState *s)
             vtxarry_init(&s->Weight, s->arg[0], s->arg[1], s->arg[2], (s->arrayBuf == 0)?
                 LookupVertex(s->arg[3], s->szVertCache):(void *)(uintptr_t)s->arg[3]);
             s->parg[3] = VAL(s->Weight.ptr);
+            break;
+        case FEnum_glVertexAttribIPointer:
+        case FEnum_glVertexAttribIPointerEXT:
+        case FEnum_glVertexAttribLPointer:
+        case FEnum_glVertexAttribLPointerEXT:
+            {
+                vtxarry_t *arry = vattr2arry(s, s->arg[0]);
+                vtxarry_init(arry, s->arg[1], s->arg[2], s->arg[3], (s->arrayBuf == 0)?
+                        LookupVertex(s->arg[4], s->szVertCache):(void *)(uintptr_t)s->arg[4]);
+                s->parg[0] = VAL(arry->ptr);
+            }
             break;
         case FEnum_glVertexAttribPointer:
         case FEnum_glVertexAttribPointerARB:
@@ -1308,6 +1334,11 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glBufferData:
         case FEnum_glBufferDataARB:
+        case FEnum_glBufferStorage:
+        case FEnum_glNamedBufferData:
+        case FEnum_glNamedBufferDataEXT:
+        case FEnum_glNamedBufferStorage:
+        case FEnum_glNamedBufferStorageEXT:
             s->parg[1] = s->arg[1];
             SZFBT_VALID(s->arg[1], s->arg[2]);
             s->parg[2] = (s->arg[2])? VAL(s->fbtm_ptr + MGLFBT_SIZE - ALIGNED(s->arg[1])):0;
@@ -1501,6 +1532,7 @@ static void processArgs(MesaPTState *s)
             s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
             s->parg[3] = VAL(s->hshm);
             break;
+        case FEnum_glGetActiveUniform:
         case FEnum_glGetActiveUniformARB:
             memset(outshm, 0, 4*ALIGNED(1));
             s->parg[3] = VAL(outshm);
@@ -1508,19 +1540,31 @@ static void processArgs(MesaPTState *s)
             s->parg[1] = VAL(PTR(outshm, 2*ALIGNED(1)));
             s->parg[2] = VAL(PTR(outshm, 3*ALIGNED(1)));
             break;
+        case FEnum_glGetActiveUniformName:
+            memset(outshm, 0, 2*ALIGNED(1));
+            s->parg[3] = VAL(outshm);
+            s->parg[0] = VAL(PTR(outshm, ALIGNED(1)));
+            break;
         case FEnum_glGetAttribLocation:
         case FEnum_glGetAttribLocationARB:
+        case FEnum_glGetUniformBlockIndex:
         case FEnum_glGetUniformLocation:
         case FEnum_glGetUniformLocationARB:
             s->datacb = ALIGNED((strlen((char *)s->hshm) + 1));
             s->parg[1] = VAL(s->hshm);
             break;
+        case FEnum_glGetAttachedShaders:
         case FEnum_glGetInfoLogARB:
         case FEnum_glGetProgramInfoLog:
         case FEnum_glGetShaderInfoLog:
-            s->arg[1] = (s->arg[1] > (3*PAGE_SIZE))? (3*PAGE_SIZE):s->arg[1];
+            if (s->FEnum == FEnum_glGetAttachedShaders)
+                s->arg[1] = (s->arg[1] > (((3*PAGE_SIZE) - ALIGNED(1)) / sizeof(int)))?
+                    (((3*PAGE_SIZE) - ALIGNED(1)) / sizeof(int)):s->arg[1];
+            else
+                s->arg[1] = (s->arg[1] > ((3*PAGE_SIZE) - ALIGNED(1)))?
+                    ((3*PAGE_SIZE) - ALIGNED(1)):s->arg[1];
             s->parg[2] = VAL(outshm);
-            s->parg[3] = VAL(PTR(outshm, ALIGNED(sizeof(int))));
+            s->parg[3] = VAL(PTR(outshm, ALIGNED(1)));
             break;
         case FEnum_glDebugMessageInsertARB:
             s->datacb = ALIGNED(s->arg[4]);
@@ -1849,6 +1893,7 @@ static void processFRet(MesaPTState *s)
                         "Attrib":"Uniform", (char *)s->hshm, (uint32_t)s->FRet);
             }
             break;
+        case FEnum_glGetActiveUniform:
         case FEnum_glGetActiveUniformARB:
             DPRINTF("ActiveUniform \"%s\" len %02x sz %02x enum %04x", PTR(outshm, 3*ALIGNED(1)),
                     *(uint32_t *)outshm,

@@ -1038,6 +1038,8 @@ void PT_CALL glBufferParameteriAPPLE(uint32_t arg0, uint32_t arg1, uint32_t arg2
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBufferParameteriAPPLE, 3);
 }
 void PT_CALL glBufferStorage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    if (arg2)
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg1)) >> 2], (unsigned char *)arg2, arg1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferStorage;
 }
@@ -1128,19 +1130,22 @@ void PT_CALL glClearBufferSubData(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
 }
 void PT_CALL glClearBufferfi(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glClearBufferfi;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClearBufferfi, 4);
 }
 void PT_CALL glClearBufferfv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, (arg0 == GL_COLOR)? 4*sizeof(float):sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glClearBufferfv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClearBufferfv, 3);
 }
 void PT_CALL glClearBufferiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, (arg0 == GL_COLOR)? 4*sizeof(int):sizeof(int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glClearBufferiv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClearBufferiv, 3);
 }
 void PT_CALL glClearBufferuiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    fifoAddData(0, arg2, (arg0 == GL_COLOR)? 4*sizeof(unsigned int):sizeof(unsigned int));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glClearBufferuiv;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClearBufferuiv, 3);
 }
 void PT_CALL glClearColor(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -3827,8 +3832,18 @@ void PT_CALL glGetActiveSubroutineUniformiv(uint32_t arg0, uint32_t arg1, uint32
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetActiveSubroutineUniformiv;
 }
 void PT_CALL glGetActiveUniform(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
+    uint32_t n, e;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetActiveUniform;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(2*ALIGNED(1), (uint32_t)&e, sizeof(uint32_t));
+    if (e) {
+        if (arg3)
+            memcpy((char *)arg3, &n, sizeof(uint32_t));
+        memcpy((char *)arg5, &e, sizeof(uint32_t));
+        fifoOutData(ALIGNED(1), arg4, sizeof(uint32_t));
+        fifoOutData(3*ALIGNED(1), arg6, ((n + 1) > arg2)? arg2:(n + 1));
+    }
 }
 void PT_CALL glGetActiveUniformARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     uint32_t n, e;
@@ -3841,7 +3856,7 @@ void PT_CALL glGetActiveUniformARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, 
             memcpy((char *)arg3, &n, sizeof(uint32_t));
         memcpy((char *)arg5, &e, sizeof(uint32_t));
         fifoOutData(ALIGNED(1), arg4, sizeof(uint32_t));
-        fifoOutData(3*ALIGNED(1), arg6, n + 1);
+        fifoOutData(3*ALIGNED(1), arg6, ((n + 1) > arg2)? arg2:(n + 1));
     }
 }
 void PT_CALL glGetActiveUniformBlockName(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
@@ -3853,8 +3868,15 @@ void PT_CALL glGetActiveUniformBlockiv(uint32_t arg0, uint32_t arg1, uint32_t ar
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetActiveUniformBlockiv;
 }
 void PT_CALL glGetActiveUniformName(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetActiveUniformName;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    if (n) {
+        if (arg3)
+            memcpy((char *)arg3, &n, sizeof(uint32_t));
+        fifoOutData(ALIGNED(1), arg4, ((n + 1) > arg2)? arg2:(n + 1));
+    }
 }
 void PT_CALL glGetActiveUniformsiv(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -3877,8 +3899,14 @@ void PT_CALL glGetAttachedObjectsARB(uint32_t arg0, uint32_t arg1, uint32_t arg2
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetAttachedObjectsARB;
 }
 void PT_CALL glGetAttachedShaders(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetAttachedShaders;
+    fifoOutData(0, (uint32_t)&n, sizeof(int));
+    if (arg2)
+        memcpy((char *)arg2, &n, sizeof(int));
+    if (arg3 && n)
+        fifoOutData(ALIGNED(1), arg3, (n > arg2)? (arg2*sizeof(int)):(n*sizeof(int)));
 }
 uint32_t PT_CALL glGetAttribLocation(uint32_t arg0, uint32_t arg1) {
     uint32_t ret;
@@ -5462,13 +5490,20 @@ void PT_CALL glGetTransformFeedbackiv(uint32_t arg0, uint32_t arg1, uint32_t arg
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetTransformFeedbackiv;
 }
-void PT_CALL glGetUniformBlockIndex(uint32_t arg0, uint32_t arg1) {
+uint32_t PT_CALL glGetUniformBlockIndex(uint32_t arg0, uint32_t arg1) {
+    uint32_t ret;
+    fifoAddData(0, arg1, ALIGNED((strlen((char *)arg1) + 1)));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetUniformBlockIndex;
+    ret = *pt0;
+    return ret;
 }
-void PT_CALL glGetUniformBufferSizeEXT(uint32_t arg0, uint32_t arg1) {
+uint32_t PT_CALL glGetUniformBufferSizeEXT(uint32_t arg0, uint32_t arg1) {
+    uint32_t ret;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetUniformBufferSizeEXT;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glGetUniformIndices(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -5490,9 +5525,12 @@ uint32_t PT_CALL glGetUniformLocationARB(uint32_t arg0, uint32_t arg1) {
     ret = *pt0;
     return ret;
 }
-void PT_CALL glGetUniformOffsetEXT(uint32_t arg0, uint32_t arg1) {
+uint32_t PT_CALL glGetUniformOffsetEXT(uint32_t arg0, uint32_t arg1) {
+    uint32_t ret;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetUniformOffsetEXT;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glGetUniformSubroutineuiv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -7608,10 +7646,14 @@ void PT_CALL glNamedBufferAttachMemoryNV(uint32_t arg0, uint32_t arg1, uint32_t 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferAttachMemoryNV;
 }
 void PT_CALL glNamedBufferData(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    if (arg2)
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg1)) >> 2], (unsigned char *)arg2, arg1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferData;
 }
 void PT_CALL glNamedBufferDataEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    if (arg2)
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg1)) >> 2], (unsigned char *)arg2, arg1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferDataEXT;
 }
@@ -7624,10 +7666,14 @@ void PT_CALL glNamedBufferPageCommitmentEXT(uint32_t arg0, uint32_t arg1, uint32
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferPageCommitmentEXT;
 }
 void PT_CALL glNamedBufferStorage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    if (arg2)
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg1)) >> 2], (unsigned char *)arg2, arg1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferStorage;
 }
 void PT_CALL glNamedBufferStorageEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    if (arg2)
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg1)) >> 2], (unsigned char *)arg2, arg1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferStorageEXT;
 }
@@ -11490,7 +11536,7 @@ void PT_CALL glUniformBlockBinding(uint32_t arg0, uint32_t arg1, uint32_t arg2) 
 }
 void PT_CALL glUniformBufferEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glUniformBufferEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformBufferEXT, 3);
 }
 void PT_CALL glUniformHandleui64ARB(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -12745,11 +12791,13 @@ void PT_CALL glVertexAttribIFormatNV(uint32_t arg0, uint32_t arg1, uint32_t arg2
 }
 void PT_CALL glVertexAttribIPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glVertexAttribIPointer;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexAttribIPointer, 5);
+    vtxarry_init(vattr2arry(arg0), arg1, arg2, arg3, (void *)arg4);
 }
 void PT_CALL glVertexAttribIPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glVertexAttribIPointerEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexAttribIPointerEXT, 5);
+    vtxarry_init(vattr2arry(arg0), arg1, arg2, arg3, (void *)arg4);
 }
 void PT_CALL glVertexAttribL1d(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -12897,11 +12945,13 @@ void PT_CALL glVertexAttribLFormatNV(uint32_t arg0, uint32_t arg1, uint32_t arg2
 }
 void PT_CALL glVertexAttribLPointer(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glVertexAttribLPointer;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexAttribLPointer, 5);
+    vtxarry_init(vattr2arry(arg0), arg1, arg2, arg3, (void *)arg4);
 }
 void PT_CALL glVertexAttribLPointerEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glVertexAttribLPointerEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glVertexAttribLPointerEXT, 5);
+    vtxarry_init(vattr2arry(arg0), arg1, arg2, arg3, (void *)arg4);
 }
 void PT_CALL glVertexAttribP1ui(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 

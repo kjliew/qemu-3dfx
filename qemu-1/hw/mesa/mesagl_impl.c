@@ -206,6 +206,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         uint32_t (__stdcall *fpa1p3)(uint32_t, uint32_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa0p2a3)(uint32_t, uintptr_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa2p3)(uint32_t, uint32_t, uint32_t, uintptr_t);
+        uint32_t (__stdcall *fpa2p4)(uint32_t, uint32_t, uint32_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa2p6)(uint32_t, uint32_t, uint32_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa2p3a4)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa2p3a5)(uint32_t, uint32_t, uint32_t, uintptr_t, uint32_t, uint32_t);
@@ -225,6 +226,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         uint32_t (__stdcall *fpa0f4)(uint32_t, float, float, float, float);
         uint32_t (__stdcall *fpa0f2a3f5)(uint32_t, float, float, uint32_t, float, float);
         uint32_t (__stdcall *fpa1f2)(uint32_t, uint32_t, float);
+        uint32_t (__stdcall *fpa1f2a3)(uint32_t, uint32_t, float, uint32_t);
         uint32_t (__stdcall *fpa1f5)(uint32_t, uint32_t, float, float, float, float);
         uint32_t (__stdcall *fpa0f2p6)(uint32_t, uint32_t, float, float, float, float, uintptr_t);
         uint32_t (__stdcall *fpa0f2a4p5)(uint32_t, float, float, uint32_t, uint32_t, uintptr_t);
@@ -317,9 +319,14 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa2p3 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa2p3)(arg[0], arg[1], arg[2], parg[3]);
             GLDONE();
+        case FEnum_glGetActiveUniform:
         case FEnum_glGetActiveUniformARB:
             usfp.fpa2p6 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa2p6)(arg[0], arg[1], arg[2], parg[3], parg[0], parg[1], parg[2]);
+            GLDONE();
+        case FEnum_glGetActiveUniformName:
+            usfp.fpa2p4 = tblMesaGL[FEnum].ptr;
+            *ret = (*usfp.fpa2p4)(arg[0], arg[1], arg[2], parg[3], parg[0]);
             GLDONE();
         case FEnum_glDrawElementsBaseVertex:
         case FEnum_glDrawElementsInstanced:
@@ -348,6 +355,10 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetInternalformativ:
         case FEnum_glGetTexImage:
         case FEnum_glTexCoordPointerEXT:
+        case FEnum_glVertexAttribIPointer:
+        case FEnum_glVertexAttribIPointerEXT:
+        case FEnum_glVertexAttribLPointer:
+        case FEnum_glVertexAttribLPointerEXT:
         case FEnum_glVertexPointerEXT:
             usfp.fpa3p4 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa3p4)(arg[0], arg[1], arg[2], arg[3], parg[0]);
@@ -425,6 +436,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetDoublev:
         case FEnum_glGetFloatv:
         case FEnum_glGetIntegerv:
+        case FEnum_glGetUniformBlockIndex:
         case FEnum_glGetUniformLocation:
         case FEnum_glGetUniformLocationARB:
         case FEnum_glLightModelfv:
@@ -648,6 +660,9 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glBindImageTextures:
         case FEnum_glBindSamplers:
         case FEnum_glCallLists:
+        case FEnum_glClearBufferfv:
+        case FEnum_glClearBufferiv:
+        case FEnum_glClearBufferuiv:
         case FEnum_glCombinerStageParameterfvNV:
         case FEnum_glDepthRangeArrayv:
         case FEnum_glDrawElementsIndirect:
@@ -751,6 +766,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.fpa1p2 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa1p2)(arg[0], arg[1], parg[2]);
             GLDONE();
+        case FEnum_glGetAttachedShaders:
         case FEnum_glGetInfoLogARB:
         case FEnum_glGetProgramInfoLog:
         case FEnum_glGetShaderInfoLog:
@@ -761,6 +777,11 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             GLDONE();
         case FEnum_glBufferData:
         case FEnum_glBufferDataARB:
+        case FEnum_glBufferStorage:
+        case FEnum_glNamedBufferData:
+        case FEnum_glNamedBufferDataEXT:
+        case FEnum_glNamedBufferStorage:
+        case FEnum_glNamedBufferStorageEXT:
             usfp.fpa0p2a3 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa0p2a3)(arg[0], parg[1], parg[2], arg[3]);
             GLDONE();
@@ -1032,6 +1053,14 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
                 GLARGSF_N(a2,2);
                 usfp.fpa1f2 = tblMesaGL[FEnum].ptr;
                 *ret = (*usfp.fpa1f2)(arg[0], arg[1], a2);
+            }
+            GLDONE();
+        case FEnum_glClearBufferfi:
+            {
+                float a2;
+                GLARGSF_N(a2,2);
+                usfp.fpa1f2a3 = tblMesaGL[FEnum].ptr;
+                *ret = (*usfp.fpa1f2a3)(arg[0], arg[1], a2, arg[3]);
             }
             GLDONE();
         case FEnum_glProgramEnvParameter4fARB:
