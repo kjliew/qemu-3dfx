@@ -402,10 +402,10 @@ struct mglOptions {
 static void parse_options(struct mglOptions *opt)
 {
     FILE *f = fopen(XSTRCFG, "r");
+    memset(opt, 0, sizeof(struct mglOptions));
     if (f) {
         char line[MAX_XSTR];
         int i, v;
-        memset(opt, 0, sizeof(struct mglOptions));
         while(fgets(line, MAX_XSTR, f)) {
             i = sscanf(line, "ContextSRGB,%d", &v);
             opt->useSRGB = (i == 1)? v:opt->useSRGB;
