@@ -162,7 +162,7 @@ void wrFlushBufObj(uint32_t target, mapbufo_t *bufo)
 
 void wrContextSRGB(int use_srgb)
 {
-    void *(__stdcall *wrEnable)(uint32_t arg0);
+    void (__stdcall *wrEnable)(uint32_t arg0);
     if (use_srgb) {
         wrEnable = tblMesaGL[FEnum_glEnable].ptr;
         wrEnable(GL_FRAMEBUFFER_SRGB);
@@ -1464,6 +1464,12 @@ static void conf_MGLOptions(void)
     }
 }
 
+int ContextUseSRGB(void)
+{
+    int (__stdcall *wrIsEnabled)(uint32_t arg0);
+    wrIsEnabled = tblMesaGL[FEnum_glIsEnabled].ptr;
+    return (cfg_cntxSRGB | wrIsEnabled(GL_FRAMEBUFFER_SRGB)? 1:0);
+}
 void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
 int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }
@@ -1471,7 +1477,6 @@ int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
 int GetContextMSAA(void) { return cfg_cntxMSAA; }
-int ContextUseSRGB(void) { return cfg_cntxSRGB; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GLFifoTrace(void) { return cfg_traceFifo; }

@@ -395,20 +395,25 @@ static void fltrxstr(const char *xstr)
         strncpy(str, (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2], (3*PAGE_SIZE));
     }
 }
-static int xstrYear(void)
+struct mglOptions {
+    int useSRGB;
+    int xstrYear;
+};
+static void parse_options(struct mglOptions *opt)
 {
-    int ret = 0;
     FILE *f = fopen(XSTRCFG, "r");
     if (f) {
         char line[MAX_XSTR];
+        int i, v;
+        memset(opt, 0, sizeof(struct mglOptions));
         while(fgets(line, MAX_XSTR, f)) {
-            int i = sscanf(line, "ExtensionsYear,%d", &ret);
-            if (i == 1)
-                break;
+            i = sscanf(line, "ContextSRGB,%d", &v);
+            opt->useSRGB = (i == 1)? v:opt->useSRGB;
+            i = sscanf(line, "ExtensionsYear,%d", &v);
+            opt->xstrYear = (i == 1)? v:opt->xstrYear;
         }
         fclose(f);
     }
-    return ret;
 }
 
 #define FIFO_EN 1
@@ -5219,10 +5224,12 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
         sizeof(extnstr) - 1,
         sizeof(glslstr) - 1,
     };
-    int nYear, sel;
+    struct mglOptions cfg;
+    int sel;
 
     if (!currGLRC)
         return 0;
+
     switch(arg0) {
         case GL_VENDOR:
         case GL_RENDERER:
@@ -5237,8 +5244,10 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
             return 0;
     }
 
-    nYear = xstrYear();
-    fifoAddData(0, (uint32_t)&nYear, sizeof(int));
+    parse_options(&cfg);
+    if (cfg.useSRGB)
+        glEnable(GL_FRAMEBUFFER_SRGB);
+    fifoAddData(0, (uint32_t)&cfg.xstrYear, sizeof(int));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetString;
     fifoOutData(0, (uint32_t)cstrTbl[sel], cstrsz[sel]);
