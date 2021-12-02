@@ -21,6 +21,7 @@
 #ifndef MGLCNTX_H
 #define MGLCNTX_H
 
+int MGLWndReady(void);
 void SetMesaFuncPtr(void *);
 void *MesaGLGetProc(const char *);
 int MGLExtIsAvail(const char *, const char *);

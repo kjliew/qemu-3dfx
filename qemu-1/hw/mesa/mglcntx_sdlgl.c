@@ -37,6 +37,7 @@
 const char dllname[] = "/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib";
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #define GL_DELETECONTEXT(x)
+#define GL_CONTEXTATTRIB(x)
 #define GL_CREATECONTEXT(x)
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
@@ -58,6 +59,22 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 }
 #define GL_DELETECONTEXT(x) \
     do { SDL_GL_DeleteContext(x); x = 0; } while(0)
+#define GL_CONTEXTATTRIB(x) \
+    do { \
+        int major, minor, pfmsk, flags; \
+        major = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MAJOR_VERSION_ARB); \
+        minor = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MINOR_VERSION_ARB); \
+        pfmsk = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_PROFILE_MASK_ARB); \
+        flags = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_FLAGS_ARB); \
+        if (major) { \
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major); \
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor); \
+        } \
+        if (pfmsk) \
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, pfmsk); \
+        if (flags) \
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags); \
+    } while(0)
 #define GL_CREATECONTEXT(x) \
     do { x = SDL_GL_CreateContext(window); } while(0)
 #endif
@@ -154,6 +171,14 @@ typedef struct tagPIXELFORMATDESCRIPTOR {
 #define WGL_SAMPLE_BUFFERS_ARB                  0x2041
 #define WGL_SAMPLES_ARB                         0x2042
 
+/* WGL_ARB_create_context
+ * WGL_ARB_create_context_profile
+ */
+#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
+#define WGL_CONTEXT_FLAGS_ARB                   0x2094
+#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
+
 typedef struct tagFakePBuffer {
     int width;
     int height;
@@ -198,6 +223,7 @@ static const int iAttribs[] = {
 static SDL_Window *window;
 static SDL_GLContext ctx[MAX_LVLCNTX];
 
+static int wnd_ready;
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 static int cDepthBits, cStencilBits, cAuxBuffers;
 static int cSampleBuf[2];
@@ -249,6 +275,7 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
     window = (SDL_Window *)swnd;
     ctx[0] = SDL_GL_GetCurrentContext();
     if (ctx[0]) {
+        wnd_ready = 1;
         SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &cDepthBits);
         SDL_GL_GetAttribute(SDL_GL_STENCIL_SIZE, &cStencilBits);
         SDL_GL_GetAttribute(SDL_GL_MULTISAMPLEBUFFERS, &cSampleBuf[0]);
@@ -256,6 +283,8 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
         DPRINTF("MESAGL window [SDL2 %p] ready", swnd);
     }
 }
+
+int MGLWndReady(void) { return wnd_ready; }
 
 void SetMesaFuncPtr(void *p)
 {
@@ -344,6 +373,7 @@ int MGLSwapBuffers(void)
 
 static int MGLPresetPixelFormat(void)
 {
+    wnd_ready = 0;
     mesa_prepare_window(&cwnd_mesagl);
 
     ImplMesaGLReset();
@@ -492,6 +522,7 @@ void MGLFuncHandler(const char *name)
             //const char *str = wglFuncs.GetExtensionsStringARB(hDC);
             const char wglext[] = "WGL_3DFX_gamma_control "
                 "WGL_ARB_create_context "
+                "WGL_ARB_create_context_profile "
                 "WGL_ARB_extensions_string "
                 "WGL_ARB_pixel_format "
                 "WGL_EXT_extensions_string "
@@ -511,6 +542,7 @@ void MGLFuncHandler(const char *name)
             if (argsp[1] == 0) {
                 SDL_GL_MakeCurrent(window, NULL);
                 GL_DELETECONTEXT(ctx[0]);
+                GL_CONTEXTATTRIB(ctx[0]);
                 GL_CREATECONTEXT(ctx[0]);
                 ret = (ctx[0])? 1:0;
             }

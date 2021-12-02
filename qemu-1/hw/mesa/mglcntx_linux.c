@@ -233,6 +233,7 @@ static GLXContext   ctx[MAX_LVLCNTX];
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 static GLXPbuffer PBDC[MAX_PBUFFER];
 static GLXContext PBRC[MAX_PBUFFER];
+static int wnd_ready;
 static int cDepthBits, cStencilBits, cAuxBuffers;
 static int cSampleBuf[2];
 
@@ -383,8 +384,11 @@ static void MesaDisplayModeset(const int modeset)
 static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
 {
     win = (Window)nwnd;
+    wnd_ready = 1;
     DPRINTF("MESAGL window [native %p] ready", nwnd);
 }
+
+int MGLWndReady(void) { return wnd_ready; }
 
 void SetMesaFuncPtr(void *p)
 {
@@ -502,6 +506,7 @@ int MGLSwapBuffers(void)
 static int MGLPresetPixelFormat(void)
 {
     dpy = XOpenDisplay(NULL);
+    wnd_ready = 0;
     mesa_prepare_window(&cwnd_mesagl);
     ImplMesaGLReset();
 

@@ -369,6 +369,9 @@ static uint64_t mesapt_read(void *opaque, hwaddr addr, unsigned size)
     uint32_t val = 0;
 
     switch (addr) {
+        case 0xFB8:
+            val = MGLWndReady();
+            break;
         case 0xFBC:
             val = s->MesaVer;
             break;

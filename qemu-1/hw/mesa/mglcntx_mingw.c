@@ -125,6 +125,7 @@ static HWND hwnd;
 static HDC hDC, hPBDC[MAX_PBUFFER];
 static HGLRC hRC[MAX_LVLCNTX], hPBRC[MAX_PBUFFER];
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
+static int wnd_ready;
 
 static struct {
     HGLRC (WINAPI *CreateContext)(HDC);
@@ -232,6 +233,7 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
     ReleaseDC(hwnd, hDC);
     hwnd = (HWND)nwnd;
     hDC = GetDC(hwnd);
+    wnd_ready = 1;
     DPRINTF("MESAGL window [native %p] ready", nwnd);
 }
 
@@ -244,6 +246,8 @@ static void TmpContextPurge(void)
             DPRINTF("UnregisterClass() failed, Error 0x%08lx", GetLastError());
     }
 }
+
+int MGLWndReady(void) { return wnd_ready; }
 
 void SetMesaFuncPtr(void *p)
 {
@@ -317,6 +321,7 @@ void MGLTmpContext(void)
 #define GLWINDOW_INIT() \
     if (hDC == 0) { if (0) \
     CreateMesaWindow("MesaGL", 640, 480, 1); \
+    wnd_ready = 0; \
     mesa_prepare_window(&cwnd_mesagl); hDC = GetDC(hwnd); }
 
 #define GLWINDOW_FINI() \

@@ -5245,8 +5245,6 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
     }
 
     parse_options(&cfg);
-    if (cfg.useSRGB)
-        glEnable(GL_FRAMEBUFFER_SRGB);
     fifoAddData(0, (uint32_t)&cfg.xstrYear, sizeof(int));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetString;
@@ -16713,17 +16711,20 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
     static const char icdBuild[] __attribute__((used)) = 
         __TIME__" "__DATE__" build ";
     uint32_t *ptVer = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
-    if (currDC == 0) {
-        if (mglCreateContext(arg0) == 0)
-            return 0;
-    }
-    if (currGLRC == 0)
-        DPRINTF("%s", icdBuild);
+    if (!currDC && !mglCreateContext(arg0))
+        return 0;
     //DPRINTF("MakeCurrent %x %x", arg0, arg1);
     ptVer[0] = arg1;
     memcpy((char *)&ptVer[1], rev_, 8);
     memcpy(((char *)&ptVer[1] + 8), icdBuild, sizeof(icdBuild));
     ptm[0xFF8 >> 2] = MESAGL_MAGIC;
+    if (!currGLRC) {
+        struct mglOptions cfg;
+        parse_options(&cfg);
+        if (cfg.useSRGB)
+            glEnable(GL_FRAMEBUFFER_SRGB);
+        DPRINTF("%s", icdBuild);
+    }
     currGLRC = (level && ((arg1 + level) == MESAGL_MAGIC))?
         (arg1 + level):((level)? MESAGL_MAGIC:arg1);
     return TRUE;
@@ -16836,10 +16837,12 @@ int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wglSwapBuffers(hdc);
 
 int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
 {
-    uint32_t ret;
+    uint32_t ret, ready = 0;
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     memcpy(xppfd, ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFEC >> 2] = MESAGL_MAGIC;
+    while (!ready)
+        ready = ptm[0xFB8 >> 2];
     ret = ptm[0xFEC >> 2];
     return ret;
 }
