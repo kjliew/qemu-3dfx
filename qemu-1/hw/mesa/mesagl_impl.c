@@ -1470,6 +1470,7 @@ int ContextUseSRGB(void)
     wrIsEnabled = tblMesaGL[FEnum_glIsEnabled].ptr;
     return (cfg_cntxSRGB | wrIsEnabled(GL_FRAMEBUFFER_SRGB)? 1:0);
 }
+void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = (enable)? 1:0; }
 void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
 int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }

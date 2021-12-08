@@ -1571,6 +1571,11 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDebugMessageInsertARB:
             s->datacb = ALIGNED(s->arg[4]);
+            if ((s->arg[0] == GL_DEBUG_SOURCE_API_ARB) &&
+                (s->arg[1] == GL_DEBUG_TYPE_PERFORMANCE_ARB) &&
+                (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
+                (0xbf0acc == *(uint32_t *)(s->hshm)))
+                GLBufOAccelCfg(1);
             DPRINTF_COND(((s->arg[0] == GL_DEBUG_SOURCE_OTHER_ARB) &&
                 (s->arg[1] == GL_DEBUG_TYPE_OTHER_ARB) &&
                 (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB)), "%s", (char *)(s->hshm));

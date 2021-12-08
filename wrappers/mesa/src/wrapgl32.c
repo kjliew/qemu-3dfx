@@ -396,6 +396,7 @@ static void fltrxstr(const char *xstr)
     }
 }
 struct mglOptions {
+    int bufoAcc;
     int useSRGB;
     int xstrYear;
 };
@@ -407,6 +408,8 @@ static void parse_options(struct mglOptions *opt)
         char line[MAX_XSTR];
         int i, v;
         while(fgets(line, MAX_XSTR, f)) {
+            i = sscanf(line, "BufOAccelEN,%d", &v);
+            opt->bufoAcc = (i == 1)? v:opt->bufoAcc;
             i = sscanf(line, "ContextSRGB,%d", &v);
             opt->useSRGB = (i == 1)? v:opt->useSRGB;
             i = sscanf(line, "ExtensionsYear,%d", &v);
@@ -16714,13 +16717,18 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
     if (!currDC && !mglCreateContext(arg0))
         return 0;
     //DPRINTF("MakeCurrent %x %x", arg0, arg1);
+    struct mglOptions cfg;
+    parse_options(&cfg);
+    if (cfg.bufoAcc && !currGLRC) {
+        const uint32_t bufoAcc = 0xbf0acc;
+        glDebugMessageInsertARB(GL_DEBUG_SOURCE_API_ARB, GL_DEBUG_TYPE_PERFORMANCE_ARB,
+            GL_DEBUG_SEVERITY_LOW_ARB, -1, sizeof(uint32_t), (uint32_t)&bufoAcc);
+    }
     ptVer[0] = arg1;
     memcpy((char *)&ptVer[1], rev_, 8);
     memcpy(((char *)&ptVer[1] + 8), icdBuild, sizeof(icdBuild));
     ptm[0xFF8 >> 2] = MESAGL_MAGIC;
     if (!currGLRC) {
-        struct mglOptions cfg;
-        parse_options(&cfg);
         if (cfg.useSRGB)
             glEnable(GL_FRAMEBUFFER_SRGB);
         DPRINTF("%s", icdBuild);
