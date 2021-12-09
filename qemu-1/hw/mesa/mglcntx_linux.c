@@ -242,26 +242,7 @@ static struct {
     int (*GetSwapIntervalEXT)(void);
 } xglFuncs;
 
-static int find_xstr(const char *xstr, const char *str)
-{
-    int xlen, ret = 0;
-    char *xbuf, *stok;
-    if (xstr) {
-        xlen = strnlen(xstr, 3*PAGE_SIZE);
-        xbuf = g_new(char, xlen + 1);
-        strncpy(xbuf, xstr, xlen + 1);
-        stok = strtok(xbuf, " ");
-        while (stok) {
-            if (!strncmp(stok, str, strnlen(str, 64))) {
-                ret = 1;
-                break;
-            }
-            stok = strtok(NULL, " ");
-        }
-        g_free(xbuf);
-    }
-    return ret;
-}
+int glwnd_ready(void) { return wnd_ready; }
 
 int MGLExtIsAvail(const char *xstr, const char *str)
 { return find_xstr(xstr, str); }
@@ -387,8 +368,6 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
     wnd_ready = 1;
     DPRINTF("MESAGL window [native %p] ready", nwnd);
 }
-
-int MGLWndReady(void) { return wnd_ready; }
 
 void SetMesaFuncPtr(void *p)
 {

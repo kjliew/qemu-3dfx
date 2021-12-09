@@ -370,7 +370,7 @@ static uint64_t mesapt_read(void *opaque, hwaddr addr, unsigned size)
 
     switch (addr) {
         case 0xFB8:
-            val = MGLWndReady();
+            val = glwnd_ready();
             break;
         case 0xFBC:
             val = s->MesaVer;
@@ -1936,7 +1936,8 @@ static void processFRet(MesaPTState *s)
                         else {
                             for (int i = 0; i < MESA_EXTENSION_COUNT; i++) {
                                 if ((s->extnLength == 0) || (s->extnLength >= extnLength)) {
-                                    if (!memcmp(_mesa_extension_table[i].name, stok, extnLength)) {
+                                    if ((extnLength == strnlen(_mesa_extension_table[i].name, MAX_IXSTR)) &&
+                                        !memcmp(_mesa_extension_table[i].name, stok, extnLength)) {
                                         if (((s->extnYear == 0) || (s->extnYear >= _mesa_extension_table[i].year))) {
                                             memcpy(xbuf, stok, extnLength);
                                             xbuf += extnLength;
@@ -1997,8 +1998,7 @@ static void processFRet(MesaPTState *s)
                     *xbuf = '\0';
                     if (MGLExtIsAvail((const char *)outshm, swapExt) == 0)
                         XSTR_ADD(swapExt);
-                    if (1)
-                        XSTR_ADD(fxgamma);
+                    XSTR_ADD(fxgamma);
 #undef XSTR_ADD
                     *(--xbuf) = '\0';
                     g_free(tmpstr);

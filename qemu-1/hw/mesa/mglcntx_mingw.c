@@ -143,8 +143,10 @@ static struct {
     int (WINAPI *GetSwapIntervalEXT)(void);
 } wglFuncs;
 
+int glwnd_ready(void) { return wnd_ready; }
+
 int MGLExtIsAvail(const char *xstr, const char *str)
-{ return 1; }
+{ return find_xstr(xstr, str); }
 
 static void MesaInitGammaRamp(void)
 {
@@ -246,8 +248,6 @@ static void TmpContextPurge(void)
             DPRINTF("UnregisterClass() failed, Error 0x%08lx", GetLastError());
     }
 }
-
-int MGLWndReady(void) { return wnd_ready; }
 
 void SetMesaFuncPtr(void *p)
 {
@@ -792,6 +792,30 @@ void MGLFuncHandler(const char *name)
 }
 
 #endif //CONFIG_WIN32
+
+int find_xstr(const char *xstr, const char *str)
+{
+#define MAX_XSTR 128
+    int nbuf, ret = 0;
+    char *xbuf, *stok;
+    if (xstr) {
+        size_t slen = strnlen(str, MAX_XSTR);
+        nbuf = strnlen(xstr, 3*PAGE_SIZE);
+        xbuf = g_new(char, nbuf + 1);
+        strncpy(xbuf, xstr, nbuf + 1);
+        stok = strtok(xbuf, " ");
+        while (stok) {
+            size_t xlen = strnlen(stok, MAX_XSTR);
+            if ((slen == xlen) && !strncmp(stok, str, xlen)) {
+                ret = 1;
+                break;
+            }
+            stok = strtok(NULL, " ");
+        }
+        g_free(xbuf);
+    }
+    return ret;
+}
 
 typedef struct {
     uint64_t last;

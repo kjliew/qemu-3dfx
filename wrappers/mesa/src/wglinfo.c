@@ -107,8 +107,8 @@ static void MGLTmpContext(char **str, char **wstr)
     }
     printf("\n");
 
-    *str = HeapAlloc(GetProcessHeap(), 0, strlen((const char *)glGetString(GL_EXTENSIONS)));
-    *wstr = HeapAlloc(GetProcessHeap(), 0, strlen(wglGetString(tmpDC)));
+    *str = HeapAlloc(GetProcessHeap(), 0, 1 + strlen((const char *)glGetString(GL_EXTENSIONS)));
+    *wstr = HeapAlloc(GetProcessHeap(), 0, 1 + strlen(wglGetString(tmpDC)));
     if (*str)
         lstrcpy(*str, (const char *)glGetString(GL_EXTENSIONS));
     if (*wstr)

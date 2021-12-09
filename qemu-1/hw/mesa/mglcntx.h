@@ -21,7 +21,6 @@
 #ifndef MGLCNTX_H
 #define MGLCNTX_H
 
-int MGLWndReady(void);
 void SetMesaFuncPtr(void *);
 void *MesaGLGetProc(const char *);
 int MGLExtIsAvail(const char *, const char *);
@@ -38,6 +37,9 @@ int NumPbuffer(void);
 void MGLFuncHandler(const char *);
 void MGLDeleteContext(int);
 int MGLCreateContext(uint32_t);
+
+int glwnd_ready(void);
+int find_xstr(const char *, const char *);
 
 typedef struct _perfstat {
     void (*stat)(void);
