@@ -42,6 +42,7 @@
 #endif
 
 #define MESAGLCFG "mesagl.cfg"
+#include "fgfont.h"
 #include "mglfptbl.h"
 
 static int getNumArgs(const char *sym)
@@ -167,6 +168,37 @@ void wrContextSRGB(int use_srgb)
         wrEnable = tblMesaGL[FEnum_glEnable].ptr;
         wrEnable(GL_FRAMEBUFFER_SRGB);
     }
+}
+
+void fgFontGenList(int first, int count, uint32_t listBase)
+{
+    void (__stdcall *wrBitmap)(uint32_t width, uint32_t height, float xorig, float yorig, float xmove, float ymove, const void *bitmap);
+    void (__stdcall *wrEndList)(void);
+    void (__stdcall *wrGetIntegerv)(uint32_t arg0, uintptr_t arg1);
+    void (__stdcall *wrNewList)(uint32_t list, uint32_t mode);
+    void (__stdcall *wrPixelStorei)(uint32_t arg0, uint32_t arg1);
+    wrBitmap = tblMesaGL[FEnum_glBitmap].ptr;
+    wrEndList = tblMesaGL[FEnum_glEndList].ptr;
+    wrGetIntegerv = tblMesaGL[FEnum_glGetIntegerv].ptr;
+    wrNewList = tblMesaGL[FEnum_glNewList].ptr;
+    wrPixelStorei = tblMesaGL[FEnum_glPixelStorei].ptr;
+
+    const SFG_Font *font = &fgFontFixed8x13;
+    int org_alignment;
+    wrGetIntegerv(GL_UNPACK_ALIGNMENT, (uintptr_t)&org_alignment);
+    wrPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    for (int i = first; i < (first + count); i++) {
+        const unsigned char *face = font->Characters[i];
+        wrNewList(listBase++, GL_COMPILE);
+        wrBitmap(
+            face[ 0 ], font->Height,
+            font->xorig, font->yorig,
+            ( float )( face [ 0 ] ), 0.0,
+            ( face + 1 )
+        );
+        wrEndList();
+    }
+    wrPixelStorei(GL_UNPACK_ALIGNMENT, org_alignment);
 }
 
 const char *getGLFuncStr(int FEnum)

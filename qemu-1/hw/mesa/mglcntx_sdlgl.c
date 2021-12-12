@@ -476,8 +476,8 @@ void MGLFuncHandler(const char *name)
         return;
     }
     FUNCP_HANDLER("wglUseFontBitmapsA") {
-        DPRINTF("wglUseFontBitmapA() %x %x %d", argsp[1], argsp[2], argsp[3]);
-        argsp[0] = 0;
+        fgFontGenList(argsp[1], argsp[2], argsp[3]);
+        argsp[0] = 1;
         return;
     }
     FUNCP_HANDLER("wglSwapIntervalEXT") {

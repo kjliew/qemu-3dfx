@@ -36,6 +36,7 @@ int wrGetParamIa1p2(int, uint32_t, uint32_t);
 void wrFillBufObj(uint32_t, void *, mapbufo_t *);
 void wrFlushBufObj(uint32_t, mapbufo_t *);
 void wrContextSRGB(int);
+void fgFontGenList(int, int, uint32_t);
 const char *getGLFuncStr(int);
 void doMesaFunc(int, uint32_t *, uintptr_t *, uintptr_t *);
 void GLBufOAccelCfg(int);
