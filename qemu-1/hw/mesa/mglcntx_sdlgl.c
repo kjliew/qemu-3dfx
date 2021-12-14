@@ -254,15 +254,11 @@ static void MesaInitGammaRamp(void)
 static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
 {
     window = (SDL_Window *)swnd;
+#ifdef CONFIG_DARWIN
     ctx[0] = SDL_GL_GetCurrentContext();
-    if (ctx[0]) {
-        wnd_ready = 1;
-        SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &cDepthBits);
-        SDL_GL_GetAttribute(SDL_GL_STENCIL_SIZE, &cStencilBits);
-        SDL_GL_GetAttribute(SDL_GL_MULTISAMPLEBUFFERS, &cSampleBuf[0]);
-        SDL_GL_GetAttribute(SDL_GL_MULTISAMPLESAMPLES, &cSampleBuf[1]);
-        DPRINTF("MESAGL window [SDL2 %p] ready", swnd);
-    }
+#endif
+    wnd_ready = 1;
+    DPRINTF("MESAGL window [SDL2 %p] ready", swnd);
 }
 
 void SetMesaFuncPtr(void *p)
@@ -374,6 +370,8 @@ int MGLSetPixelFormat(int fmt, const void *p)
     if (!window)
         MGLPresetPixelFormat();
     else {
+        ctx[0] = (ctx[0])? ctx[0]:SDL_GL_GetCurrentContext();
+        ctx[0] = (ctx[0])? ctx[0]:SDL_GL_CreateContext(window);
         if (ctx[0]) {
             int cColors[4];
             SDL_GL_MakeCurrent(window, ctx[0]);
@@ -381,6 +379,10 @@ int MGLSetPixelFormat(int fmt, const void *p)
             SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &cColors[1]);
             SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &cColors[2]);
             SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &cColors[3]);
+            SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &cDepthBits);
+            SDL_GL_GetAttribute(SDL_GL_STENCIL_SIZE, &cStencilBits);
+            SDL_GL_GetAttribute(SDL_GL_MULTISAMPLEBUFFERS, &cSampleBuf[0]);
+            SDL_GL_GetAttribute(SDL_GL_MULTISAMPLESAMPLES, &cSampleBuf[1]);
             glGetIntegerv(GL_AUX_BUFFERS, &cAuxBuffers);
             DPRINTF("%s OpenGL %s", glGetString(GL_RENDERER), glGetString(GL_VERSION));
             DPRINTF("Pixel Format ABGR%d%d%d%d D%2dS%d nAux %d nSamples %d %d %s",
@@ -388,7 +390,7 @@ int MGLSetPixelFormat(int fmt, const void *p)
                     cAuxBuffers, cSampleBuf[0], cSampleBuf[1], ContextUseSRGB()? "sRGB":"");
         }
     }
-    return 1;
+    return (ctx[0])? 1:0;
 }
 
 int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)

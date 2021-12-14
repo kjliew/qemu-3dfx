@@ -238,7 +238,7 @@ diff -Nru ../orig/qemu-4.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
 diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-4.1.1/ui/sdl2.c	2019-11-14 10:06:21.000000000 -0800
 +++ ./ui/sdl2.c	2021-10-11 18:57:08.725884100 -0700
-@@ -712,6 +712,248 @@
+@@ -712,6 +712,258 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -283,8 +283,13 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
 +        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  24);
 +        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
++        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 +        SDL_DestroyRenderer(s->scon->real_renderer);
++        gui_saved_grab = gui_grab;
++        sdl_grab_end(s->scon);
 +        s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1, 0);
++        if (gui_saved_grab)
++            sdl_grab_start(s->scon);
 +        SDL_SysWMinfo wmi;
 +        SDL_VERSION(&wmi.version);
 +        if (SDL_GetWindowWMInfo(s->scon->real_window, &wmi)) {
@@ -311,20 +316,21 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        }
 +        SDL_DestroyRenderer(s->scon->real_renderer);
 +        s->scon->real_renderer = 0;
-+        s->render_pause = 1;
 +        s->scon->winctx = SDL_GL_GetCurrentContext();
-+        if (!s->scon->winctx)
-+            s->scon->winctx = SDL_GL_CreateContext(s->scon->real_window);
++        s->scon->winctx = (s->scon->winctx)? s->scon->winctx:SDL_GL_CreateContext(s->scon->real_window);
++        s->render_pause = 1;
 +        if (!s->opaque)
 +            s->cwnd_fn(s->scon->real_window, s->hnwnd, 0);
 +    }
 +    else {
 +        SDL_GL_MakeCurrent(s->scon->real_window, NULL);
 +        SDL_GL_DeleteContext(s->scon->winctx);
-+        s->scon->winctx = 0;
-+        s->render_pause = 0;
 +        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "0");
 +        SDL_DestroyRenderer(s->scon->real_renderer);
++        s->scon->winctx = 0;
++        s->render_pause = 0;
++        gui_saved_grab = gui_grab;
++        sdl_grab_end(s->scon);
 +        s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1, 0);
 +        if (!s->scon->real_renderer) {
 +            sdl2_window_destroy(s->scon);
@@ -332,6 +338,8 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        }
 +        if (!s->scon->opengl)
 +            sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++        if (gui_saved_grab)
++            sdl_grab_start(s->scon);
 +        timer_del(s->ts);
 +        timer_free(s->ts);
 +        s->ts = 0;
@@ -415,8 +423,10 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        if (s->scon->winctx) {
 +            int scr_w, scr_h;
 +            SDL_GetWindowSize(s->scon->real_window, &scr_w, &scr_h);
++#ifdef CONFIG_DARWIN
 +            if (SDL_GL_MakeCurrent(s->scon->real_window, s->scon->winctx))
-+                fprintf(stderr, "%s", SDL_GetError());
++                fprintf(stderr, "%s\n", SDL_GetError());
++#endif
 +            stat = ((scr_h & 0x7FFFU) << 0x10) | scr_w;
 +            s->cwnd_fn(s->scon->real_window, s->hnwnd, s->opaque);
 +        }
