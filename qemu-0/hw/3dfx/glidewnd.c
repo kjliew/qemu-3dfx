@@ -227,11 +227,11 @@ void fini_window(void *opaque)
     if (cfg_createWnd)
         DestroyWindow(hwnd);
     hwnd = 0;
-    glide_release_window(&disp_cb, &cwnd_glide2x);
+    glide_release_window(disp_cb, &cwnd_glide2x);
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX || \
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
-    glide_release_window(&disp_cb, &cwnd_glide2x);
+    glide_release_window(disp_cb, &cwnd_glide2x);
 #endif	    
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;

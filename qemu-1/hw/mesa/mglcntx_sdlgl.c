@@ -396,8 +396,12 @@ int MGLSetPixelFormat(int fmt, const void *p)
 int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
 {
     //DPRINTF("DescribePixelFormat()");
-    if (!window)
+    if (!window) {
         MGLPresetPixelFormat();
+        cDepthBits = pfd.cDepthBits;
+        cStencilBits = pfd.cStencilBits;
+        cAuxBuffers = pfd.cAuxBuffers;
+    }
     memcpy(p, &pfd, sizeof(PIXELFORMATDESCRIPTOR));
     ((PIXELFORMATDESCRIPTOR *)p)->cDepthBits = cDepthBits;
     ((PIXELFORMATDESCRIPTOR *)p)->cStencilBits = cStencilBits;

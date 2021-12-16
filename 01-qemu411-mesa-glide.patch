@@ -238,7 +238,7 @@ diff -Nru ../orig/qemu-4.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
 diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-4.1.1/ui/sdl2.c	2019-11-14 10:06:21.000000000 -0800
 +++ ./ui/sdl2.c	2021-10-11 18:57:08.725884100 -0700
-@@ -712,6 +712,258 @@
+@@ -712,6 +712,269 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -252,6 +252,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +
 +static struct sdl_console_cb {
 +    QEMUTimer *ts;
++    SDL_Surface *icon;
 +    struct sdl2_console *scon;
 +    int gui_saved_res;
 +    int render_pause;
@@ -260,6 +261,25 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    void *hnwnd;
 +    void (*cwnd_fn)(void *, void *, void *);
 +} scon_cb;
++static void sdl_gui_restart(struct sdl2_console *scon, SDL_Surface *icon)
++{
++    int x, y, top;
++    gui_saved_grab = gui_grab;
++    sdl_grab_end(scon);
++    SDL_GetWindowPosition(scon->real_window, &x, &y);
++    SDL_GetWindowBordersSize(scon->real_window, &top, 0, 0, 0);
++#ifndef CONFIG_WIN32
++    y -= top;
++#endif
++    sdl2_window_destroy(scon);
++    sdl2_window_create(scon);
++    if (icon)
++        SDL_SetWindowIcon(scon->real_window, icon);
++    if (!gui_fullscreen)
++        SDL_SetWindowPosition(scon->real_window, x, y);
++    if (gui_saved_grab)
++        sdl_grab_start(scon);
++}
 +static void sched_wndproc(void *opaque)
 +{
 +    struct sdl_console_cb *s = opaque;
@@ -270,10 +290,14 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +            s->scon->texture = 0;
 +        }
 +        else {
++            gui_saved_grab = gui_grab;
++            sdl_grab_end(s->scon);
 +            if (!s->scon->real_renderer)
 +                s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
 +            if (!s->scon->opengl)
 +                sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++            if (gui_saved_grab)
++                sdl_grab_start(s->scon);
 +        }
 +        return;
 +    }
@@ -284,12 +308,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  24);
 +        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 +        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-+        SDL_DestroyRenderer(s->scon->real_renderer);
-+        gui_saved_grab = gui_grab;
-+        sdl_grab_end(s->scon);
-+        s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1, 0);
-+        if (gui_saved_grab)
-+            sdl_grab_start(s->scon);
++        sdl_gui_restart(s->scon, s->icon);
 +        SDL_SysWMinfo wmi;
 +        SDL_VERSION(&wmi.version);
 +        if (SDL_GetWindowWMInfo(s->scon->real_window, &wmi)) {
@@ -325,21 +344,13 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    else {
 +        SDL_GL_MakeCurrent(s->scon->real_window, NULL);
 +        SDL_GL_DeleteContext(s->scon->winctx);
-+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "0");
-+        SDL_DestroyRenderer(s->scon->real_renderer);
 +        s->scon->winctx = 0;
 +        s->render_pause = 0;
-+        gui_saved_grab = gui_grab;
-+        sdl_grab_end(s->scon);
-+        s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1, 0);
-+        if (!s->scon->real_renderer) {
-+            sdl2_window_destroy(s->scon);
-+            sdl2_window_create(s->scon);
-+        }
++        SDL_GL_ResetAttributes();
++        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "0");
++        sdl_gui_restart(s->scon, s->icon);
 +        if (!s->scon->opengl)
 +            sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
-+        if (gui_saved_grab)
-+            sdl_grab_start(s->scon);
 +        timer_del(s->ts);
 +        timer_free(s->ts);
 +        s->ts = 0;
@@ -497,6 +508,14 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
+@@ -842,6 +1105,7 @@
+ #endif
+     if (icon) {
+         SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
++        scon_cb.icon = icon;
+     }
+
+     gui_grab = 0;
 diff -Nru ../orig/qemu-4.1.1/vl.c ./vl.c
 --- ../orig/qemu-4.1.1/vl.c	2019-11-14 10:06:21.000000000 -0800
 +++ ./vl.c	2021-08-02 15:25:09.167988700 -0700
