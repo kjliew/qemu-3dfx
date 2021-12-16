@@ -8,11 +8,10 @@ KJ Liew \<liewkj@yahoo.com\>
     wrappers/3dfx       - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
     wrappers/mesa       - MESA GL wrapper for supported guest OS/environment (Windows)
 ## Patch
-    00-qemu520-mesa-glide.patch - Patch for QEMU version 5.2x (MESA & Glide)
-    01-qemu411-mesa-glide.patch - Patch for QEMU version 4.xx (MESA & Glide)
-    02-qemu311-mesa-glide.patch - Patch for QEMU version 3.xx (MESA & Glide)
-    99-oldqemu-mesa-glide.patch - Patch for QEMU version 1.6.x to 2.12.1 (deprecated)
-    99-oldqemu.patch            - Additional patch for QEMU version < 2.10 (deprecated)
+    00-qemu620-mesa-glide.patch - Patch for QEMU version 6.2x (MESA & Glide)
+    01-qemu520-mesa-glide.patch - Patch for QEMU version 5.2x (MESA & Glide)
+    02-qemu411-mesa-glide.patch - Patch for QEMU version 4.xx (MESA & Glide)
+    03-qemu311-mesa-glide.patch - Patch for QEMU version 3.xx (MESA & Glide)
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
 Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Windows 10 and Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to make them work on newer version of Windows.
 - YouTube channel (https://www.youtube.com/channel/UCl8InhZs1ixZBcLrMDSWd0A/videos)
@@ -22,20 +21,20 @@ Witness, experience and share your thoughts on modern CPU/GPU prowess for retro 
 Following instructions are based on `MSYS2/mingw-w64` BASH shell environment on Windows 10. It is meant to be simple and minor variations are inevitable due to different flavors of Linux distributions.
 
 Simple guide to apply the patch:<br>
-(using `00-qemu520-mesa-glide.patch`)
+(using `00-qemu620-mesa-glide.patch`)
 
     $ mkdir ~/myqemu && cd ~/myqemu
     $ git clone https://github.com/kjliew/qemu-3dfx.git
     $ cd qemu-3dfx
-    $ wget https://download.qemu.org/qemu-5.2.0.tar.xz
-    $ tar xf qemu-5.2.0.tar.xz
-    $ cd qemu-5.2.0
+    $ wget https://download.qemu.org/qemu-6.2.0.tar.xz
+    $ tar xf qemu-6.2.0.tar.xz
+    $ cd qemu-6.2.0
     $ rsync -r ../qemu-0/hw/3dfx ./hw/
     $ rsync -r ../qemu-1/hw/mesa ./hw/
-    $ patch -p0 -i ../00-qemu520-mesa-glide.patch
+    $ patch -p0 -i ../00-qemu620-mesa-glide.patch
     $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
-    $ ../qemu-5.2.0/configure && make
+    $ ../qemu-6.2.0/configure && make
 
 ## Building Guest Wrappers
 **Requirements:**
