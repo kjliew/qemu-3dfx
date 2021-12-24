@@ -238,7 +238,7 @@ diff -Nru ../orig/qemu-4.1.1/target/i386/whpx-all.c ./target/i386/whpx-all.c
 diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-4.1.1/ui/sdl2.c	2019-11-14 10:06:21.000000000 -0800
 +++ ./ui/sdl2.c	2021-10-11 18:57:08.725884100 -0700
-@@ -712,6 +712,269 @@
+@@ -712,6 +712,280 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -254,6 +254,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    QEMUTimer *ts;
 +    SDL_Surface *icon;
 +    struct sdl2_console *scon;
++    int glide_on_mesa;
 +    int gui_saved_res;
 +    int render_pause;
 +    int res;
@@ -398,16 +399,20 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +
 +    sdl_display_valid("glidept");
 +    s->scon = &sdl2_console[0];
-+    s->res = res;
 +    s->opaque = opaque;
 +    s->cwnd_fn = (void (*)(void *, void *, void *))cwnd_fn;
-+
-+    SDL_GetWindowSize(s->scon->real_window, &scr_w, &scr_h);
-+    s->gui_saved_res = ((scr_h & 0x7FFFU) << 0x10) | scr_w;
-+
-+    if (!s->ts)
-+        s->ts = timer_new_ms(QEMU_CLOCK_REALTIME, &sched_wndproc, s);
-+    timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++    if (s->render_pause) {
++        s->glide_on_mesa = 1;
++        s->gui_saved_res = 0;
++    }
++    else {
++        SDL_GetWindowSize(s->scon->real_window, &scr_w, &scr_h);
++        s->gui_saved_res = ((scr_h & 0x7FFFU) << 0x10) | scr_w;
++        s->res = res;
++        if (!s->ts)
++            s->ts = timer_new_ms(QEMU_CLOCK_REALTIME, &sched_wndproc, s);
++        timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++    }
 +}
 +
 +void glide_release_window(void *opaque, void *cwnd_fn)
@@ -416,13 +421,14 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +
 +    sdl_display_valid("glidept");
 +    s->scon = &sdl2_console[0];
-+    s->res = s->gui_saved_res;
 +    s->opaque = opaque;
 +    s->cwnd_fn = (void (*)(void *, void *, void *))cwnd_fn;
-+    s->gui_saved_res = 0;
-+
-+    if (s->ts)
-+        timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++    if (s->gui_saved_res) {
++        s->res = s->gui_saved_res;
++        s->gui_saved_res = 0;
++        if (s->ts)
++            timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++    }
 +}
 +
 +int glide_window_stat(const int activate)
@@ -446,7 +452,9 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    }
 +    else {
 +        s->cwnd_fn(s->scon->real_window, s->hnwnd, s->opaque);
-+	stat = (s->scon->winctx)? 1:0;
++        stat = s->glide_on_mesa;
++        s->glide_on_mesa = 0;
++        stat ^= (s->scon->winctx)? 1:0;
 +    }
 +    return stat;
 +}
@@ -463,7 +471,10 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +
 +void mesa_renderer_stat(const int activate)
 +{
++    struct sdl_console_cb *s = &scon_cb;
 +    sdl_renderer_stat(activate, "mesapt");
++    if (s->glide_on_mesa && !activate)
++        glide_renderer_stat(1);
 +}
 +
 +void mesa_prepare_window(void *cwnd_fn)
@@ -508,7 +519,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -842,6 +1105,7 @@
+@@ -842,6 +1116,7 @@
  #endif
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
