@@ -1060,14 +1060,28 @@ void PT_CALL glBufferStorageMemEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferStorageMemEXT;
 }
 void PT_CALL glBufferSubData(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg2)) >> 2], (unsigned char *)arg3, arg2);
-    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferSubData;
+    uint32_t offst = arg1, remain = arg2, ptr = arg3;
+    while(remain) {
+        uint32_t chunk = (remain > (MGLFBT_SIZE - PAGE_SIZE))? (MGLFBT_SIZE - PAGE_SIZE):remain;
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - chunk) >> 2], (unsigned char *)ptr, chunk);
+        pt[1] = arg0; pt[2] = offst; pt[3] = chunk; pt[4] = ptr;
+        pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferSubData;
+        offst += chunk;
+        ptr += chunk;
+        remain -= chunk;
+    }
 }
 void PT_CALL glBufferSubDataARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg2)) >> 2], (unsigned char *)arg3, arg2);
-    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferSubDataARB;
+    uint32_t offst = arg1, remain = arg2, ptr = arg3;
+    while(remain) {
+        uint32_t chunk = (remain > (MGLFBT_SIZE - PAGE_SIZE))? (MGLFBT_SIZE - PAGE_SIZE):remain;
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - chunk) >> 2], (unsigned char *)ptr, chunk);
+        pt[1] = arg0; pt[2] = offst; pt[3] = chunk; pt[4] = ptr;
+        pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferSubDataARB;
+        offst += chunk;
+        ptr += chunk;
+        remain -= chunk;
+    }
 }
 void PT_CALL glCallCommandListNV(uint32_t arg0) {
     pt[1] = arg0; 
@@ -3980,14 +3994,28 @@ void PT_CALL glGetBufferPointervARB(uint32_t arg0, uint32_t arg1, uint32_t arg2)
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetBufferPointervARB;
 }
 void PT_CALL glGetBufferSubData(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetBufferSubData;
-    FBTMMCPY((unsigned char *)arg3, &fbtm[(MGLFBT_SIZE - ALIGNED(arg2)) >> 2], arg2);
+    uint32_t offst = arg1, remain = arg2, ptr = arg3;
+    while(remain) {
+        uint32_t chunk = (remain > (MGLFBT_SIZE - PAGE_SIZE))? (MGLFBT_SIZE - PAGE_SIZE):remain;
+        pt[1] = arg0; pt[2] = offst; pt[3] = chunk; pt[4] = ptr;
+        pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetBufferSubData;
+        FBTMMCPY((unsigned char *)ptr, &fbtm[(MGLFBT_SIZE - chunk) >> 2], chunk);
+        offst += chunk;
+        ptr += chunk;
+        remain -= chunk;
+    }
 }
 void PT_CALL glGetBufferSubDataARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetBufferSubDataARB;
-    FBTMMCPY((unsigned char *)arg3, &fbtm[(MGLFBT_SIZE - ALIGNED(arg2)) >> 2], arg2);
+    uint32_t offst = arg1, remain = arg2, ptr = arg3;
+    while(remain) {
+        uint32_t chunk = (remain > (MGLFBT_SIZE - PAGE_SIZE))? (MGLFBT_SIZE - PAGE_SIZE):remain;
+        pt[1] = arg0; pt[2] = offst; pt[3] = chunk; pt[4] = ptr;
+        pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetBufferSubDataARB;
+        FBTMMCPY((unsigned char *)ptr, &fbtm[(MGLFBT_SIZE - chunk) >> 2], chunk);
+        offst += chunk;
+        ptr += chunk;
+        remain -= chunk;
+    }
 }
 void PT_CALL glGetClipPlane(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -7696,14 +7724,28 @@ void PT_CALL glNamedBufferStorageMemEXT(uint32_t arg0, uint32_t arg1, uint32_t a
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferStorageMemEXT;
 }
 void PT_CALL glNamedBufferSubData(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg2)) >> 2], (unsigned char *)arg3, arg2);
-    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferSubData;
+    uint32_t offst = arg1, remain = arg2, ptr = arg3;
+    while(remain) {
+        uint32_t chunk = (remain > (MGLFBT_SIZE - PAGE_SIZE))? (MGLFBT_SIZE - PAGE_SIZE):remain;
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - chunk) >> 2], (unsigned char *)ptr, chunk);
+        pt[1] = arg0; pt[2] = offst; pt[3] = chunk; pt[4] = ptr;
+        pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferSubData;
+        offst += chunk;
+        ptr += chunk;
+        remain -= chunk;
+    }
 }
 void PT_CALL glNamedBufferSubDataEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg2)) >> 2], (unsigned char *)arg3, arg2);
-    pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferSubDataEXT;
+    uint32_t offst = arg1, remain = arg2, ptr = arg3;
+    while(remain) {
+        uint32_t chunk = (remain > (MGLFBT_SIZE - PAGE_SIZE))? (MGLFBT_SIZE - PAGE_SIZE):remain;
+        FBTMMCPY(&fbtm[(MGLFBT_SIZE - chunk) >> 2], (unsigned char *)ptr, chunk);
+        pt[1] = arg0; pt[2] = offst; pt[3] = chunk; pt[4] = ptr;
+        pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glNamedBufferSubDataEXT;
+        offst += chunk;
+        ptr += chunk;
+        remain -= chunk;
+    }
 }
 void PT_CALL glNamedCopyBufferSubDataEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 

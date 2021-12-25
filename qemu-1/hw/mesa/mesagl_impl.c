@@ -156,7 +156,7 @@ void wrFlushBufObj(uint32_t target, mapbufo_t *bufo)
         return;
 
     if (bufo->hva) {
-        uint32_t szBuf = (bufo->range)? bufo->range:bufo->mapsz;
+        uint32_t szBuf = (bufo->range)? bufo->range:(bufo->mapsz - bufo->offst);
         memcpy((void *)(bufo->hva + bufo->offst), (void *)(bufo->gpa - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
     }
 }

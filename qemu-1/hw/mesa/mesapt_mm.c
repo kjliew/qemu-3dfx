@@ -1364,6 +1364,9 @@ static void processArgs(MesaPTState *s)
                     s->arg[0], s->arg[1], s->arg[2], s->arg[3], s->szUsedBuf, "mapped");
             }
             else {
+                DPRINTF_COND(((s->BufObj->offst + s->BufObj->range) > s->BufObj->mapsz),
+                    "  *WARN* Flush mapped buffer overbound offst %08x range %08x mapsz %08x",
+                    s->BufObj->offst, s->BufObj->range, s->BufObj->mapsz);
                 wrFlushBufObj(s->arg[0], s->BufObj);
                 if (s->FEnum == FEnum_glFlushMappedBufferRangeAPPLE)
                     s->BufObj->acc |= GL_MAP_FLUSH_EXPLICIT_BIT;
