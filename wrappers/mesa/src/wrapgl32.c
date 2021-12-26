@@ -10869,6 +10869,7 @@ void PT_CALL glTexSubImage1D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
         uint32_t szTex, *texPtr;
         szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * szgldata(arg4, arg5);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
+        szTex -= (arg2 * szgldata(arg4, arg5));
         FBTMMCPY(texPtr, (unsigned char *)arg6, szTex);
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
@@ -10879,6 +10880,7 @@ void PT_CALL glTexSubImage1DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
         uint32_t szTex, *texPtr;
         szTex = ((szUnpackWidth == 0)? arg3:szUnpackWidth) * szgldata(arg4, arg5);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
+        szTex -= (arg2 * szgldata(arg4, arg5));
         FBTMMCPY(texPtr, (unsigned char *)arg6, szTex);
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
@@ -10889,6 +10891,7 @@ void PT_CALL glTexSubImage2D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
         uint32_t szTex, *texPtr;
         szTex = ((szUnpackWidth == 0)? arg4:szUnpackWidth) * arg5 * szgldata(arg6, arg7);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
+        szTex -= (arg2 * szgldata(arg6, arg7));
         //DPRINTF("TexSubImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
         FBTMMCPY(texPtr, (unsigned char *)arg8, szTex);
     }
@@ -10900,6 +10903,7 @@ void PT_CALL glTexSubImage2DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
         uint32_t szTex, *texPtr;
         szTex = ((szUnpackWidth == 0)? arg4:szUnpackWidth) * arg5 * szgldata(arg6, arg7);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
+        szTex -= (arg2 * szgldata(arg6, arg7));
         //DPRINTF("TexSubImage2D() %x,%x,%x,%x,%x,%x,%x,%x size %07x", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, szTex);
         FBTMMCPY(texPtr, (unsigned char *)arg8, szTex);
     }
@@ -10911,6 +10915,7 @@ void PT_CALL glTexSubImage3D(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
         uint32_t szTex, *texPtr;
         szTex = ((szUnpackWidth == 0)? arg5:szUnpackWidth) * ((szUnpackHeight == 0)? arg6:szUnpackHeight) * arg7 * szgldata(arg8, arg9);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
+        szTex -= (arg2 * szgldata(arg8, arg9));
         FBTMMCPY(texPtr, (unsigned char *)arg10, szTex);
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; 
@@ -10921,6 +10926,7 @@ void PT_CALL glTexSubImage3DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
         uint32_t szTex, *texPtr;
         szTex = ((szUnpackWidth == 0)? arg5:szUnpackWidth) * ((szUnpackHeight == 0)? arg6:szUnpackHeight) * arg7 * szgldata(arg8, arg9);
         texPtr = &fbtm[(MGLFBT_SIZE - ALIGNED(szTex)) >> 2];
+        szTex -= (arg2 * szgldata(arg8, arg9));
         FBTMMCPY(texPtr, (unsigned char *)arg10, szTex);
     }
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; 
