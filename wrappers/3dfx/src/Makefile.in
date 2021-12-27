@@ -8,7 +8,7 @@ DLLTOOL=dlltool
 STRIP=strip
 CFLAGS=-I$(QEMU_SRC_DIR)/hw/3dfx -I$(FXLIB) -D__REV__=\"$(GIT)\" -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
-LDFLAGS+=-Wl,--disable-auto-image-base -Wl,--no-seh -Wl,--dynamicbase -Wl,--nxcompat
+LDFLAGS+=-Wl,--disable-auto-image-base,--no-seh,--dynamicbase,--nxcompat
 SRCDIR=../src
 TARGET1=glide.dll
 TARGET2=glide2x.dll
