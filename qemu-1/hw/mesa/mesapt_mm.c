@@ -539,6 +539,7 @@ static void processArgs(MesaPTState *s)
             s->parg[2] = VAL(s->hshm);
             break;
         case FEnum_glScissorIndexedv:
+        case FEnum_glSetFragmentShaderConstantATI:
         case FEnum_glViewportIndexedfv:
             s->datacb = 4*sizeof(uint32_t);
             s->parg[1] = VAL(s->hshm);

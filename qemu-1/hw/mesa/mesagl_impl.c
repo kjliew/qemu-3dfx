@@ -511,6 +511,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glPointParameteriv:
         case FEnum_glScissorIndexedv:
         case FEnum_glSelectBuffer:
+        case FEnum_glSetFragmentShaderConstantATI:
         case FEnum_glVertexAttrib1dv:
         case FEnum_glVertexAttrib1dvARB:
         case FEnum_glVertexAttrib1fv:

@@ -9955,6 +9955,7 @@ void PT_CALL glSetFenceNV(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glSetFenceNV;
 }
 void PT_CALL glSetFragmentShaderConstantATI(uint32_t arg0, uint32_t arg1) {
+    fifoAddData(0, arg1, 4*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glSetFragmentShaderConstantATI;
 }
