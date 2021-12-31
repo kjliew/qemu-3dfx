@@ -466,15 +466,15 @@ void PT_CALL glActiveVaryingNV(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glAlphaFragmentOp1ATI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glAlphaFragmentOp1ATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glAlphaFragmentOp1ATI, 6);
 }
 void PT_CALL glAlphaFragmentOp2ATI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glAlphaFragmentOp2ATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glAlphaFragmentOp2ATI, 9);
 }
 void PT_CALL glAlphaFragmentOp3ATI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10, uint32_t arg11) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; pt[12] = arg11; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glAlphaFragmentOp3ATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glAlphaFragmentOp3ATI, 12);
 }
 void PT_CALL glAlphaFunc(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -566,7 +566,7 @@ void PT_CALL glBeginConditionalRenderNVX(uint32_t arg0) {
 }
 void PT_CALL glBeginFragmentShaderATI(void) {
     
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBeginFragmentShaderATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBeginFragmentShaderATI, 0);
 }
 void PT_CALL glBeginOcclusionQueryNV(uint32_t arg0) {
     pt[1] = arg0; 
@@ -709,7 +709,7 @@ void PT_CALL glBindFragDataLocationIndexed(uint32_t arg0, uint32_t arg1, uint32_
 }
 void PT_CALL glBindFragmentShaderATI(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindFragmentShaderATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindFragmentShaderATI, 1);
 }
 void PT_CALL glBindFramebuffer(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -1521,15 +1521,15 @@ void PT_CALL glColorFormatNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glColorFragmentOp1ATI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glColorFragmentOp1ATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glColorFragmentOp1ATI, 7);
 }
 void PT_CALL glColorFragmentOp2ATI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glColorFragmentOp2ATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glColorFragmentOp2ATI, 10);
 }
 void PT_CALL glColorFragmentOp3ATI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9, uint32_t arg10, uint32_t arg11, uint32_t arg12) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; pt[11] = arg10; pt[12] = arg11; pt[13] = arg12; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glColorFragmentOp3ATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glColorFragmentOp3ATI, 13);
 }
 void PT_CALL glColorMask(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -2288,7 +2288,7 @@ void PT_CALL glDeleteFencesNV(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glDeleteFragmentShaderATI(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDeleteFragmentShaderATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDeleteFragmentShaderATI, 1);
 }
 void PT_CALL glDeleteFramebuffers(uint32_t arg0, uint32_t arg1) {
     fifoAddData(0, arg1, arg0*sizeof(uint32_t));
@@ -3174,7 +3174,7 @@ void PT_CALL glEndConditionalRenderNVX(void) {
 }
 void PT_CALL glEndFragmentShaderATI(void) {
     
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glEndFragmentShaderATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEndFragmentShaderATI, 0);
 }
 void PT_CALL glEndList(void) {
     
@@ -8084,7 +8084,7 @@ void PT_CALL glPNTrianglesiATI(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glPassTexCoordATI(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glPassTexCoordATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPassTexCoordATI, 3);
 }
 void PT_CALL glPassThrough(uint32_t arg0) {
     pt[1] = arg0; 
@@ -9655,7 +9655,7 @@ void PT_CALL glSampleCoverageARB(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glSampleMapATI(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glSampleMapATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glSampleMapATI, 3);
 }
 void PT_CALL glSampleMaskEXT(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
@@ -9957,7 +9957,7 @@ void PT_CALL glSetFenceNV(uint32_t arg0, uint32_t arg1) {
 void PT_CALL glSetFragmentShaderConstantATI(uint32_t arg0, uint32_t arg1) {
     fifoAddData(0, arg1, 4*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glSetFragmentShaderConstantATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glSetFragmentShaderConstantATI, 2);
 }
 void PT_CALL glSetInvariantEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -10115,11 +10115,11 @@ void PT_CALL glStencilFunc(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glStencilFuncSeparate(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glStencilFuncSeparate;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glStencilFuncSeparate, 4);
 }
 void PT_CALL glStencilFuncSeparateATI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glStencilFuncSeparateATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glStencilFuncSeparateATI, 4);
 }
 void PT_CALL glStencilMask(uint32_t arg0) {
     pt[1] = arg0; 
@@ -10127,7 +10127,7 @@ void PT_CALL glStencilMask(uint32_t arg0) {
 }
 void PT_CALL glStencilMaskSeparate(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glStencilMaskSeparate;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glStencilMaskSeparate, 2);
 }
 void PT_CALL glStencilOp(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -10135,11 +10135,11 @@ void PT_CALL glStencilOp(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glStencilOpSeparate(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glStencilOpSeparate;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glStencilOpSeparate, 4);
 }
 void PT_CALL glStencilOpSeparateATI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glStencilOpSeparateATI;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glStencilOpSeparateATI, 4);
 }
 void PT_CALL glStencilOpValueAMD(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
