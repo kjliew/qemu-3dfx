@@ -964,6 +964,7 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
                     s->initDLL = 0;
                     s->disp_cb.FEnum = 0;
                     fini_window(&s->disp_cb);
+                    fini_glide2x();
                     memset(s->version, 0, sizeof(char [80]));
                     DPRINTF("DLL unloaded");
                 }

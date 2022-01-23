@@ -70,6 +70,7 @@ static int cfg_lfbMapBufo;
 static int cfg_MipMaps;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
+static void *hwnd;
 
 #if defined(CONFIG_DARWIN) && CONFIG_DARWIN
 int glide_mapbufo(mapbufo_t *bufo, int add) { return 0; }
@@ -110,6 +111,7 @@ int glide_mapbufo(mapbufo_t *bufo, int add)
     return ret;
 }
 
+static int cfg_createWnd;
 static LONG WINAPI GlideWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch(uMsg) {
@@ -162,8 +164,6 @@ static HWND CreateGlideWindow(const char *title, int w, int h)
 
     return hWnd;
 }
-static HWND hwnd;
-static int cfg_createWnd;
 #endif // defined(CONFIG_WIN32) && CONFIG_WIN32
 
 static int scaledRes(int w, float r)
@@ -226,13 +226,15 @@ void fini_window(void *opaque)
 #if defined(CONFIG_WIN32) && CONFIG_WIN32	    
     if (cfg_createWnd)
         DestroyWindow(hwnd);
-    hwnd = 0;
-    glide_release_window(disp_cb, &cwnd_glide2x);
+    if (hwnd)
+        glide_release_window(disp_cb, &cwnd_glide2x);
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX || \
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
-    glide_release_window(disp_cb, &cwnd_glide2x);
+    if (hwnd)
+        glide_release_window(disp_cb, &cwnd_glide2x);
 #endif	    
+    hwnd = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
 }
@@ -322,6 +324,7 @@ void init_window(const int res, const char *wndTitle, void *opaque)
         conf_glide2x(flags, 0);
 
     disp_cb->activate = 1;
+    hwnd = (void *)(uintptr_t)(((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w);
 #if defined(CONFIG_WIN32) && CONFIG_WIN32	    
     if (cfg_createWnd)
         hwnd = CreateGlideWindow(wndTitle, tblRes[sel].w, tblRes[sel].h);

@@ -11591,7 +11591,7 @@ void PT_CALL glUniform4uivEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glUniformBlockBinding(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glUniformBlockBinding;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glUniformBlockBinding, 3);
 }
 void PT_CALL glUniformBufferEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
