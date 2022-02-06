@@ -1195,7 +1195,7 @@ void PT_CALL glClearDepthdNV(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glClearDepthf(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glClearDepthf;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClearDepthf, 1);
 }
 void PT_CALL glClearDepthfOES(uint32_t arg0) {
     pt[1] = arg0; 
