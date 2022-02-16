@@ -31,8 +31,15 @@ if [ ! -z $1 ]; then
 fi
 if [ x`uname | sed "s/_.*//"` == xMINGW32 ]; then
     echo "  MSYSTEM=$MSYSTEM"
-    CC_CHECK=1
-
+    TARGET_CC=`gcc -v 2>&1 | grep ^Target`
+    echo "  $TARGET_CC"
+    if expr "$TARGET_CC" : ".*\(\ i686.*mingw32\)" > /dev/null ||\
+        expr "$TARGET_CC" : ".*\(\ mingw32\)" > /dev/null; then
+        CC_CHECK=1
+    else
+        echo "Error: Invalid CC target for WIN32"
+        exit 1
+    fi
 fi
 if [ x`uname` == xDarwin ] || [ x`uname` == xLinux ]; then
     echo "  `uname` cross build"
