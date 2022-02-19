@@ -1,8 +1,16 @@
 diff --git a/meson.build b/meson.build
-index 0916486..b87e712 100644
+index 0916486..883af7d 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -74,7 +74,6 @@ endforeach
+@@ -47,6 +47,7 @@ cc = meson.get_compiler('c')
+ add_project_arguments('-DHAVE_CONFIG_H=1', language : 'c')
+ add_project_arguments('-D_GNU_SOURCE=1', language : 'c')
+ add_project_arguments('-DVIRGL_RENDERER_UNSTABLE_APIS', language : 'c')
++add_project_link_arguments('-static-libgcc', language : 'c')
+
+ warnings = [
+    '-Werror=implicit-function-declaration',
+@@ -74,7 +75,6 @@ endforeach
  
  prog_python = import('python').find_installation('python3')
  
@@ -10,7 +18,7 @@ index 0916486..b87e712 100644
  thread_dep = dependency('threads')
  epoxy_dep = dependency('epoxy', version: '>= 1.5.4')
  m_dep = cc.find_library('m')
-@@ -182,9 +181,12 @@ endif
+@@ -182,9 +182,12 @@ endif
  
  if with_egl
     if cc.has_header('epoxy/egl.h', dependencies: epoxy_dep) and epoxy_dep.get_pkgconfig_variable('epoxy_has_egl') == '1'
@@ -25,7 +33,7 @@ index 0916486..b87e712 100644
     else
        assert(not require_egl,
               'egl was explicitely requested but it is not supported by epoxy')
-@@ -237,7 +239,7 @@ with_tests = get_option('tests')
+@@ -237,7 +240,7 @@ with_tests = get_option('tests')
  with_valgrind = get_option('valgrind')
  
  subdir('src')
