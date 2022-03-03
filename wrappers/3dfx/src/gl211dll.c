@@ -898,10 +898,14 @@ void PT_CALL grLfbWriteMode(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grLfbWriteMode;
 }
 uint32_t PT_CALL grSstOpen(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
+    uint32_t ret, wait = 1;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5;
     pt[7] = (uint32_t)lfb;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grSstOpen;
-    return *pt0;
+    ret = *pt0;
+    while (ret && wait)
+        wait = ptm[0xfb8U >> 2];
+    return ret;
 }
 void PT_CALL grSstPassthruMode(uint32_t arg0) {
     pt[1] = arg0; 
