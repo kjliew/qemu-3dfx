@@ -76,6 +76,14 @@ static uint32_t *mdata;
 static uint32_t *vgLfb;
 static void *mbufo;
 
+static void FiniGlidePTMMBase(PDRVFUNC pDrv)
+{
+    pDrv->UnmapLinear((FxU32)mbufo, MBUFO_SIZE);
+    pDrv->UnmapLinear((FxU32)vgLfb, SHLFB_SIZE);
+    pDrv->UnmapLinear((FxU32)lfb, GRLFB_SIZE);
+    pDrv->UnmapLinear((FxU32)mfifo, GRSHM_SIZE);
+    pDrv->UnmapLinear((FxU32)ptm, PAGE_SIZE);
+}
 static int InitGlidePTMMBase(PDRVFUNC pDrv)
 {
 #define MAPMEM(x,paddr,len) \
@@ -87,7 +95,7 @@ static int InitGlidePTMMBase(PDRVFUNC pDrv)
     MAPMEM(vgLfb, (GLIDE_LFB_BASE + GRLFB_SIZE), SHLFB_SIZE);
     MAPMEM(mbufo, MBUFO_BASE, MBUFO_SIZE);
 
-    if (ptm == 0)
+    if (!ptm || !mfifo)
         return 1;
     mdata = &mfifo[MAX_FIFO];
     pt = &mfifo[1];
@@ -1020,6 +1028,10 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | GLIDEVER;
             memset(&vgLfb[(SHLFB_SIZE - ALIGNBO(1)) >> 2], 0, ALIGNED(1));
             mfifo[1] = 0;
+            if (drv.Init()) {
+                FiniGlidePTMMBase(&drv);
+                drv.Fini();
+            }
 #ifdef DEBUG_FXSTUB
 	    fclose(logfp);
 #endif

@@ -39,6 +39,13 @@ static uint32_t *mdata;
 static uint32_t *fbtm;
 static void *mbufo;
 
+static void FiniMesaPTMMBase(PDRVFUNC pDrv)
+{
+    pDrv->UnmapLinear((FxU32)mbufo, MBUFO_SIZE);
+    pDrv->UnmapLinear((FxU32)fbtm, MGLFBT_SIZE);
+    pDrv->UnmapLinear((FxU32)mfifo, MGLSHM_SIZE);
+    pDrv->UnmapLinear((FxU32)ptm, PAGE_SIZE);
+}
 static int InitMesaPTMMBase(PDRVFUNC pDrv)
 {
 #define MAPMEM(x,paddr,len) \
@@ -49,7 +56,7 @@ static int InitMesaPTMMBase(PDRVFUNC pDrv)
     MAPMEM(fbtm, MESA_FBTM_BASE, MGLFBT_SIZE);
     MAPMEM(mbufo, MBUFO_BASE, MBUFO_SIZE);
 
-    if (ptm == 0)
+    if (!ptm || !mfifo)
         return 1;
     mdata = &mfifo[MAX_FIFO];
     pt = &mfifo[1];
@@ -17042,6 +17049,10 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
 	    ptm[(0xFBCU >> 2)] = (0xD0UL << 12) | MESAVER;
             memset(&fbtm[(MGLFBT_SIZE - ALIGNBO(1)) >> 2], 0, ALIGNED(1));
             mfifo[1] = 0;
+            if (drv.Init()) {
+                FiniMesaPTMMBase(&drv);
+                drv.Fini();
+            }
 #ifdef DEBUG_GLSTUB
             fclose(logfp);
 #endif
