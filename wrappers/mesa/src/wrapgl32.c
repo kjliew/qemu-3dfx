@@ -12,6 +12,8 @@
 
 #define INLINE inline
 #define PT_CALL __stdcall
+#define COMPACT __attribute__((optimize("Os")))
+#define COMPACT_FRAME COMPACT __attribute__((optimize("-fno-omit-frame-pointer")))
 #define LOG_NAME "C:\\WRAPGL32.LOG"
 
 #ifdef DEBUG_GLSTUB
@@ -405,6 +407,7 @@ static void fltrxstr(const char *xstr)
 struct mglOptions {
     int bufoAcc;
     int useSRGB;
+    int vsyncOff;
     int xstrYear;
 };
 static void parse_options(struct mglOptions *opt)
@@ -419,6 +422,8 @@ static void parse_options(struct mglOptions *opt)
             opt->bufoAcc = (i == 1)? v:opt->bufoAcc;
             i = sscanf(line, "ContextSRGB,%d", &v);
             opt->useSRGB = (i == 1)? v:opt->useSRGB;
+            i = sscanf(line, "ContextVsyncOff,%d", &v);
+            opt->vsyncOff = (i == 1)? v:opt->vsyncOff;
             i = sscanf(line, "ExtensionsYear,%d", &v);
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
         }
@@ -16334,8 +16339,10 @@ static uint32_t getExtNameEntry(char *name)
 static uint32_t PT_CALL wglSwapIntervalEXT (uint32_t arg0)
 {
     uint32_t ret;
+    struct mglOptions cfg;
+    parse_options(&cfg);
     WGL_FUNCP("wglSwapIntervalEXT");
-    argsp[0] = arg0;
+    argsp[0] = (cfg.vsyncOff)? 0:arg0;
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
     WGL_FUNCP_RET(ret);
     return ret;
@@ -16437,7 +16444,7 @@ wglChoosePixelFormatARB (HDC hdc,
 
 /* WGL_ARB_create_context */
 static int level;
-static HGLRC WINAPI
+static HGLRC WINAPI COMPACT
 wglCreateContextAttribsARB(HDC hDC,
                            HGLRC hShareContext,
                            const int *attribList)
@@ -16696,7 +16703,8 @@ mglSetLayerPaletteEntries(HDC hdc,int iLayerPlane, int iStart,
   return(FALSE);
 }
 
-uint32_t PT_CALL mglGetProcAddress (uint32_t arg0)
+uint32_t PT_CALL COMPACT
+mglGetProcAddress (uint32_t arg0)
 {
     uint32_t ret;
     uint32_t *proc = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
@@ -16743,7 +16751,8 @@ uint32_t PT_CALL mglGetProcAddress (uint32_t arg0)
     return ret;
 }
 
-uint32_t PT_CALL mglCreateContext (uint32_t arg0)
+uint32_t PT_CALL COMPACT
+mglCreateContext (uint32_t arg0)
 {
     uint32_t i, currRC = 0;
     uint32_t *cntxDC = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
@@ -16765,7 +16774,8 @@ uint32_t PT_CALL mglCreateContext (uint32_t arg0)
     return currRC;
 }
 
-uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
+uint32_t PT_CALL COMPACT
+mglMakeCurrent (uint32_t arg0, uint32_t arg1)
 {
     static const char icdBuild[] __attribute__((used)) = 
         __TIME__" "__DATE__" build ";
@@ -16785,8 +16795,10 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
     memcpy(((char *)&ptVer[1] + 8), icdBuild, sizeof(icdBuild));
     ptm[0xFF8 >> 2] = MESAGL_MAGIC;
     if (!currGLRC) {
-        if (cfg.useSRGB)
+        if (cfg.useSRGB && !glIsEnabled(GL_FRAMEBUFFER_SRGB))
             glEnable(GL_FRAMEBUFFER_SRGB);
+        if (cfg.vsyncOff && wglGetSwapIntervalEXT())
+            wglSwapIntervalEXT(0);
         DPRINTF("%s", icdBuild);
     }
     currGLRC = (level && ((arg1 + level) == MESAGL_MAGIC))?
@@ -16794,7 +16806,8 @@ uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1)
     return TRUE;
 }
 
-uint32_t PT_CALL mglDeleteContext (uint32_t arg0)
+uint32_t PT_CALL COMPACT
+mglDeleteContext (uint32_t arg0)
 {
     if (level && ((arg0 + level) == MESAGL_MAGIC)) { }
     else if (!currGLRC && (arg0 == MESAGL_MAGIC)) {
@@ -16896,8 +16909,10 @@ int WINAPI wglSwapBuffers (HDC hdc)
     }
     return (ret & 0x01U);
 }
-int WINAPI wgdSwapBuffers(HDC hdc) { return wglSwapBuffers(hdc); }
-int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wglSwapBuffers(hdc); }
+int WINAPI COMPACT
+wgdSwapBuffers(HDC hdc) { return wglSwapBuffers(hdc); }
+
+int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wgdSwapBuffers(hdc); }
 
 int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
 {
@@ -16910,7 +16925,8 @@ int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
     ret = ptm[0xFEC >> 2];
     return ret;
 }
-int WINAPI wgdChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
+int WINAPI COMPACT
+wgdChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
 { return wglChoosePixelFormat(hdc, ppfd); }
 
 int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
@@ -16926,16 +16942,18 @@ int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXE
     }
     return ret;
 }
-int WINAPI wgdDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
+int WINAPI COMPACT
+wgdDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
 { return wglDescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd); }
 
 int WINAPI wglGetPixelFormat(HDC hdc)
 {
-    return (currPixFmt == 0)? 0:wglDescribePixelFormat(hdc, 1, 0, 0);
+    return (currPixFmt == 0)? 0:wgdDescribePixelFormat(hdc, 1, 0, 0);
 }
-int WINAPI wgdGetPixelFormat(HDC hdc) { return wglGetPixelFormat(hdc); }
+int WINAPI COMPACT
+wgdGetPixelFormat(HDC hdc) { return wglGetPixelFormat(hdc); }
 
-BOOL WINAPI __attribute__((optimize("-fno-omit-frame-pointer")))
+BOOL WINAPI COMPACT_FRAME
 wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 {
     uint32_t ret, *rsp, *xppfd;
@@ -16957,7 +16975,7 @@ wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
     currPixFmt = (ret)? format:0;
     return ret;
 }
-BOOL WINAPI __attribute__((optimize("Os")))
+BOOL WINAPI COMPACT
 wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 { return wglSetPixelFormat(hdc, format, ppfd); }
 

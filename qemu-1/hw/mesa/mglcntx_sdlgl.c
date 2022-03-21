@@ -488,19 +488,23 @@ void MGLFuncHandler(const char *name)
     }
     FUNCP_HANDLER("wglSwapIntervalEXT") {
         int val = SDL_GL_SetSwapInterval(argsp[0]);
-        if (val != -1) {
+        if (val == -1)
+            argsp[0] = 1;
+        else {
             DPRINTF("wglSwapIntervalEXT(%u) %s %-24u", argsp[0], ((val)? "err":"ret"), ((val)? val:1));
             argsp[0] = (val)? 0:1;
-            return;
         }
+        return;
     }
     FUNCP_HANDLER("wglGetSwapIntervalEXT") {
         int val = SDL_GL_GetSwapInterval();
-        if (val != -1) {
+        if (val == -1)
+            argsp[0] = 1;
+        else {
             argsp[0] = val;
             DPRINTF("wglGetSwapIntervalEXT() ret %-24u", argsp[0]);
-            return;
         }
+        return;
     }
     FUNCP_HANDLER("wglGetExtensionsStringARB") {
         if (1 /* wglFuncs.GetExtensionsStringARB */) {
