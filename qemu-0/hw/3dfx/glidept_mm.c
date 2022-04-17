@@ -97,6 +97,7 @@ typedef struct GlidePTState
     uintptr_t FRet;
     uint32_t initDLL;
     uint32_t GrRes;
+    int cfgPushed;
     wrTexStruct GrTex;
     PERFSTAT perfs;
 } GlidePTState;
@@ -272,6 +273,18 @@ static void processArgs(GlidePTState *s)
                         s->arg[3], s->arg[4], s->arg[5], s->arg[6], s->arg[7]);
             }
 	    break;
+        case FEnum_grGlideInit:
+            if (s->GrTex.fbuf && s->GrTex.flen) {
+                int fd = open("glide.cfg", O_BINARY | O_CREAT | O_WRONLY, 0666);
+                if (fd > 0) {
+                    if (s->GrTex.flen == write(fd, s->GrTex.fbuf, s->GrTex.flen))
+                        DPRINTF("Push cfgFile, size = %-8x", s->GrTex.flen);
+                    close(fd);
+                    s->cfgPushed = 1;
+                }
+                s->GrTex.flen = 0;
+            }
+            break;
         case FEnum_grTexSource:
         case FEnum_grTexDownloadMipMap:
             s->datacb = ALIGNED(SIZE_GRTEXINFO);
@@ -693,6 +706,10 @@ static void processFRet(GlidePTState *s)
             DPRINTF("  GrState %d VtxLayout %d", FreeGrState(), FreeVtxLayout());
 	    memset(s->arg, 0, sizeof(uint32_t [16]));
 	    strncpy(s->version, "Glide2x", sizeof(char [80])-1);
+            if (s->cfgPushed) {
+                s->cfgPushed = 0;
+                DPRINTF("cfgFile remove() ret %d", remove("glide.cfg"));
+            }
 	    break;
 
         case FEnum_grBufferSwap:

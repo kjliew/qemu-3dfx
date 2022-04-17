@@ -415,9 +415,21 @@ void PT_CALL grGlideGetVersion(uint32_t arg0) {
 }
 void PT_CALL grGlideInit(void) {
 
-    uint32_t *ptVer, *rsp, ret;
+    int fd;
+    uint32_t len, *ptVer, *rsp, ret;
     asm volatile("lea 0x1c(%%esp), %0;":"=rm"(rsp));
     ret = rsp[0];
+    fd = open("glide.cfg", O_BINARY | O_RDONLY);
+    if (fd > 0) {
+        len = lseek(fd, 0, SEEK_END);
+        lseek(fd, 0, SEEK_SET);
+        if (len > (MAX_3DF - ALIGNED(1)))
+            len = (MAX_3DF - ALIGNED(1));
+        read(fd, &m3df[ALIGNED(1) >> 2], len);
+        close(fd);
+        m3df[0] = len;
+        ft[0] = MAX_3DF;
+    }
     ptVer = &mfifo[(GRSHM_SIZE - PAGE_SIZE) >> 2];
     memcpy(ptVer, buildstr, sizeof(buildstr));
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideInit;
@@ -906,6 +918,8 @@ void PT_CALL grLfbWriteMode(uint32_t arg0) {
 }
 uint32_t PT_CALL grSstOpen(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     uint32_t ret, wait = 1;
+    if (!grGlidePresent)
+        grGlideInit();
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5;
     pt[7] = (uint32_t)lfb;
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grSstOpen;
