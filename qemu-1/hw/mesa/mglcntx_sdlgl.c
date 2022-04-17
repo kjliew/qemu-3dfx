@@ -396,11 +396,20 @@ int MGLSetPixelFormat(int fmt, const void *p)
 int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
 {
     //DPRINTF("DescribePixelFormat()");
-    if (!window) {
+    cDepthBits = pfd.cDepthBits;
+    cStencilBits = pfd.cStencilBits;
+    cAuxBuffers = pfd.cAuxBuffers;
+    if (!window)
         MGLPresetPixelFormat();
-        cDepthBits = pfd.cDepthBits;
-        cStencilBits = pfd.cStencilBits;
-        cAuxBuffers = pfd.cAuxBuffers;
+    else {
+        ctx[0] = (ctx[0])? ctx[0]:SDL_GL_GetCurrentContext();
+        ctx[0] = (ctx[0])? ctx[0]:SDL_GL_CreateContext(window);
+        if (ctx[0]) {
+            SDL_GL_MakeCurrent(window, ctx[0]);
+            SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &cDepthBits);
+            SDL_GL_GetAttribute(SDL_GL_STENCIL_SIZE, &cStencilBits);
+            glGetIntegerv(GL_AUX_BUFFERS, &cAuxBuffers);
+        }
     }
     memcpy(p, &pfd, sizeof(PIXELFORMATDESCRIPTOR));
     ((PIXELFORMATDESCRIPTOR *)p)->cDepthBits = cDepthBits;
