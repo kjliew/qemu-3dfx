@@ -778,12 +778,14 @@ static HINSTANCE hDll = 0;
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
 static void *hDll = 0;
 #endif
-void __stdcall (*setConfig)(const uint32_t flag);
+static uint32_t SignSDL;
+void __stdcall (*setConfig)(const uint32_t flags, void *magic);
 void __stdcall (*setConfigRes)(const int res);
 void conf_glide2x(const uint32_t flags, const int res)
 {
+    SignSDL = 0x58326724 /*'$g2X'*/;
     if (setConfig)
-        (*setConfig)(flags);
+        (*setConfig)(flags, &SignSDL);
     if (res && setConfigRes)
         (*setConfigRes)(res);
 }
@@ -805,6 +807,7 @@ void cwnd_glide2x(void *swnd, void *nwnd, void *opaque)
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
     uintptr_t wnd = othr_hwnd()? (uintptr_t)nwnd:(uintptr_t)swnd;
 #endif
+    wnd = (SignSDL == 0x324c4453 /*'SDL2'*/)? (uintptr_t)swnd:wnd;
     window_cb *s = opaque;
 
     switch (s->FEnum) {
@@ -864,8 +867,8 @@ int init_glide2x(const char *dllname)
         const char *libname = strcat(prefix, dllname);
         hDll = LoadLibrary(libname);
     }
-    setConfig = (void *)(GetProcAddress(hDll, "_setConfig@4"));
-    setConfigRes = (void *)(GetProcAddress(hDll, "_setConfigRes@4"));
+    setConfig = (void (*)(const uint32_t, void *))GetProcAddress(hDll, "_setConfig@8");
+    setConfigRes = (void (*)(const int))GetProcAddress(hDll, "_setConfigRes@4");
 #endif
 #if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)

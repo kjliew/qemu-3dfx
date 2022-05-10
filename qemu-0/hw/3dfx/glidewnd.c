@@ -67,6 +67,7 @@ static int cfg_lfbNoAux;
 static int cfg_lfbLockDirty;
 static int cfg_lfbWriteMerge;
 static int cfg_lfbMapBufo;
+static int cfg_Annotate;
 static int cfg_MipMaps;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
@@ -255,6 +256,7 @@ void init_window(const int res, const char *wndTitle, void *opaque)
     cfg_lfbLockDirty = 0;
     cfg_lfbWriteMerge = 0;
     cfg_lfbMapBufo = 0;
+    cfg_Annotate = 0;
     cfg_MipMaps = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
@@ -288,6 +290,8 @@ void init_window(const int res, const char *wndTitle, void *opaque)
             cfg_lfbWriteMerge = ((i == 1) && c)? 1:cfg_lfbWriteMerge;
             i = sscanf(line, "LfbMapBufo,%d", &c);
             cfg_lfbMapBufo = ((i == 1) && c)? 1:cfg_lfbMapBufo;
+            i = sscanf(line, "Annotate,%d", &c);
+            cfg_Annotate = ((i == 1) && c)? 1:cfg_Annotate;
             i = sscanf(line, "MipMaps,%d", &c);
             cfg_MipMaps = ((i == 1) && c)? 1:cfg_MipMaps;
             i = sscanf(line, "FifoTrace,%d", &c);
@@ -305,12 +309,14 @@ void init_window(const int res, const char *wndTitle, void *opaque)
 
 #define WRAPPER_FLAG_WINDOWED           0x01
 #define WRAPPER_FLAG_MIPMAPS            0x02
+#define WRAPPER_FLAG_ANNOTATE           0x10
 #define WRAPPER_FLAG_FRAMEBUFFER_SRGB   0x20
 #define WRAPPER_FLAG_VSYNCOFF           0x40
 #define WRAPPER_FLAG_QEMU               0x80
     uint32_t flags = (glide_fullscreen)? WRAPPER_FLAG_QEMU:
         (WRAPPER_FLAG_QEMU | WRAPPER_FLAG_WINDOWED);
     flags |= (cfg_MipMaps)? WRAPPER_FLAG_MIPMAPS:0;
+    flags |= (cfg_Annotate)? WRAPPER_FLAG_ANNOTATE:0;
     flags |= (cfg_cntxVsyncOff)? WRAPPER_FLAG_VSYNCOFF:0;
     flags |= (cfg_cntxSRGB)? WRAPPER_FLAG_FRAMEBUFFER_SRGB:0;
     flags |= cfg_cntxMSAA;
