@@ -362,7 +362,7 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +        s->scon->winctx = 0;
 +        s->render_pause = 0;
 +        SDL_GL_ResetAttributes();
-+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "0");
++        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "");
 +        sdl_gui_restart(s->scon, s->icon);
 +        if (!s->scon->opengl)
 +            sdl2_2d_switch(&s->scon->dcl, s->scon->surface);

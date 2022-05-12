@@ -36,8 +36,8 @@ static void MGLTmpContext(char **str, char **wstr)
         (BOOL (WINAPI *)(HDC, int, int, UINT, const int *, int *))
         wglGetProcAddress("wglGetPixelFormatAttribivARB");
 
-    int nPix, na[] = { WGL_NUMBER_PIXEL_FORMATS_ARB };
-    int n[33], nAttr[] = {
+    const int na[] = { WGL_NUMBER_PIXEL_FORMATS_ARB },
+          piAttr[] = {
         WGL_DRAW_TO_WINDOW_ARB,
         WGL_DRAW_TO_BITMAP_ARB,
         WGL_ACCELERATION_ARB,
@@ -72,19 +72,33 @@ static void MGLTmpContext(char **str, char **wstr)
         WGL_SAMPLE_BUFFERS_ARB,
         WGL_SAMPLES_ARB,
     };
+    const UINT nAttr = sizeof(piAttr) / sizeof(int);
+    int nPix, n[nAttr];
+
     const char accel[] = "0NGF",
           swap[] = "XCU",
           type[] = "f0rc";
-
-    char strbuf[1024];
-    strncpy(strbuf, (const char *)glGetString(GL_RENDERER), 1023);
-    printf("Renderer : %s [ %d ]\n", strbuf, strlen(strbuf));
-    strncpy(strbuf, (const char *)glGetString(GL_VENDOR), 1023);
-    printf("Vendor   : %s [ %d ]\n", strbuf, strlen(strbuf));
-    strncpy(strbuf, (const char *)glGetString(GL_VERSION), 1023);
-    printf("Version  : %s [ %d ]\n\n", strbuf, strlen(strbuf));
-    strncpy(strbuf, (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION), 1023);
-    printf("Shading Language Version : %s [ %d ]\n\n", strbuf, strlen(strbuf));
+    const struct {
+        char *fmt;
+        int enm;
+    } strname[] = {
+        { .fmt = "Renderer : %s [ %d ]\n",   .enm = GL_RENDERER, },
+        { .fmt = "Vendor   : %s [ %d ]\n",   .enm = GL_VENDOR,   },
+        { .fmt = "Version  : %s [ %d ]\n\n", .enm = GL_VERSION,  },
+        { .fmt = "Shading Language Version : %s [ %d ]\n\n", .enm = GL_SHADING_LANGUAGE_VERSION, },
+        { .fmt = 0, .enm = 0, },
+    };
+    for (int i = 0; strname[i].enm; i++) {
+        const char *namestr;
+        char *namebuf;
+        namestr = (const char *)glGetString(strname[i].enm);
+        namebuf = HeapAlloc(GetProcessHeap(), 0, 1 + strlen(namestr));
+        if (namestr && namebuf) {
+            lstrcpy(namebuf, namestr);
+            printf(strname[i].fmt, namebuf, 1 + strlen(namestr));
+            HeapFree(GetProcessHeap(), 0, namebuf);
+        }
+    }
 
     wglGetPixelFormatAttribivARB(tmpDC, 1, 0, 1, na, &nPix);
     printf("Total pixel formats %d\n", nPix);
@@ -99,7 +113,7 @@ static void MGLTmpContext(char **str, char **wstr)
         0x003 1 0 F 0 0 0 U 0 0 0 1 0 0 r  32   8  8  8  0   0 16  8  0  64 16 16 16 16 24 8 4 0  0
     */
     for (int i = 1; i <= nPix; i++) {
-        wglGetPixelFormatAttribivARB(tmpDC, i, 0, 33, nAttr, n);
+        wglGetPixelFormatAttribivARB(tmpDC, i, 0, nAttr, piAttr, n);
         printf(
         "0x%03x %-2x%-2x%-2c%-2x%-2x%-2x%-2c%-2x%-2x%-2x%-2x%-2x%-2x%-2c%3d %3d%3d%3d%3d %3d%3d%3d%3d  %2d %2d %2d %2d %2d %2d %d %d %d %2d\n",
             i, n[0],n[1],accel[n[2]&0x3],n[3],n[4],n[5],swap[n[6]&0x3],n[7],n[8],n[9],n[10],n[11],n[12],type[(n[13]&0xC)>>2],n[14],n[15],
@@ -107,12 +121,15 @@ static void MGLTmpContext(char **str, char **wstr)
     }
     printf("\n");
 
-    *str = HeapAlloc(GetProcessHeap(), 0, 1 + strlen((const char *)glGetString(GL_EXTENSIONS)));
-    *wstr = HeapAlloc(GetProcessHeap(), 0, 1 + strlen(wglGetString(tmpDC)));
+    const char *glstr = (const char *)glGetString(GL_EXTENSIONS),
+              *wglstr = (const char *)wglGetString(tmpDC);
+
+    *str = HeapAlloc(GetProcessHeap(), 0, 1 + strlen(glstr));
+    *wstr = HeapAlloc(GetProcessHeap(), 0, 1 + strlen(wglstr));
     if (*str)
-        lstrcpy(*str, (const char *)glGetString(GL_EXTENSIONS));
+        lstrcpy(*str, glstr);
     if (*wstr)
-        lstrcpy(*wstr, wglGetString(tmpDC));
+        lstrcpy(*wstr, wglstr);
 
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(tmpGL);
@@ -126,7 +143,7 @@ int main()
     char *wstr;
     MGLTmpContext(&str, &wstr);
     if (str && wstr) {
-        printf("%s [ %d ]\n%s [ %d ]\n", str, strlen(str), wstr, strlen(wstr));
+        printf("%s [ %d ]\n%s [ %d ]\n", str, 1 + strlen(str), wstr, 1 + strlen(wstr));
         HeapFree(GetProcessHeap(), 0, str);
         HeapFree(GetProcessHeap(), 0, wstr);
     }
