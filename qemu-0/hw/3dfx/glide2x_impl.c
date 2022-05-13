@@ -807,14 +807,7 @@ void cwnd_glide2x(void *swnd, void *nwnd, void *opaque)
         void (__stdcall *SstWinClose3x)(uintptr_t arg0);
     } GrWndFunc;
 
-    uintptr_t wnd = SDLSignValid(0)? (uintptr_t)swnd:
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
-        (othr_hwnd()? (uintptr_t)swnd:(uintptr_t)nwnd);
-#endif
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
-        (othr_hwnd()? (uintptr_t)nwnd:(uintptr_t)swnd);
-#endif
+    uintptr_t wnd = SDLSignValid(0)? (uintptr_t)swnd:(uintptr_t)nwnd;
     window_cb *s = opaque;
 
     switch (s->FEnum) {

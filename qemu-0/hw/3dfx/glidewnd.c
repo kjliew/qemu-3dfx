@@ -55,8 +55,7 @@ static struct tblGlideResolution tblRes[] = {
   { .w = 0, .h = 0},
 };
 
-static int cfg_ovrdHwnd;
-static int cfg_scaleGuiX;
+static int cfg_scaleGuiOff;
 static int cfg_scaleX;
 static int cfg_cntxMSAA;
 static int cfg_cntxSRGB;
@@ -193,8 +192,6 @@ void glide_winres(const int res, int *w, int *h)
     *h = tblRes[res].h;
 }
 
-int othr_hwnd(void) { return cfg_ovrdHwnd; }
-
 int stat_window(const int res, void *opaque)
 {
     int stat, sel, glide_fullscreen;
@@ -244,8 +241,7 @@ void init_window(const int res, const char *wndTitle, void *opaque)
 {
     window_cb *disp_cb = opaque;
 
-    cfg_ovrdHwnd = 0;
-    cfg_scaleGuiX = 1;
+    cfg_scaleGuiOff = 0;
     cfg_scaleX = 0;
     cfg_cntxMSAA = 0;
     cfg_cntxSRGB = 0;
@@ -266,10 +262,8 @@ void init_window(const int res, const char *wndTitle, void *opaque)
         char line[32];
         int i, c;
         while (fgets(line, 32, fp)) {
-            i = sscanf(line, "OverrideHwnd,%d", &c);
-            cfg_ovrdHwnd = ((i == 1) && c)? 1:cfg_ovrdHwnd;
-            i = sscanf(line, "ScaleGuiX,%d", &c);
-            cfg_scaleGuiX = ((i == 1) && (c == 0))? 0:cfg_scaleGuiX;
+            i = sscanf(line, "ScaleGuiOff,%d", &c);
+            cfg_scaleGuiOff = ((i == 1) && c)? 1:cfg_scaleGuiOff;
             i = sscanf(line, "ScaleWidth,%d", &c);
             cfg_scaleX = ((i == 1) && c)? c:cfg_scaleX;
             i = sscanf(line, "ContextMSAA,%d", &c);
@@ -303,8 +297,8 @@ void init_window(const int res, const char *wndTitle, void *opaque)
     }
 
     int gui_height, glide_fullscreen = glide_gui_fullscreen(0, &gui_height);
-    cfg_scaleGuiX = (glide_fullscreen || cfg_scaleX)? 0:cfg_scaleGuiX;
-    cfg_scaleX = (cfg_scaleGuiX && (gui_height > 480) && (gui_height > tblRes[res].h))?
+    cfg_scaleGuiOff = (glide_fullscreen || cfg_scaleX)? 1:cfg_scaleGuiOff;
+    cfg_scaleX = (!cfg_scaleGuiOff && (gui_height > 480) && (gui_height > tblRes[res].h))?
         (int)((1.f * tblRes[res].w * gui_height) / tblRes[res].h):cfg_scaleX;
 
 #define WRAPPER_FLAG_WINDOWED           0x01

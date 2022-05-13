@@ -655,9 +655,8 @@ static void processFRet(GlidePTState *s)
                     s->lfb_h = (s->lfb_h > 0x300)? 0x300:s->lfb_h;
                     memset(s->glfb_ptr + (s->lfb_h * 0x800), 0, (s->lfb_h * 0x800));
                 }
-                DPRINTF("LFB mode is %s%s-copy%s%s%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
+                DPRINTF("LFB mode is %s%s-copy%s%s%s%s", (s->lfb_real)? "MMIO Handlers (slow)" : "Shared Memory (fast)",
                         (s->lfb_real || glide_mapbufo(0, 0))? ", Zero":", One",
-                        (othr_hwnd())? ", othr-hwnd":"",
                         (glide_fpslimit())? strFpsLimit:"",
                         (glide_lfbdirty())? ", LfbLockDirty":"",
                         (s->lfb_noaux)? ", LfbNoAux":"", (s->lfb_merge)? ", LfbWriteMerge":"");
