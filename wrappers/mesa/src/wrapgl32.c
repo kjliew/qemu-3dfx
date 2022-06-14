@@ -406,6 +406,7 @@ static void fltrxstr(const char *xstr)
 }
 struct mglOptions {
     int bufoAcc;
+    int dispTimerMS;
     int useSRGB;
     int vsyncOff;
     int xstrYear;
@@ -418,6 +419,8 @@ static void parse_options(struct mglOptions *opt)
         char line[MAX_XSTR];
         int i, v;
         while(fgets(line, MAX_XSTR, f)) {
+            i = sscanf(line, "DispTimerMS,%d", &v);
+            opt->dispTimerMS = (i == 1)? (0x8000U | (v & 0x7FFFU)):opt->dispTimerMS;
             i = sscanf(line, "BufOAccelEN,%d", &v);
             opt->bufoAcc = (i == 1)? v:opt->bufoAcc;
             i = sscanf(line, "ContextSRGB,%d", &v);
@@ -16785,10 +16788,17 @@ mglMakeCurrent (uint32_t arg0, uint32_t arg1)
     //DPRINTF("MakeCurrent %x %x", arg0, arg1);
     struct mglOptions cfg;
     parse_options(&cfg);
-    if (cfg.bufoAcc && !currGLRC) {
-        const uint32_t bufoAcc = 0xbf0acc;
-        glDebugMessageInsertARB(GL_DEBUG_SOURCE_API_ARB, GL_DEBUG_TYPE_PERFORMANCE_ARB,
-            GL_DEBUG_SEVERITY_LOW_ARB, -1, sizeof(uint32_t), (uint32_t)&bufoAcc);
+    if (!currGLRC) {
+        if (cfg.dispTimerMS & 0x8000) {
+            uint32_t dispTimerMS = 0xcf8000 | (cfg.dispTimerMS & 0x7FFFU);
+            glDebugMessageInsertARB(GL_DEBUG_SOURCE_API_ARB, GL_DEBUG_TYPE_PERFORMANCE_ARB,
+                GL_DEBUG_SEVERITY_LOW_ARB, -1, sizeof(uint32_t), (uint32_t)&dispTimerMS);
+        }
+        if (cfg.bufoAcc) {
+            const uint32_t bufoAcc = 0xbf0acc;
+            glDebugMessageInsertARB(GL_DEBUG_SOURCE_API_ARB, GL_DEBUG_TYPE_PERFORMANCE_ARB,
+                GL_DEBUG_SEVERITY_LOW_ARB, -1, sizeof(uint32_t), (uint32_t)&bufoAcc);
+        }
     }
     ptVer[0] = arg1;
     memcpy((char *)&ptVer[1], rev_, 8);

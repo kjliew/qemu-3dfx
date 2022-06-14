@@ -1578,6 +1578,11 @@ static void processArgs(MesaPTState *s)
             if ((s->arg[0] == GL_DEBUG_SOURCE_API_ARB) &&
                 (s->arg[1] == GL_DEBUG_TYPE_PERFORMANCE_ARB) &&
                 (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
+                (0xcf8000 == ((*(uint32_t *)(s->hshm)) & ~0x7FFFU)))
+                GLDispTimerCfg( (*(uint32_t *)(s->hshm)) & 0x7FFFU );
+            if ((s->arg[0] == GL_DEBUG_SOURCE_API_ARB) &&
+                (s->arg[1] == GL_DEBUG_TYPE_PERFORMANCE_ARB) &&
+                (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
                 (0xbf0acc == *(uint32_t *)(s->hshm)))
                 GLBufOAccelCfg(1);
             DPRINTF_COND(((s->arg[0] == GL_DEBUG_SOURCE_OTHER_ARB) &&
@@ -2197,8 +2202,10 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         dispTimerSched(s->dispTimer);
                     }
                     else {
-                        DPRINTF_COND((ptVer[0] && (0 == NumPbuffer())),
+                        static int lvl_prev;
+                        DPRINTF_COND((ptVer[0] && (lvl_prev != level) && (0 == NumPbuffer())),
                             "wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
+                        lvl_prev = level;
                         MGLMakeCurrent(ptVer[0], level);
                     }
                 } while(0);
