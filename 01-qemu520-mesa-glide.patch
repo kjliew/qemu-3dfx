@@ -140,8 +140,16 @@ diff -Nru ../orig/qemu-5.2.0/include/sysemu/whpx.h ./include/sysemu/whpx.h
  #else /* CONFIG_WHPX */
 diff -Nru ../orig/qemu-5.2.0/include/ui/console.h ./include/ui/console.h
 --- ../orig/qemu-5.2.0/include/ui/console.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/ui/console.h	2021-10-02 22:34:17.172828400 -0700
-@@ -446,4 +446,17 @@
++++ ./include/ui/console.h	2022-07-03 21:31:07.665700400 -0700
+@@ -370,6 +370,7 @@
+                                void *opaque);
+ void graphic_console_close(QemuConsole *con);
+
++int graphic_hw_halt(const int);
+ void graphic_hw_update(QemuConsole *con);
+ void graphic_hw_update_done(QemuConsole *con);
+ void graphic_hw_invalidate(QemuConsole *con);
+@@ -446,4 +447,17 @@
  /* input.c */
  int index_from_key(const char *key, size_t key_length);
  
@@ -249,10 +257,36 @@ diff -Nru ../orig/qemu-5.2.0/target/i386/whpx-all.c ./target/i386/whpx-all.c
  static void whpx_region_add(MemoryListener *listener,
                             MemoryRegionSection *section)
  {
+diff -Nru ../orig/qemu-5.2.0/ui/console.c ./ui/console.c
+--- ../orig/qemu-5.2.0/ui/console.c	2020-12-08 08:59:44.000000000 -0800
++++ ./ui/console.c	2022-07-03 21:30:40.203396600 -0700
+@@ -262,6 +262,13 @@
+     ds->have_text = have_text;
+ }
+
++int graphic_hw_halt(const int enable)
++{
++    static int halt_en;
++    halt_en = (enable & 0x80U)? (enable & 0x01U):halt_en;
++    return halt_en;
++}
++
+ void graphic_hw_update_done(QemuConsole *con)
+ {
+     if (con) {
+@@ -272,6 +279,8 @@
+ void graphic_hw_update(QemuConsole *con)
+ {
+     bool async = false;
++    if (graphic_hw_halt(0))
++        return;
+     con = con ? con : active_console;
+     if (!con) {
+         return;
 diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-5.2.0/ui/sdl2.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./ui/sdl2.c	2021-10-11 18:53:40.469192000 -0700
-@@ -755,6 +755,280 @@
++++ ./ui/sdl2.c	2022-07-03 21:30:01.828943200 -0700
+@@ -755,6 +755,285 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -284,6 +318,8 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +    SDL_GetWindowPosition(scon->real_window, &x, &y);
 +    SDL_GetWindowBordersSize(scon->real_window, &top, 0, 0, 0);
 +#ifndef CONFIG_WIN32
++    if (!memcmp(SDL_GetHint(SDL_HINT_RENDER_DRIVER), "opengl", strlen("opengl")))
++        top <<= 1;
 +    y -= top;
 +#endif
 +    sdl2_window_destroy(scon);
@@ -314,10 +350,8 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +            if (gui_saved_grab)
 +                sdl_grab_start(s->scon);
 +        }
-+        return;
 +    }
-+
-+    if (s->gui_saved_res) {
++    else if (s->gui_saved_res) {
 +        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 +        SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
 +        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  24);
@@ -352,6 +386,10 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +        s->scon->real_renderer = 0;
 +        s->scon->winctx = SDL_GL_GetCurrentContext();
 +        s->scon->winctx = (s->scon->winctx)? s->scon->winctx:SDL_GL_CreateContext(s->scon->real_window);
++        if (!s->scon->winctx) {
++            error_report("%s", SDL_GetError());
++            exit(1);
++        }
 +        s->render_pause = 1;
 +        if (!s->opaque)
 +            s->cwnd_fn(s->scon->real_window, s->hnwnd, 0);
@@ -372,6 +410,7 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +    }
 +    if (s->opaque && (s->res > 0))
 +        SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
++    graphic_hw_halt(0x80U | s->render_pause);
 +}
 +
 +static int sdl_gui_fullscreen(int *width, int *height, const char *feat)
