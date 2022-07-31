@@ -149,7 +149,7 @@ diff -Nru ../orig/qemu-6.2.0/include/ui/console.h ./include/ui/console.h
  void graphic_hw_update(QemuConsole *con);
  void graphic_hw_update_done(QemuConsole *con);
  void graphic_hw_invalidate(QemuConsole *con);
-@@ -484,4 +485,17 @@
+@@ -484,4 +485,18 @@
  int udmabuf_fd(void);
  #endif
  
@@ -164,6 +164,7 @@ diff -Nru ../orig/qemu-6.2.0/include/ui/console.h ./include/ui/console.h
 +void mesa_renderer_stat(const int);
 +void mesa_prepare_window(void *);
 +void mesa_release_window(void);
++void mesa_mouse_warp(int, int, const int);
 +int mesa_gui_fullscreen(int *, int *);
 +
  #endif
@@ -313,8 +314,6 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +static void sdl_gui_restart(struct sdl2_console *scon, SDL_Surface *icon)
 +{
 +    int x, y, top;
-+    gui_saved_grab = gui_grab;
-+    sdl_grab_end(scon);
 +    SDL_GetWindowPosition(scon->real_window, &x, &y);
 +    SDL_GetWindowBordersSize(scon->real_window, &top, 0, 0, 0);
 +#ifndef CONFIG_WIN32
@@ -322,14 +321,13 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +        top <<= 1;
 +    y -= top;
 +#endif
++    sdl_grab_end(scon);
 +    sdl2_window_destroy(scon);
 +    sdl2_window_create(scon);
 +    if (icon)
 +        SDL_SetWindowIcon(scon->real_window, icon);
 +    if (!gui_fullscreen)
 +        SDL_SetWindowPosition(scon->real_window, x, y);
-+    if (gui_saved_grab)
-+        sdl_grab_start(scon);
 +}
 +static void sched_wndproc(void *opaque)
 +{
@@ -341,14 +339,10 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +            s->scon->texture = 0;
 +        }
 +        else {
-+            gui_saved_grab = gui_grab;
-+            sdl_grab_end(s->scon);
 +            if (!s->scon->real_renderer)
 +                s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
 +            if (!s->scon->opengl)
 +                sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
-+            if (gui_saved_grab)
-+                sdl_grab_start(s->scon);
 +        }
 +    }
 +    else if (s->gui_saved_res) {
@@ -424,8 +418,6 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +    if (height)
 +        *height = surface_height(s->scon->surface);
 +    return gui_fullscreen;
-+
-+
 +}
 +
 +static void sdl_renderer_stat(const int activate, const char *feat)
@@ -562,6 +554,15 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +
 +    if (s->ts)
 +        timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++}
++
++void mesa_mouse_warp(int x, int y, const int on)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    QemuConsole *con = s->scon ? s->scon->dcl.con : NULL;
++    if (con && !qemu_input_is_absolute())
++        dpy_mouse_set(con, x, y, on);
 +}
 +
 +int mesa_gui_fullscreen(int *width, int *height)

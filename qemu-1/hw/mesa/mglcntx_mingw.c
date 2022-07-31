@@ -36,6 +36,21 @@
 #include <GL/wglext.h>
 #include "sysemu/whpx.h"
 
+int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
+{
+    int ret = GetBufOAccelEN()? whpx_enabled():0;
+
+    if (ret && bufo) {
+        bufo->lvl = (add)? MapBufObjGpa(bufo):0;
+        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
+            (void *)(bufo->hva & qemu_real_host_page_mask),
+            (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
+    }
+
+    return ret;
+}
+
 static LONG WINAPI MGLWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch(uMsg) {
@@ -265,21 +280,6 @@ void *MesaGLGetProc(const char *proc)
     return (void *)wglFuncs.GetProcAddress(proc);
 }
 
-int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
-{
-    int ret = GetBufOAccelEN()? whpx_enabled():0;
-
-    if (ret && bufo) {
-        bufo->lvl = (add)? MapBufObjGpa(bufo):0;
-        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
-            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
-            (void *)(bufo->hva & qemu_real_host_page_mask),
-            (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
-    }
-
-    return ret;
-}
-
 void MGLTmpContext(void)
 {
     HWND tmpWin = CreateMesaWindow("dummy", 640, 480, 0);
@@ -342,8 +342,10 @@ void MGLDeleteContext(int level)
     }
     wglFuncs.DeleteContext(hRC[n]);
     hRC[n] = 0;
-    if (!n)
+    if (!n) {
         MGLActivateHandler(0);
+        MGLMouseWarp(0);
+    }
 }
 
 void MGLWndRelease(void)
@@ -527,6 +529,18 @@ void MGLActivateHandler(int i)
         if (i)
             MesaDisplayModeset(1);
         mesa_renderer_stat(i);
+    }
+}
+
+void MGLMouseWarp(const uint32_t ci)
+{
+    static uint32_t last_ci = 0;
+
+    if (ci != last_ci) {
+        last_ci = ci;
+        int x = ((ci >> 16) & 0x7FFFU),
+            y = (ci & 0x7FFFU), on = (ci)? 1:0;
+        mesa_mouse_warp(x, y, on);
     }
 }
 

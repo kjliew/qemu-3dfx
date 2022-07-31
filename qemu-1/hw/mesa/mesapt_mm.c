@@ -1575,6 +1575,11 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glDebugMessageInsertARB:
             s->datacb = ALIGNED(s->arg[4]);
+            if ((s->arg[0] == GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB) &&
+                (s->arg[1] == GL_DEBUG_TYPE_OTHER_ARB) &&
+                (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
+                (sizeof(uint32_t) == s->arg[4]))
+                MGLMouseWarp(*(uint32_t *)(s->hshm));
             if ((s->arg[0] == GL_DEBUG_SOURCE_API_ARB) &&
                 (s->arg[1] == GL_DEBUG_TYPE_PERFORMANCE_ARB) &&
                 (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
@@ -2235,7 +2240,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 s->perfs.stat();
                 do {
                     uint32_t *swapRet = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - ALIGNED(1)));
-                    swapRet[0] = MGLSwapBuffers()? ((GetFpsLimit() << 8) | 1):0;
+                    swapRet[0] = MGLSwapBuffers()? ((GetFpsLimit() << 1) | 1):0;
+                    MGLMouseWarp(swapRet[1]);
                     dispTimerSched(s->dispTimer);
                 } while(0);
                 break;

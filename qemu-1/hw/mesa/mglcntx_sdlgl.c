@@ -286,8 +286,10 @@ void MGLDeleteContext(int level)
         }
     }
     GL_DELETECONTEXT(ctx[n]);
-    if (!n)
+    if (!n) {
         MGLActivateHandler(0);
+        MGLMouseWarp(0);
+    }
 }
 
 void MGLWndRelease(void)
@@ -428,6 +430,18 @@ void MGLActivateHandler(int i)
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
         mesa_renderer_stat(i);
+    }
+}
+
+void MGLMouseWarp(const uint32_t ci)
+{
+    static uint32_t last_ci = 0;
+
+    if (ci != last_ci) {
+        last_ci = ci;
+        int x = ((ci >> 16) & 0x7FFFU),
+            y = (ci & 0x7FFFU), on = (ci)? 1:0;
+        mesa_mouse_warp(x, y, on);
     }
 }
 
@@ -630,4 +644,3 @@ void MGLFuncHandler(const char *name)
 }
 
 #endif //MESAGL_SDLGL
-

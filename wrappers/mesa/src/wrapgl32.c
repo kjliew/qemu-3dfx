@@ -16907,13 +16907,31 @@ uint32_t PT_CALL mglUseFontOutlinesW(uint32_t arg0, uint32_t arg1, uint32_t arg2
 int WINAPI wglSwapBuffers (HDC hdc)
 {
     uint32_t ret, *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
+    CURSORINFO ci = { .cbSize = sizeof(CURSORINFO) };
+    if (GetCursorInfo(&ci) && (ci.flags == CURSOR_SHOWING)) {
+        RECT wr, cr;
+        GetWindowRect(WindowFromDC(hdc), &wr);
+        GetClientRect(WindowFromDC(hdc), &cr);
+        int top = (wr.bottom - wr.top) - cr.bottom;
+        ci.ptScreenPos.y = (ci.ptScreenPos.y > top)? (ci.ptScreenPos.y - top):0;
+        if ((ci.ptScreenPos.x > (wr.right - wr.left - 1)) ||
+            (ci.ptScreenPos.y > (wr.bottom - wr.top - 1))) {
+            ci.ptScreenPos.x = 0;
+            ci.ptScreenPos.y = 0;
+        }
+    }
+    else {
+        ci.ptScreenPos.x = 0;
+        ci.ptScreenPos.y = 0;
+    }
+    swapRet[1] = ((ci.ptScreenPos.x & 0x7FFFU) << 16) | (ci.ptScreenPos.y & 0x7FFFU);
     ptm[0xFF0 >> 2] = MESAGL_MAGIC;
     ret = swapRet[0];
-    if (ret & 0x3F00U) {
+    if (ret & 0x7EU) {
         static uint32_t nexttick;
         uint32_t t = GetTickCount();
         nexttick = (nexttick == 0)? t:nexttick;
-        nexttick += 1000/((ret & 0x3F00U) >> 8);
+        nexttick += 1000/((ret & 0x7EU) >> 1);
         while (GetTickCount() < nexttick)
             Sleep(0);
     }

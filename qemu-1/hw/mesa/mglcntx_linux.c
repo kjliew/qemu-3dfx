@@ -409,8 +409,10 @@ void MGLDeleteContext(int level)
     }
     glXDestroyContext(dpy, ctx[n]);
     ctx[n] = 0;
-    if (!n)
+    if (!n) {
         MGLActivateHandler(0);
+        MGLMouseWarp(0);
+    }
 }
 
 void MGLWndRelease(void)
@@ -553,6 +555,18 @@ void MGLActivateHandler(int i)
         if (i)
             MesaDisplayModeset(1);
         mesa_renderer_stat(i);
+    }
+}
+
+void MGLMouseWarp(const uint32_t ci)
+{
+    static uint32_t last_ci = 0;
+
+    if (ci != last_ci) {
+        last_ci = ci;
+        int x = ((ci >> 16) & 0x7FFFU),
+            y = (ci & 0x7FFFU), on = (ci)? 1:0;
+        mesa_mouse_warp(x, y, on);
     }
 }
 
