@@ -322,7 +322,8 @@ void MGLTmpContext(void)
     if (hDC == 0) { if (0) \
     CreateMesaWindow("MesaGL", 640, 480, 1); \
     wnd_ready = 0; \
-    mesa_prepare_window(&cwnd_mesagl); hDC = GetDC(hwnd); }
+    ImplMesaGLReset(); \
+    mesa_prepare_window(GetContextMSAA(), &cwnd_mesagl); hDC = GetDC(hwnd); }
 
 #define GLWINDOW_FINI() \
     if (0) { } \
@@ -413,7 +414,6 @@ int MGLSwapBuffers(void)
 static int MGLPresetPixelFormat(void)
 {
     int ipixfmt = 0;
-    ImplMesaGLReset();
 
     if (wglFuncs.ChoosePixelFormatARB) {
         static const float fa[] = {0, 0};
@@ -467,10 +467,9 @@ int MGLSetPixelFormat(int fmt, const void *p)
     curr = GetPixelFormat(hDC);
     if (curr == 0)
         curr = MGLPresetPixelFormat();
-    else {
+    else
         TmpContextPurge();
-        ImplMesaGLReset();
-    }
+
     if (wglFuncs.GetPixelFormatAttribivARB) {
         static const int iattr[] = {
             WGL_AUX_BUFFERS_ARB,

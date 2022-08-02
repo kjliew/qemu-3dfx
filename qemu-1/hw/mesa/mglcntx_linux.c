@@ -488,8 +488,8 @@ static int MGLPresetPixelFormat(void)
 {
     dpy = XOpenDisplay(NULL);
     wnd_ready = 0;
-    mesa_prepare_window(&cwnd_mesagl);
     ImplMesaGLReset();
+    mesa_prepare_window(GetContextMSAA(), &cwnd_mesagl);
 
     int fbid, fbcnt, *attrib = iattribs_fb(dpy, GetContextMSAA());
     GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);

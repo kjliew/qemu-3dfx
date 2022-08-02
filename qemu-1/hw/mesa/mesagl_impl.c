@@ -1481,7 +1481,7 @@ static void conf_MGLOptions(void)
             i = sscanf(line, "BufOAccelEN,%d", &v);
             cfg_bufoAccelEN = ((i == 1) && v)? 1:cfg_bufoAccelEN;
             i = sscanf(line, "ContextMSAA,%d", &v);
-            cfg_cntxMSAA = (i == 1)? v:cfg_cntxMSAA;
+            cfg_cntxMSAA = (i == 1)? ((v & 0x03U) << 2):cfg_cntxMSAA;
             i = sscanf(line, "ContextSRGB,%d", &v);
             cfg_cntxSRGB = ((i == 1) && v)? 1:cfg_cntxSRGB;
             i = sscanf(line, "ContextVsyncOff,%d", &v);
@@ -1511,7 +1511,7 @@ int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
-int GetContextMSAA(void) { return cfg_cntxMSAA; }
+int GetContextMSAA(void) { return (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GLFifoTrace(void) { return cfg_traceFifo; }

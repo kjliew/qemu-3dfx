@@ -329,12 +329,12 @@ void init_window(const int res, const char *wndTitle, void *opaque)
     if (cfg_createWnd)
         hwnd = CreateGlideWindow(wndTitle, tblRes[sel].w, tblRes[sel].h);
     glide_prepare_window(((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w,
-            disp_cb, &cwnd_glide2x);
+            (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA, disp_cb, &cwnd_glide2x);
 #endif
 #if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
     glide_prepare_window(((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w,
-            disp_cb, &cwnd_glide2x);
+            (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA, disp_cb, &cwnd_glide2x);
 #endif	
 }
 

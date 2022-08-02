@@ -268,7 +268,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/console.c ./ui/console.c
 diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-4.1.1/ui/sdl2.c	2019-11-14 10:06:21.000000000 -0800
 +++ ./ui/sdl2.c	2022-07-03 21:59:27.040928800 -0700
-@@ -712,6 +712,285 @@
+@@ -712,6 +712,297 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -287,7 +287,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    int glide_on_mesa;
 +    int gui_saved_res;
 +    int render_pause;
-+    int res;
++    int res, msaa;
 +    void *opaque;
 +    void *hnwnd;
 +    void (*cwnd_fn)(void *, void *, void *);
@@ -332,6 +332,10 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  24);
 +        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 +        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
++        if (s->msaa) {
++            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, SDL_TRUE);
++            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, s->msaa);
++        }
 +        sdl_gui_restart(s->scon, s->icon);
 +        SDL_SysWMinfo wmi;
 +        SDL_VERSION(&wmi.version);
@@ -418,7 +422,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
 +}
 +
-+void glide_prepare_window(uint32_t res, void *opaque, void *cwnd_fn)
++void glide_prepare_window(uint32_t res, int msaa, void *opaque, void *cwnd_fn)
 +{
 +    int scr_w, scr_h;
 +    struct sdl_console_cb *s = &scon_cb;
@@ -435,6 +439,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        SDL_GetWindowSize(s->scon->real_window, &scr_w, &scr_h);
 +        s->gui_saved_res = ((scr_h & 0x7FFFU) << 0x10) | scr_w;
 +        s->res = res;
++        s->msaa = msaa;
 +        if (!s->ts)
 +            s->ts = timer_new_ms(QEMU_CLOCK_REALTIME, &sched_wndproc, s);
 +        timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
@@ -503,7 +508,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +        glide_renderer_stat(1);
 +}
 +
-+void mesa_prepare_window(void *cwnd_fn)
++void mesa_prepare_window(int msaa, void *cwnd_fn)
 +{
 +    int scr_w, scr_h;
 +    struct sdl_console_cb *s = &scon_cb;
@@ -511,6 +516,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    sdl_display_valid("mesapt");
 +    s->scon = &sdl2_console[0];
 +    s->res = 0;
++    s->msaa = msaa;
 +    s->opaque = 0;
 +    s->cwnd_fn = (void (*)(void *, void *, void *))cwnd_fn;
 +
@@ -542,8 +548,14 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
 +    struct sdl_console_cb *s = &scon_cb;
 +
 +    QemuConsole *con = s->scon ? s->scon->dcl.con : NULL;
-+    if (con && !qemu_input_is_absolute())
-+        dpy_mouse_set(con, x, y, on);
++    if (con && !qemu_input_is_absolute()) {
++        static int64_t last_update;
++        int64_t curr_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
++        if (!on || (curr_time >= (last_update + GUI_REFRESH_INTERVAL_DEFAULT))) {
++            last_update = curr_time;
++            dpy_mouse_set(con, x, y, on);
++        }
++    }
 +}
 +
 +int mesa_gui_fullscreen(int *width, int *height)
@@ -554,7 +566,7 @@ diff -Nru ../orig/qemu-4.1.1/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -842,6 +1121,7 @@
+@@ -842,6 +1133,7 @@
  #endif
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);

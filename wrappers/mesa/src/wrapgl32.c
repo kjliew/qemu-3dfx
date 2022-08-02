@@ -16909,6 +16909,7 @@ int WINAPI wglSwapBuffers (HDC hdc)
     uint32_t ret, *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
     CURSORINFO ci = { .cbSize = sizeof(CURSORINFO) };
     if (GetCursorInfo(&ci) && (ci.flags == CURSOR_SHOWING)) {
+        static uint32_t last_ci;
         RECT wr, cr;
         GetWindowRect(WindowFromDC(hdc), &wr);
         GetClientRect(WindowFromDC(hdc), &cr);
@@ -16916,9 +16917,11 @@ int WINAPI wglSwapBuffers (HDC hdc)
         ci.ptScreenPos.y = (ci.ptScreenPos.y > top)? (ci.ptScreenPos.y - top):0;
         if ((ci.ptScreenPos.x > (wr.right - wr.left - 1)) ||
             (ci.ptScreenPos.y > (wr.bottom - wr.top - 1))) {
-            ci.ptScreenPos.x = 0;
-            ci.ptScreenPos.y = 0;
+            ci.ptScreenPos.x = (last_ci >> 16) & 0x7FFFU;
+            ci.ptScreenPos.y = last_ci & 0x7FFFU;
         }
+        else
+            last_ci = ((ci.ptScreenPos.x & 0x7FFFU) << 16) | (ci.ptScreenPos.y & 0x7FFFU);
     }
     else {
         ci.ptScreenPos.x = 0;

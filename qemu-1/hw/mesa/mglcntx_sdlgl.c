@@ -351,9 +351,9 @@ int MGLSwapBuffers(void)
 static int MGLPresetPixelFormat(void)
 {
     wnd_ready = 0;
-    mesa_prepare_window(&cwnd_mesagl);
-
     ImplMesaGLReset();
+    mesa_prepare_window(GetContextMSAA(), &cwnd_mesagl);
+
     MesaInitGammaRamp();
     return 1;
 }
