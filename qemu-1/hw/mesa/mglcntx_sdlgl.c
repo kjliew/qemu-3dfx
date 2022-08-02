@@ -429,6 +429,9 @@ void MGLActivateHandler(int i)
     if (i != last) {
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
+        if (i) { }
+        else
+            MGLMouseWarp(0);
         mesa_renderer_stat(i);
     }
 }

@@ -527,6 +527,8 @@ void MGLActivateHandler(int i)
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
         if (i)
             MesaDisplayModeset(1);
+        else
+            MGLMouseWarp(0);
         mesa_renderer_stat(i);
     }
 }
