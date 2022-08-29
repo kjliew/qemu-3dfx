@@ -154,7 +154,7 @@ diff -Nru ../orig/qemu-6.2.0/include/ui/console.h ./include/ui/console.h
  #endif
  
 +/* glidewnd.c */
-+void glide_prepare_window(uint32_t res, void *, void *);
++void glide_prepare_window(uint32_t, int, void *, void *);
 +void glide_release_window(void *, void *);
 +int glide_window_stat(const int);
 +int glide_gui_fullscreen(int *, int *);
@@ -162,7 +162,7 @@ diff -Nru ../orig/qemu-6.2.0/include/ui/console.h ./include/ui/console.h
 +
 +/* mglcntx.c */
 +void mesa_renderer_stat(const int);
-+void mesa_prepare_window(void *);
++void mesa_prepare_window(int, void *);
 +void mesa_release_window(void);
 +void mesa_mouse_warp(int, int, const int);
 +int mesa_gui_fullscreen(int *, int *);
