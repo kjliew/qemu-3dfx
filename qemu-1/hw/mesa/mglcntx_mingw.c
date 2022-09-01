@@ -20,7 +20,6 @@
 
 #include "qemu/osdep.h"
 #include "qemu/timer.h"
-#include "qemu-common.h"
 #include "ui/console.h"
 
 #include "mesagl_impl.h"
@@ -42,9 +41,9 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 
     if (ret && bufo) {
         bufo->lvl = (add)? MapBufObjGpa(bufo):0;
-        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
-            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
-            (void *)(bufo->hva & qemu_real_host_page_mask),
+        whpx_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size() - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size() - 1)),
+            (void *)(bufo->hva & qemu_real_host_page_mask()),
             (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
     }
 
@@ -323,7 +322,7 @@ void MGLTmpContext(void)
     CreateMesaWindow("MesaGL", 640, 480, 1); \
     wnd_ready = 0; \
     ImplMesaGLReset(); \
-    mesa_prepare_window(GetContextMSAA(), &cwnd_mesagl); hDC = GetDC(hwnd); }
+    mesa_prepare_window(GetContextMSAA(), 1, &cwnd_mesagl); hDC = GetDC(hwnd); }
 
 #define GLWINDOW_FINI() \
     if (0) { } \

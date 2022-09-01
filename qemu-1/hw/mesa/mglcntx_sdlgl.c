@@ -20,7 +20,6 @@
 
 #include "qemu/osdep.h"
 #include "qemu/timer.h"
-#include "qemu-common.h"
 #include "ui/console.h"
 
 #include "mesagl_impl.h"
@@ -49,9 +48,9 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 
     if (ret && bufo) {
         bufo->lvl = (add)? MapBufObjGpa(bufo):0;
-        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
-            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
-            (void *)(bufo->hva & qemu_real_host_page_mask),
+        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size() - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size() - 1)),
+            (void *)(bufo->hva & qemu_real_host_page_mask()),
             (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
     }
 
@@ -352,7 +351,7 @@ static int MGLPresetPixelFormat(void)
 {
     wnd_ready = 0;
     ImplMesaGLReset();
-    mesa_prepare_window(GetContextMSAA(), &cwnd_mesagl);
+    mesa_prepare_window(GetContextMSAA(), 1, &cwnd_mesagl);
 
     MesaInitGammaRamp();
     return 1;

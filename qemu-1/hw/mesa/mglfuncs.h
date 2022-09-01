@@ -34,5 +34,14 @@ typedef struct {
 #define MAX_TEXUNIT                             8
 #define MAX_PBUFFER                             16
 
+#ifdef QEMU_OSDEP_H
+#if (((QEMU_VERSION_MAJOR << 8) | \
+      (QEMU_VERSION_MINOR << 4) | \
+       QEMU_VERSION_MICRO) < 0x710)
+#define qemu_real_host_page_size()      qemu_real_host_page_size
+#define qemu_real_host_page_mask()      qemu_real_host_page_mask
+#endif
+#endif /* QEMU_OSDEP_H */
+
 #define COMMIT_SIGN \
     const char rev_[ALIGNED(1)]

@@ -19,7 +19,6 @@
  */
 
 #include "qemu/osdep.h"
-#include "cpu.h"
 
 #include "mglfuncs.h"
 #include "mglmapbo.h"
@@ -102,13 +101,13 @@ int MapBufObjGpa(mapbufo_t *bufo)
     bufo->gpa = bufo->hva & (MBUFO_SIZE - 1);
     if (bufo != &curr->bo) {
         uintptr_t addr_lo = MBUFO_SIZE - 1, addr_hi = 0;
-        uint32_t bufo_sz = ALIGNBO(bufo->mapsz) + (uint32_t)(bufo->hva & (qemu_real_host_page_size - 1));
+        uint32_t bufo_sz = ALIGNBO(bufo->mapsz) + (uint32_t)(bufo->hva & (qemu_real_host_page_size() - 1));
         while (bufo != &curr->bo) {
-            uint32_t curr_sz = curr->bo.mapsz + (uint32_t)(curr->bo.hva & (qemu_real_host_page_size - 1));
-            addr_lo = ((curr->bo.gpa & qemu_real_host_page_mask) < addr_lo)?
-                (curr->bo.gpa & qemu_real_host_page_mask):addr_lo;
-            addr_hi = (((curr->bo.gpa + curr_sz) & qemu_real_host_page_mask) > addr_hi)?
-                ((curr->bo.gpa + curr_sz) & qemu_real_host_page_mask):addr_hi;
+            uint32_t curr_sz = curr->bo.mapsz + (uint32_t)(curr->bo.hva & (qemu_real_host_page_size() - 1));
+            addr_lo = ((curr->bo.gpa & qemu_real_host_page_mask()) < addr_lo)?
+                (curr->bo.gpa & qemu_real_host_page_mask()):addr_lo;
+            addr_hi = (((curr->bo.gpa + curr_sz) & qemu_real_host_page_mask()) > addr_hi)?
+                ((curr->bo.gpa + curr_sz) & qemu_real_host_page_mask()):addr_hi;
             curr = curr->next;
             ret++;
         }

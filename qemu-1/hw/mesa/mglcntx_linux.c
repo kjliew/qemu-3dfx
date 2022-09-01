@@ -20,7 +20,6 @@
 
 #include "qemu/osdep.h"
 #include "qemu/timer.h"
-#include "qemu-common.h"
 #include "ui/console.h"
 
 #include "mesagl_impl.h"
@@ -47,9 +46,9 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 
     if (ret && bufo) {
         bufo->lvl = (add)? MapBufObjGpa(bufo):0;
-        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size - 1))),
-            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size - 1)),
-            (void *)(bufo->hva & qemu_real_host_page_mask),
+        kvm_update_guest_pa_range(MBUFO_BASE | (bufo->gpa & ((MBUFO_SIZE - 1) - (qemu_real_host_page_size() - 1))),
+            bufo->mapsz + (bufo->hva & (qemu_real_host_page_size() - 1)),
+            (void *)(bufo->hva & qemu_real_host_page_mask()),
             (bufo->acc & GL_MAP_WRITE_BIT)? 0:1, add);
     }
 
@@ -227,7 +226,7 @@ static Display     *dpy;
 static Window       win;
 static XVisualInfo *xvi;
 static int          xvidmode;
-static const char  *xstr;
+static const char  *xstr, *xcstr;
 static GLXContext   ctx[MAX_LVLCNTX];
 
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
@@ -381,6 +380,7 @@ void *MesaGLGetProc(const char *proc)
 void MGLTmpContext(void)
 {
     Display *tmpDisp = XOpenDisplay(NULL);
+    xcstr = glXGetClientString(tmpDisp, GLX_VENDOR);
     xstr = glXQueryExtensionsString(tmpDisp, DefaultScreen(tmpDisp));
     if (find_xstr(xstr, "GLX_MESA_swap_control")) {
         xglFuncs.SwapIntervalEXT = (int (*)(unsigned int))
@@ -486,10 +486,11 @@ int MGLSwapBuffers(void)
 
 static int MGLPresetPixelFormat(void)
 {
+    const char nvstr[] = "NVIDIA ";
     dpy = XOpenDisplay(NULL);
     wnd_ready = 0;
     ImplMesaGLReset();
-    mesa_prepare_window(GetContextMSAA(), &cwnd_mesagl);
+    mesa_prepare_window(GetContextMSAA(), memcmp(xcstr, nvstr, sizeof(nvstr) - 1), &cwnd_mesagl);
 
     int fbid, fbcnt, *attrib = iattribs_fb(dpy, GetContextMSAA());
     GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
