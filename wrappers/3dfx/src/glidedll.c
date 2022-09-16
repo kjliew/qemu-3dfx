@@ -110,6 +110,18 @@ static int InitGlidePTMMBase(PDRVFUNC pDrv)
     return 0;
 }
 
+static int InhibitDll(void)
+{
+    const char str[] = "InhibitDll,1";
+    char line[16];
+    FILE *fp = fopen("glide.cfg", "r");
+    if (fp != NULL) {
+        fgets(line, sizeof(line), fp);
+        fclose(fp);
+    }
+    return memcmp(line, str, sizeof(str) - 1);
+}
+
 static INLINE void forcedPageIn(const uint32_t addr, const uint32_t size, const char *func)
 {
     int i;
@@ -1028,7 +1040,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
             memcpy(&vgLfb[(SHLFB_SIZE - ALIGNBO(1)) >> 2], buildstr, ALIGNED(1));
 	    ptm[(0xFBCU >> 2)] = (0xA0UL << 12) | GLIDEVER;
 	    HostRet = ptm[(0xFBCU >> 2)];
-	    if (HostRet != ((GLIDEVER << 8) | 0xA0UL)) {
+	    if ((HostRet != ((GLIDEVER << 8) | 0xA0UL)) || !InhibitDll()) {
 		DPRINTF("Error - Glide2x init failed 0x%08x\n", HostRet);
 		return FALSE;
 	    }

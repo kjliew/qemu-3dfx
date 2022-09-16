@@ -202,8 +202,7 @@ int stat_window(const int res, void *opaque)
     if (stat) {
 	int wndStat = glide_window_stat(disp_cb->activate);
 	if (disp_cb->activate) {
-            wndStat = ((wndStat > 1) && glide_fullscreen)?
-                (((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w):wndStat;
+            wndStat = (wndStat > 1)? (((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w):wndStat;
 	    if (wndStat == (((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w)) {
 		DPRINTF("    %s %ux%u %s", (glide_fullscreen)? "fullscreen":"window",
                     (wndStat & 0xFFFFU), (wndStat >> 0x10), (cfg_scaleX)? "(scaled)":"");
