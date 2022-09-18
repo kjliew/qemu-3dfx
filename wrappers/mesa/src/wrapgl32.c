@@ -16930,11 +16930,11 @@ int WINAPI wglSwapBuffers (HDC hdc)
     swapRet[1] = ((ci.ptScreenPos.x & 0x7FFFU) << 16) | (ci.ptScreenPos.y & 0x7FFFU);
     ptm[0xFF0 >> 2] = MESAGL_MAGIC;
     ret = swapRet[0];
-    if (ret & 0x7EU) {
+    if (ret & 0xFEU) {
         static uint32_t nexttick;
         uint32_t t = GetTickCount();
         nexttick = (nexttick == 0)? t:nexttick;
-        nexttick += 1000/((ret & 0x7EU) >> 1);
+        nexttick += 1000/((ret & 0xFEU) >> 1);
         while (GetTickCount() < nexttick)
             Sleep(0);
     }

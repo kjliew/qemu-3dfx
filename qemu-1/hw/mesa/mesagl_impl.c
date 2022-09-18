@@ -1487,7 +1487,7 @@ static void conf_MGLOptions(void)
             i = sscanf(line, "ContextVsyncOff,%d", &v);
             cfg_cntxVsyncOff = ((i == 1) && v)? 1:cfg_cntxVsyncOff;
             i = sscanf(line, "FpsLimit,%d", &v);
-            cfg_fpsLimit = (i == 1)? (v & 0x3FU):cfg_fpsLimit;
+            cfg_fpsLimit = (i == 1)? (v & 0x7FU):cfg_fpsLimit;
             i = sscanf(line, "FifoTrace,%d", &v);
             cfg_traceFifo = ((i == 1) && v)? 1:cfg_traceFifo;
             i = sscanf(line, "FuncTrace,%d", &v);
