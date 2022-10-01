@@ -39,7 +39,7 @@ Simple guide to apply the patch:<br>
 ## Building Guest Wrappers
 **Requirements:**
  - `base-devel` (make, sed, xxd)
- - `pexports, shasum`
+ - `gendef, shasum`
  - `mingw32` cross toolchain (`binutils, gcc, windres, dlltool`) for WIN32 DLL wrappers
  - `Watcom C/C++ 11.0` for DOS32 OVL wrapper
  - `i686-pc-msdosdjgpp` cross toolchain (`binutils, gcc, dxe3gen`) for DJGPP DXE wrappers

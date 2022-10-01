@@ -7,7 +7,7 @@ CHECK_DEPS=" \
     make \
     sed \
     xxd \
-    pexports \
+    gendef \
     shasum \
     git \
 " \
