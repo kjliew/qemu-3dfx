@@ -1,1 +1,1 @@
-## Virgil 3D with SDL2 OpenGL for Windows 10 & macOS
+## Virgil 3D with SDL2 OpenGL for native Windows & macOS
