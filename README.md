@@ -73,9 +73,10 @@ If this project helps you relive the nostalgic memory of old Windows games, you 
 
 For $59.99 donation, you will deserve the following donor's privileges:
 - QEMU binary package built for platform of your choice (choose one: Windows 10, Ubuntu, etc.)
-- QEMU-enhanced OpenGlide host binary package built for platform of your choice (choose one: Windows 10, Ubuntu, etc.)
+- QEMU-enhanced OpenGLide host binary package built for platform of your choice (choose one: Windows 10, Ubuntu, etc.)
 - QEMU-enhanced **WineD3D libraries for Win98/2K/ME/XP VMs** for DirectDraw/Direct3D games up to DirectX 9.0c
-- OpenGlide guest binary package for Windows
+- Game controllers support with [**QEMU USB Gamepad**](https://github.com/kjliew/qemu-3dfx/wiki/QEMU-USB-Gamepad)
+- OpenGLide guest binary package for Windows
 - Elect up to 3 games for priority support and your name as the honorary sponsor in the supported & tested list of games.
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XE47KTASERX4A)
