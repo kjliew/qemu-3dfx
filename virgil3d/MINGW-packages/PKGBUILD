@@ -14,11 +14,11 @@ depends=("${MINGW_PACKAGE_PREFIX}-libepoxy")
 makedepends=("${MINGW_PACKAGE_PREFIX}-python"
              "${MINGW_PACKAGE_PREFIX}-meson"
              "${MINGW_PACKAGE_PREFIX}-ninja")
-_tag=virglrenderer-$pkgver
+_tag=$pkgver
 source=("virglrenderer-$pkgver.tar.bz2::https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/$_tag/virglrenderer-$_tag.tar.bz2"
         "0001-Virglrenderer-on-Windows-and-macOS.patch")
-sha256sums=('b8a1f13e128033083713519e4c936bc9df0afe76109f1f2bd5e077b8c13a2d44'
-            'fb5e200be140740a4b0a433f92382ecba54b263563ba30cd3848bff60bec2401')
+sha256sums=('70d362da3765139c74da00cf7fb2cac5d5dd92c112503ca7fff999032aeebf2f'
+            '34448221077b1f204b85a7dd7591b6ee9356f37591aa730d9d44a6c45d80198c')
 
 prepare() {
   cd virglrenderer-$_tag
@@ -35,5 +35,5 @@ build() {
 package() {
   cd virglrenderer-$_tag
   DESTDIR="$pkgdir" ninja -C build install
-  install -D -m644 "${srcdir}/${_realname}-${_realname}-${pkgver}/COPYING" "${pkgdir}/${MINGW_PREFIX}/share/licenses/${_realname}/COPYING"
+  install -D -m644 "${srcdir}/${_realname}-${pkgver}/COPYING" "${pkgdir}/${MINGW_PREFIX}/share/licenses/${_realname}/COPYING"
 }

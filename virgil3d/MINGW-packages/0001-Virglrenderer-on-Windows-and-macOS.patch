@@ -214,6 +214,15 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_renderer.c src/virglrenderer-0.10.
        glReadnPixelsKHR(x, y, width, height, format, type, bufSize, data);
     else
        glReadPixels(x, y, width, height, format, type, data);
+@@ -11733,7 +11739,7 @@
+    // is used to create shmem. On drm path, we can use this, because
+    // size of drm resource (bo) is not passed to virglrenderer and
+    // we can pass "1" as size on drm path, but not on vtest.
+-   caps->v2.capability_bits_v2 |= VIRGL_CAP_V2_COPY_TRANSFER_BOTH_DIRECTIONS;
++   //caps->v2.capability_bits_v2 |= VIRGL_CAP_V2_COPY_TRANSFER_BOTH_DIRECTIONS;
+
+    if (has_feature(feat_anisotropic_filter)) {
+       float max_aniso;
 diff -Nru orig/virglrenderer-0.10.3/src/vrend_shader.c src/virglrenderer-0.10.3/src/vrend_shader.c
 --- orig/virglrenderer-0.10.3/src/vrend_shader.c	2022-09-19 01:48:34.000000000 -0700
 +++ src/virglrenderer-0.10.3/src/vrend_shader.c	2022-11-01 11:04:39.900513900 -0700
