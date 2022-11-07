@@ -16920,8 +16920,13 @@ int WINAPI wglSwapBuffers (HDC hdc)
             ci.ptScreenPos.x = (last_ci >> 16) & 0x7FFFU;
             ci.ptScreenPos.y = last_ci & 0x7FFFU;
         }
-        else
+        else {
+            ci.ptScreenPos.x = (1.f * ci.ptScreenPos.x / (wr.right - wr.left - 1)) *
+                (GetSystemMetrics(SM_CXSCREEN) - 1);
+            ci.ptScreenPos.y = (1.f * ci.ptScreenPos.y / (wr.bottom - wr.top - 1)) *
+                (GetSystemMetrics(SM_CYSCREEN) - 1);
             last_ci = ((ci.ptScreenPos.x & 0x7FFFU) << 16) | (ci.ptScreenPos.y & 0x7FFFU);
+        }
     }
     else {
         ci.ptScreenPos.x = 0;
