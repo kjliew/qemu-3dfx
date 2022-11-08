@@ -9,7 +9,6 @@ struct gl_extensions
 {
    uint32_t dummy;  /* don't remove this! */
    uint32_t dummy_true;  /* Set true by _mesa_init_extensions(). */
-   uint32_t dummy_false; /* Set false by _mesa_init_extensions(). */
    uint32_t ANGLE_texture_compression_dxt;
    uint32_t ARB_ES2_compatibility;
    uint32_t ARB_ES3_compatibility;
@@ -30,9 +29,9 @@ struct gl_extensions
    uint32_t ARB_conservative_depth;
    uint32_t ARB_copy_image;
    uint32_t ARB_cull_distance;
+   uint32_t EXT_color_buffer_half_float;
    uint32_t ARB_depth_buffer_float;
    uint32_t ARB_depth_clamp;
-   uint32_t ARB_depth_texture;
    uint32_t ARB_derivative_control;
    uint32_t ARB_draw_buffers_blend;
    uint32_t ARB_draw_elements_base_vertex;
@@ -89,22 +88,21 @@ struct gl_extensions
    uint32_t ARB_shading_language_420pack;
    uint32_t ARB_shadow;
    uint32_t ARB_sparse_buffer;
+   uint32_t ARB_sparse_texture;
+   uint32_t ARB_sparse_texture2;
+   uint32_t ARB_sparse_texture_clamp;
    uint32_t ARB_stencil_texturing;
    uint32_t ARB_spirv_extensions;
    uint32_t ARB_sync;
    uint32_t ARB_tessellation_shader;
-   uint32_t ARB_texture_border_clamp;
    uint32_t ARB_texture_buffer_object;
    uint32_t ARB_texture_buffer_object_rgb32;
    uint32_t ARB_texture_buffer_range;
    uint32_t ARB_texture_compression_bptc;
    uint32_t ARB_texture_compression_rgtc;
-   uint32_t ARB_texture_cube_map;
    uint32_t ARB_texture_cube_map_array;
-   uint32_t ARB_texture_env_combine;
-   uint32_t ARB_texture_env_crossbar;
-   uint32_t ARB_texture_env_dot3;
    uint32_t ARB_texture_filter_anisotropic;
+   uint32_t ARB_texture_filter_minmax;
    uint32_t ARB_texture_float;
    uint32_t ARB_texture_gather;
    uint32_t ARB_texture_mirror_clamp_to_edge;
@@ -128,10 +126,7 @@ struct gl_extensions
    uint32_t ARB_vertex_type_10f_11f_11f_rev;
    uint32_t ARB_vertex_type_2_10_10_10_rev;
    uint32_t ARB_viewport_array;
-   uint32_t EXT_blend_color;
    uint32_t EXT_blend_equation_separate;
-   uint32_t EXT_blend_func_separate;
-   uint32_t EXT_blend_minmax;
    uint32_t EXT_demote_to_helper_invocation;
    uint32_t EXT_depth_bounds_test;
    uint32_t EXT_disjoint_timer_query;
@@ -145,14 +140,15 @@ struct gl_extensions
    uint32_t EXT_gpu_shader4;
    uint32_t EXT_memory_object;
    uint32_t EXT_memory_object_fd;
+   uint32_t EXT_memory_object_win32;
    uint32_t EXT_multisampled_render_to_texture;
    uint32_t EXT_packed_float;
    uint32_t EXT_pixel_buffer_object;
-   uint32_t EXT_point_parameters;
    uint32_t EXT_provoking_vertex;
    uint32_t EXT_render_snorm;
    uint32_t EXT_semaphore;
    uint32_t EXT_semaphore_fd;
+   uint32_t EXT_semaphore_win32;
    uint32_t EXT_shader_image_load_formatted;
    uint32_t EXT_shader_image_load_store;
    uint32_t EXT_shader_integer_mix;
@@ -166,6 +162,7 @@ struct gl_extensions
    uint32_t EXT_texture_compression_s3tc_srgb;
    uint32_t EXT_texture_env_dot3;
    uint32_t EXT_texture_filter_anisotropic;
+   uint32_t EXT_texture_filter_minmax;
    uint32_t EXT_texture_integer;
    uint32_t EXT_texture_mirror_clamp;
    uint32_t EXT_texture_norm16;
@@ -174,6 +171,7 @@ struct gl_extensions
    uint32_t EXT_texture_snorm;
    uint32_t EXT_texture_sRGB;
    uint32_t EXT_texture_sRGB_R8;
+   uint32_t EXT_texture_sRGB_RG8;
    uint32_t EXT_texture_sRGB_decode;
    uint32_t EXT_texture_swizzle;
    uint32_t EXT_texture_type_2_10_10_10_REV;
@@ -199,7 +197,7 @@ struct gl_extensions
    uint32_t AMD_vertex_shader_layer;
    uint32_t AMD_vertex_shader_viewport_index;
    uint32_t ANDROID_extension_pack_es31a;
-   uint32_t APPLE_object_purgeable;
+   uint32_t ARM_shader_framebuffer_fetch_depth_stencil;
    uint32_t ATI_meminfo;
    uint32_t ATI_texture_compression_3dc;
    uint32_t ATI_texture_mirror_once;
@@ -218,21 +216,23 @@ struct gl_extensions
    uint32_t KHR_texture_compression_astc_ldr;
    uint32_t KHR_texture_compression_astc_sliced_3d;
    uint32_t MESA_framebuffer_flip_y;
-   uint32_t MESA_tile_raster_order;
    uint32_t MESA_pack_invert;
+   uint32_t MESA_tile_raster_order;
    uint32_t EXT_shader_framebuffer_fetch;
    uint32_t EXT_shader_framebuffer_fetch_non_coherent;
    uint32_t MESA_shader_integer_functions;
+   uint32_t MESA_window_pos;
    uint32_t MESA_ycbcr_texture;
    uint32_t NV_alpha_to_coverage_dither_control;
    uint32_t NV_compute_shader_derivatives;
    uint32_t NV_conditional_render;
+   uint32_t NV_copy_depth_to_color;
    uint32_t NV_copy_image;
    uint32_t NV_fill_rectangle;
    uint32_t NV_fog_distance;
-   uint32_t NV_point_sprite;
    uint32_t NV_primitive_restart;
    uint32_t NV_shader_atomic_float;
+   uint32_t NV_shader_atomic_int64;
    uint32_t NV_texture_barrier;
    uint32_t NV_texture_env_combine4;
    uint32_t NV_texture_rectangle;
@@ -249,6 +249,7 @@ struct gl_extensions
    uint32_t OES_draw_texture;
    uint32_t OES_depth_texture_cube_map;
    uint32_t OES_EGL_image_external;
+   uint32_t OES_texture_3D;
    uint32_t OES_texture_float;
    uint32_t OES_texture_float_linear;
    uint32_t OES_texture_half_float;
@@ -267,12 +268,6 @@ struct gl_extensions
     * while meta is in progress.
     */
    uint8_t Version;
-   /**
-    * Force-enabled, yet unrecognized, extensions.
-    * See _mesa_one_time_init_extension_overrides()
-    */
-#define MAX_UNRECOGNIZED_EXTENSIONS 16
-   const char *unrecognized_extensions[MAX_UNRECOGNIZED_EXTENSIONS];
 };
 
 /**
