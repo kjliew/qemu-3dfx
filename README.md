@@ -10,8 +10,6 @@ KJ Liew \<liewkj@yahoo.com\>
 ## Patch
     00-qemu620-mesa-glide.patch - Patch for QEMU version 6.2x (MESA & Glide)
     01-qemu520-mesa-glide.patch - Patch for QEMU version 5.2x (MESA & Glide)
-    02-qemu411-mesa-glide.patch - Patch for QEMU version 4.xx (MESA & Glide)
-    03-qemu311-mesa-glide.patch - Patch for QEMU version 3.xx (MESA & Glide)
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
 Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Windows 10 and Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to make them work on newer version of Windows.
 - YouTube channel (https://www.youtube.com/channel/UCl8InhZs1ixZBcLrMDSWd0A/videos)

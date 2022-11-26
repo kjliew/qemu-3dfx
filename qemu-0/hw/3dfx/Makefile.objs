@@ -1,2 +1,0 @@
-obj-y += glidept_mm.o glide2x_impl.o glidewnd.o gllstbuf.o
-

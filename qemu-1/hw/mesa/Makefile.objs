@@ -1,1 +1,0 @@
-obj-y += mesapt_mm.o mesagl_impl.o mglcntx_mingw.o mglcntx_linux.o mglvarry.o mglmapbo.o szgldata.o extensions_table.o
