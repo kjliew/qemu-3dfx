@@ -16786,25 +16786,13 @@ mglMakeCurrent (uint32_t arg0, uint32_t arg1)
     if (!currDC && !mglCreateContext(arg0))
         return 0;
     //DPRINTF("MakeCurrent %x %x", arg0, arg1);
-    struct mglOptions cfg;
-    parse_options(&cfg);
-    if (!currGLRC) {
-        if (cfg.dispTimerMS & 0x8000) {
-            uint32_t dispTimerMS = 0xcf8000 | (cfg.dispTimerMS & 0x7FFFU);
-            glDebugMessageInsertARB(GL_DEBUG_SOURCE_API_ARB, GL_DEBUG_TYPE_PERFORMANCE_ARB,
-                GL_DEBUG_SEVERITY_LOW_ARB, -1, sizeof(uint32_t), (uint32_t)&dispTimerMS);
-        }
-        if (cfg.bufoAcc) {
-            const uint32_t bufoAcc = 0xbf0acc;
-            glDebugMessageInsertARB(GL_DEBUG_SOURCE_API_ARB, GL_DEBUG_TYPE_PERFORMANCE_ARB,
-                GL_DEBUG_SEVERITY_LOW_ARB, -1, sizeof(uint32_t), (uint32_t)&bufoAcc);
-        }
-    }
     ptVer[0] = arg1;
     memcpy((char *)&ptVer[1], rev_, 8);
     memcpy(((char *)&ptVer[1] + 8), icdBuild, sizeof(icdBuild));
     ptm[0xFF8 >> 2] = MESAGL_MAGIC;
     if (!currGLRC) {
+        struct mglOptions cfg;
+        parse_options(&cfg);
         if (cfg.useSRGB && !glIsEnabled(GL_FRAMEBUFFER_SRGB))
             glEnable(GL_FRAMEBUFFER_SRGB);
         if (cfg.vsyncOff && wglGetSwapIntervalEXT())
@@ -16954,7 +16942,11 @@ int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
 {
     uint32_t ret, ready = 0;
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
-    memcpy(xppfd, ppfd, sizeof(PIXELFORMATDESCRIPTOR));
+    struct mglOptions cfg;
+    parse_options(&cfg);
+    xppfd[0] = cfg.bufoAcc;
+    xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT;
+    memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFEC >> 2] = MESAGL_MAGIC;
     while (!ready)
         ready = ptm[0xFB8 >> 2];
@@ -16969,8 +16961,12 @@ int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXE
 {
     uint32_t ret;
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
-    xppfd[0] = iPixelFormat;
-    xppfd[1] = nBytes;
+    struct mglOptions cfg;
+    parse_options(&cfg);
+    xppfd[0] = cfg.bufoAcc;
+    xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT;
+    xppfd[2] = iPixelFormat;
+    xppfd[3] = nBytes;
     ptm[0xFE8 >> 2] = MESAGL_MAGIC;
     ret = ptm[0xFE8 >> 2];
     if (ret && ppfd) {

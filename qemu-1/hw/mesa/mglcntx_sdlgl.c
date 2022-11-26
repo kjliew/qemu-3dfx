@@ -351,7 +351,7 @@ static int MGLPresetPixelFormat(void)
 {
     wnd_ready = 0;
     ImplMesaGLReset();
-    mesa_prepare_window(GetContextMSAA(), 1, &cwnd_mesagl);
+    mesa_prepare_window(GetContextMSAA(), GetDispTimerMS(), &cwnd_mesagl);
 
     MesaInitGammaRamp();
     return 1;

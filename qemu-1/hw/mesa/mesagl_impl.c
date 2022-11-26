@@ -1457,8 +1457,6 @@ static void conf_MGLOptions(void)
     cfg_xYear = 0;
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
-    cfg_dispTimerMS = 2000;
-    cfg_bufoAccelEN = 0;
     cfg_cntxMSAA = 0;
     cfg_cntxSRGB = 0;
     cfg_cntxVsyncOff = 0;

@@ -1579,16 +1579,6 @@ static void processArgs(MesaPTState *s)
                 (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
                 (sizeof(uint32_t) == s->arg[4]))
                 MGLMouseWarp(*(uint32_t *)(s->hshm));
-            if ((s->arg[0] == GL_DEBUG_SOURCE_API_ARB) &&
-                (s->arg[1] == GL_DEBUG_TYPE_PERFORMANCE_ARB) &&
-                (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
-                (0xcf8000 == ((*(uint32_t *)(s->hshm)) & ~0x7FFFU)))
-                GLDispTimerCfg( (*(uint32_t *)(s->hshm)) & 0x7FFFU );
-            if ((s->arg[0] == GL_DEBUG_SOURCE_API_ARB) &&
-                (s->arg[1] == GL_DEBUG_TYPE_PERFORMANCE_ARB) &&
-                (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
-                (0xbf0acc == *(uint32_t *)(s->hshm)))
-                GLBufOAccelCfg(1);
             DPRINTF_COND(((s->arg[0] == GL_DEBUG_SOURCE_OTHER_ARB) &&
                 (s->arg[1] == GL_DEBUG_TYPE_OTHER_ARB) &&
                 (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB)), "%s", (char *)(s->hshm));
@@ -2245,13 +2235,24 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 } while(0);
                 break;
             case 0xFEC:
+                do {
+                    uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
+                    int enable = *(int *)ppfd;
+                    int msec = *(int *)PTR(ppfd, sizeof(int));
+                    GLBufOAccelCfg(enable);
+                    GLDispTimerCfg(msec);
+                } while(0);
                 s->pixfmt = MGLChoosePixelFormat();
                 break;
             case 0xFE8:
                 do {
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
-                    int pixfmt = *(int *)ppfd;
-                    unsigned int nbytes = *(uint32_t *)PTR(ppfd, sizeof(int));
+                    int enable = *(int *)ppfd;
+                    int msec = *(int *)PTR(ppfd, sizeof(int));
+                    int pixfmt = *(int *)PTR(ppfd, 2*sizeof(int));
+                    unsigned int nbytes = *(uint32_t *)PTR(ppfd, 3*sizeof(int));
+                    GLBufOAccelCfg(enable);
+                    GLDispTimerCfg(msec);
                     s->pixfmtMax = ((uint32_t *)s->fifo_ptr)[1]? MGLDescribePixelFormat(pixfmt, nbytes, ppfd):0;
                 } while(0);
                 break;
