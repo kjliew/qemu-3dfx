@@ -4428,6 +4428,9 @@ void PT_CALL glGetIntegerv(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetIntegerv;
     fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
     fifoOutData(ALIGNED(sizeof(int)), arg1, n*sizeof(int));
+    if ((arg0 == GL_NUM_EXTENSIONS) &&
+        !memcmp(vernstr, "4.1 Metal", strlen("4.1 Metal")))
+        *((int *)arg1) += 1;
 }
 void PT_CALL glGetInternalformatSampleivNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
@@ -5302,7 +5305,15 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
 }
 uint8_t * PT_CALL glGetStringi(uint32_t arg0, uint32_t arg1) {
     static char str[256];
-    uint32_t n;
+    uint32_t n, nexts;
+    if ((arg0 == GL_EXTENSIONS) &&
+        !memcmp(vernstr, "4.1 Metal", strlen("4.1 Metal"))) {
+        glGetIntegerv(GL_NUM_EXTENSIONS, (uint32_t)&nexts);
+        if (arg1 == (nexts - 1)) {
+            strcpy(str, "GL_ARB_debug_output");
+            return (uint8_t *)str;
+        }
+    }
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetStringi;
     fifoOutData(0, (uint32_t)&n, sizeof(int));
