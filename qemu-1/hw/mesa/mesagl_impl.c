@@ -1501,7 +1501,18 @@ int ContextUseSRGB(void)
     wrIsEnabled = tblMesaGL[FEnum_glIsEnabled].ptr;
     return (cfg_cntxSRGB | wrIsEnabled(GL_FRAMEBUFFER_SRGB)? 1:0);
 }
-void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = (enable)? 1:0; }
+int SwapFpsLimit(int fps)
+{
+    int ret;
+    if (fps && (fps != cfg_fpsLimit)) {
+        cfg_fpsLimit = fps;
+        ret = 1;
+    }
+    else
+        ret = 0;
+    return ret;
+}
+void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = enable; }
 void GLDispTimerCfg(int msec) { cfg_dispTimerMS = msec; }
 void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
 int GetGLExtYear(void) { return cfg_xYear; }

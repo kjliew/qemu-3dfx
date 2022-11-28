@@ -640,8 +640,8 @@ static void processFRet(GlidePTState *s)
             s->disp_cb.FEnum = s->FEnum;
             init_window(s->arg[1], s->version, &s->disp_cb);
 	    do {
-                char strFpsLimit[sizeof(", FpsLimit ...FPS")];
-                snprintf(strFpsLimit, sizeof(", FpsLimit ...FPS"), ", FpsLimit %dFPS", glide_fpslimit());
+                char strFpsLimit[sizeof(", FpsLimit [ ... FPS ]")];
+                snprintf(strFpsLimit, sizeof(strFpsLimit), ", FpsLimit [ %d FPS ]", glide_fpslimit());
 		s->lfbDev->origin = s->arg[4];
 		s->lfbDev->guestLfb = (s->FEnum == FEnum_grSstWinOpenExt)? s->arg[8]:s->arg[7];
                 s->GrRes = s->arg[1];

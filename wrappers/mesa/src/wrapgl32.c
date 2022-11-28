@@ -411,6 +411,7 @@ struct mglOptions {
     int vsyncOff;
     int xstrYear;
 };
+static int swapFps;
 static void parse_options(struct mglOptions *opt)
 {
     FILE *f = fopen(XSTRCFG, "r");
@@ -422,13 +423,15 @@ static void parse_options(struct mglOptions *opt)
             i = sscanf(line, "DispTimerMS,%d", &v);
             opt->dispTimerMS = (i == 1)? (0x8000U | (v & 0x7FFFU)):opt->dispTimerMS;
             i = sscanf(line, "BufOAccelEN,%d", &v);
-            opt->bufoAcc = (i == 1)? v:opt->bufoAcc;
+            opt->bufoAcc = ((i == 1) && v)? 1:opt->bufoAcc;
             i = sscanf(line, "ContextSRGB,%d", &v);
-            opt->useSRGB = (i == 1)? v:opt->useSRGB;
+            opt->useSRGB = ((i == 1) && v)? 1:opt->useSRGB;
             i = sscanf(line, "ContextVsyncOff,%d", &v);
-            opt->vsyncOff = (i == 1)? v:opt->vsyncOff;
+            opt->vsyncOff = ((i == 1) && v)? 1:opt->vsyncOff;
             i = sscanf(line, "ExtensionsYear,%d", &v);
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
+            i = sscanf(line, "FpsLimit,%d", &v);
+            swapFps = (i == 1)? (v & 0x7FU):swapFps;
         }
         fclose(f);
     }
@@ -16931,6 +16934,7 @@ int WINAPI wglSwapBuffers (HDC hdc)
         ci.ptScreenPos.x = 0;
         ci.ptScreenPos.y = 0;
     }
+    swapRet[0] = swapFps;
     swapRet[1] = ((ci.ptScreenPos.x & 0x7FFFU) << 16) | (ci.ptScreenPos.y & 0x7FFFU);
     ptm[0xFF0 >> 2] = MESAGL_MAGIC;
     ret = swapRet[0];

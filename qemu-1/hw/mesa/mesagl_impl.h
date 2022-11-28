@@ -50,6 +50,7 @@ int GetBufOAccelEN(void);
 int GetContextMSAA(void);
 int ContextUseSRGB(void);
 int ContextVsyncOff(void);
+int SwapFpsLimit(int);
 int GetFpsLimit(void);
 int GLFifoTrace(void);
 int GLFuncTrace(void);

@@ -2186,7 +2186,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         snprintf(strTimerMS, 8, "%dms", disptmr);
                         DPRINTF_COND(GetContextMSAA(), "ContextMSAA %dx", GetContextMSAA());
                         DPRINTF_COND(ContextVsyncOff(), "ContextVsyncOff");
-                        DPRINTF_COND(GetFpsLimit(), "FpsLimit %dFPS", GetFpsLimit());
+                        DPRINTF_COND(GetFpsLimit(), "FpsLimit [ %d FPS ]", GetFpsLimit());
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
                         DPRINTF("DispTimerSched %s", disptmr? strTimerMS:"disabled");
                         DPRINTF("MappedBufferObject %s-copy", MGLUpdateGuestBufo(0, 0)? "Zero":"One");
@@ -2229,6 +2229,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 s->perfs.stat();
                 do {
                     uint32_t *swapRet = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - ALIGNED(1)));
+                    DPRINTF_COND(SwapFpsLimit(swapRet[0]), "Guest GL Swap limit [ %d FPS ]", GetFpsLimit());
                     swapRet[0] = MGLSwapBuffers()? ((GetFpsLimit() << 1) | 1):0;
                     MGLMouseWarp(swapRet[1]);
                     dispTimerSched(s->dispTimer);
