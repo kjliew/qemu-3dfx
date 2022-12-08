@@ -1911,7 +1911,10 @@ static void processFRet(MesaPTState *s)
                     *(uint32_t *)PTR(outshm, ALIGNED(1)),
                     *(uint32_t *)PTR(outshm, 2*ALIGNED(1)));
             break;
-#endif
+        case FEnum_glCompileShader:
+            wrCompileShaderStatus(s->arg[0]);
+            break;
+#endif /* MGL_TRACE */
         case FEnum_glGetString:
             if (s->FRet) {
 #define MAX_XSTR (3*PAGE_SIZE)
@@ -1981,7 +1984,7 @@ static void processFRet(MesaPTState *s)
     xbuf += len; \
     *(xbuf++) = ' '; }
                     *xbuf = '\0';
-                    if ((MGLExtIsAvail((const char *)outshm, "GL_APPLE_packed_pixels")) &&
+                    if ((MGLExtIsAvail((const char *)outshm, "GL_APPLE_packed_pixels")) ||
                         (MGLExtIsAvail((const char *)outshm, packPixel) == 0))
                         XSTR_ADD(packPixel);
                     *xbuf = '\0';

@@ -33,6 +33,7 @@ int ExtFuncIsValid(char *);
 int wrMapOrderPoints(uint32_t);
 int wrTexSizeTexture(uint32_t, uint32_t, int);
 int wrGetParamIa1p2(int, uint32_t, uint32_t);
+void wrCompileShaderStatus(uint32_t);
 void wrFillBufObj(uint32_t, void *, mapbufo_t *);
 void wrFlushBufObj(uint32_t, mapbufo_t *);
 void wrContextSRGB(int);

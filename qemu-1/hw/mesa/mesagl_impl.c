@@ -123,6 +123,27 @@ int wrGetParamIa1p2(int FEnum, uint32_t arg0, uint32_t arg1)
     return ret;
 }
 
+void wrCompileShaderStatus(uint32_t shader)
+{
+    int status, length, type;
+    char *errmsg;
+    void (__stdcall *wrGetShaderiv)(uint32_t, uint32_t, int *) =
+        tblMesaGL[FEnum_glGetShaderiv].ptr;
+    void (__stdcall *wrGetShaderInfoLog)(uint32_t, int, int *, char *) =
+        tblMesaGL[FEnum_glGetShaderInfoLog].ptr;
+    wrGetShaderiv(shader, GL_SHADER_TYPE, &type);
+    wrGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (!status) {
+        wrGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+        errmsg = g_malloc(length);
+        wrGetShaderInfoLog(shader, length, &length, errmsg);
+        fprintf(stderr, "%s\n", errmsg);
+        g_free(errmsg);
+    }
+    DPRINTF("%s shader compilation %s", (type == GL_VERTEX_SHADER)? "vertex":"fragment",
+        (status)? "PASS":"FAIL");
+}
+
 void wrFillBufObj(uint32_t target, void *dst, mapbufo_t *bufo)
 {
     void *src;
