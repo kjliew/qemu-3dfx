@@ -1,6 +1,6 @@
-diff -Nru ../orig/qemu-7.1.0/include/ui/egl-helpers.h ./include/ui/egl-helpers.h
---- ../orig/qemu-7.1.0/include/ui/egl-helpers.h	2022-08-30 09:41:57.000000000 -0700
-+++ ./include/ui/egl-helpers.h	2022-08-30 19:09:08.881077600 -0700
+diff -Nru ../orig/qemu-7.2.0/include/ui/egl-helpers.h ./include/ui/egl-helpers.h
+--- ../orig/qemu-7.2.0/include/ui/egl-helpers.h	2022-12-14 08:28:45.000000000 -0800
++++ ./include/ui/egl-helpers.h	2022-12-15 18:43:11.087459300 -0800
 @@ -2,7 +2,15 @@
  #define EGL_HELPERS_H
 
@@ -17,10 +17,10 @@ diff -Nru ../orig/qemu-7.1.0/include/ui/egl-helpers.h ./include/ui/egl-helpers.h
  #ifdef CONFIG_GBM
  #include <gbm.h>
  #endif
-diff -Nru ../orig/qemu-7.1.0/meson.build ./meson.build
---- ../orig/qemu-7.1.0/meson.build	2022-08-30 19:04:33.557889200 -0700
-+++ ./meson.build	2022-08-30 19:09:08.890120800 -0700
-@@ -1082,12 +1082,14 @@
+diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
+--- ../orig/qemu-7.2.0/meson.build	2022-12-15 18:39:56.193799300 -0800
++++ ./meson.build	2022-12-15 18:43:11.099877200 -0800
+@@ -1141,12 +1141,14 @@
                           required: get_option('coreaudio'))
  endif
 
@@ -36,15 +36,15 @@ diff -Nru ../orig/qemu-7.1.0/meson.build ./meson.build
    elif get_option('opengl').enabled()
      error('epoxy/egl.h not found')
    endif
-@@ -1771,6 +1773,7 @@
- config_host_data.set('CONFIG_MPATH_NEW_API', mpathpersist_new_api)
+@@ -1833,6 +1835,7 @@
+ config_host_data.set('CONFIG_BLKIO', blkio.found())
  config_host_data.set('CONFIG_CURL', curl.found())
  config_host_data.set('CONFIG_CURSES', curses.found())
 +config_host_data.set('CONFIG_EGL', egl.found())
  config_host_data.set('CONFIG_GBM', gbm.found())
  config_host_data.set('CONFIG_GIO', gio.found())
  config_host_data.set('CONFIG_GLUSTERFS', glusterfs.found())
-@@ -3968,6 +3971,7 @@
+@@ -3961,6 +3964,7 @@
  summary_info += {'libusb':            libusb}
  summary_info += {'usb net redir':     usbredir}
  summary_info += {'OpenGL support (epoxy)': opengl}
@@ -52,9 +52,9 @@ diff -Nru ../orig/qemu-7.1.0/meson.build ./meson.build
  summary_info += {'GBM':               gbm}
  summary_info += {'libiscsi support':  libiscsi}
  summary_info += {'libnfs support':    libnfs}
-diff -Nru ../orig/qemu-7.1.0/ui/egl-helpers.c ./ui/egl-helpers.c
---- ../orig/qemu-7.1.0/ui/egl-helpers.c	2022-08-30 09:41:57.000000000 -0700
-+++ ./ui/egl-helpers.c	2022-08-30 19:09:08.897130800 -0700
+diff -Nru ../orig/qemu-7.2.0/ui/egl-helpers.c ./ui/egl-helpers.c
+--- ../orig/qemu-7.2.0/ui/egl-helpers.c	2022-12-14 08:28:45.000000000 -0800
++++ ./ui/egl-helpers.c	2022-12-15 18:43:11.103387100 -0800
 @@ -334,6 +334,8 @@
 
  /* ---------------------------------------------------------------------- */
@@ -70,9 +70,9 @@ diff -Nru ../orig/qemu-7.1.0/ui/egl-helpers.c ./ui/egl-helpers.c
  }
 +
 +#endif //#ifdef CONFIG_EGL
-diff -Nru ../orig/qemu-7.1.0/ui/meson.build ./ui/meson.build
---- ../orig/qemu-7.1.0/ui/meson.build	2022-08-30 09:41:57.000000000 -0700
-+++ ./ui/meson.build	2022-09-02 17:25:53.682280500 -0700
+diff -Nru ../orig/qemu-7.2.0/ui/meson.build ./ui/meson.build
+--- ../orig/qemu-7.2.0/ui/meson.build	2022-12-14 08:28:45.000000000 -0800
++++ ./ui/meson.build	2022-12-15 18:43:11.119058300 -0800
 @@ -59,13 +59,15 @@
    opengl_ss = ss.source_set()
    opengl_ss.add(gbm)
@@ -91,9 +91,9 @@ diff -Nru ../orig/qemu-7.1.0/ui/meson.build ./ui/meson.build
                        if_true: files('egl-headless.c'))
    ui_modules += {'egl-headless' : egl_headless_ss}
  endif
-@@ -99,8 +101,8 @@
-   gtk_ss = ss.source_set()
-   gtk_ss.add(gtk, vte, pixman, files('gtk.c', 'gtk-clipboard.c'))
+@@ -102,8 +104,8 @@
+     gtk_ss.add(files('gtk-clipboard.c'))
+   endif
    gtk_ss.add(when: x11, if_true: files('x_keymap.c'))
 -  gtk_ss.add(when: opengl, if_true: files('gtk-gl-area.c'))
 -  gtk_ss.add(when: [x11, opengl], if_true: files('gtk-egl.c'))
@@ -102,9 +102,9 @@ diff -Nru ../orig/qemu-7.1.0/ui/meson.build ./ui/meson.build
    ui_modules += {'gtk' : gtk_ss}
  endif
  
-diff -Nru ../orig/qemu-7.1.0/ui/sdl2-gl.c ./ui/sdl2-gl.c
---- ../orig/qemu-7.1.0/ui/sdl2-gl.c	2022-08-30 09:41:57.000000000 -0700
-+++ ./ui/sdl2-gl.c	2022-08-30 19:09:08.897130800 -0700
+diff -Nru ../orig/qemu-7.2.0/ui/sdl2-gl.c ./ui/sdl2-gl.c
+--- ../orig/qemu-7.2.0/ui/sdl2-gl.c	2022-12-14 08:28:45.000000000 -0800
++++ ./ui/sdl2-gl.c	2022-12-15 18:43:11.119058300 -0800
 @@ -169,6 +169,13 @@
 
  void sdl2_gl_destroy_context(DisplayGLCtx *dgc, QEMUGLContext ctx)
@@ -119,9 +119,9 @@ diff -Nru ../orig/qemu-7.1.0/ui/sdl2-gl.c ./ui/sdl2-gl.c
      SDL_GLContext sdlctx = (SDL_GLContext)ctx;
  
      SDL_GL_DeleteContext(sdlctx);
-diff -Nru ../orig/qemu-7.1.0/ui/sdl2.c ./ui/sdl2.c
---- ../orig/qemu-7.1.0/ui/sdl2.c	2022-08-30 19:08:11.944523200 -0700
-+++ ./ui/sdl2.c	2022-08-30 19:09:08.912793400 -0700
+diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
+--- ../orig/qemu-7.2.0/ui/sdl2.c	2022-12-15 18:43:57.071806600 -0800
++++ ./ui/sdl2.c	2022-12-15 18:43:11.119058300 -0800
 @@ -92,6 +92,16 @@
      }
  #ifdef CONFIG_OPENGL
