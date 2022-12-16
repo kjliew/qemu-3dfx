@@ -412,6 +412,13 @@ struct mglOptions {
     int xstrYear;
 };
 static int swapFps;
+static int parse_value(const char *str, const char *tok, int *val)
+{
+    int ret = (memcmp(str, tok, strlen(tok)))? 0:1;
+    if (ret)
+        *val = strtol(str + strlen(tok), 0, 10);
+    return ret;
+}
 static void parse_options(struct mglOptions *opt)
 {
     FILE *f = fopen(XSTRCFG, "r");
@@ -420,17 +427,17 @@ static void parse_options(struct mglOptions *opt)
         char line[MAX_XSTR];
         int i, v;
         while(fgets(line, MAX_XSTR, f)) {
-            i = sscanf(line, "DispTimerMS,%d", &v);
+            i = parse_value(line, "DispTimerMS,", &v);
             opt->dispTimerMS = (i == 1)? (0x8000U | (v & 0x7FFFU)):opt->dispTimerMS;
-            i = sscanf(line, "BufOAccelEN,%d", &v);
+            i = parse_value(line, "BufOAccelEN,", &v);
             opt->bufoAcc = ((i == 1) && v)? 1:opt->bufoAcc;
-            i = sscanf(line, "ContextSRGB,%d", &v);
+            i = parse_value(line, "ContextSRGB,", &v);
             opt->useSRGB = ((i == 1) && v)? 1:opt->useSRGB;
-            i = sscanf(line, "ContextVsyncOff,%d", &v);
+            i = parse_value(line, "ContextVsyncOff,", &v);
             opt->vsyncOff = ((i == 1) && v)? 1:opt->vsyncOff;
-            i = sscanf(line, "ExtensionsYear,%d", &v);
+            i = parse_value(line, "ExtensionsYear,", &v);
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
-            i = sscanf(line, "FpsLimit,%d", &v);
+            i = parse_value(line, "FpsLimit,", &v);
             swapFps = (i == 1)? (v & 0x7FU):swapFps;
         }
         fclose(f);

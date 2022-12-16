@@ -212,19 +212,17 @@ void HookTimeGetTime(const uint32_t caddr)
         strncat(buffer, dotstr, MAX_PATH);
         FILE *fp = fopen(buffer, "r");
         if (fp) {
-            int i;
-            char line[32], name[(MAX_PATH / 8)];
+            char line[32];
             while(fgets(line, sizeof(line), fp)) {
-                i = sscanf(line, "0x%x", &addr);
-                if (addr && (i == 1)) {
+                addr = strtoul(line, 0, 16);
+                if (addr) {
                     addr &= ~(si.dwPageSize - 1);
                     patch = (uint32_t *)addr;
                     HookPatchTimer(addr, patch, si.dwPageSize);
                 }
                 else {
-                    i = sscanf(line, "0x%x,%s", &addr, name);
-                    if (!addr && (i == 2) && modList.modName[modList.modNum]) {
-                        strncpy(modList.modName[modList.modNum], name, sizeof(name) - 1);
+                    if (!memcmp(line, "0x0,", strlen("0x0,")) && modList.modName[modList.modNum]) {
+                        strncpy(modList.modName[modList.modNum], line + strlen("0x0,"), (MAX_PATH / 8));
                         modList.modNum++;
                     }
                 }
