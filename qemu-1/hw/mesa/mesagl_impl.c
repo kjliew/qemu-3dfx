@@ -1467,6 +1467,7 @@ static int cfg_xLength;
 static int cfg_vertCacheMB;
 static int cfg_dispTimerMS;
 static int cfg_bufoAccelEN;
+static int cfg_scaleX;
 static int cfg_cntxMSAA;
 static int cfg_cntxSRGB;
 static int cfg_cntxVsyncOff;
@@ -1499,6 +1500,8 @@ static void conf_MGLOptions(void)
             cfg_dispTimerMS = (i == 1)? v:cfg_dispTimerMS;
             i = sscanf(line, "BufOAccelEN,%d", &v);
             cfg_bufoAccelEN = ((i == 1) && v)? 1:cfg_bufoAccelEN;
+            i = sscanf(line, "ScaleWidth,%d", &v);
+            cfg_scaleX = ((i == 1) && v)? (v & 0x7FFFU):cfg_scaleX;
             i = sscanf(line, "ContextMSAA,%d", &v);
             cfg_cntxMSAA = (i == 1)? ((v & 0x03U) << 2):cfg_cntxMSAA;
             i = sscanf(line, "ContextSRGB,%d", &v);
@@ -1534,10 +1537,12 @@ int SwapFpsLimit(int fps)
     return ret;
 }
 void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = enable; }
+void GLScaleWidth(int width) { cfg_scaleX = width; }
 void GLDispTimerCfg(int msec) { cfg_dispTimerMS = msec; }
 void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
 int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }
+int GetGLScaleWidth(void) { return cfg_scaleX; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }

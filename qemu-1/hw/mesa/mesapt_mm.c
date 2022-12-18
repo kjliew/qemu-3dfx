@@ -2241,9 +2241,11 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xFEC:
                 do {
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
-                    int enable = *(int *)ppfd;
+                    int enable = (*(int *)ppfd) & 0x01U;
+                    int width = (*(int *)ppfd) >> 16;
                     int msec = *(int *)PTR(ppfd, sizeof(int));
                     GLBufOAccelCfg(enable);
+                    GLScaleWidth(width);
                     GLDispTimerCfg(msec);
                 } while(0);
                 s->pixfmt = MGLChoosePixelFormat();
@@ -2251,11 +2253,13 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xFE8:
                 do {
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
-                    int enable = *(int *)ppfd;
+                    int enable = (*(int *)ppfd) & 0x01U;
+                    int width = (*(int *)ppfd) >> 16;
                     int msec = *(int *)PTR(ppfd, sizeof(int));
                     int pixfmt = *(int *)PTR(ppfd, 2*sizeof(int));
                     unsigned int nbytes = *(uint32_t *)PTR(ppfd, 3*sizeof(int));
                     GLBufOAccelCfg(enable);
+                    GLScaleWidth(width);
                     GLDispTimerCfg(msec);
                     s->pixfmtMax = ((uint32_t *)s->fifo_ptr)[1]? MGLDescribePixelFormat(pixfmt, nbytes, ppfd):0;
                 } while(0);

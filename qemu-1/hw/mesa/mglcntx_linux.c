@@ -302,8 +302,12 @@ static void MesaDisplayModeset(const int modeset)
     switch(modeset) {
         case 1:
             do {
-                int w, h, fullscreen = mesa_gui_fullscreen(&w, &h), modeset = 0, vidCount;
+                int w, h, fullscreen = mesa_gui_fullscreen(&w, &h), scale_x = GetGLScaleWidth(), modeset = 0, vidCount;
                 XF86VidModeModeInfo **vidModes;
+                if (scale_x) {
+                    h = ((1.f * h) / w) * scale_x;
+                    w = scale_x;
+                }
                 if (fullscreen && xvidmode && XF86VidModeGetAllModeLines(dpy, DefaultScreen(dpy), &vidCount, &vidModes)) {
                     int vidRef = (1000.f * vidModes[0]->dotclock) / (vidModes[0]->htotal * vidModes[0]->vtotal);
                     DPRINTF_COND(GLFuncTrace(), "Current %4dx%d %3dHz dotclock %6d",
@@ -490,7 +494,8 @@ static int MGLPresetPixelFormat(void)
     dpy = XOpenDisplay(NULL);
     wnd_ready = 0;
     ImplMesaGLReset();
-    mesa_prepare_window(GetContextMSAA(), memcmp(xcstr, nvstr, sizeof(nvstr) - 1), &cwnd_mesagl);
+    DPRINTF_COND(GetGLScaleWidth(), "MESAGL window scaled at width %d", GetGLScaleWidth());
+    mesa_prepare_window(GetContextMSAA(), memcmp(xcstr, nvstr, sizeof(nvstr) - 1), GetGLScaleWidth(), &cwnd_mesagl);
 
     int fbid, fbcnt, *attrib = iattribs_fb(dpy, GetContextMSAA());
     GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);

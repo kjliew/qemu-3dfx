@@ -368,12 +368,27 @@ static void InitClientStates(void)
         HeapFree(GetProcessHeap(), 0, str); \
     } while(0)
 
+static FILE * opt_fopen(void)
+{
+#define XSTRCFG "wrapgl32.ext"
+    char cfg_path[MAX_PATH];
+    FILE *ret = NULL;
+    int i;
+    GetModuleFileName(NULL, cfg_path, MAX_PATH);
+    i = strnlen(cfg_path, MAX_PATH);
+    while (i && cfg_path[i] != '\\') i--;
+    if (cfg_path[i] == '\\' && (MAX_PATH - i - 1) > sizeof(XSTRCFG)) {
+        strcpy(&cfg_path[++i], XSTRCFG);
+        ret = fopen(cfg_path, "r");
+    }
+    return ret;
+}
+
 static void fltrxstr(const char *xstr)
 {
 #define MAX_XSTR 128
-#define XSTRCFG "wrapgl32.ext"
     char *str = (char *)xstr, *tmp = (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2];
-    FILE *f = fopen(XSTRCFG, "r");
+    FILE *f = opt_fopen();
     *tmp = ' ';
     *(tmp + 1) = '\0';
     if (f) {
@@ -407,6 +422,7 @@ static void fltrxstr(const char *xstr)
 struct mglOptions {
     int bufoAcc;
     int dispTimerMS;
+    int scaleX;
     int useSRGB;
     int vsyncOff;
     int xstrYear;
@@ -421,7 +437,7 @@ static int parse_value(const char *str, const char *tok, int *val)
 }
 static void parse_options(struct mglOptions *opt)
 {
-    FILE *f = fopen(XSTRCFG, "r");
+    FILE *f = opt_fopen();
     memset(opt, 0, sizeof(struct mglOptions));
     if (f) {
         char line[MAX_XSTR];
@@ -429,6 +445,8 @@ static void parse_options(struct mglOptions *opt)
         while(fgets(line, MAX_XSTR, f)) {
             i = parse_value(line, "DispTimerMS,", &v);
             opt->dispTimerMS = (i == 1)? (0x8000U | (v & 0x7FFFU)):opt->dispTimerMS;
+            i = parse_value(line, "ScaleWidth,", &v);
+            opt->scaleX = (i == 1)? (v & 0x7FFFU):opt->scaleX;
             i = parse_value(line, "BufOAccelEN,", &v);
             opt->bufoAcc = ((i == 1) && v)? 1:opt->bufoAcc;
             i = parse_value(line, "ContextSRGB,", &v);
@@ -16966,7 +16984,7 @@ int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     struct mglOptions cfg;
     parse_options(&cfg);
-    xppfd[0] = cfg.bufoAcc;
+    xppfd[0] = (cfg.scaleX << 16) | cfg.bufoAcc;
     xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT;
     memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFEC >> 2] = MESAGL_MAGIC;
@@ -16985,7 +17003,7 @@ int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXE
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     struct mglOptions cfg;
     parse_options(&cfg);
-    xppfd[0] = cfg.bufoAcc;
+    xppfd[0] = (cfg.scaleX << 16) | cfg.bufoAcc;
     xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT;
     xppfd[2] = iPixelFormat;
     xppfd[3] = nBytes;

@@ -183,10 +183,14 @@ static void MesaDisplayModeset(const int modeset)
     switch(modeset) {
         case 1:
             do {
-                int w, h, fullscreen = mesa_gui_fullscreen(&w, &h);
+                int w, h, fullscreen = mesa_gui_fullscreen(&w, &h), scale_x = GetGLScaleWidth();
                 DEVMODE DevMode;
                 memset(&DevMode, 0, sizeof(DEVMODE));
                 DevMode.dmSize = sizeof(DEVMODE);
+                if (scale_x) {
+                    h = ((1.f * h) / w) * scale_x;
+                    w = scale_x;
+                }
 
                 if (fullscreen && EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &DevMode)) {
                     DWORD vidBpp = DevMode.dmBitsPerPel, vidRef = DevMode.dmDisplayFrequency;
@@ -322,7 +326,8 @@ void MGLTmpContext(void)
     CreateMesaWindow("MesaGL", 640, 480, 1); \
     wnd_ready = 0; \
     ImplMesaGLReset(); \
-    mesa_prepare_window(GetContextMSAA(), 1, &cwnd_mesagl); hDC = GetDC(hwnd); }
+    DPRINTF_COND(GetGLScaleWidth(), "MESAGL window scaled at width %d", GetGLScaleWidth()); \
+    mesa_prepare_window(GetContextMSAA(), 1, GetGLScaleWidth(), &cwnd_mesagl); hDC = GetDC(hwnd); }
 
 #define GLWINDOW_FINI() \
     if (0) { } \

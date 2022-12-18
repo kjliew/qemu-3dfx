@@ -35,6 +35,7 @@
 #if defined(CONFIG_DARWIN) && CONFIG_DARWIN
 const char dllname[] = "/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib";
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
+#define GL_CONTEXTALPHA GetDispTimerMS()
 #define GL_DELETECONTEXT(x)
 #define GL_CONTEXTATTRIB(x)
 #define GL_CREATECONTEXT(x)
@@ -56,6 +57,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 
     return ret;
 }
+#define GL_CONTEXTALPHA 1
 #define GL_DELETECONTEXT(x) \
     do { SDL_GL_DeleteContext(x); x = 0; } while(0)
 #define GL_CONTEXTATTRIB(x) \
@@ -351,7 +353,8 @@ static int MGLPresetPixelFormat(void)
 {
     wnd_ready = 0;
     ImplMesaGLReset();
-    mesa_prepare_window(GetContextMSAA(), GetDispTimerMS(), &cwnd_mesagl);
+    DPRINTF_COND(GetGLScaleWidth(), "MESAGL window scaled at width %d", GetGLScaleWidth());
+    mesa_prepare_window(GetContextMSAA(), GL_CONTEXTALPHA, GetGLScaleWidth(), &cwnd_mesagl);
 
     MesaInitGammaRamp();
     return 1;
