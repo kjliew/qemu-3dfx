@@ -1,5 +1,5 @@
 # QEMU MESA GL/3Dfx Glide Pass-Through
-Copyright (C) 2018-2022
+Copyright (C) 2018-2022<br>
 KJ Liew \<liewkj@yahoo.com\>
 ## Content
     qemu-0/hw/3dfx      - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
@@ -72,10 +72,10 @@ If this project helps you relive the nostalgic memory of Good Old Windows Games,
 
 For $59.99 donation, you will deserve the following donor's privileges:
 - QEMU binary package built for platform of your choice (choose one: Windows 10/11, Ubuntu, etc.)
-- QEMU-enhanced OpenGLide host binary package built for platform of your choice (choose one: Windows 10/11, Ubuntu, etc.)
-- QEMU-enhanced **WineD3D libraries for Win98/2K/ME/XP VMs** for DirectDraw/Direct3D games up to DirectX 9.0c
+- QEMU-enhanced OpenGLide **Host-side wrappers** built for platform of your choice (choose one: Windows 10/11, Ubuntu, etc.)
+- QEMU-enhanced [**WineD3D libraries for Win98/2K/ME/XP VMs**](https://www.winehq.org) for DirectDraw/Direct3D games up to DirectX 9.0c
 - Game controllers support with [**QEMU USB Gamepad**](https://github.com/kjliew/qemu-3dfx/wiki/QEMU-USB-Gamepad)
-- OpenGLide guest binary package for Windows
+- OpenGLide **Guest-side wrappers** for Windows
 - Elect up to 3 games for priority support and your name as the honorary sponsor in the supported & tested list of games.
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XE47KTASERX4A)
