@@ -282,8 +282,8 @@ diff -Nru ../orig/qemu-5.2.0/ui/console.c ./ui/console.c
          return;
 diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-5.2.0/ui/sdl2.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./ui/sdl2.c	2022-12-17 18:56:14.759336400 -0800
-@@ -755,6 +755,314 @@
++++ ./ui/sdl2.c	2022-12-28 14:48:10.278791100 -0800
+@@ -755,6 +755,316 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -410,9 +410,11 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +        timer_free(s->ts);
 +        s->ts = 0;
 +    }
-+    if (s->opaque && (s->res > 0))
-+        SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
-+    graphic_hw_halt(0x80U | s->render_pause);
++    if (s->opaque) {
++        if (s->res > 0)
++            SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
++        graphic_hw_halt(0x80U | s->render_pause);
++    }
 +}
 +
 +static int sdl_gui_fullscreen(int *width, int *height, const char *feat)
@@ -598,7 +600,7 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -889,6 +1197,7 @@
+@@ -889,6 +1199,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
