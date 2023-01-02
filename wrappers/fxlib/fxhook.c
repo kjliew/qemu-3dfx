@@ -222,6 +222,7 @@ void HookTimeGetTime(const uint32_t caddr)
                 }
                 else {
                     if (!memcmp(line, "0x0,", strlen("0x0,")) && modList.modName[modList.modNum]) {
+                        line[strcspn(line, "\r\n")] = 0;
                         strncpy(modList.modName[modList.modNum], line + strlen("0x0,"), (MAX_PATH / 8));
                         modList.modNum++;
                     }
