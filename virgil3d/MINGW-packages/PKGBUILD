@@ -3,7 +3,7 @@
 _realname=virglrenderer
 pkgbase=mingw-w64-${_realname}
 pkgname=${MINGW_PACKAGE_PREFIX}-${_realname}
-pkgver=0.10.3
+pkgver=0.10.4
 pkgrel=1
 pkgdesc='A virtual 3D GPU library, that allows the guest operating system to use the host GPU to accelerate 3D rendering'
 arch=('any')
@@ -17,9 +17,8 @@ makedepends=("${MINGW_PACKAGE_PREFIX}-python"
 _tag=$pkgver
 source=("virglrenderer-$pkgver.tar.bz2::https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/$_tag/virglrenderer-$_tag.tar.bz2"
         "0001-Virglrenderer-on-Windows-and-macOS.patch")
-sha256sums=('70d362da3765139c74da00cf7fb2cac5d5dd92c112503ca7fff999032aeebf2f'
-            '34448221077b1f204b85a7dd7591b6ee9356f37591aa730d9d44a6c45d80198c')
-
+sha256sums=('b42dbbc87f799feb77f89a246336253aedc733f7c3c78d4103158438deea5a6d'
+            '6beee5930ff602de252c7c698eb397048d638c64fd44b2d2a78ad8d0cbda5527')
 prepare() {
   cd virglrenderer-$_tag
   patch -p2 -i ${srcdir}/0001-Virglrenderer-on-Windows-and-macOS.patch

@@ -1,6 +1,6 @@
-diff -Nru orig/virglrenderer-0.10.3/meson.build src/virglrenderer-0.10.3/meson.build
---- orig/virglrenderer-0.10.3/meson.build	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/meson.build	2022-11-01 11:04:39.852599400 -0700
+diff -Nru orig/virglrenderer-0.10.4/meson.build src/virglrenderer-0.10.4/meson.build
+--- orig/virglrenderer-0.10.4/meson.build	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/meson.build	2023-01-07 00:46:30.802648300 -0800
 @@ -63,10 +63,10 @@
  ]
 
@@ -33,10 +33,10 @@ diff -Nru orig/virglrenderer-0.10.3/meson.build src/virglrenderer-0.10.3/meson.b
  
  if with_render_server
  subdir('server')
-diff -Nru orig/virglrenderer-0.10.3/src/meson.build src/virglrenderer-0.10.3/src/meson.build
---- orig/virglrenderer-0.10.3/src/meson.build	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/meson.build	2022-11-01 11:04:39.873797400 -0700
-@@ -170,7 +170,6 @@
+diff -Nru orig/virglrenderer-0.10.4/src/meson.build src/virglrenderer-0.10.4/src/meson.build
+--- orig/virglrenderer-0.10.4/src/meson.build	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/meson.build	2023-01-07 00:46:30.802648300 -0800
+@@ -171,7 +171,6 @@
  virgl_depends = [
     gallium_dep,
     epoxy_dep,
@@ -44,7 +44,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/meson.build src/virglrenderer-0.10.3/src
     thread_dep,
     m_dep,
  ]
-@@ -187,7 +186,7 @@
+@@ -188,7 +187,7 @@
  
  if have_egl
     virgl_sources += vrend_winsys_egl_sources
@@ -53,9 +53,9 @@ diff -Nru orig/virglrenderer-0.10.3/src/meson.build src/virglrenderer-0.10.3/src
  endif
  
  if have_glx
-diff -Nru orig/virglrenderer-0.10.3/src/virglrenderer.c src/virglrenderer-0.10.3/src/virglrenderer.c
---- orig/virglrenderer-0.10.3/src/virglrenderer.c	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/virglrenderer.c	2022-11-01 11:04:39.873797400 -0700
+diff -Nru orig/virglrenderer-0.10.4/src/virglrenderer.c src/virglrenderer-0.10.4/src/virglrenderer.c
+--- orig/virglrenderer-0.10.4/src/virglrenderer.c	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/virglrenderer.c	2023-01-07 00:46:30.818273600 -0800
 @@ -31,7 +31,11 @@
  #include <fcntl.h>
  #include <errno.h>
@@ -68,7 +68,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/virglrenderer.c src/virglrenderer-0.10.3
 
  #include "pipe/p_state.h"
  #include "util/u_format.h"
-@@ -1031,11 +1035,13 @@
+@@ -1054,11 +1058,13 @@
           res->map_size = map_size;
     } else {
        switch (res->fd_type) {
@@ -82,7 +82,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/virglrenderer.c src/virglrenderer-0.10.3
        case VIRGL_RESOURCE_FD_OPAQUE:
           ret = vkr_allocator_resource_map(res, &map, &map_size);
           break;
-@@ -1065,9 +1071,12 @@
+@@ -1088,9 +1094,12 @@
        ret = vrend_renderer_resource_unmap(res->pipe_resource);
     } else {
        switch (res->fd_type) {
@@ -95,7 +95,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/virglrenderer.c src/virglrenderer-0.10.3
        case VIRGL_RESOURCE_FD_OPAQUE:
           ret = vkr_allocator_resource_unmap(res);
           break;
-@@ -1146,15 +1155,17 @@
+@@ -1169,15 +1178,17 @@
 
     enum virgl_resource_fd_type fd_type = VIRGL_RESOURCE_FD_INVALID;
     switch (args->fd_type) {
@@ -116,9 +116,9 @@ diff -Nru orig/virglrenderer-0.10.3/src/virglrenderer.c src/virglrenderer-0.10.3
     default:
        return -EINVAL;
     }
-diff -Nru orig/virglrenderer-0.10.3/src/vrend_blitter.h src/virglrenderer-0.10.3/src/vrend_blitter.h
---- orig/virglrenderer-0.10.3/src/vrend_blitter.h	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/vrend_blitter.h	2022-11-01 11:04:39.873797400 -0700
+diff -Nru orig/virglrenderer-0.10.4/src/vrend_blitter.h src/virglrenderer-0.10.4/src/vrend_blitter.h
+--- orig/virglrenderer-0.10.4/src/vrend_blitter.h	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/vrend_blitter.h	2023-01-07 00:46:30.818273600 -0800
 @@ -30,7 +30,7 @@
  /* shaders for blitting */
 
@@ -137,9 +137,9 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_blitter.h src/virglrenderer-0.10.3
     "// Blitter\n"                               \
 
  #define HEADER_GLES                             \
-diff -Nru orig/virglrenderer-0.10.3/src/vrend_debug.c src/virglrenderer-0.10.3/src/vrend_debug.c
---- orig/virglrenderer-0.10.3/src/vrend_debug.c	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/vrend_debug.c	2022-11-01 11:04:39.885409300 -0700
+diff -Nru orig/virglrenderer-0.10.4/src/vrend_debug.c src/virglrenderer-0.10.4/src/vrend_debug.c
+--- orig/virglrenderer-0.10.4/src/vrend_debug.c	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/vrend_debug.c	2023-01-07 00:46:30.833900100 -0800
 @@ -25,6 +25,11 @@
  #include "vrend_debug.h"
  #include "vrend_renderer.h"
@@ -152,10 +152,10 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_debug.c src/virglrenderer-0.10.3/s
  #include <stdlib.h>
  #include <stdio.h>
  
-diff -Nru orig/virglrenderer-0.10.3/src/vrend_renderer.c src/virglrenderer-0.10.3/src/vrend_renderer.c
---- orig/virglrenderer-0.10.3/src/vrend_renderer.c	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/vrend_renderer.c	2022-11-01 11:05:10.266362500 -0700
-@@ -354,6 +354,7 @@
+diff -Nru orig/virglrenderer-0.10.4/src/vrend_renderer.c src/virglrenderer-0.10.4/src/vrend_renderer.c
+--- orig/virglrenderer-0.10.4/src/vrend_renderer.c	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/vrend_renderer.c	2023-01-07 00:46:30.833900100 -0800
+@@ -358,6 +358,7 @@
     uint64_t features[feat_last / 64 + 1];
  
     bool finishing : 1;
@@ -163,7 +163,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_renderer.c src/virglrenderer-0.10.
     bool use_gles : 1;
     bool use_core_profile : 1;
     bool use_external_blob : 1;
-@@ -7063,6 +7064,8 @@
+@@ -7065,6 +7066,8 @@
     GLenum err;
 
     err = glGetError();
@@ -172,7 +172,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_renderer.c src/virglrenderer-0.10.
     if (err == GL_NO_ERROR)
        return true;
  
-@@ -7165,6 +7168,7 @@
+@@ -7167,6 +7170,7 @@
        vrend_printf( "gl_version %d - compat profile\n", gl_ver);
     }
  
@@ -180,7 +180,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_renderer.c src/virglrenderer-0.10.
     vrend_state.use_integer = use_integer();
  
     init_features(gles ? 0 : gl_ver,
-@@ -7442,6 +7446,7 @@
+@@ -7444,6 +7448,7 @@
     grctx->shader_cfg.has_es31_compat = has_feature(feat_gles31_compatibility);
     grctx->shader_cfg.has_conservative_depth = has_feature(feat_conservative_depth);
     grctx->shader_cfg.use_integer = vrend_state.use_integer;
@@ -188,7 +188,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_renderer.c src/virglrenderer-0.10.
     grctx->shader_cfg.has_dual_src_blend = has_feature(feat_dual_src_blend);
     grctx->shader_cfg.has_fbfetch_coherent = has_feature(feat_framebuffer_fetch);
     grctx->shader_cfg.has_cull_distance = has_feature(feat_cull_distance);
-@@ -7910,6 +7915,7 @@
+@@ -7914,6 +7919,7 @@
  
     const bool format_can_texture_storage = has_feature(feat_texture_storage) &&
          (tex_conv_table[format].flags & VIRGL_TEXTURE_CAN_TEXTURE_STORAGE);
@@ -196,7 +196,7 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_renderer.c src/virglrenderer-0.10.
  
     if (format_can_texture_storage)
        gr->storage_bits |= VREND_STORAGE_GL_IMMUTABLE;
-@@ -7982,7 +7988,7 @@
+@@ -7986,7 +7992,7 @@
        }
  
        if (pr->nr_samples > 0) {
@@ -214,19 +214,28 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_renderer.c src/virglrenderer-0.10.
        glReadnPixelsKHR(x, y, width, height, format, type, bufSize, data);
     else
        glReadPixels(x, y, width, height, format, type, data);
-@@ -11733,7 +11739,7 @@
-    // is used to create shmem. On drm path, we can use this, because
-    // size of drm resource (bo) is not passed to virglrenderer and
-    // we can pass "1" as size on drm path, but not on vtest.
--   caps->v2.capability_bits_v2 |= VIRGL_CAP_V2_COPY_TRANSFER_BOTH_DIRECTIONS;
-+   //caps->v2.capability_bits_v2 |= VIRGL_CAP_V2_COPY_TRANSFER_BOTH_DIRECTIONS;
-
-    if (has_feature(feat_anisotropic_filter)) {
-       float max_aniso;
-diff -Nru orig/virglrenderer-0.10.3/src/vrend_shader.c src/virglrenderer-0.10.3/src/vrend_shader.c
---- orig/virglrenderer-0.10.3/src/vrend_shader.c	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/vrend_shader.c	2022-11-01 11:04:39.900513900 -0700
-@@ -6037,10 +6037,10 @@
+diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.c src/virglrenderer-0.10.4/src/vrend_shader.c
+--- orig/virglrenderer-0.10.4/src/vrend_shader.c	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/vrend_shader.c	2023-01-07 01:06:32.778530200 -0800
+@@ -1514,6 +1514,8 @@
+             }
+          }
+          break;
++      case TGSI_SEMANTIC_FOG:
++         break;
+       default:
+          vrend_printf("unhandled input semantic: %x\n", ctx->inputs[i].name);
+          break;
+@@ -1764,6 +1766,8 @@
+             }
+          }
+          break;
++      case TGSI_SEMANTIC_FOG:
++         break;
+       default:
+          vrend_printf("unhandled output semantic: %x\n", ctx->outputs[i].name);
+          break;
+@@ -6087,10 +6091,10 @@
 
        if (ctx->prog_type == TGSI_PROCESSOR_VERTEX && ctx->cfg->use_explicit_locations)
           emit_ext(glsl_strbufs, "ARB_explicit_attrib_location", "require");
@@ -239,10 +248,10 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_shader.c src/virglrenderer-0.10.3/
           emit_ext(glsl_strbufs, "ARB_uniform_buffer_object", "require");
 
        if (ctx->num_cull_dist_prop || ctx->key->num_in_cull || ctx->key->num_out_cull)
-diff -Nru orig/virglrenderer-0.10.3/src/vrend_shader.h src/virglrenderer-0.10.3/src/vrend_shader.h
---- orig/virglrenderer-0.10.3/src/vrend_shader.h	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/vrend_shader.h	2022-11-01 11:04:39.900513900 -0700
-@@ -235,6 +235,7 @@
+diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.h src/virglrenderer-0.10.4/src/vrend_shader.h
+--- orig/virglrenderer-0.10.4/src/vrend_shader.h	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/vrend_shader.h	2023-01-07 00:46:30.849602900 -0800
+@@ -236,6 +236,7 @@
     uint32_t glsl_version : 12;
     uint32_t max_draw_buffers : 4;
     uint32_t max_shader_patch_varyings : 6;
@@ -250,9 +259,9 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_shader.h src/virglrenderer-0.10.3/
     uint32_t use_gles : 1;
     uint32_t use_core_profile : 1;
     uint32_t use_explicit_locations : 1;
-diff -Nru orig/virglrenderer-0.10.3/src/vrend_winsys.c src/virglrenderer-0.10.3/src/vrend_winsys.c
---- orig/virglrenderer-0.10.3/src/vrend_winsys.c	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/vrend_winsys.c	2022-11-01 11:04:39.900513900 -0700
+diff -Nru orig/virglrenderer-0.10.4/src/vrend_winsys.c src/virglrenderer-0.10.4/src/vrend_winsys.c
+--- orig/virglrenderer-0.10.4/src/vrend_winsys.c	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/vrend_winsys.c	2023-01-07 00:46:30.849602900 -0800
 @@ -22,6 +22,7 @@
   *
   **************************************************************************/
@@ -261,9 +270,9 @@ diff -Nru orig/virglrenderer-0.10.3/src/vrend_winsys.c src/virglrenderer-0.10.3/
  #include "vrend_winsys.h"
  
  #ifdef HAVE_EPOXY_GLX_H
-diff -Nru orig/virglrenderer-0.10.3/src/vrend_winsys_gbm.h src/virglrenderer-0.10.3/src/vrend_winsys_gbm.h
---- orig/virglrenderer-0.10.3/src/vrend_winsys_gbm.h	2022-09-19 01:48:34.000000000 -0700
-+++ src/virglrenderer-0.10.3/src/vrend_winsys_gbm.h	2022-11-01 11:04:39.900513900 -0700
+diff -Nru orig/virglrenderer-0.10.4/src/vrend_winsys_gbm.h src/virglrenderer-0.10.4/src/vrend_winsys_gbm.h
+--- orig/virglrenderer-0.10.4/src/vrend_winsys_gbm.h	2023-01-02 08:12:17.000000000 -0800
++++ src/virglrenderer-0.10.4/src/vrend_winsys_gbm.h	2023-01-07 00:46:30.865149900 -0800
 @@ -25,7 +25,9 @@
  #ifndef VIRGL_GBM_H
  #define VIRGL_GBM_H
