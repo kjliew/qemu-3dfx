@@ -519,7 +519,7 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
             ppfd->cRedBits, ppfd->cGreenBits, ppfd->cBlueBits, ppfd->cAlphaBits,
             ppfd->cAlphaShift, ppfd->cRedShift, ppfd->cGreenShift, ppfd->cBlueShift);
     }
-    return 1;
+    return curr;
 }
 
 void MGLActivateHandler(int i)

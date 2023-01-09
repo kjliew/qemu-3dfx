@@ -17012,7 +17012,9 @@ int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXE
     if (ret && ppfd) {
         memcpy(ppfd, xppfd, nBytes);
     }
-    return ret;
+    if ((nBytes == sizeof(int)) && ppfd)
+        *(int *)ppfd = ret;
+    return (ret)? 1:0;
 }
 int WINAPI COMPACT
 wgdDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
@@ -17020,7 +17022,14 @@ wgdDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESC
 
 int WINAPI wglGetPixelFormat(HDC hdc)
 {
-    return (currPixFmt == 0)? 0:wgdDescribePixelFormat(hdc, 1, 0, 0);
+    static int fmt;
+    if (currPixFmt) {
+        if (!fmt)
+            wgdDescribePixelFormat(hdc, 1, sizeof(int), (LPPIXELFORMATDESCRIPTOR)&fmt);
+    }
+    else
+        fmt = 0;
+    return fmt;
 }
 int WINAPI COMPACT
 wgdGetPixelFormat(HDC hdc) { return wglGetPixelFormat(hdc); }

@@ -112,7 +112,15 @@ static void MGLTmpContext(char **str, char **wstr)
         0x002 1 0 F 0 0 0 U 0 0 0 1 0 0 r  32   8  8  8  8  24 16  8  0  64 16 16 16 16 24 0 4 0  0
         0x003 1 0 F 0 0 0 U 0 0 0 1 0 0 r  32   8  8  8  0   0 16  8  0  64 16 16 16 16 24 8 4 0  0
     */
+    int curr = GetPixelFormat(tmpDC);
+    wglGetPixelFormatAttribivARB(tmpDC, curr, 0, nAttr, piAttr, n);
+    printf(
+    "0x%03x %-2x%-2x%-2c%-2x%-2x%-2x%-2c%-2x%-2x%-2x%-2x%-2x%-2x%-2c%3d %3d%3d%3d%3d %3d%3d%3d%3d  %2d %2d %2d %2d %2d %2d %d %d %d %2d\n",
+     curr, n[0],n[1],accel[n[2]&0x3],n[3],n[4],n[5],swap[n[6]&0x3],n[7],n[8],n[9],n[10],n[11],n[12],type[(n[13]&0xC)>>2],n[14],n[15],
+           n[16],n[17],n[18],n[19],n[20],n[21],n[22],n[23],n[24],n[25],n[26],n[27],n[28],n[29],n[30],n[31],n[32]);
     for (int i = 1; i <= nPix; i++) {
+        if (curr == i )
+            continue;
         wglGetPixelFormatAttribivARB(tmpDC, i, 0, nAttr, piAttr, n);
         printf(
         "0x%03x %-2x%-2x%-2c%-2x%-2x%-2x%-2c%-2x%-2x%-2x%-2x%-2x%-2x%-2c%3d %3d%3d%3d%3d %3d%3d%3d%3d  %2d %2d %2d %2d %2d %2d %d %d %d %2d\n",
