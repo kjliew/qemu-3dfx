@@ -5,7 +5,8 @@ CC=$(CROSS)gcc
 RC=windres
 DLLTOOL=dlltool
 STRIP=strip
-CFLAGS=-I$(QEMU_SRC_DIR)/hw/mesa -I$(FXLIB) -Wall -Werror -msse2 -O3 -flto -fomit-frame-pointer
+CFLAGS=-march=x86-64-v2 -mtune=generic -O3
+CFLAGS+=-pipe -I$(QEMU_SRC_DIR)/hw/mesa -I$(FXLIB) -Wall -Werror -flto=auto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base,--no-seh,--dynamicbase,--nxcompat
 SRCDIR=../src
@@ -25,7 +26,9 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/;/CallWndProc/d;s/^mgl/wgl/;s/wgd//" | grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
+	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/;/CallWndProc/d;s/^mgl/wgl/;s/wgd//" | \
+		sed "s/\ ;\ Check!!!.*//" | \
+		grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 
