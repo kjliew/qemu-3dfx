@@ -150,7 +150,6 @@ uint32_t PT_CALL grTexTextureMemRequired(uint32_t arg0, uint32_t arg1);
 static int grGlidePresent;
 static int grGlideWnd;
 uint32_t PT_CALL grSstWinClose(uint32_t arg0);
-uint32_t PT_CALL grReset(uint32_t arg0);
 char *basename(const char *name);
 uint32_t PT_CALL grGet(uint32_t arg0, uint32_t arg1, uint32_t arg2);
 static char g3ext_str[192] = " ";
@@ -342,7 +341,6 @@ void PT_CALL grGlideSetState(uint32_t arg0) {
 }
 void PT_CALL grGlideShutdown(void) {
     grSstWinClose(grGlideWnd); 
-    grReset(GR_VERTEX_PARAMETER);
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideShutdown;
     grGlidePresent = 0;
     HookEntryHook(0, 0);
