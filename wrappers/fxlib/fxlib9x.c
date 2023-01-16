@@ -1,6 +1,7 @@
 #include <windows.h>
 #include "fxlib.h"
 
+
 static FxU32 pciErrorCode;
 static HANDLE hMemmapFile;
 
@@ -56,7 +57,34 @@ fxMapLinear(FxU32 busNumber, FxU32 physical_addr,
 static FxBool
 fxUnmapLinear(FxU32 linear_addr, FxU32 length)
 {
-    return FXTRUE;
+  FxU32 nret;
+
+  return DeviceIoControl(hMemmapFile, DECREMENTMUTEX,
+                         NULL, 0,
+                         NULL, 0,
+                         &nret, NULL);
+}
+
+static FxBool
+fxGetMSR(MSRInfo* in, MSRInfo* out)
+{
+  FxU32 nret;
+
+  return DeviceIoControl( hMemmapFile, GETMSR,
+                          in, sizeof(*in),
+                          out, sizeof(*out),
+                          &nret, NULL);
+}
+
+static FxBool
+fxSetMSR(MSRInfo* in, MSRInfo* out)
+{
+  FxU32 nret;
+
+  return DeviceIoControl( hMemmapFile, SETMSR,
+                          in, sizeof(*in),
+                          out, sizeof(*out),
+                          &nret, NULL);
 }
 
 /* Ganked from vmm.h */
@@ -90,5 +118,7 @@ void vxdDrvInit(PDRVFUNC drv)
     drv->Fini = &fxlibFini;
     drv->MapLinear = &fxMapLinear;
     drv->UnmapLinear = &fxUnmapLinear;
+    drv->GetMSR = &fxGetMSR;
+    drv->SetMSR = &fxSetMSR;
     drv->SetPermission = &fxSetPermission;
 }

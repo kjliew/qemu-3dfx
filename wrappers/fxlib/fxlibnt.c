@@ -70,6 +70,28 @@ fxUnmapLinear(FxU32 linear_addr, FxU32 length)
 }
 
 static FxBool
+fxGetMSR(MSRInfo* in, MSRInfo* out)
+{
+  ULONG retLen;
+
+  return DeviceIoControl(hMemmapFile, (FxU32)IOCTL_MAPMEM_GET_MSR,
+                         in, sizeof(*in),
+                         out, sizeof(*out),
+                         &retLen, NULL);
+}
+
+static FxBool
+fxSetMSR(MSRInfo* in, MSRInfo* out)
+{
+  ULONG retLen;
+
+  return DeviceIoControl(hMemmapFile, (FxU32)IOCTL_MAPMEM_SET_MSR,
+                         in, sizeof(*in),
+                         out, sizeof(*out),
+                         &retLen, NULL);
+}
+
+static FxBool
 fxSetPermission(const FxU32 addrBase, const FxU32 addrLen,
                    const FxBool writePermP)
 {
@@ -82,5 +104,7 @@ void kmdDrvInit(PDRVFUNC drv)
     drv->Fini = &fxlibFini;
     drv->MapLinear = &fxMapLinear;
     drv->UnmapLinear = &fxUnmapLinear;
+    drv->GetMSR = &fxGetMSR;
+    drv->SetMSR = &fxSetMSR;
     drv->SetPermission = &fxSetPermission;
 }

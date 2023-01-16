@@ -5,6 +5,9 @@
 #define FXFALSE 0
 
 #define   GETLINEARADDR         2
+#define   GETMSR                6 /* Get the contents of an MSR */
+#define   SETMSR                7
+#define   DECREMENTMUTEX        8
 #define   SETADDRPERM           10
 
 #define PCI_ERR_MEMMAPVXD       2
@@ -14,6 +17,11 @@
 
 typedef int FxBool;
 typedef unsigned long FxU32;
+typedef struct {
+  FxU32
+    msrNum,                     /* Which MSR? */
+    msrLo, msrHi;               /* MSR Values  */
+} MSRInfo;
 
 #ifdef small
   /* MSYS/MinGW.org headers #define small char */
@@ -66,6 +74,16 @@ typedef enum _INTERFACE_TYPE {
                                                           METHOD_BUFFERED,     \
                                                           FILE_ANY_ACCESS)
 
+#define IOCTL_MAPMEM_GET_MSR   CTL_CODE(FILE_DEVICE_MAPMEM , \
+                                          MAPMEM_IOCTL_INDEX+2,  \
+                                          METHOD_BUFFERED,     \
+                                          FILE_ANY_ACCESS)
+
+#define IOCTL_MAPMEM_SET_MSR CTL_CODE(FILE_DEVICE_MAPMEM,  \
+                                          MAPMEM_IOCTL_INDEX+3,\
+                                          METHOD_BUFFERED,     \
+                                          FILE_ANY_ACCESS)
+
 typedef struct
 {
     INTERFACE_TYPE InterfaceType; // Isa, Eisa, etc....
@@ -82,6 +100,8 @@ typedef struct DrvFuncTbl {
     FxBool (*Fini)(void);
     FxBool (*MapLinear)(FxU32, FxU32, FxU32 *, FxU32 *);
     FxBool (*UnmapLinear)(FxU32, FxU32);
+    FxBool (*SetMSR)(MSRInfo *, MSRInfo *);
+    FxBool (*GetMSR)(MSRInfo *, MSRInfo *);
     FxBool (*SetPermission)(const FxU32, const FxU32, const FxBool);
 } DRVFUNC, * PDRVFUNC;
 
