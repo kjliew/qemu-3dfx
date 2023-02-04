@@ -76,6 +76,14 @@ int ExtFuncIsValid(char *name)
     return (i == FEnum_zzMGLFuncEnum_max)? 0:((tblMesaGL[i].ptr)? 1:0);
 }
 
+int GLIsD3D12(void)
+{
+    const char d3d12[] = "D3D12";
+    const char * (__stdcall *p_glGetString)(int) = (const char *(__stdcall *)(int))
+        tblMesaGL[FEnum_glGetString].ptr;
+    return (!memcmp(p_glGetString(GL_RENDERER), d3d12, sizeof(d3d12) - 1));
+}
+
 int wrMapOrderPoints(uint32_t target)
 {
     int v[2] = {1, 1};

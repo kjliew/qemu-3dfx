@@ -30,6 +30,7 @@
 
 int GLFEnumArgsCnt(int);
 int ExtFuncIsValid(char *);
+int GLIsD3D12(void);
 int wrMapOrderPoints(uint32_t);
 int wrTexSizeTexture(uint32_t, uint32_t, int);
 int wrGetParamIa1p2(int, uint32_t, uint32_t);

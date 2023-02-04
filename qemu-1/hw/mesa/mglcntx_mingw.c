@@ -139,7 +139,7 @@ static HWND hwnd;
 static HDC hDC, hPBDC[MAX_PBUFFER];
 static HGLRC hRC[MAX_LVLCNTX], hPBRC[MAX_PBUFFER];
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
-static int wnd_ready;
+static int wnd_ready, GLon12;
 
 static struct {
     HGLRC (WINAPI *CreateContext)(HDC);
@@ -315,6 +315,7 @@ void MGLTmpContext(void)
     wglFuncs.GetSwapIntervalEXT = (int (WINAPI *)(void))
         MesaGLGetProc("wglGetSwapIntervalEXT");
 
+    GLon12 = GLIsD3D12();
     wglFuncs.MakeCurrent(NULL, NULL);
     wglFuncs.DeleteContext(tmpGL);
     ReleaseDC(tmpWin, tmpDC);
@@ -327,7 +328,7 @@ void MGLTmpContext(void)
     wnd_ready = 0; \
     ImplMesaGLReset(); \
     DPRINTF_COND(GetGLScaleWidth(), "MESAGL window scaled at width %d", GetGLScaleWidth()); \
-    mesa_prepare_window(GetContextMSAA(), 1, GetGLScaleWidth(), &cwnd_mesagl); hDC = GetDC(hwnd); }
+    mesa_prepare_window(GetContextMSAA(), GLon12, GetGLScaleWidth(), &cwnd_mesagl); hDC = GetDC(hwnd); }
 
 #define GLWINDOW_FINI() \
     if (0) { } \
