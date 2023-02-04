@@ -469,10 +469,14 @@ int MGLSetPixelFormat(int fmt, const void *p)
     int curr, ret;
     GLWINDOW_INIT();
     curr = GetPixelFormat(hDC);
-    if (curr == 0)
+    if (curr == 0) {
         curr = MGLPresetPixelFormat();
-    else
+        ret = SetPixelFormat(hDC, curr, (ppfd->nSize)? ppfd:0);
+    }
+    else {
+        ret = 1;
         TmpContextPurge();
+    }
 
     if (wglFuncs.GetPixelFormatAttribivARB) {
         static const int iattr[] = {
@@ -487,7 +491,6 @@ int MGLSetPixelFormat(int fmt, const void *p)
         DPRINTF("PixFmt 0x%02x nAux %d nSamples %d %d %s", curr,
             cattr[0], cattr[1], cattr[2], (cattr[3])? "sRGB":"");
     }
-    ret = SetPixelFormat(hDC, curr, (ppfd->nSize)? ppfd:0);
     DPRINTF("SetPixelFormat() fmt 0x%02x ret %d", curr, (ret)? 1:0);
     return ret;
 }
