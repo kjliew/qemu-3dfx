@@ -287,10 +287,8 @@ void MGLDeleteContext(int level)
         }
     }
     GL_DELETECONTEXT(ctx[n]);
-    if (!n) {
-        MGLActivateHandler(0);
-        MGLMouseWarp(0);
-    }
+    if (!n)
+        MGLActivateHandler(0, 0);
 }
 
 void MGLWndRelease(void)
@@ -334,7 +332,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
             SDL_GL_SetSwapInterval(val);
         }
         if (!n)
-            MGLActivateHandler(1);
+            MGLActivateHandler(1, 0);
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
     { /* Pbuffer unsupported */ }
@@ -344,7 +342,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
 
 int MGLSwapBuffers(void)
 {
-    MGLActivateHandler(1);
+    MGLActivateHandler(1, 0);
     SDL_GL_SwapWindow(window);
     return 1;
 }
@@ -422,19 +420,21 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
     return 1;
 }
 
-void MGLActivateHandler(int i)
+void MGLActivateHandler(const int i, const int d)
 {
-    static int last = 0;
+    static int last;
 
 #define WA_ACTIVE 1
 #define WA_INACTIVE 0
     if (i != last) {
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
-        if (i) { }
+        if (i) {
+            deactivateCancel();
+            mesa_renderer_stat(i);
+        }
         else
-            MGLMouseWarp(0);
-        mesa_renderer_stat(i);
+            deactivateSched(d);
     }
 }
 

@@ -348,10 +348,8 @@ void MGLDeleteContext(int level)
     }
     wglFuncs.DeleteContext(hRC[n]);
     hRC[n] = 0;
-    if (!n) {
-        MGLActivateHandler(0);
-        MGLMouseWarp(0);
-    }
+    if (!n)
+        MGLActivateHandler(0, 0);
 }
 
 void MGLWndRelease(void)
@@ -402,7 +400,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
                 wglFuncs.SwapIntervalEXT(val);
         }
         if (!n)
-            MGLActivateHandler(1);
+            MGLActivateHandler(1, 0);
     }
     if (cntxRC == (((MESAGL_MAGIC & 0xFFFFFFFU) << 4) | i))
         wglFuncs.MakeCurrent(hPBDC[i], hPBRC[i]);
@@ -412,7 +410,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
 
 int MGLSwapBuffers(void)
 {
-    MGLActivateHandler(1);
+    MGLActivateHandler(1, 0);
     return SwapBuffers(hDC);
 }
 
@@ -526,18 +524,20 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
     return curr;
 }
 
-void MGLActivateHandler(int i)
+void MGLActivateHandler(const int i, const int d)
 {
-    static int last = 0;
+    static int last;
 
     if (i != last) {
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
-        if (i)
-            MesaDisplayModeset(1);
+        if (i) {
+            deactivateCancel();
+            MesaDisplayModeset(i);
+            mesa_renderer_stat(i);
+        }
         else
-            MGLMouseWarp(0);
-        mesa_renderer_stat(i);
+            deactivateSched(d);
     }
 }
 
@@ -815,6 +815,36 @@ void MGLFuncHandler(const char *name)
 }
 
 #endif //CONFIG_WIN32
+
+static QEMUTimer *ts;
+static void deactivateOnce(void)
+{
+    MGLMouseWarp(0);
+    mesa_renderer_stat(0);
+}
+static void deactivateOneshot(void *opaque)
+{
+    deactivateCancel();
+    deactivateOnce();
+}
+void deactivateCancel(void)
+{
+    if (ts) {
+        timer_del(ts);
+        timer_free(ts);
+        ts = 0;
+    }
+}
+void deactivateSched(const int deferred)
+{
+    if (!deferred)
+        deactivateOnce();
+    else {
+        if (!ts)
+            ts = timer_new_ms(QEMU_CLOCK_VIRTUAL, deactivateOneshot, 0);
+        timer_mod(ts, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + GetDispTimerMS());
+    }
+}
 
 int find_xstr(const char *xstr, const char *str)
 {

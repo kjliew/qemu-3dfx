@@ -352,7 +352,7 @@ static void InitClientStates(MesaPTState *s)
 
 static void dispTimerProc(void *opaque)
 {
-    MGLActivateHandler(0);
+    MGLActivateHandler(0, 1);
 }
 
 static void dispTimerSched(QEMUTimer *ts)
@@ -1823,7 +1823,7 @@ static void processFRet(MesaPTState *s)
             break;
         case FEnum_glFinish:
         case FEnum_glFlush:
-            MGLActivateHandler(1);
+            MGLActivateHandler(1, 0);
             dispTimerSched(s->dispTimer);
             break;
         case FEnum_glMapBuffer:
@@ -2309,7 +2309,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     int *i = (int *)(s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE));
                     if (s->mglContext && s->mglCntxCurrent) {
                         DPRINTF_COND((GLFuncTrace()), "ActivateHandler %d", i[0]);
-                        MGLActivateHandler(i[0]);
+                        MGLActivateHandler(i[0], 0);
                         if (i[0])
                             dispTimerSched(s->dispTimer);
                     }
