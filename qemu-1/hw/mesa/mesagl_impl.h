@@ -55,6 +55,7 @@ int GetContextMSAA(void);
 int ContextUseSRGB(void);
 int ContextVsyncOff(void);
 int SwapFpsLimit(int);
+int GLShaderDump(void);
 int GetFpsLimit(void);
 int GLFifoTrace(void);
 int GLFuncTrace(void);

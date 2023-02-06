@@ -264,6 +264,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         uint32_t (__stdcall *fpa0p2)(uint32_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa0p3)(uint32_t, uintptr_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa1p2)(uint32_t, uint32_t, uintptr_t);
+        uint32_t (__stdcall *fpa1p2a3)(uint32_t, uint32_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa1p3)(uint32_t, uint32_t, uintptr_t, uintptr_t);
         uint32_t (__stdcall *fpa0p2a3)(uint32_t, uintptr_t, uintptr_t, uint32_t);
         uint32_t (__stdcall *fpa2p3)(uint32_t, uint32_t, uint32_t, uintptr_t);
@@ -827,6 +828,10 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glViewportArrayv:
             usfp.fpa1p2 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa1p2)(arg[0], arg[1], parg[2]);
+            GLDONE();
+        case FEnum_glTransformFeedbackVaryings:
+            usfp.fpa1p2a3 = tblMesaGL[FEnum].ptr;
+            *ret = (*usfp.fpa1p2a3)(arg[0], arg[1], parg[2], arg[3]);
             GLDONE();
         case FEnum_glGetAttachedShaders:
         case FEnum_glGetInfoLogARB:
@@ -1480,6 +1485,7 @@ static int cfg_cntxMSAA;
 static int cfg_cntxSRGB;
 static int cfg_cntxVsyncOff;
 static int cfg_fpsLimit;
+static int cfg_shaderDump;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
 static void conf_MGLOptions(void)
@@ -1490,6 +1496,7 @@ static void conf_MGLOptions(void)
     cfg_cntxMSAA = 0;
     cfg_cntxSRGB = 0;
     cfg_cntxVsyncOff = 0;
+    cfg_shaderDump = 0;
     cfg_fpsLimit = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
@@ -1516,6 +1523,8 @@ static void conf_MGLOptions(void)
             cfg_cntxSRGB = ((i == 1) && v)? 1:cfg_cntxSRGB;
             i = sscanf(line, "ContextVsyncOff,%d", &v);
             cfg_cntxVsyncOff = ((i == 1) && v)? 1:cfg_cntxVsyncOff;
+            i = sscanf(line, "DumpShader,%d", &v);
+            cfg_shaderDump = ((i == 1) && v)? 1:cfg_shaderDump;
             i = sscanf(line, "FpsLimit,%d", &v);
             cfg_fpsLimit = (i == 1)? (v & 0x7FU):cfg_fpsLimit;
             i = sscanf(line, "FifoTrace,%d", &v);
@@ -1556,6 +1565,7 @@ int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
 int GetContextMSAA(void) { return (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
+int GLShaderDump(void) { return cfg_shaderDump; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GLFifoTrace(void) { return cfg_traceFifo; }
 int GLFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }

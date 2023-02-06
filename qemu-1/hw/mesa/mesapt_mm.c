@@ -1586,45 +1586,84 @@ static void processArgs(MesaPTState *s)
         case FEnum_glShaderSource:
         case FEnum_glShaderSourceARB:
             {
-                char **str;
+                char **str, *p;
                 int i, offs = 0, *len = (int *)(s->hshm);
                 if (s->arg[3]) {
-                    for (i = 0; i < s->arg[1]; i++)
-                        offs += ALIGNED(len[i]) + ALIGNED(1);
-                    str = (char **)PTR(s->hshm, offs + ALIGNED(s->arg[1]*sizeof(int)));
-                    str[0] = (char *)PTR(s->hshm, ALIGNED(s->arg[1]*sizeof(int)));
-                    for (i = 1; i < s->arg[1]; i++)
-                        str[i] = str[i-1] + ALIGNED(len[i-1]) + ALIGNED(1);
-                    if (0) {
-                        DPRINTF("ShaderSource");
+                    p = (char *)PTR(s->hshm, ALIGNED((s->arg[1] * sizeof(int))));
+                    for (i = 0; i < s->arg[1]; i++) {
+                        int slen = (len[i] > 0)? ALIGNED(len[i]):ALIGNED(strlen(p));
+                        p += (slen + ALIGNED(1));
+                        offs += slen;
+                    }
+                    s->datacb = offs + ALIGNED((s->arg[1] * sizeof(uint32_t)));
+                    str = (char **)PTR(s->hshm, offs);
+                    p = (char *)PTR(s->hshm, ALIGNED((s->arg[1] * sizeof(int))));
+                    str[0] = p;
+                    for (i = 1; i < s->arg[1]; i++) {
+                        int slen = (len[i] > 0)? ALIGNED(len[i]):ALIGNED(strlen(p));
+                        p += (slen + ALIGNED(1));
+                        str[i] = (char *)PTR(s->hshm, slen);
+                    }
+                    if (GLShaderDump()) {
+                        DPRINTF("-------- ShaderSource %04x -------->>>>", s->arg[0]);
                         for (i = 0; i < s->arg[1]; i++)
                             fprintf(stderr, "%s", str[i]);
+                        DPRINTF("<<<<-------- %04x ShaderSource --------", s->arg[0]);
                     }
-                    s->datacb = ALIGNED(s->arg[1]*sizeof(int)) + offs;
                     s->parg[3] = VAL(len);
                 }
                 else {
-                    char *send = (char *)(s->hshm);
+                    p = (char *)(s->hshm);
                     for (i = 0; i < s->arg[1]; i++) {
-                        offs = ALIGNED((strlen(send) + 1));
-                        send += offs;
+                        int slen = ALIGNED((strlen(p) + 1));
+                        p += slen;
+                        offs += slen;
                     }
-                    s->datacb = VAL(send) - VAL(s->hshm);
-                    s->parg[3] = 0;
-                    str = (char **)send;
-                    send = (char *)(s->hshm);
-                    offs = 0;
-                    str[0] = send;
+                    s->datacb = offs + ALIGNED((s->arg[1] * sizeof(uint32_t)));
+                    str = (char **)PTR(s->hshm, offs);
+                    p = (char *)(s->hshm);
+                    str[0] = p;
                     for (i = 1; i < s->arg[1]; i++) {
-                        offs = ALIGNED((strlen(send) + 1));
-                        send += offs;
-                        str[i] = send;
+                        int slen = ALIGNED((strlen(p) + 1));
+                        p += slen;
+                        str[i] = (char *)PTR(s->hshm, slen);
                     }
-                    if (0) {
-                        DPRINTF("ShaderSource");
+                    if (GLShaderDump()) {
+                        DPRINTF("-------- ShaderSource %04x -------->>>>", s->arg[0]);
                         for (i = 0; i < s->arg[1]; i++)
                             fprintf(stderr, "%s", str[i]);
+                        DPRINTF("<<<<-------- %04x ShaderSource --------", s->arg[0]);
                     }
+                    s->parg[3] = 0;
+                }
+                s->parg[2] = VAL(str);
+            }
+            break;
+        case FEnum_glTransformFeedbackVaryings:
+            {
+                char **str, *p;
+                int i, offs = 0;
+                p = (char *)(s->hshm);
+                for (i = 0; i < s->arg[1]; i++) {
+                    int len = ALIGNED((strlen(p) + 1));
+                    p += len;
+                    offs += len;
+                }
+                s->datacb = offs + ALIGNED((s->arg[1] * sizeof(uint32_t)));
+                str = (char **)PTR(s->hshm, offs);
+                p = (char *)(s->hshm);
+                str[0] = p;
+                for (i = 1; i < s->arg[1]; i++) {
+                    int len = ALIGNED((strlen(p) + 1));
+                    p += len;
+                    str[i] = p;
+                }
+                if (GLShaderDump()) {
+                    DPRINTF("TransformFeedbackVaryings prog %04x count %d mode %04x",
+                        s->arg[0], s->arg[1], s->arg[3]);
+                    for (i = 0; i < s->arg[1]; i++)
+                        fprintf(stderr, " %s ", str[i]);
+                    fprintf(stderr, "%s", "\n");
                 }
                 s->parg[2] = VAL(str);
             }

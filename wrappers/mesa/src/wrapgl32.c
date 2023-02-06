@@ -637,7 +637,7 @@ void PT_CALL glBeginQueryIndexed(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glBeginTransformFeedback(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBeginTransformFeedback;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBeginTransformFeedback, 1);
 }
 void PT_CALL glBeginTransformFeedbackEXT(uint32_t arg0) {
     pt[1] = arg0; 
@@ -717,11 +717,11 @@ void PT_CALL glBindBufferOffsetNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
 }
 void PT_CALL glBindBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindBufferRange;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindBufferRange, 5);
 }
 void PT_CALL glBindBufferRangeEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBindBufferRangeEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBindBufferRangeEXT, 5);
 }
 void PT_CALL glBindBufferRangeNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -2587,7 +2587,7 @@ void PT_CALL glDisableVertexAttribArrayARB(uint32_t arg0) {
 }
 void PT_CALL glDisablei(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDisablei;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDisablei, 2);
 }
 void PT_CALL glDispatchCompute(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -3197,7 +3197,7 @@ void PT_CALL glEnableVertexAttribArrayARB(uint32_t arg0) {
 }
 void PT_CALL glEnablei(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glEnablei;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEnablei, 2);
 }
 void PT_CALL glEnd(void) {
     
@@ -3249,7 +3249,7 @@ void PT_CALL glEndQueryIndexed(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glEndTransformFeedback(void) {
     
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glEndTransformFeedback;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEndTransformFeedback, 0);
 }
 void PT_CALL glEndTransformFeedbackEXT(void) {
     
@@ -8242,7 +8242,7 @@ void PT_CALL glPathTexGenNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_
 }
 void PT_CALL glPauseTransformFeedback(void) {
     
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glPauseTransformFeedback;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glPauseTransformFeedback, 0);
 }
 void PT_CALL glPauseTransformFeedbackNV(void) {
     
@@ -10047,41 +10047,43 @@ void PT_CALL glShaderOp3EXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_
 }
 void PT_CALL glShaderSource(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     int i;
+    const int strz[2] = { 0, 0 };
     char **str = (char **)arg2;
-    static const uint32_t send[2] = {0, 0};
     if (arg3) {
         int *len = (int *)arg3;
         fifoAddData(0, arg3, ALIGNED(arg1*sizeof(int)));
         for (i = 0; i < arg1; i++) {
-            fifoAddData(0, (uint32_t)str[i], (len[i])? ALIGNED(len[i]):ALIGNED(strlen(str[i])));
-            fifoAddData(0, (uint32_t)send, ALIGNED(1));
+            fifoAddData(0, (uint32_t)str[i], (len[i] > 0)? ALIGNED(len[i]):ALIGNED(strlen(str[i])));
+            fifoAddData(0, (uint32_t)strz, ALIGNED(1));
         }
     }
     else {
         for (i = 0; i < arg1; i++)
             fifoAddData(0, (uint32_t)str[i], ALIGNED((strlen(str[i]) + 1)));
     }
+    fifoAddData(0, arg2, ALIGNED((arg1 * sizeof(uint32_t))));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glShaderSource;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glShaderSource, 4);
 }
 void PT_CALL glShaderSourceARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     int i;
+    const int strz[2] = { 0, 0 };
     char **str = (char **)arg2;
-    static const uint32_t send[2] = {0, 0};
     if (arg3) {
         int *len = (int *)arg3;
         fifoAddData(0, arg3, ALIGNED(arg1*sizeof(int)));
         for (i = 0; i < arg1; i++) {
-            fifoAddData(0, (uint32_t)str[i], (len[i])? ALIGNED(len[i]):ALIGNED(strlen(str[i])));
-            fifoAddData(0, (uint32_t)send, ALIGNED(1));
+            fifoAddData(0, (uint32_t)str[i], (len[i] > 0)? ALIGNED(len[i]):ALIGNED(strlen(str[i])));
+            fifoAddData(0, (uint32_t)strz, ALIGNED(1));
         }
     }
     else {
         for (i = 0; i < arg1; i++)
             fifoAddData(0, (uint32_t)str[i], ALIGNED((strlen(str[i]) + 1)));
     }
+    fifoAddData(0, arg2, ALIGNED((arg1 * sizeof(uint32_t))));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glShaderSourceARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glShaderSourceARB, 4);
 }
 void PT_CALL glShaderStorageBlockBinding(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
@@ -11213,7 +11215,7 @@ void PT_CALL glTextureSubImage3DEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2,
 }
 void PT_CALL glTextureView(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTextureView;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glTextureView, 8);
 }
 void PT_CALL glTrackMatrixNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -11236,8 +11238,13 @@ void PT_CALL glTransformFeedbackStreamAttribsNV(uint32_t arg0, uint32_t arg1, ui
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTransformFeedbackStreamAttribsNV;
 }
 void PT_CALL glTransformFeedbackVaryings(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t i;
+    char **varys = (char **)arg2;
+    for (i = 0; i < arg1; i++)
+        fifoAddData(0, (uint32_t)varys[i], ALIGNED((strlen(varys[i] + 1))));
+    fifoAddData(0, arg2, ALIGNED((arg1 * sizeof(uint32_t))));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTransformFeedbackVaryings;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glTransformFeedbackVaryings, 4);
 }
 void PT_CALL glTransformFeedbackVaryingsEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
