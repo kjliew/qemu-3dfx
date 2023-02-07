@@ -1540,6 +1540,8 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glGetActiveUniform:
         case FEnum_glGetActiveUniformARB:
+        case FEnum_glGetTransformFeedbackVarying:
+        case FEnum_glGetTransformFeedbackVaryingEXT:
             memset(outshm, 0, 4*ALIGNED(1));
             s->parg[3] = VAL(outshm);
             s->parg[0] = VAL(PTR(outshm, ALIGNED(1)));
@@ -1640,6 +1642,7 @@ static void processArgs(MesaPTState *s)
             }
             break;
         case FEnum_glTransformFeedbackVaryings:
+        case FEnum_glTransformFeedbackVaryingsEXT:
             {
                 char **str, *p;
                 int i, offs = 0;

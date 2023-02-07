@@ -383,6 +383,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             GLDONE();
         case FEnum_glGetActiveUniform:
         case FEnum_glGetActiveUniformARB:
+        case FEnum_glGetTransformFeedbackVarying:
+        case FEnum_glGetTransformFeedbackVaryingEXT:
             usfp.fpa2p6 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa2p6)(arg[0], arg[1], arg[2], parg[3], parg[0], parg[1], parg[2]);
             GLDONE();
@@ -830,6 +832,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             *ret = (*usfp.fpa1p2)(arg[0], arg[1], parg[2]);
             GLDONE();
         case FEnum_glTransformFeedbackVaryings:
+        case FEnum_glTransformFeedbackVaryingsEXT:
             usfp.fpa1p2a3 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.fpa1p2a3)(arg[0], arg[1], parg[2], arg[3]);
             GLDONE();
