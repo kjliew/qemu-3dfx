@@ -625,15 +625,15 @@ void PT_CALL glBeginPerfQueryINTEL(uint32_t arg0) {
 }
 void PT_CALL glBeginQuery(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBeginQuery;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBeginQuery, 2);
 }
 void PT_CALL glBeginQueryARB(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBeginQueryARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBeginQueryARB, 2);
 }
 void PT_CALL glBeginQueryIndexed(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBeginQueryIndexed;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glBeginQueryIndexed, 3);
 }
 void PT_CALL glBeginTransformFeedback(uint32_t arg0) {
     pt[1] = arg0; 
@@ -1072,13 +1072,17 @@ void PT_CALL glBufferData(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t 
     if (arg2)
         FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg1)) >> 2], (unsigned char *)arg2, arg1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferData;
+    pt0 = (uint32_t *)pt[0]; /**pt0 = FEnum_glBufferData;*/
+    if (!arg2) { FIFO_GLFUNC(FEnum_glBufferData, 4); }
+    else *pt0 = FEnum_glBufferData;
 }
 void PT_CALL glBufferDataARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     if (arg2)
         FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg1)) >> 2], (unsigned char *)arg2, arg1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferDataARB;
+    pt0 = (uint32_t *)pt[0]; /**pt0 = FEnum_glBufferDataARB;*/
+    if (!arg2) { FIFO_GLFUNC(FEnum_glBufferDataARB, 4); }
+    else *pt0 = FEnum_glBufferDataARB;
 }
 void PT_CALL glBufferPageCommitmentARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
@@ -1092,7 +1096,9 @@ void PT_CALL glBufferStorage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
     if (arg2)
         FBTMMCPY(&fbtm[(MGLFBT_SIZE - ALIGNED(arg1)) >> 2], (unsigned char *)arg2, arg1);
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glBufferStorage;
+    pt0 = (uint32_t *)pt[0]; /**pt0 = FEnum_glBufferStorage;*/
+    if (!arg2) { FIFO_GLFUNC(FEnum_glBufferStorage, 4); }
+    else *pt0 = FEnum_glBufferStorage;
 }
 void PT_CALL glBufferStorageExternalEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -3237,15 +3243,15 @@ void PT_CALL glEndPerfQueryINTEL(uint32_t arg0) {
 }
 void PT_CALL glEndQuery(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glEndQuery;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEndQuery, 1);
 }
 void PT_CALL glEndQueryARB(uint32_t arg0) {
     pt[1] = arg0; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glEndQueryARB;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEndQueryARB, 1);
 }
 void PT_CALL glEndQueryIndexed(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glEndQueryIndexed;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEndQueryIndexed, 2);
 }
 void PT_CALL glEndTransformFeedback(void) {
     
