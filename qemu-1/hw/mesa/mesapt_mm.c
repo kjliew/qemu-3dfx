@@ -2344,6 +2344,11 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
                         s->mglCntxWGL = argsp[0];
                     }
+                    if (strncmp((const char *)func, "wglSetDeviceCursor3DFX", 64) == 0) {
+                        uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
+                        uint8_t *data = s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(argsp[2] * argsp[3] * sizeof(uint32_t)));
+                        MGLCursorDefine(argsp[0], argsp[1], argsp[2], argsp[3], data);
+                    }
                 } while(0);
                 break;
             case 0xFD8:

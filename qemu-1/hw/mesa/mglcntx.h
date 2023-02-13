@@ -33,6 +33,7 @@ int MGLChoosePixelFormat(void);
 int MGLDescribePixelFormat(int, unsigned int, void *);
 int MGLSetPixelFormat(int, const void *);
 void MGLActivateHandler(const int, const int);
+void MGLCursorDefine(int, int, int, int, const void *);
 void MGLMouseWarp(const uint32_t);
 int NumPbuffer(void);
 void MGLFuncHandler(const char *);

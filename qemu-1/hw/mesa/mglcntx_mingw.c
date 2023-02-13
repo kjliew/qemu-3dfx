@@ -541,18 +541,6 @@ void MGLActivateHandler(const int i, const int d)
     }
 }
 
-void MGLMouseWarp(const uint32_t ci)
-{
-    static uint32_t last_ci = 0;
-
-    if (ci != last_ci) {
-        last_ci = ci;
-        int x = ((ci >> 16) & 0x7FFFU),
-            y = (ci & 0x7FFFU), on = (ci)? 1:0;
-        mesa_mouse_warp(x, y, on);
-    }
-}
-
 int NumPbuffer(void)
 {
     int i, c;
@@ -809,12 +797,33 @@ void MGLFuncHandler(const char *name)
         argsp[0] = ret;
         return;
     }
+    FUNCP_HANDLER("wglSetDeviceCursor3DFX") {
+        return;
+    }
 
     DPRINTF("  *WARN* Unhandled GLFunc %s", name);
     argsp[0] = 0;
 }
 
 #endif //CONFIG_WIN32
+
+void MGLCursorDefine(int hot_x, int hot_y, int width, int height,
+                        const void *data)
+{
+    mesa_cursor_define(hot_x, hot_y, width, height, data);
+}
+
+void MGLMouseWarp(const uint32_t ci)
+{
+    static uint32_t last_ci = 0;
+
+    if (ci != last_ci) {
+        last_ci = ci;
+        int x = ((ci >> 16) & 0x7FFFU),
+            y = (ci & 0x7FFFU), on = (ci)? 1:0;
+        mesa_mouse_warp(x, y, on);
+    }
+}
 
 static QEMUTimer *ts;
 static void deactivateOnce(void)

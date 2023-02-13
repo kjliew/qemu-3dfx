@@ -16695,6 +16695,39 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
     return ret;
 }
 
+static HCURSOR WINAPI
+wglSetDeviceCursor3DFX(HCURSOR hCursor)
+{
+    if (hCursor) {
+        ICONINFO ic;
+        int (WINAPI *p_GetDIBits)(HDC, HBITMAP, UINT, UINT, LPVOID, LPBITMAPINFO, UINT) =
+            (int (WINAPI *)(HDC, HBITMAP, UINT, UINT, LPVOID, LPBITMAPINFO, UINT))
+            GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDIBits");
+        if (p_GetDIBits && GetIconInfo(hCursor, &ic) && !ic.fIcon) {
+            BITMAPINFO bmi;
+            memset(&bmi, 0, sizeof(BITMAPINFO));
+            bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            bmi.bmiHeader.biPlanes = 1;
+            if (p_GetDIBits(GetDC(GLwnd), ic.hbmColor, 0, 0, NULL, &bmi, DIB_RGB_COLORS) &&
+                (bmi.bmiHeader.biBitCount == 32) &&
+                (bmi.bmiHeader.biWidth > ic.xHotspot) &&
+                (bmi.bmiHeader.biHeight > ic.yHotspot)) {
+                WGL_FUNCP("wglSetDeviceCursor3DFX");
+                argsp[0] = ic.xHotspot;
+                argsp[1] = ic.yHotspot;
+                argsp[2] = bmi.bmiHeader.biWidth;
+                argsp[3] = bmi.bmiHeader.biHeight;
+                bmi.bmiHeader.biHeight *= -1;
+                p_GetDIBits(GetDC(GLwnd), ic.hbmColor, 0, argsp[3],
+                    &fbtm[(MGLFBT_SIZE - ALIGNED(argsp[2] * argsp[3] * sizeof(uint32_t))) >> 2],
+                    &bmi, DIB_RGB_COLORS);
+                ptm[0xFDC >> 2] = MESAGL_MAGIC;
+            }
+        }
+    }
+    return SetCursor(hCursor);
+}
+
 static void HookPatchGamma(const uint32_t start, const uint32_t *iat, const DWORD range)
 {
     DWORD oldProt;
@@ -16816,6 +16849,7 @@ mglGetProcAddress (uint32_t arg0)
     /* WGL_3DFX_gamma_control */
     FUNC_WGL_EXT(wglGetDeviceGammaRamp3DFX);
     FUNC_WGL_EXT(wglSetDeviceGammaRamp3DFX);
+    FUNC_WGL_EXT(wglSetDeviceCursor3DFX);
     /* GL_ARB_debug_output */
     FUNC_WGL_EXT(glDebugMessageCallbackARB);
     FUNC_WGL_EXT(glDebugMessageControlARB);

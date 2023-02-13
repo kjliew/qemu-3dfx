@@ -127,7 +127,7 @@ diff -Nru ../orig/qemu-6.2.0/include/sysemu/whpx.h ./include/sysemu/whpx.h
  
 diff -Nru ../orig/qemu-6.2.0/include/ui/console.h ./include/ui/console.h
 --- ../orig/qemu-6.2.0/include/ui/console.h	2021-12-14 12:42:02.000000000 -0800
-+++ ./include/ui/console.h	2022-12-17 18:50:42.616508000 -0800
++++ ./include/ui/console.h	2023-02-13 14:35:22.203720700 -0800
 @@ -402,6 +402,7 @@
                                 void *opaque);
  void graphic_console_close(QemuConsole *con);
@@ -136,7 +136,7 @@ diff -Nru ../orig/qemu-6.2.0/include/ui/console.h ./include/ui/console.h
  void graphic_hw_update(QemuConsole *con);
  void graphic_hw_update_done(QemuConsole *con);
  void graphic_hw_invalidate(QemuConsole *con);
-@@ -484,4 +485,18 @@
+@@ -484,4 +485,19 @@
  int udmabuf_fd(void);
  #endif
  
@@ -151,6 +151,7 @@ diff -Nru ../orig/qemu-6.2.0/include/ui/console.h ./include/ui/console.h
 +void mesa_renderer_stat(const int);
 +void mesa_prepare_window(int, int, int, void *);
 +void mesa_release_window(void);
++void mesa_cursor_define(int, int, int, int, const void *);
 +void mesa_mouse_warp(int, int, const int);
 +int mesa_gui_fullscreen(int *, int *);
 +
@@ -282,8 +283,8 @@ diff -Nru ../orig/qemu-6.2.0/ui/console.c ./ui/console.c
          return;
 diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-6.2.0/ui/sdl2.c	2021-12-14 12:42:02.000000000 -0800
-+++ ./ui/sdl2.c	2023-02-04 13:50:35.679959300 -0800
-@@ -758,6 +758,330 @@
++++ ./ui/sdl2.c	2023-02-13 14:36:40.356472200 -0800
+@@ -758,6 +758,349 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -407,6 +408,10 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +        s->render_pause = 0;
 +        SDL_GL_ResetAttributes();
 +        if (!s->GLon12) {
++            if (s->scon->texture) {
++                SDL_DestroyTexture(s->scon->texture);
++                s->scon->texture = 0;
++            }
 +            SDL_SetHint(SDL_HINT_RENDER_DRIVER, "");
 +            sdl_gui_restart(s->scon, s->icon);
 +        }
@@ -591,6 +596,21 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +        timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
 +}
 +
++void mesa_cursor_define(int hot_x, int hot_y, int width, int height, const void *data)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    QemuConsole *con = s->scon ? s->scon->dcl.con : NULL;
++    QEMUCursor *c = cursor_alloc(width, height);
++    if (con && c) {
++        c->hot_x = hot_x;
++        c->hot_y = hot_y;
++        memcpy(c->data, data, (width * height * sizeof(uint32_t)));
++        dpy_cursor_define(con, c);
++        cursor_put(c);
++    }
++}
++
 +void mesa_mouse_warp(int x, int y, const int on)
 +{
 +    struct sdl_console_cb *s = &scon_cb;
@@ -614,7 +634,7 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -894,6 +1218,7 @@
+@@ -894,6 +1237,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);

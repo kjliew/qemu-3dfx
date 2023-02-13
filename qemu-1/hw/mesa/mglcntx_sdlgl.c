@@ -438,18 +438,6 @@ void MGLActivateHandler(const int i, const int d)
     }
 }
 
-void MGLMouseWarp(const uint32_t ci)
-{
-    static uint32_t last_ci = 0;
-
-    if (ci != last_ci) {
-        last_ci = ci;
-        int x = ((ci >> 16) & 0x7FFFU),
-            y = (ci & 0x7FFFU), on = (ci)? 1:0;
-        mesa_mouse_warp(x, y, on);
-    }
-}
-
 int NumPbuffer(void)
 {
     int i, c;
@@ -641,6 +629,9 @@ void MGLFuncHandler(const char *name)
         struct GammaRamp *pRamp = (struct GammaRamp *)&argsp[0];
         ret = ContextUseSRGB()? 0:((SDL_SetWindowGammaRamp(window, pRamp->r, pRamp->g, pRamp->b))? 0:1);
         argsp[0] = ret;
+        return;
+    }
+    FUNCP_HANDLER("wglSetDeviceCursor3DFX") {
         return;
     }
 
