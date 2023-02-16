@@ -298,28 +298,34 @@ void MGLTmpContext(void)
     pfd.cDepthBits = 24;
     pfd.cAlphaBits = 8;
     pfd.cStencilBits = 8;
-    SetPixelFormat(tmpDC, ChoosePixelFormat(tmpDC, &pfd), &pfd);
-    HGLRC tmpGL = wglFuncs.CreateContext(tmpDC);
-    wglFuncs.MakeCurrent(tmpDC, tmpGL);
+    if (tmpWin && tmpDC &&
+        SetPixelFormat(tmpDC, ChoosePixelFormat(tmpDC, &pfd), &pfd)) {
+        HGLRC tmpGL = wglFuncs.CreateContext(tmpDC);
+        if (!tmpGL)
+            DPRINTF("CreateContext() failed, Error 0x%08lx", GetLastError());
+        else {
+            wglFuncs.MakeCurrent(tmpDC, tmpGL);
 
-    wglFuncs.GetPixelFormatAttribivARB = (BOOL (WINAPI *)(HDC, int, int, UINT, const int *, int *))
-        MesaGLGetProc("wglGetPixelFormatAttribivARB");
-    wglFuncs.ChoosePixelFormatARB = (BOOL (WINAPI *)(HDC, const int *, const float *, UINT, int *, UINT *))
-        MesaGLGetProc("wglChoosePixelFormatARB");
-    wglFuncs.GetExtensionsStringARB =  (const char * (WINAPI *)(HDC))
-        MesaGLGetProc("wglGetExtensionsStringARB");
-    wglFuncs.CreateContextAttribsARB = (HGLRC (WINAPI *)(HDC, HGLRC, const int *))
-        MesaGLGetProc("wglCreateContextAttribsARB");
-    wglFuncs.SwapIntervalEXT = (BOOL (WINAPI *)(int))
-        MesaGLGetProc("wglSwapIntervalEXT");
-    wglFuncs.GetSwapIntervalEXT = (int (WINAPI *)(void))
-        MesaGLGetProc("wglGetSwapIntervalEXT");
+            wglFuncs.GetPixelFormatAttribivARB = (BOOL (WINAPI *)(HDC, int, int, UINT, const int *, int *))
+                MesaGLGetProc("wglGetPixelFormatAttribivARB");
+            wglFuncs.ChoosePixelFormatARB = (BOOL (WINAPI *)(HDC, const int *, const float *, UINT, int *, UINT *))
+                MesaGLGetProc("wglChoosePixelFormatARB");
+            wglFuncs.GetExtensionsStringARB =  (const char * (WINAPI *)(HDC))
+                MesaGLGetProc("wglGetExtensionsStringARB");
+            wglFuncs.CreateContextAttribsARB = (HGLRC (WINAPI *)(HDC, HGLRC, const int *))
+                MesaGLGetProc("wglCreateContextAttribsARB");
+            wglFuncs.SwapIntervalEXT = (BOOL (WINAPI *)(int))
+                MesaGLGetProc("wglSwapIntervalEXT");
+            wglFuncs.GetSwapIntervalEXT = (int (WINAPI *)(void))
+                MesaGLGetProc("wglGetSwapIntervalEXT");
 
-    GLon12 = GLIsD3D12();
-    wglFuncs.MakeCurrent(NULL, NULL);
-    wglFuncs.DeleteContext(tmpGL);
-    ReleaseDC(tmpWin, tmpDC);
-    hwnd = tmpWin;
+            GLon12 = GLIsD3D12();
+            wglFuncs.MakeCurrent(NULL, NULL);
+            wglFuncs.DeleteContext(tmpGL);
+        }
+        ReleaseDC(tmpWin, tmpDC);
+        hwnd = tmpWin;
+    }
 }
 
 #define GLWINDOW_INIT() \
