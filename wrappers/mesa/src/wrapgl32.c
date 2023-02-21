@@ -16699,10 +16699,13 @@ static void WINAPI
 wglSetDeviceCursor3DFX(HCURSOR hCursor)
 {
     ICONINFO ic;
+    BOOL (WINAPI *p_DeleteObject)(HANDLE) = (BOOL (WINAPI *)(HANDLE))
+        GetProcAddress(GetModuleHandle("gdi32.dll"), "DeleteObject");
     int (WINAPI *p_GetDIBits)(HDC, HBITMAP, UINT, UINT, LPVOID, LPBITMAPINFO, UINT) =
         (int (WINAPI *)(HDC, HBITMAP, UINT, UINT, LPVOID, LPBITMAPINFO, UINT))
         GetProcAddress(GetModuleHandle("gdi32.dll"), "GetDIBits");
-    if (p_GetDIBits && GetIconInfo(hCursor, &ic) && !ic.fIcon) {
+    memset(&ic, 0, sizeof(ICONINFO));
+    if (p_GetDIBits && hCursor && GetIconInfo(hCursor, &ic) && !ic.fIcon) {
 #define SIZE_BMPINFO (sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD[3]))
         unsigned char binfo[SIZE_BMPINFO];
         BITMAPINFO *pbmi = (BITMAPINFO *)binfo;
@@ -16710,7 +16713,7 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
         memset(pbmi, 0, SIZE_BMPINFO);
         pbmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
         pbmi->bmiHeader.biPlanes = 1;
-        if (hdc && p_GetDIBits(hdc, ic.hbmColor, 0, 0, NULL, pbmi, DIB_RGB_COLORS) &&
+        if (hdc && ic.hbmColor && p_GetDIBits(hdc, ic.hbmColor, 0, 0, NULL, pbmi, DIB_RGB_COLORS) &&
             (pbmi->bmiHeader.biSizeImage == (32 * 32 * sizeof(uint32_t))) &&
             (pbmi->bmiHeader.biBitCount == 32) &&
             (pbmi->bmiHeader.biWidth > ic.xHotspot) &&
@@ -16726,6 +16729,12 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
                 pbmi, DIB_RGB_COLORS);
             ptm[0xFDC >> 2] = MESAGL_MAGIC;
         }
+    }
+    if (p_DeleteObject) {
+        if (ic.hbmColor)
+            p_DeleteObject(ic.hbmColor);
+        if (ic.hbmMask)
+            p_DeleteObject(ic.hbmMask);
     }
 }
 
