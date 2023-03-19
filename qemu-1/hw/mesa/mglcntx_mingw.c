@@ -653,6 +653,7 @@ void MGLFuncHandler(const char *name)
                         hRC[i] = 0;
                     }
                 }
+                MGLActivateHandler(0, 0);
                 hRC[0] = wglFuncs.CreateContextAttribsARB(hDC, 0, (const int *)&argsp[2]);
                 ret = (hRC[0])? 1:0;
             }

@@ -257,7 +257,7 @@ diff -Nru ../orig/qemu-7.2.0/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx
  {
 diff -Nru ../orig/qemu-7.2.0/ui/console.c ./ui/console.c
 --- ../orig/qemu-7.2.0/ui/console.c	2022-12-14 08:28:45.000000000 -0800
-+++ ./ui/console.c	2022-12-15 18:23:57.193692700 -0800
++++ ./ui/console.c	2023-03-18 23:58:31.980515300 -0700
 @@ -212,6 +212,13 @@
      ds->have_text = have_text;
  }
@@ -272,19 +272,19 @@ diff -Nru ../orig/qemu-7.2.0/ui/console.c ./ui/console.c
  void graphic_hw_update_done(QemuConsole *con)
  {
      if (con) {
-@@ -222,6 +229,8 @@
- void graphic_hw_update(QemuConsole *con)
- {
-     bool async = false;
-+    if (graphic_hw_halt(0))
-+        return;
-     con = con ? con : active_console;
-     if (!con) {
+@@ -227,6 +234,8 @@
          return;
+     }
+     if (con->hw_ops->gfx_update) {
++        if (graphic_hw_halt(0)) { }
++        else
+         con->hw_ops->gfx_update(con->hw);
+         async = con->hw_ops->gfx_update_async;
+     }
 diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-7.2.0/ui/sdl2.c	2022-12-14 08:28:45.000000000 -0800
-+++ ./ui/sdl2.c	2023-02-13 14:34:25.948940300 -0800
-@@ -765,6 +765,349 @@
++++ ./ui/sdl2.c	2023-03-19 00:00:32.532892200 -0700
+@@ -765,6 +765,345 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -395,11 +395,8 @@ diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
 +            exit(1);
 +        }
 +        s->render_pause = 1;
-+        if (!s->opaque) {
-+            if (s->res > 0)
-+                SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
-+            s->cwnd_fn(s->scon->real_window, s->hnwnd, 0);
-+        }
++        if (!s->opaque)
++            s->cwnd_fn(s->scon->real_window, s->hnwnd, opaque);
 +    }
 +    else {
 +        SDL_GL_MakeCurrent(s->scon->real_window, NULL);
@@ -425,11 +422,10 @@ diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
 +        timer_free(s->ts);
 +        s->ts = 0;
 +    }
-+    if (s->opaque) {
-+        if (s->res > 0)
-+            SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
++    if (s->res > 0)
++        SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
++    if (s->opaque || true)
 +        graphic_hw_halt(0x80U | s->render_pause);
-+    }
 +}
 +
 +static int sdl_gui_fullscreen(int *width, int *height, const char *feat)
@@ -634,7 +630,7 @@ diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -924,6 +1267,7 @@
+@@ -924,6 +1263,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);

@@ -716,6 +716,7 @@ void MGLFuncHandler(const char *name)
                         ctx[i] = 0;
                     }
                 }
+                MGLActivateHandler(0, 0);
                 ctx[0] = fp(dpy, fbcnf[0], 0, True, (const int *)&argsp[2]);
                 ret = (ctx[0])? 1:0;
             }

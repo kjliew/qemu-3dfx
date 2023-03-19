@@ -547,6 +547,7 @@ void MGLFuncHandler(const char *name)
             if (argsp[1] == 0) {
                 SDL_GL_MakeCurrent(window, NULL);
                 GL_DELETECONTEXT(ctx[0]);
+                MGLActivateHandler(0, 0);
                 GL_CONTEXTATTRIB(ctx[0]);
                 GL_CREATECONTEXT(ctx[0]);
                 ret = (ctx[0])? 1:0;

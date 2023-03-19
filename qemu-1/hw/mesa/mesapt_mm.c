@@ -1594,10 +1594,12 @@ static void processArgs(MesaPTState *s)
                     p = (char *)PTR(s->hshm, ALIGNED((s->arg[1] * sizeof(int))));
                     for (i = 0; i < s->arg[1]; i++) {
                         int slen = (len[i] > 0)? ALIGNED(len[i]):ALIGNED(strlen(p));
-                        p += (slen + ALIGNED(1));
+                        slen += ALIGNED(1);
+                        p += slen;
                         offs += slen;
                     }
-                    s->datacb = offs + ALIGNED((s->arg[1] * sizeof(uint32_t)));
+                    s->datacb = offs + (s->arg[1] * ALIGNED(1))
+                        + ALIGNED((s->arg[1] * sizeof(uint32_t)));
                     str = (char **)PTR(s->hshm, offs);
                     p = (char *)PTR(s->hshm, ALIGNED((s->arg[1] * sizeof(int))));
                     str[0] = p;
@@ -1621,7 +1623,7 @@ static void processArgs(MesaPTState *s)
                         p += slen;
                         offs += slen;
                     }
-                    s->datacb = offs + ALIGNED((s->arg[1] * sizeof(uint32_t)));
+                    s->datacb = offs + (s->arg[1] * ALIGNED(1));
                     str = (char **)PTR(s->hshm, offs);
                     p = (char *)(s->hshm);
                     str[0] = p;

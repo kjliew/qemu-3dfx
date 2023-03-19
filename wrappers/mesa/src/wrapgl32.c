@@ -10077,7 +10077,7 @@ void PT_CALL glShaderSource(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_
     char **str = (char **)arg2;
     if (arg3) {
         int *len = (int *)arg3;
-        fifoAddData(0, arg3, ALIGNED(arg1*sizeof(int)));
+        fifoAddData(0, arg3, ALIGNED((arg1 * sizeof(uint32_t))));
         for (i = 0; i < arg1; i++) {
             fifoAddData(0, (uint32_t)str[i], (len[i] > 0)? ALIGNED(len[i]):ALIGNED(strlen(str[i])));
             fifoAddData(0, (uint32_t)strz, ALIGNED(1));
@@ -10087,7 +10087,7 @@ void PT_CALL glShaderSource(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_
         for (i = 0; i < arg1; i++)
             fifoAddData(0, (uint32_t)str[i], ALIGNED((strlen(str[i]) + 1)));
     }
-    fifoAddData(0, arg2, ALIGNED((arg1 * sizeof(uint32_t))));
+    fifoAddData(0, arg2, (arg1 * ALIGNED(1)));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glShaderSource, 4);
 }
