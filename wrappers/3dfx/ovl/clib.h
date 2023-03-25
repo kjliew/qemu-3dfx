@@ -2,6 +2,7 @@
 #define CLIB_H
 
 typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
 typedef unsigned uint32_t;
 typedef unsigned long FxU32;
 typedef int FxBool;
