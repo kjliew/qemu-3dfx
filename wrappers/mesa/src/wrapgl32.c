@@ -422,6 +422,7 @@ static void fltrxstr(const char *xstr)
 struct mglOptions {
     int bufoAcc;
     int dispTimerMS;
+    int ovrdSync;
     int scaleX;
     int useSRGB;
     int vsyncOff;
@@ -447,6 +448,8 @@ static void parse_options(struct mglOptions *opt)
             opt->dispTimerMS = (i == 1)? (0x8000U | (v & 0x7FFFU)):opt->dispTimerMS;
             i = parse_value(line, "ScaleWidth,", &v);
             opt->scaleX = (i == 1)? (v & 0x7FFFU):opt->scaleX;
+            i = parse_value(line, "OverrideSync,", &v);
+            opt->ovrdSync = (i == 1)? (v & 0x03U):opt->ovrdSync;
             i = parse_value(line, "BufOAccelEN,", &v);
             opt->bufoAcc = ((i == 1) && v)? 1:opt->bufoAcc;
             i = parse_value(line, "ContextSRGB,", &v);
@@ -16916,8 +16919,12 @@ mglMakeCurrent (uint32_t arg0, uint32_t arg1)
         parse_options(&cfg);
         if (cfg.useSRGB && !glIsEnabled(GL_FRAMEBUFFER_SRGB))
             glEnable(GL_FRAMEBUFFER_SRGB);
-        if (cfg.vsyncOff && wglGetSwapIntervalEXT())
-            wglSwapIntervalEXT(0);
+        if (cfg.vsyncOff) {
+            if (wglGetSwapIntervalEXT())
+                wglSwapIntervalEXT(0);
+        }
+        else if (cfg.ovrdSync && (cfg.ovrdSync != wglGetSwapIntervalEXT()))
+            wglSwapIntervalEXT(cfg.ovrdSync);
         DPRINTF("%s", icdBuild);
     }
     currGLRC = (level && ((arg1 + level) == MESAGL_MAGIC))?
