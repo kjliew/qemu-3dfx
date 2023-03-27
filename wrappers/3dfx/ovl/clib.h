@@ -17,6 +17,27 @@ void _dxe_putc(int c)
     }
 }
 
+static unsigned getTickMS(void)
+{
+    static unsigned tick;
+    unsigned tickAcpi;
+
+    __asm
+    {
+        mov dx, 0x608;
+        in eax, dx;
+        mov tickAcpi, eax;
+    }
+
+    if ((tick & 0x00FFFFFFU) > tickAcpi)
+        tick = (((tick >> 24) + 1) << 24) | tickAcpi;
+    else
+        tick = (tick & 0xFF000000U) | tickAcpi;
+#define SCALE_MS  1024
+#define TICK_ACPI 0x369E99U /* 3.579545 MHz */
+    return ((tick * SCALE_MS) / TICK_ACPI);
+}
+
 static unsigned getDosPSPSeg(void)
 {
     unsigned segPSP;
