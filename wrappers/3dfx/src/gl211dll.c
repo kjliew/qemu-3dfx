@@ -277,11 +277,12 @@ void PT_CALL grBufferSwap(uint32_t arg0) {
     ret = *pt0;
     if (ret) {
         static uint32_t nexttick;
-        uint32_t t = GetTickCount();
-        nexttick = (nexttick == 0)? t:nexttick;
-        nexttick += 1000/ret;
         while (GetTickCount() < nexttick)
             Sleep(0);
+        nexttick = GetTickCount();
+        while (nexttick >= (UINT32_MAX - (1000 / ret)))
+            nexttick = GetTickCount();
+        nexttick += (1000 / ret);
     }
 }
 void PT_CALL grChromakeyMode(uint32_t arg0) {

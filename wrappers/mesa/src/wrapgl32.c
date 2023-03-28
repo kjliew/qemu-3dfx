@@ -17055,10 +17055,13 @@ int WINAPI wglSwapBuffers (HDC hdc)
     ret = swapRet[0];
     if (ret & 0xFEU) {
         static uint32_t nexttick;
-        nexttick = (nexttick == 0)? t:nexttick;
-        nexttick += 1000/((ret & 0xFEU) >> 1);
+        const uint32_t maxFPS = (ret >> 1) & 0x7FU;
         while (GetTickCount() < nexttick)
             Sleep(0);
+        nexttick = GetTickCount();
+        while (nexttick >= (UINT32_MAX - (1000 / maxFPS)))
+            nexttick = GetTickCount();
+        nexttick += (1000 / maxFPS);
     }
     return (ret & 0x01U);
 }
