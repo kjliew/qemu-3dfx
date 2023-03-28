@@ -43,6 +43,7 @@ const char *getGLFuncStr(int);
 void doMesaFunc(int, uint32_t *, uintptr_t *, uintptr_t *);
 void GLBufOAccelCfg(int);
 void GLScaleWidth(int);
+void GLContextMSAA(int);
 void GLDispTimerCfg(int);
 void GLExtUncapped(void);
 int GetGLExtYear(void);

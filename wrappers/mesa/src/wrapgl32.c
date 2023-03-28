@@ -424,6 +424,7 @@ struct mglOptions {
     int dispTimerMS;
     int ovrdSync;
     int scaleX;
+    int useMSAA;
     int useSRGB;
     int vsyncOff;
     int xstrYear;
@@ -452,6 +453,8 @@ static void parse_options(struct mglOptions *opt)
             opt->ovrdSync = (i == 1)? (v & 0x03U):opt->ovrdSync;
             i = parse_value(line, "BufOAccelEN,", &v);
             opt->bufoAcc = ((i == 1) && v)? 1:opt->bufoAcc;
+            i = parse_value(line, "ContextMSAA,", &v);
+            opt->useMSAA = ((i == 1) && v)? ((v & 0x03U) << 2):opt->useMSAA;
             i = parse_value(line, "ContextSRGB,", &v);
             opt->useSRGB = ((i == 1) && v)? 1:opt->useSRGB;
             i = parse_value(line, "ContextVsyncOff,", &v);
@@ -17076,7 +17079,7 @@ int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     struct mglOptions cfg;
     parse_options(&cfg);
-    xppfd[0] = (cfg.scaleX << 16) | cfg.bufoAcc;
+    xppfd[0] = (cfg.scaleX << 16) | cfg.useMSAA | cfg.bufoAcc;
     xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT;
     memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFEC >> 2] = MESAGL_MAGIC;
@@ -17095,7 +17098,7 @@ int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXE
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     struct mglOptions cfg;
     parse_options(&cfg);
-    xppfd[0] = (cfg.scaleX << 16) | cfg.bufoAcc;
+    xppfd[0] = (cfg.scaleX << 16) | cfg.useMSAA | cfg.bufoAcc;
     xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT;
     xppfd[2] = iPixelFormat;
     xppfd[3] = nBytes;

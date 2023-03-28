@@ -1496,7 +1496,6 @@ static void conf_MGLOptions(void)
     cfg_xYear = 0;
     cfg_xLength = 0;
     cfg_vertCacheMB = 32;
-    cfg_cntxMSAA = 0;
     cfg_cntxSRGB = 0;
     cfg_cntxVsyncOff = 0;
     cfg_shaderDump = 0;
@@ -1558,6 +1557,7 @@ int SwapFpsLimit(int fps)
 }
 void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = enable; }
 void GLScaleWidth(int width) { cfg_scaleX = width; }
+void GLContextMSAA(int msaa) { cfg_cntxMSAA = msaa; }
 void GLDispTimerCfg(int msec) { cfg_dispTimerMS = msec; }
 void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
 int GetGLExtYear(void) { return cfg_xYear; }
