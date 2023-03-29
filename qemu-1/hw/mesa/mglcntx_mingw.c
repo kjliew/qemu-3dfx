@@ -538,7 +538,7 @@ void MGLActivateHandler(const int i, const int d)
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
         if (i) {
-            deactivateCancel();
+            deactivateGuiRefSched();
             MesaDisplayModeset(i);
             mesa_renderer_stat(i);
         }
@@ -854,12 +854,23 @@ void deactivateCancel(void)
 void deactivateSched(const int deferred)
 {
     if (!deferred)
-        deactivateOnce();
+        deactivateOneshot(0);
     else {
-        if (!ts)
-            ts = timer_new_ms(QEMU_CLOCK_VIRTUAL, deactivateOneshot, 0);
+        deactivateCancel();
+        ts = timer_new_ms(QEMU_CLOCK_VIRTUAL, deactivateOneshot, 0);
         timer_mod(ts, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + GetDispTimerMS());
     }
+}
+static void deactivateGuiRefOneshot(void *opaque)
+{
+    deactivateCancel();
+    graphic_hw_halt(0x81U);
+}
+void deactivateGuiRefSched(void)
+{
+    deactivateCancel();
+    ts = timer_new_ms(QEMU_CLOCK_VIRTUAL, deactivateGuiRefOneshot, 0);
+    timer_mod(ts, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + GUI_REFRESH_INTERVAL_DEFAULT);
 }
 
 int find_xstr(const char *xstr, const char *str)

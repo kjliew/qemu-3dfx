@@ -61,6 +61,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 #define GL_DELETECONTEXT(x) \
     do { SDL_GL_DeleteContext(x); x = 0; } while(0)
 #define GL_CONTEXTATTRIB(x) \
+    MGLActivateHandler(0, 0); \
     do { \
         int major, minor, pfmsk, flags; \
         major = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MAJOR_VERSION_ARB); \
@@ -430,7 +431,7 @@ void MGLActivateHandler(const int i, const int d)
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
         if (i) {
-            deactivateCancel();
+            deactivateGuiRefSched();
             mesa_renderer_stat(i);
         }
         else
@@ -547,7 +548,6 @@ void MGLFuncHandler(const char *name)
             if (argsp[1] == 0) {
                 SDL_GL_MakeCurrent(window, NULL);
                 GL_DELETECONTEXT(ctx[0]);
-                MGLActivateHandler(0, 0);
                 GL_CONTEXTATTRIB(ctx[0]);
                 GL_CREATECONTEXT(ctx[0]);
                 ret = (ctx[0])? 1:0;

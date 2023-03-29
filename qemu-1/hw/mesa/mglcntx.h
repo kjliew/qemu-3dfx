@@ -43,6 +43,7 @@ int MGLCreateContext(uint32_t);
 int glwnd_ready(void);
 void deactivateCancel(void);
 void deactivateSched(const int);
+void deactivateGuiRefSched(void);
 int find_xstr(const char *, const char *);
 
 typedef struct _perfstat {

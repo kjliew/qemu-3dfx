@@ -424,7 +424,7 @@ diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
 +    }
 +    if (s->res > 0)
 +        SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
-+    if (s->opaque || true)
++    if (s->opaque || !s->render_pause)
 +        graphic_hw_halt(0x80U | s->render_pause);
 +}
 +

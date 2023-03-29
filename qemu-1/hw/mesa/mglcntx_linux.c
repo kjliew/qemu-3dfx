@@ -557,7 +557,7 @@ void MGLActivateHandler(const int i, const int d)
         last = i;
         DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
         if (i) {
-            deactivateCancel();
+            deactivateGuiRefSched();
             MesaDisplayModeset(i);
             mesa_renderer_stat(i);
         }
