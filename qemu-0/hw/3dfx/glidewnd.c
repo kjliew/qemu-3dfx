@@ -181,6 +181,7 @@ static int scaledRes(int w, float r)
 int GRFifoTrace(void) { return cfg_traceFifo; }
 int GRFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }
 int glide_fpslimit(void) { return cfg_fpsLimit; }
+int glide_vsyncoff(void) { return cfg_cntxVsyncOff; }
 int glide_lfbmerge(void) { return (cfg_lfbMapBufo)? 0:cfg_lfbWriteMerge; }
 int glide_lfbdirty(void) { return (cfg_lfbMapBufo)? 0:cfg_lfbLockDirty; }
 int glide_lfbnoaux(void) { return cfg_lfbNoAux; }

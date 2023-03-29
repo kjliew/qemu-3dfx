@@ -341,6 +341,8 @@ static void processArgs(GlidePTState *s)
                     wrWriteRegion(1, 0, 0, 0, s->lfb_w, s->lfb_h, 0x800, (uintptr_t)(s->glfb_ptr));
                 s->lfb_dirty = 1;
             }
+            if (glide_vsyncoff())
+                s->arg[0] = 0;
             if (GRFuncTrace() == 2)
                 DPRINTF(">>>>>>>> _grBufferSwap <<<<<<<<");
             s->perfs.stat();
