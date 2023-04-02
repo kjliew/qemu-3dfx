@@ -384,11 +384,12 @@ static FILE * opt_fopen(void)
     return ret;
 }
 
-static void fltrxstr(const char *xstr)
+static void fltrxstr(const char *xstr, size_t len)
 {
 #define MAX_XSTR 128
     char *str = (char *)xstr, *tmp = (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2];
     FILE *f = opt_fopen();
+    len = (len > (3*PAGE_SIZE))? (3*PAGE_SIZE):len;
     *tmp = ' ';
     *(tmp + 1) = '\0';
     if (f) {
@@ -416,7 +417,7 @@ static void fltrxstr(const char *xstr)
         }
         *(--tmp) = '\0';
         fclose(f);
-        strncpy(str, (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2], (3*PAGE_SIZE));
+        strncpy(str, (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2], len);
     }
 }
 struct mglOptions {
@@ -5339,7 +5340,7 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetString;
     fifoOutData(0, (uint32_t)cstrTbl[sel], cstrsz[sel]);
     if (sel == 0x03U)
-        fltrxstr(cstrTbl[sel]);
+        fltrxstr(cstrTbl[sel], cstrsz[sel]);
     //DPRINTF("%s [ %04x ]", cstrTbl[sel], arg0);
     return (uint8_t *)cstrTbl[sel];
 }
@@ -16452,6 +16453,7 @@ static uint32_t PT_CALL wglGetExtensionsStringARB(uint32_t arg0)
     WGL_FUNCP("wglGetExtensionsStringARB");
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
     strncpy((char *)wstrtbl[0], (char *)&mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2], PAGE_SIZE);
+    fltrxstr(wstrtbl[0], PAGE_SIZE - 1);
     //DPRINTF("GetExtensionsStringARB %s", wstrtbl[0]);
     return (uint32_t)wstrtbl[0];
 }
