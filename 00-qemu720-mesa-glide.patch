@@ -158,8 +158,16 @@ diff -Nru ../orig/qemu-7.2.0/include/ui/console.h ./include/ui/console.h
  #endif
 diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
 --- ../orig/qemu-7.2.0/meson.build	2022-12-14 08:28:45.000000000 -0800
-+++ ./meson.build	2022-12-15 18:23:57.162432700 -0800
-@@ -3060,6 +3060,8 @@
++++ ./meson.build	2023-04-04 17:36:23.860286500 -0700
+@@ -995,6 +995,7 @@
+     error('sdl-image required, but SDL was @0@'.format(
+           get_option('sdl').disabled() ? 'disabled' : 'not found'))
+   endif
++  error('Featuring qemu-3dfx required SDL2')
+   sdl_image = not_found
+ endif
+
+@@ -3060,6 +3061,8 @@
                           arguments: ['@INPUT@', '@EXTRA_ARGS@', '-o', '@OUTPUT@'])
    subdir('libdecnumber')
    subdir('target')
@@ -168,7 +176,7 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
  endif
  
  subdir('audio')
-@@ -3393,6 +3395,11 @@
+@@ -3393,6 +3396,11 @@
    target_inc = [include_directories('target' / config_target['TARGET_BASE_ARCH'])]
    if targetos == 'linux'
      target_inc += include_directories('linux-headers', is_system: true)

@@ -158,8 +158,16 @@ diff -Nru ../orig/qemu-5.2.0/include/ui/console.h ./include/ui/console.h
  #endif
 diff -Nru ../orig/qemu-5.2.0/meson.build ./meson.build
 --- ../orig/qemu-5.2.0/meson.build	2020-12-08 08:59:44.000000000 -0800
-+++ ./meson.build	2022-08-31 18:43:10.033396300 -0700
-@@ -1512,6 +1512,8 @@
++++ ./meson.build	2023-04-04 17:43:52.914380500 -0700
+@@ -589,6 +589,7 @@
+     error('sdl-image required, but SDL was @0@'.format(
+           get_option('sdl').disabled() ? 'disabled' : 'not found'))
+   endif
++  error('Featuring qemu-3dfx required SDL2')
+   sdl_image = not_found
+ endif
+
+@@ -1512,6 +1513,8 @@
  subdir('fsdev')
  subdir('libdecnumber')
  subdir('target')
@@ -168,7 +176,7 @@ diff -Nru ../orig/qemu-5.2.0/meson.build ./meson.build
  subdir('dump')
 
  block_ss.add(files(
-@@ -1740,6 +1742,11 @@
+@@ -1740,6 +1743,11 @@
    target_inc = [include_directories('target' / config_target['TARGET_BASE_ARCH'])]
    if targetos == 'linux'
      target_inc += include_directories('linux-headers', is_system: true)

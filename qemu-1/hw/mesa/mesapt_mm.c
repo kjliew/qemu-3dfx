@@ -2343,8 +2343,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                             s->mglCntxWGL = argsp[0];
                             ContextCreateCommon(s);
                         }
-                        DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d lvl %x",
-                            s->mglContext, s->mglCntxCurrent, argsp[0], argsp[1]);
+                        DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d %s",
+                            s->mglContext, s->mglCntxCurrent, argsp[0], (argsp[1] == 0)? "zero":"incr");
                     }
                     if (strncmp((const char *)func, "wglChoosePixelFormatARB", 64) == 0) {
                         uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));

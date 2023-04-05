@@ -342,7 +342,7 @@ void MGLTmpContext(void)
 
 void MGLDeleteContext(int level)
 {
-    int n = (level >= MAX_LVLCNTX)? (MAX_LVLCNTX - 1):level;
+    int n = (level)? ((level % MAX_LVLCNTX)? (level % MAX_LVLCNTX):1):level;
     wglFuncs.MakeCurrent(NULL, NULL);
     if (n == 0) {
         for (int i = MAX_LVLCNTX; i > 1;) {
@@ -395,7 +395,8 @@ int MGLCreateContext(uint32_t gDC)
 
 int MGLMakeCurrent(uint32_t cntxRC, int level)
 {
-    uint32_t i = cntxRC & (MAX_PBUFFER - 1), n = (level >= MAX_LVLCNTX)? (MAX_LVLCNTX - 1):level;
+    int n = (level)? ((level % MAX_LVLCNTX)? (level % MAX_LVLCNTX):1):level;
+    uint32_t i = cntxRC & (MAX_PBUFFER - 1);
     if (cntxRC == (MESAGL_MAGIC - n)) {
         wglFuncs.MakeCurrent(hDC, hRC[n]);
         InitMesaGLExt();

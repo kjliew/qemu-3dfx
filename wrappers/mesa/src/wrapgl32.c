@@ -16550,8 +16550,7 @@ wglCreateContextAttribsARB(HDC hDC,
   if (ret) {
       if (currGLRC && hShareContext) {
           level++;
-          if (level == MAX_LVLCNTX)
-              level--;
+          level = (level % MAX_LVLCNTX)? (level % MAX_LVLCNTX):1;
       }
       else {
           currDC = (uint32_t)hDC;
