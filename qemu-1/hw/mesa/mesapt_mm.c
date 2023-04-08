@@ -2010,6 +2010,9 @@ static void processFRet(MesaPTState *s)
                     const char texCubeMap[] =
                         "GL_EXT_texture_cube_map"
                         ;
+                    const char texgenReflection[] =
+                        "GL_NV_texgen_reflection"
+                        ;
                     const char debugMsg[] =
                         "GL_ARB_debug_output"
                         ;
@@ -2036,9 +2039,14 @@ static void processFRet(MesaPTState *s)
                         (MGLExtIsAvail((const char *)outshm, texEnvCmbn) == 0))
                         XSTR_ADD(texEnvCmbn);
                     *xbuf = '\0';
-                    if ((MGLExtIsAvail((const char *)outshm, "GL_ARB_texture_cube_map")) &&
-                        (MGLExtIsAvail((const char *)outshm, texCubeMap) == 0))
-                        XSTR_ADD(texCubeMap);
+                    if (MGLExtIsAvail((const char *)outshm, "GL_ARB_texture_cube_map")) {
+                        if (MGLExtIsAvail((const char *)outshm, texCubeMap) == 0) {
+                            XSTR_ADD(texCubeMap);
+                        }
+                        if (MGLExtIsAvail((const char *)outshm, texgenReflection) == 0) {
+                            XSTR_ADD(texgenReflection);
+                        }
+                    }
                     *xbuf = '\0';
                     if (MGLExtIsAvail((const char *)outshm, debugMsg) == 0)
                         XSTR_ADD(debugMsg);
