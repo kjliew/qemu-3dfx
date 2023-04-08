@@ -2040,14 +2040,13 @@ static void processFRet(MesaPTState *s)
                         XSTR_ADD(texEnvCmbn);
                     *xbuf = '\0';
                     if (MGLExtIsAvail((const char *)outshm, "GL_ARB_texture_cube_map")) {
-                        if (MGLExtIsAvail((const char *)outshm, texCubeMap) == 0) {
+                        if (MGLExtIsAvail((const char *)outshm, texCubeMap) == 0)
                             XSTR_ADD(texCubeMap);
-                        }
-                        if (MGLExtIsAvail((const char *)outshm, texgenReflection) == 0) {
+                        *xbuf = '\0';
+                        if (MGLExtIsAvail((const char *)outshm, texgenReflection) == 0)
                             XSTR_ADD(texgenReflection);
-                        }
+                        *xbuf = '\0';
                     }
-                    *xbuf = '\0';
                     if (MGLExtIsAvail((const char *)outshm, debugMsg) == 0)
                         XSTR_ADD(debugMsg);
                     *xbuf = '\0';
