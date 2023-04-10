@@ -1,7 +1,15 @@
 diff -Nru orig/virglrenderer-0.10.4/meson.build src/virglrenderer-0.10.4/meson.build
 --- orig/virglrenderer-0.10.4/meson.build	2023-01-02 08:12:17.000000000 -0800
 +++ src/virglrenderer-0.10.4/meson.build	2023-01-07 00:46:30.802648300 -0800
-@@ -63,10 +63,10 @@
+@@ -53,6 +53,7 @@
+    '-Wmissing-prototypes',
+    '-Werror=incompatible-pointer-types',
+    '-Werror=int-to-pointer-cast',
++   '-Wno-unused-parameter',
+    '-Wno-overlength-strings',
+ ]
+
+@@ -63,10 +64,10 @@
  ]
 
  add_project_arguments(cc.get_supported_arguments(flags), language : 'c')
@@ -13,7 +21,7 @@ diff -Nru orig/virglrenderer-0.10.4/meson.build src/virglrenderer-0.10.4/meson.b
  thread_dep = dependency('threads')
  epoxy_dep = dependency('epoxy', version: '>= 1.5.4')
  m_dep = cc.find_library('m', required : false)
-@@ -205,8 +205,9 @@
+@@ -205,8 +206,9 @@
  
  if with_egl
     if cc.has_header('epoxy/egl.h', dependencies: epoxy_dep) and epoxy_dep.get_pkgconfig_variable('epoxy_has_egl') == '1'
@@ -24,7 +32,7 @@ diff -Nru orig/virglrenderer-0.10.4/meson.build src/virglrenderer-0.10.4/meson.b
        if (have_egl)
           conf_data.set('HAVE_EPOXY_EGL_H', 1)
        else
-@@ -301,7 +302,7 @@
+@@ -301,7 +303,7 @@
  with_valgrind = get_option('valgrind')
  
  subdir('src')
@@ -235,7 +243,23 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.c src/virglrenderer-0.10.4/
        default:
           vrend_printf("unhandled output semantic: %x\n", ctx->outputs[i].name);
           break;
-@@ -6087,10 +6091,10 @@
+@@ -3241,6 +3245,7 @@
+
+    // EXT_texture_shadow_lod defines a few more functions handling bias
+    if (bias &&
++       ctx->cfg->has_texture_shadow_lod &&
+        (inst->Texture.Texture == TGSI_TEXTURE_SHADOW2D_ARRAY ||
+         inst->Texture.Texture == TGSI_TEXTURE_SHADOWCUBE ||
+         inst->Texture.Texture == TGSI_TEXTURE_SHADOWCUBE_ARRAY))
+@@ -3248,6 +3253,7 @@
+
+    // EXT_texture_shadow_lod also adds the missing textureOffset for 2DArrayShadow in GLES
+    if ((bias || offset) && ctx->cfg->use_gles &&
++       ctx->cfg->has_texture_shadow_lod &&
+        (inst->Texture.Texture == TGSI_TEXTURE_SHADOW1D_ARRAY ||
+         inst->Texture.Texture == TGSI_TEXTURE_SHADOW2D_ARRAY))
+       ctx->shader_req_bits |= SHADER_REQ_TEXTURE_SHADOW_LOD;
+@@ -6087,10 +6093,10 @@
 
        if (ctx->prog_type == TGSI_PROCESSOR_VERTEX && ctx->cfg->use_explicit_locations)
           emit_ext(glsl_strbufs, "ARB_explicit_attrib_location", "require");

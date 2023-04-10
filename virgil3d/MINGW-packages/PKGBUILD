@@ -18,7 +18,7 @@ _tag=$pkgver
 source=("virglrenderer-$pkgver.tar.bz2::https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/$_tag/virglrenderer-$_tag.tar.bz2"
         "0001-Virglrenderer-on-Windows-and-macOS.patch")
 sha256sums=('b42dbbc87f799feb77f89a246336253aedc733f7c3c78d4103158438deea5a6d'
-            '6beee5930ff602de252c7c698eb397048d638c64fd44b2d2a78ad8d0cbda5527')
+            'b2f24949795be3033d156a5f2c77c502291442d2073fddc0473f2bdf8bfec713')
 prepare() {
   cd virglrenderer-$_tag
   patch -p2 -i ${srcdir}/0001-Virglrenderer-on-Windows-and-macOS.patch
