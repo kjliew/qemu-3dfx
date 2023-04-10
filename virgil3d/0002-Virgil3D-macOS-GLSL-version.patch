@@ -1,8 +1,21 @@
+diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
+--- ../orig/qemu-7.2.0/ui/sdl2.c	2022-12-15 18:43:57.071806600 -0800
++++ ./ui/sdl2.c	2022-12-15 18:43:11.119058300 -0800
+@@ -96,6 +96,10 @@
+     }
+ #ifdef CONFIG_OPENGL
+     if (scon->opengl) {
++#ifdef CONFIG_DARWIN
++        /* Apple OpenGL quirk */
++        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
++#endif
+         flags |= SDL_WINDOW_OPENGL;
+     }
+ #endif
 diff -Nru ../orig/qemu-6.1.0/ui/shader/texture-blit-flip.vert ./ui/shader/texture-blit-flip.vert
 --- ../orig/qemu-6.1.0/ui/shader/texture-blit-flip.vert	2021-08-25 14:40:08.000000000 -0700
 +++ ./ui/shader/texture-blit-flip.vert	2021-11-15 20:45:35.000000000 -0800
-@@ -1,6 +1,3 @@
--
+@@ -1,5 +1,3 @@
 -#version 300 es
 -
  in vec2  in_position;
@@ -11,8 +24,7 @@ diff -Nru ../orig/qemu-6.1.0/ui/shader/texture-blit-flip.vert ./ui/shader/textur
 diff -Nru ../orig/qemu-6.1.0/ui/shader/texture-blit.frag ./ui/shader/texture-blit.frag
 --- ../orig/qemu-6.1.0/ui/shader/texture-blit.frag	2021-08-25 14:40:08.000000000 -0700
 +++ ./ui/shader/texture-blit.frag	2021-11-15 20:45:35.000000000 -0800
-@@ -1,6 +1,3 @@
--
+@@ -1,5 +1,3 @@
 -#version 300 es
 -
  uniform sampler2D image;
@@ -21,8 +33,7 @@ diff -Nru ../orig/qemu-6.1.0/ui/shader/texture-blit.frag ./ui/shader/texture-bli
 diff -Nru ../orig/qemu-6.1.0/ui/shader/texture-blit.vert ./ui/shader/texture-blit.vert
 --- ../orig/qemu-6.1.0/ui/shader/texture-blit.vert	2021-08-25 14:40:08.000000000 -0700
 +++ ./ui/shader/texture-blit.vert	2021-11-15 20:45:35.000000000 -0800
-@@ -1,6 +1,3 @@
--
+@@ -1,5 +1,3 @@
 -#version 300 es
 -
  in vec2  in_position;
@@ -31,7 +42,7 @@ diff -Nru ../orig/qemu-6.1.0/ui/shader/texture-blit.vert ./ui/shader/texture-bli
 diff -Nru ../orig/qemu-6.1.0/ui/shader.c ./ui/shader.c
 --- ../orig/qemu-6.1.0/ui/shader.c	2021-08-25 14:40:07.000000000 -0700
 +++ ./ui/shader.c	2021-11-20 22:22:51.000000000 -0800
-@@ -150,11 +150,22 @@
+@@ -152,11 +152,22 @@
  QemuGLShader *qemu_gl_init_shader(void)
  {
      QemuGLShader *gls = g_new0(QemuGLShader, 1);
