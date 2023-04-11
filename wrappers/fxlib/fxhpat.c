@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include "hpat.h"
 
+static struct E_PATCH engrel_exe[] = {
+    { 0xbf0a8, 1, "\x00" },
+    E_PATCH_END()
+};
 static struct E_PATCH d3d_exe[] = {
     { 0x65b2d, 1, "\xEB" },
     E_PATCH_END()
@@ -11,11 +15,13 @@ static struct E_PATCH hg_exe[] = {
     E_PATCH_END()
 };
 static struct E_PATCH tomb4_exe[] = {
-    { 0x8da53, 3, "\x90\xB4\x01" },
+    { 0x8da53, 3, "\x90\xB4\x00" },
     { 0x8da64, 3, "\x90\xB0\x00" },
     E_PATCH_END()
 };
 static COMPATFX fxCompatTbl[] = {
+    /* Warhammer: Dark Omen */
+    { "engrel.exe", "8dc25757be926088167cb1663b7c7b76", HP_ANYO, engrel_exe },
     /* Requiem D3D 1.2 */
     { "d3d.exe",   "b783b9fbca594286b606eb07912740b6", HP_ANYO, d3d_exe },
     /* Heavy Gear 1.2 */
@@ -46,7 +52,8 @@ void HookPatchfxCompat(const DWORD hpMask)
             void *modPage;
             j = 0;
             modPage = (unsigned char *)(modBase + (fxCompatTbl[i].ptr[j].offs & ~0xFFFU));
-            if (!stricmp(fxCompatTbl[i].modName, basename(modName)) &&
+            if ((fxCompatTbl[i].op_mask & hpMask) &&
+                !stricmp(fxCompatTbl[i].modName, basename(modName)) &&
                 !strcmp(fxCompatTbl[i].md5, md5page((const char *)modPage)) &&
                 VirtualProtect(modPage, sizeof(void *), PAGE_EXECUTE_READWRITE, &oldProt)) {
                 fxCompatTbl[i].op_mask |= HP_DONE;
