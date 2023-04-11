@@ -19,8 +19,10 @@ OUTDIR=$(shell basename `pwd`)
 
 C_OBJS:=\
     fxhook.o \
+    fxhpat.o \
     fxlib9x.o \
     fxlibnt.o \
+    md5.o \
 
 
 all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) fxdrv
@@ -72,10 +74,10 @@ $(TARGET3): $(C_OBJS) gl301dll.o
 
 fxlib:
 	@if [ "$$MSYSTEM" != "MINGW32" ]; then echo "Error: MSYSTEM == $$MSYSTEM"; exit 1; fi
-	@echo "  CC  fxhook.o fxlib9x.o fxlibnt.o"
-	@$(CC) $(CFLAGS) -c -o fxhook.o $(FXLIB)/fxhook.c
-	@$(CC) $(CFLAGS) -c -o fxlib9x.o $(FXLIB)/fxlib9x.c
-	@$(CC) $(CFLAGS) -c -o fxlibnt.o $(FXLIB)/fxlibnt.c
+	@echo "  CC  $(C_OBJS)"
+	@for i in $(C_OBJS); do \
+		$(CC) $(CFLAGS) -c -o $$i $(FXLIB)/`echo $$i | sed "s/\.o/\.c/"`; \
+	done
 
 %.o: $(SRCDIR)/%.c
 	@echo "  CC  $@"
