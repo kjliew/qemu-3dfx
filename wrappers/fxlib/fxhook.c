@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "hpat.h"
 
 void HookEntryHook(uint32_t *patch, const uint32_t orig)
 {
@@ -230,7 +231,7 @@ void HookTimeGetTime(const uint32_t caddr)
             }
             fclose(fp);
             if (modList.modNum == 0)
-                return;
+                goto compat_patched;
         }
         modList.modName[modList.modNum] = NULL;
     }
@@ -258,5 +259,11 @@ void HookTimeGetTime(const uint32_t caddr)
         TICK_HOOK(modList.modName[i]);
     }
 #undef TICK_HOOK
+compat_patched:
+    PCOMPATFX nptr = fxCompatTblPtr();
+    for (int i = 0; nptr && nptr[i].modName; i++) {
+        if (nptr[i].op_mask & HP_DONE)
+            OHST_DMESG("..%s patched", nptr[i].modName);
+    }
 }
 

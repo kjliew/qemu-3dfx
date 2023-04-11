@@ -111,6 +111,8 @@ void kmdDrvInit(PDRVFUNC);
 void HookEntryHook(unsigned int *, const unsigned int);
 void HookParseRange(unsigned int *, unsigned int **, const DWORD);
 void HookTimeGetTime(const unsigned int);
+/* fxhpat.c */
+void HookPatchfxCompat(const DWORD);
 
 #endif // FXLIB_H
 
