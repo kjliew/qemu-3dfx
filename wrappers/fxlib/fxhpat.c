@@ -2,16 +2,22 @@
 #include <stdio.h>
 #include "hpat.h"
 
+static struct E_PATCH d3d_exe[] = {
+    { 0x65b2d, 1, "\xEB" },
+    E_PATCH_END()
+};
 static struct E_PATCH hg_exe[] = {
     { 0x0133e, 2, "\x90\x90" },
     E_PATCH_END()
 };
 static struct E_PATCH tomb4_exe[] = {
-    { 0x8da53, 3, "\x90\xb4\x01" },
-    { 0x8da64, 3, "\x90\xb0\x00" },
+    { 0x8da53, 3, "\x90\xB4\x01" },
+    { 0x8da64, 3, "\x90\xB0\x00" },
     E_PATCH_END()
 };
 static COMPATFX fxCompatTbl[] = {
+    /* Requiem D3D 1.2 */
+    { "d3d.exe",   "b783b9fbca594286b606eb07912740b6", HP_ANYO, d3d_exe },
     /* Heavy Gear 1.2 */
     { "hg.exe",    "4685aa795e3916c1bb0de5616a86bfa0", HP_2KXP, hg_exe },
     /* Tomb Raider IV */
