@@ -2,6 +2,17 @@
 #include <stdio.h>
 #include "hpat.h"
 
+static struct E_PATCH xwg95_exe[] = {
+    { 0x856d7, 2, "\x38\xE0" },
+    E_PATCH_END()
+};
+static struct E_PATCH fforce_exe[] = {
+    { 0x366f1, 2, "\x38\xE0" },
+    { 0x3673f, 2, "\x38\xE0" },
+    { 0x3678d, 2, "\x38\xE0" },
+    { 0x367d4, 2, "\x38\xE0" },
+    E_PATCH_END()
+};
 static struct E_PATCH engrel_exe[] = {
     { 0xbf0a8, 1, "\x00" },
     E_PATCH_END()
@@ -20,6 +31,10 @@ static struct E_PATCH tomb4_exe[] = {
     E_PATCH_END()
 };
 static COMPATFX fxCompatTbl[] = {
+    /* X-Wing95 3D */
+    { "xwing95.exe", "7e490350a5f3d35d674c7e6d923660e2", HP_2KXP, xwg95_exe },
+    /* Fighting Force */
+    { "fforce.exe", "81ee5e035d23e130430f31723cecaf64", HP_2KXP, fforce_exe },
     /* Warhammer: Dark Omen */
     { "engrel.exe", "8dc25757be926088167cb1663b7c7b76", HP_ANYO, engrel_exe },
     /* Requiem D3D 1.2 */
