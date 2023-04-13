@@ -13,8 +13,12 @@ static struct E_PATCH fforce_exe[] = {
     { 0x367d4, 2, "\x38\xE0" },
     E_PATCH_END()
 };
-static struct E_PATCH engrel_exe[] = {
+static struct E_PATCH engrel_blit[] = {
     { 0xbf0a8, 1, "\x00" },
+    E_PATCH_END()
+};
+static struct E_PATCH engrel_cursor[] = {
+    { 0x1805a, 2, "\x38\xC4" },
     E_PATCH_END()
 };
 static struct E_PATCH d3d_exe[] = {
@@ -36,7 +40,8 @@ static COMPATFX fxCompatTbl[] = {
     /* Fighting Force */
     { "fforce.exe", "81ee5e035d23e130430f31723cecaf64", HP_2KXP, fforce_exe },
     /* Warhammer: Dark Omen */
-    { "engrel.exe", "8dc25757be926088167cb1663b7c7b76", HP_ANYO, engrel_exe },
+    { "engrel.exe", "8dc25757be926088167cb1663b7c7b76", HP_ANYO, engrel_blit },
+    { "engrel.exe", "1a0b17352c8fee8c62732ef4f7aae95f", HP_2KXP, engrel_cursor },
     /* Requiem D3D 1.2 */
     { "d3d.exe",   "b783b9fbca594286b606eb07912740b6", HP_ANYO, d3d_exe },
     /* Heavy Gear 1.2 */
