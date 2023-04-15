@@ -12,6 +12,7 @@ struct E_PATCH {
     int offs, len;
     char *cb;
 };
+#define PATCH_D(a,b) { a, sizeof(b)/sizeof(char) - 1, b }
 #define E_PATCH_END() { 0, 0 }
 
 typedef struct fxCompatTbl {

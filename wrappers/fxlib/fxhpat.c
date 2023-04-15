@@ -2,39 +2,50 @@
 #include <stdio.h>
 #include "hpat.h"
 
+static struct E_PATCH tie95_vga[] = {
+    PATCH_D(0x16092, "\xE9\x7F\x01"),
+    E_PATCH_END()
+};
+static struct E_PATCH tie95_exe[] = {
+    PATCH_D(0x30377, "\x38\xE0"),
+    E_PATCH_END()
+};
 static struct E_PATCH xwg95_exe[] = {
-    { 0x856d7, 2, "\x38\xE0" },
+    PATCH_D(0x856d7, "\x38\xE0"),
     E_PATCH_END()
 };
 static struct E_PATCH fforce_exe[] = {
-    { 0x366f1, 2, "\x38\xE0" },
-    { 0x3673f, 2, "\x38\xE0" },
-    { 0x3678d, 2, "\x38\xE0" },
-    { 0x367d4, 2, "\x38\xE0" },
+    PATCH_D(0x366f1, "\x38\xE0"),
+    PATCH_D(0x3673f, "\x38\xE0"),
+    PATCH_D(0x3678d, "\x38\xE0"),
+    PATCH_D(0x367d4, "\x38\xE0"),
     E_PATCH_END()
 };
 static struct E_PATCH engrel_blit[] = {
-    { 0xbf0a8, 1, "\x00" },
+    PATCH_D(0xbf0a8, "\x00"),
     E_PATCH_END()
 };
 static struct E_PATCH engrel_cursor[] = {
-    { 0x1805a, 2, "\x38\xC4" },
+    PATCH_D(0x1805a, "\x38\xC4"),
     E_PATCH_END()
 };
 static struct E_PATCH d3d_exe[] = {
-    { 0x65b2d, 1, "\xEB" },
+    PATCH_D(0x65b2d, "\xEB"),
     E_PATCH_END()
 };
 static struct E_PATCH hg_exe[] = {
-    { 0x0133e, 2, "\x90\x90" },
+    PATCH_D(0x0133e, "\x90\x90"),
     E_PATCH_END()
 };
 static struct E_PATCH tomb4_exe[] = {
-    { 0x8da53, 3, "\x90\xB4\x00" },
-    { 0x8da64, 3, "\x90\xB0\x00" },
+    PATCH_D(0x8da53, "\x90\xB4\x00"),
+    PATCH_D(0x8da64, "\x90\xB0\x00"),
     E_PATCH_END()
 };
 static COMPATFX fxCompatTbl[] = {
+    /* Tie95 3D */
+    { "tie95.exe", "384d3ae028aadae67c617a09ed5ea085", HP_2KXP, tie95_exe },
+    { "tie95.exe", "a736f8ec53825b4a824060b3af7a332b", HP_2KXP, tie95_vga },
     /* X-Wing95 3D */
     { "xwing95.exe", "7e490350a5f3d35d674c7e6d923660e2", HP_2KXP, xwg95_exe },
     /* Fighting Force */
