@@ -42,7 +42,29 @@ static struct E_PATCH tomb4_exe[] = {
     PATCH_D(0x8da64, "\x90\xB0\x00"),
     E_PATCH_END()
 };
+static struct E_PATCH go_retail[] = {
+    PATCH_D(0x40a52, "\xEB\x0D"),
+    E_PATCH_END()
+};
+static struct E_PATCH go_g400_1[] = {
+    PATCH_D(0x40d0f, "\xEB\x0D"),
+    E_PATCH_END()
+};
+static struct E_PATCH go_g400_2[] = {
+    PATCH_D(0x0c2f4, "\xEB\x08"),
+    PATCH_D(0x0c30e, "\xEB"),
+    E_PATCH_END()
+};
+static struct E_PATCH go_g400_3[] = {
+    PATCH_D(0x097a9, "\xEB"),
+    E_PATCH_END()
+};
 static COMPATFX fxCompatTbl[] = {
+    /* Rage Expendable Retailed & G400 EMBM */
+    { "go.exe", "330113cfeb00ae4de299f041fb5714ba", HP_ANYO, go_g400_3 },
+    { "go.exe", "c86b59bdfa1360eb43879e59fb3ac89f", HP_ANYO, go_g400_2 },
+    { "go.exe", "6cf594d3a8704ba5281f4a11fc3adf7e", HP_ANYO, go_g400_1 },
+    { "go.exe", "b64b448d7448103417edbb413e13283c", HP_ANYO, go_retail },
     /* Tie95 3D */
     { "tie95.exe", "384d3ae028aadae67c617a09ed5ea085", HP_2KXP, tie95_exe },
     { "tie95.exe", "a736f8ec53825b4a824060b3af7a332b", HP_2KXP, tie95_vga },
