@@ -640,9 +640,13 @@ static void processFRet(GlidePTState *s)
         case FEnum_grSstWinOpenExt:
             s->disp_cb.arg = s->arg;
             s->disp_cb.FEnum = s->FEnum;
-            init_window(s->arg[1], s->version, &s->disp_cb);
-	    do {
+	    if ((s->arg[1] & 0xFFU) > 0x0FU) {
+                s->FRet = 0;
+                DPRINTF("grSstWinOpen failed, res %d", s->arg[1]);
+            }
+            else {
                 char strFpsLimit[sizeof(", FpsLimit [ ... FPS ]")];
+                init_window(s->arg[1], s->version, &s->disp_cb);
                 snprintf(strFpsLimit, sizeof(strFpsLimit), ", FpsLimit [ %d FPS ]", glide_fpslimit());
 		s->lfbDev->origin = s->arg[4];
 		s->lfbDev->guestLfb = (s->FEnum == FEnum_grSstWinOpenExt)? s->arg[8]:s->arg[7];
@@ -661,7 +665,7 @@ static void processFRet(GlidePTState *s)
                         (glide_fpslimit())? strFpsLimit:"",
                         (glide_lfbdirty())? ", LfbLockDirty":"",
                         (s->lfb_noaux)? ", LfbNoAux":"", (s->lfb_merge)? ", LfbWriteMerge":"");
-	    } while(0);
+	    }
 	    break;
 	case FEnum_grSstWinClose:
         case FEnum_grSstWinClose3x:
