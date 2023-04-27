@@ -17185,8 +17185,13 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     GetVersionEx(&osInfo);
     HookPatchfxCompat(osInfo.dwPlatformId);
-    if (osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT)
+    if (osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+        DWORD affinityMask[2];
+        GetProcessAffinityMask(GetCurrentProcess(), &affinityMask[0], &affinityMask[1]);
+        SetThreadAffinityMask(GetCurrentThread(), (1 << ((GetCurrentThreadId() >> 2) &
+                        ((sizeof(DWORD) << 3) - __builtin_clz(affinityMask[0]) - 1))));
         kmdDrvInit(&drv);
+    }
     else
         vxdDrvInit(&drv);
 
