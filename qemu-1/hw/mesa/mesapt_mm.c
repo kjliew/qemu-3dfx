@@ -1846,6 +1846,7 @@ static void processFRet(MesaPTState *s)
             s->arrayBuf = s->vao;
             s->elemArryBuf = s->vao;
             break;
+        case FEnum_glClientActiveTexture:
         case FEnum_glClientActiveTextureARB:
             s->texUnit = ((s->arg[0] & 0xFFF0U) == GL_TEXTURE0_ARB)? (s->arg[0] & 0x0FU):0;
             break;
@@ -2193,8 +2194,10 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 dataptr[0] = ALIGNED(1) >> 2;
             } while (0);
         }
-        else
+        else {
+            memset(s->fifo_ptr + (MGLSHM_SIZE - (3*PAGE_SIZE)), 0, ALIGNED(1));
             DPRINTF("WARN: No GL context for func %04x", (uint32_t)val);
+        }
     }
     else if (val == MESAGL_MAGIC) {
         if (s->mglContext && s->mglCntxCurrent) {

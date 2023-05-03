@@ -260,8 +260,17 @@ static void PrepVertexArray(int start, int end, int sizei)
         }
         for (i = 0; i < MAX_TEXUNIT; i++) {
             if (vtxArry.TexCoord[i].enable && vtxArry.TexCoord[i].ptr) {
+                int ucb;
                 cbElem = (vtxArry.TexCoord[i].stride)? vtxArry.TexCoord[i].stride:szgldata(vtxArry.TexCoord[i].size, vtxArry.TexCoord[i].type);
-                n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.TexCoord[i].size, vtxArry.TexCoord[i].type)));
+                ucb = ALIGNED((cbElem*(end - start) + szgldata(vtxArry.TexCoord[i].size, vtxArry.TexCoord[i].type)));
+                if (IsBadReadPtr(vtxArry.TexCoord[i].ptr, ucb)) {
+                    void PT_CALL glClientActiveTexture(uint32_t);
+                    void PT_CALL glDisableClientState(uint32_t);
+                    glClientActiveTexture(GL_TEXTURE0 + i);
+                    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+                }
+                else
+                    n += ucb;
             }
         }
         if (vtxArry.Vertex.enable && vtxArry.Vertex.ptr) {
@@ -5304,8 +5313,9 @@ void PT_CALL glGetStageIndexNV(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetStageIndexNV;
 }
 uint8_t * PT_CALL glGetString(uint32_t arg0) {
+    static const char strz[] = { 0 };
     static const char *cstrTbl[] = {
-        vendstr, rendstr, vernstr, extnstr, glslstr,
+        vendstr, rendstr, vernstr, extnstr, glslstr, strz,
     };
     static const int cstrsz[] = {
         sizeof(vendstr) - 1,
@@ -5318,7 +5328,7 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
     int sel;
 
     if (!currGLRC)
-        return 0;
+        return (uint8_t *)cstrTbl[5];
 
     switch(arg0) {
         case GL_VENDOR:
@@ -5331,7 +5341,7 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
             sel = 4;
             break;
         default:
-            return 0;
+            return (uint8_t *)cstrTbl[5];
     }
 
     parse_options(&cfg);
