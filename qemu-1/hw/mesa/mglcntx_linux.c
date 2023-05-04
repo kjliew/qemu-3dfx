@@ -762,7 +762,7 @@ void MGLFuncHandler(const char *name)
             argsp[1] = 0x02;
         }
         else {
-            DPRINTF("wglChoosePixelFormatARB()");
+            DPRINTF("%-32s", "wglChoosePixelFormatARB()");
             argsp[1] = MGLChoosePixelFormat();
         }
         argsp[0] = 1;
@@ -780,7 +780,7 @@ void MGLFuncHandler(const char *name)
         uint32_t i;
         for (i = 0; ((i < MAX_PBUFFER) && hPbuffer[i].width); i++);
         if (MAX_PBUFFER == i) {
-            DPRINTF("MAX_PBUFFER reached %d", i);
+            DPRINTF("MAX_PBUFFER reached %-24u", i);
             argsp[0] = 0;
             return;
         }

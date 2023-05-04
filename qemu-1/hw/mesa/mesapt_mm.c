@@ -1121,9 +1121,9 @@ static void processArgs(MesaPTState *s)
             }
             break;
         case FEnum_glGetString:
-            s->datacb = ALIGNED(sizeof(int));
             if (s->arg[0]  == GL_EXTENSIONS) {
                 int nYear = *(const int *)(s->hshm);
+                s->datacb = ALIGNED(sizeof(int));
                 if (nYear) {
                     s->extnYear = (s->extnYear == 0)? nYear:((nYear < s->extnYear)? nYear:s->extnYear);
                     DPRINTF_COND((s->extnYear == nYear), "Guest GL Extensions limit to Year %d", s->extnYear);
@@ -1968,8 +1968,12 @@ static void processFRet(MesaPTState *s)
 #undef MAX_XSTR
                 len++; /* '\0' */
                 if (s->arg[0] != GL_EXTENSIONS) {
-                    strncpy((char *)outshm, (const char *)s->FRet, len);
-                    DPRINTF("%s [ %u ]", (char *)outshm, (uint32_t)len);
+                    memcpy((char *)outshm, (const char *)s->FRet, len);
+                    if (s->arg[0] == GL_PROGRAM_ERROR_STRING_ARB) {
+                        DPRINTF_COND((*(char *)outshm), "WARN: program error: %s [ %u ]", (char *)outshm, (uint32_t)len);
+                    }
+                    else
+                        DPRINTF("%s [ %u ]", (char *)outshm, (uint32_t)len);
                 }
                 else {
                     char *tmpstr, *stok, *xbuf = (char *)outshm;
@@ -2069,7 +2073,7 @@ static void processFRet(MesaPTState *s)
 #undef MAX_IXSTR
                 len++; /* '\0' */
                 *(int *)outshm = len;
-                strncpy((char *)PTR(outshm, sizeof(int)), (const char *)s->FRet, len);
+                memcpy((char *)PTR(outshm, sizeof(int)), (const char *)s->FRet, len);
                 //DPRINTF("GetStringi() %04x %s [ %u ]", s->arg[1], (char *)PTR(outshm, sizeof(int)), *(uint32_t *)outshm);
             }
             break;

@@ -5313,9 +5313,9 @@ void PT_CALL glGetStageIndexNV(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetStageIndexNV;
 }
 uint8_t * PT_CALL glGetString(uint32_t arg0) {
-    static const char strz[] = { 0 };
+    static char ARBperr[256];
     static const char *cstrTbl[] = {
-        vendstr, rendstr, vernstr, extnstr, glslstr, strz,
+        vendstr, rendstr, vernstr, extnstr, glslstr, ARBperr,
     };
     static const int cstrsz[] = {
         sizeof(vendstr) - 1,
@@ -5323,29 +5323,34 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
         sizeof(vernstr) - 1,
         sizeof(extnstr) - 1,
         sizeof(glslstr) - 1,
+        sizeof(ARBperr) - 1,
     };
     struct mglOptions cfg;
     int sel;
 
     if (!currGLRC)
-        return (uint8_t *)cstrTbl[5];
+        return 0;
 
     switch(arg0) {
+        case GL_EXTENSIONS:
+            parse_options(&cfg);
+            fifoAddData(0, (uint32_t)&cfg.xstrYear, sizeof(int));
+            /* fall through */
         case GL_VENDOR:
         case GL_RENDERER:
         case GL_VERSION:
-        case GL_EXTENSIONS:
             sel = arg0 & 0x03U;
             break;
         case GL_SHADING_LANGUAGE_VERSION:
             sel = 4;
             break;
+        case GL_PROGRAM_ERROR_STRING_ARB:
+            sel = 5;
+            break;
         default:
-            return (uint8_t *)cstrTbl[5];
+            return 0;
     }
 
-    parse_options(&cfg);
-    fifoAddData(0, (uint32_t)&cfg.xstrYear, sizeof(int));
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetString;
     fifoOutData(0, (uint32_t)cstrTbl[sel], cstrsz[sel]);
