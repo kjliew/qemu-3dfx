@@ -778,8 +778,8 @@ void MGLFuncHandler(const char *name)
     }
     FUNCP_HANDLER("wglCreatePbufferARB") {
         uint32_t i;
-        i = 0; while(hPbuffer[i].width) i++;
-        if (i == MAX_PBUFFER) {
+        for (i = 0; ((i < MAX_PBUFFER) && hPbuffer[i].width); i++);
+        if (MAX_PBUFFER == i) {
             DPRINTF("MAX_PBUFFER reached %d", i);
             argsp[0] = 0;
             return;

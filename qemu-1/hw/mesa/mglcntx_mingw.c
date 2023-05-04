@@ -753,8 +753,8 @@ void MGLFuncHandler(const char *name)
             (HDC (__stdcall *)(HPBUFFERARB)) MesaGLGetProc("wglGetPbufferDCARB");
         if (fp && fpDC) {
             uint32_t i;
-            i = 0; while(hPbuffer[i]) i++;
-            if (i == MAX_PBUFFER) {
+            for (i = 0; ((i < MAX_PBUFFER) && hPbuffer[i]); i++);
+            if (MAX_PBUFFER == i) {
                 DPRINTF("MAX_PBUFFER reached %d", i);
                 argsp[0] = 0;
                 return;

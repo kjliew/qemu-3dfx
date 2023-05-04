@@ -16431,6 +16431,7 @@ static uint32_t getExtNameEntry(char *name)
     memcpy(funcp, a, sizeof(a))
 
 #define WGL_FUNCP_RET(a) \
+    (void)a; \
     a = argsp[0]
 
 static uint32_t PT_CALL wglSwapIntervalEXT (uint32_t arg0)
@@ -16472,8 +16473,6 @@ static uint32_t PT_CALL wglGetExtensionsStringEXT(void)
     return wglGetExtensionsStringARB(0);
 }
 
-typedef void *HPBUFFERARB;
-
 /* WGL_ARB_pixel_format */
 static BOOL WINAPI
 wglGetPixelFormatAttribivARB (HDC hdc,
@@ -16483,13 +16482,13 @@ wglGetPixelFormatAttribivARB (HDC hdc,
 			      const int *piAttributes,
 			      int *piValues)
 {
-  int ret;
+  uint32_t ret;
   WGL_FUNCP("wglGetPixelFormatAttribivARB");
   argsp[0] = iPixelFormat; argsp[1] = iLayerPlane; argsp[2] = nAttributes;
   memcpy(&argsp[4], piAttributes, nAttributes*sizeof(int));
   //DPRINTF("GetPixelFormatAttribivARB");
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
-  ret = argsp[0];
+  WGL_FUNCP_RET(ret);
   if (ret && piValues)
       memcpy(piValues, &argsp[2], nAttributes*sizeof(int));
   return ret;
@@ -16503,13 +16502,13 @@ wglGetPixelFormatAttribfvARB (HDC hdc,
 			      const int *piAttributes,
 			      FLOAT *pfValues)
 {
-  int ret;
+  uint32_t ret;
   WGL_FUNCP("wglGetPixelFormatAttribfvARB");
   argsp[0] = iPixelFormat; argsp[1] = iLayerPlane; argsp[2] = nAttributes;
   memcpy(&argsp[4], piAttributes, nAttributes*sizeof(int));
   //DPRINTF("GetPixelFormatAttribfvARB");
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
-  ret = argsp[0];
+  WGL_FUNCP_RET(ret);
   if (ret && pfValues)
       memcpy(pfValues, &argsp[2], nAttributes*sizeof(float));
   return ret;
@@ -16523,7 +16522,7 @@ wglChoosePixelFormatARB (HDC hdc,
 			 int *piFormats,
 			 UINT *nNumFormats)
 {
-  int i, ret;
+  uint32_t i, ret;
   WGL_FUNCP("wglChoosePixelFormatARB");
   for (i = 0; piAttribIList[i]; i+=2) {
       argsp[i] = piAttribIList[i];
@@ -16531,7 +16530,7 @@ wglChoosePixelFormatARB (HDC hdc,
   }
   argsp[i] = 0; argsp[i+1] = 0;
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
-  ret = argsp[0];
+  WGL_FUNCP_RET(ret);
   if (ret && piFormats && nNumFormats) {
       *piFormats = argsp[1];
       *nNumFormats = 1;
@@ -16547,7 +16546,7 @@ wglCreateContextAttribsARB(HDC hDC,
                            HGLRC hShareContext,
                            const int *attribList)
 {
-  int i, ret;
+  uint32_t i, ret;
   WGL_FUNCP("wglCreateContextAttribsARB");
   argsp[0] = (uint32_t) hShareContext;
   for (i = 0; attribList[i]; i+=2) {
@@ -16574,10 +16573,11 @@ wglCreateContextAttribsARB(HDC hDC,
 }
 
 /* WGL_ARB_render_texture */
+typedef void *HPBUFFERARB;
 static BOOL WINAPI
 wglBindTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
 {
-  BOOL ret;
+  uint32_t ret;
   WGL_FUNCP("wglBindTexImageARB");
   argsp[0] = (uint32_t)hPbuffer; argsp[1] = iBuffer;
   //DPRINTF("BindTexImageARB %x", iBuffer);
@@ -16589,7 +16589,7 @@ wglBindTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
 static BOOL WINAPI
 wglReleaseTexImageARB (HPBUFFERARB hPbuffer, int iBuffer)
 {
-  BOOL ret;
+  uint32_t ret;
   WGL_FUNCP("wglReleaseTexImageARB");
   argsp[0] = (uint32_t)hPbuffer; argsp[1] = iBuffer;
   //DPRINTF("ReleaseTexImageARB %x", iBuffer);
@@ -16602,8 +16602,7 @@ static BOOL WINAPI
 wglSetPbufferAttribARB (HPBUFFERARB hPbuffer,
 			const int *piAttribList)
 {
-  BOOL ret;
-  int i;
+  uint32_t i, ret;
   WGL_FUNCP("wglSetPbufferAttribARB");
   argsp[0] = (uint32_t)hPbuffer;
   for (i = 0; piAttribList[i]; i+=2) {
@@ -16625,8 +16624,7 @@ wglCreatePbufferARB (HDC hDC,
 		     int iHeight,
 		     const int *piAttribList)
 {
-  uint32_t ret;
-  int i;
+  uint32_t i, ret;
   WGL_FUNCP("wglCreatePbufferARB");
   argsp[0] = iPixelFormat; argsp[1] = iWidth; argsp[2] = iHeight;
   for (i = 0; piAttribList[i]; i+=2) {
@@ -16635,9 +16633,11 @@ wglCreatePbufferARB (HDC hDC,
   }
   argsp[i+4] = 0; argsp[i+5] = 0;
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
+  WGL_FUNCP_RET(ret);
+  i = argsp[1] & (MAX_PBUFFER - 1);
   //DPRINTF("CreatePbufferARB %p %02x %d %d pbuf %02x", hDC, iPixelFormat, iWidth, iHeight, argsp[1]);
-  currPB[argsp[1] & (MAX_PBUFFER - 1)] = (argsp[0])? (((MESAGL_MAGIC & 0x0FFFFFFFU) << 4) | argsp[1]):0;
-  ret = currPB[argsp[1] & (MAX_PBUFFER - 1)];
+  currPB[i] = (ret)? (((MESAGL_MAGIC & 0x0FFFFFFFU) << 4) | argsp[1]):0;
+  ret = currPB[i];
   return (HPBUFFERARB)ret;
 }
 
@@ -16662,13 +16662,14 @@ wglReleasePbufferDCARB (HPBUFFERARB hPbuffer, HDC hDC)
 static BOOL WINAPI
 wglDestroyPbufferARB (HPBUFFERARB hPbuffer)
 {
-  BOOL ret;
+  uint32_t ret;
   WGL_FUNCP("wglDestroyPbufferARB");
   argsp[0] = (uint32_t)hPbuffer;
   //DPRINTF("DestroyPbufferARB %p", hPbuffer);
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
   WGL_FUNCP_RET(ret);
-  currPB[((uint32_t)hPbuffer & (MAX_PBUFFER - 1))] = 0;
+  if (ret)
+      currPB[((uint32_t)hPbuffer & (MAX_PBUFFER - 1))] = 0;
   return ret;
 }
 
@@ -16682,7 +16683,7 @@ wglQueryPbufferARB (HPBUFFERARB hPbuffer,
   //DPRINTF("QueryPbufferARB %p %x", hPbuffer, iAttribute);
   argsp[0] = (uint32_t)hPbuffer; argsp[1] = iAttribute;
   ptm[0xFDC >> 2] = MESAGL_MAGIC;
-  ret = argsp[0];
+  WGL_FUNCP_RET(ret);
   if (ret && piValue)
       *piValue = argsp[2];
   return ret;
@@ -16695,7 +16696,7 @@ wglGetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
     uint32_t ret;
     WGL_FUNCP("wglGetDeviceGammaRamp3DFX");
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
-    ret = argsp[0];
+    WGL_FUNCP_RET(ret);
     if (ret && arrays)
         memcpy(arrays, &argsp[2], 3*256*sizeof(uint16_t));
     return ret;
