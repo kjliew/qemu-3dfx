@@ -150,6 +150,9 @@ static void vtxarry_state(MesaPTState *s, uint32_t arry, int st)
             s->GenAttrib[1].enable = st;
             break;
         default:
+            DPRINTF_COND(((s->FEnum == FEnum_glDisableClientState) ||
+                (s->FEnum == FEnum_glEnableClientState)),
+                    " *WARN* Unsupported client state %04X st %d", arry, st);
             break;
     }
 }
@@ -485,6 +488,7 @@ static int PArgsShouldAligned(MesaPTState *s)
         case FEnum_glVertexAttribLPointerEXT:
         case FEnum_glVertexAttribPointer:
         case FEnum_glVertexAttribPointerARB:
+        case FEnum_glVertexAttribPointerNV:
         case FEnum_glVertexPointer:
         case FEnum_glVertexPointerEXT:
         case FEnum_glVertexWeightPointerEXT:
@@ -505,6 +509,7 @@ static void processArgs(MesaPTState *s)
     uint8_t *outshm = s->fifo_ptr + (MGLSHM_SIZE - (3*PAGE_SIZE));
 
     switch (s->FEnum) {
+        case FEnum_glAreProgramsResidentNV:
         case FEnum_glAreTexturesResident:
         case FEnum_glAreTexturesResidentEXT:
             s->datacb = ALIGNED(s->arg[0] * sizeof(uint32_t));
@@ -624,6 +629,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glVertexAttribIPointerEXT:
         case FEnum_glVertexAttribLPointer:
         case FEnum_glVertexAttribLPointerEXT:
+        case FEnum_glVertexAttribPointerNV:
             {
                 vtxarry_t *arry = vattr2arry(s, s->arg[0]);
                 vtxarry_init(arry, s->arg[1], s->arg[2], s->arg[3], (s->arrayBuf == 0)?
@@ -663,118 +669,106 @@ static void processArgs(MesaPTState *s)
             } while(0);
             break;
         case FEnum_glColor3bv:
-        case FEnum_glColor3ubv:
-        case FEnum_glNormal3bv:
-        case FEnum_glSecondaryColor3bv:
-        case FEnum_glSecondaryColor3bvEXT:
-        case FEnum_glSecondaryColor3ubv:
-        case FEnum_glSecondaryColor3ubvEXT:            
-            s->datacb = ALIGNED(3*sizeof(uint8_t));
-            s->parg[0] = VAL(s->hshm);
-            break;
-        case FEnum_glColor4bv:
-        case FEnum_glColor4ubv:
-        case FEnum_glVertexAttrib4Nbv:
-        case FEnum_glVertexAttrib4NbvARB:
-        case FEnum_glVertexAttrib4Nubv:
-        case FEnum_glVertexAttrib4NubvARB:
-        case FEnum_glVertexAttrib4bv:
-        case FEnum_glVertexAttrib4bvARB:
-        case FEnum_glVertexAttrib4ubv:
-        case FEnum_glVertexAttrib4ubvARB:            
-            s->datacb = ALIGNED(4*sizeof(uint8_t));
-            s->parg[0] = VAL(s->hshm);
-            break;
-        case FEnum_glIndexsv:
-        case FEnum_glMultiTexCoord1sv:
-        case FEnum_glMultiTexCoord1svARB:
-        case FEnum_glVertexAttrib1sv:
-        case FEnum_glVertexAttrib1svARB:            
-            s->datacb = ALIGNED(sizeof(uint16_t));
-            s->parg[0] = VAL(s->hshm);
-            s->parg[1] = VAL(s->hshm);
-            break;
-        case FEnum_glRasterPos2sv:
-        case FEnum_glTexCoord2sv:
-        case FEnum_glVertex2sv:
-        case FEnum_glMultiTexCoord2sv:
-        case FEnum_glMultiTexCoord2svARB:
-        case FEnum_glVertexAttrib2sv:
-        case FEnum_glVertexAttrib2svARB:            
-            s->datacb = ALIGNED(2*sizeof(uint16_t));
-            s->parg[0] = VAL(s->hshm);
-            s->parg[1] = VAL(s->hshm);
-            break;
         case FEnum_glColor3sv:
+        case FEnum_glColor3ubv:
         case FEnum_glColor3usv:
-        case FEnum_glMultiTexCoord3sv:
-        case FEnum_glMultiTexCoord3svARB:
-        case FEnum_glNormal3sv:
-        case FEnum_glRasterPos3sv:
-        case FEnum_glSecondaryColor3sv:
-        case FEnum_glSecondaryColor3svEXT:
-        case FEnum_glSecondaryColor3usv:
-        case FEnum_glSecondaryColor3usvEXT:            
-        case FEnum_glTexCoord3sv:
-        case FEnum_glVertex3sv:
-        case FEnum_glVertexAttrib3sv:
-        case FEnum_glVertexAttrib3svARB:            
-            s->datacb = ALIGNED(3*sizeof(uint16_t));
-            s->parg[0] = VAL(s->hshm);
-            s->parg[1] = VAL(s->hshm);
-            break;
+        case FEnum_glColor4bv:
         case FEnum_glColor4sv:
+        case FEnum_glColor4ubv:
         case FEnum_glColor4usv:
-        case FEnum_glRasterPos4sv:
-        case FEnum_glTexCoord4sv:
-        case FEnum_glVertex4sv:
-        case FEnum_glMultiTexCoord4sv:
-        case FEnum_glMultiTexCoord4svARB:
-        case FEnum_glVertexAttrib4Nsv:
-        case FEnum_glVertexAttrib4NsvARB:
-        case FEnum_glVertexAttrib4Nusv:
-        case FEnum_glVertexAttrib4NusvARB:
-        case FEnum_glVertexAttrib4sv:
-        case FEnum_glVertexAttrib4svARB:
-        case FEnum_glVertexAttrib4usv:
-        case FEnum_glVertexAttrib4usvARB:
-            s->datacb = 4*sizeof(uint16_t);
-            s->parg[0] = VAL(s->hshm);
-            s->parg[1] = VAL(s->hshm);
-            break;
         case FEnum_glEdgeFlagv:
+        case FEnum_glEvalCoord1dv:
         case FEnum_glEvalCoord1fv:
+        case FEnum_glEvalCoord2fv:
         case FEnum_glFogCoorddv:
         case FEnum_glFogCoorddvEXT:
         case FEnum_glFogCoordfv:
         case FEnum_glFogCoordfvEXT:
+        case FEnum_glIndexdv:
         case FEnum_glIndexfv:
         case FEnum_glIndexiv:
+        case FEnum_glIndexsv:
+        case FEnum_glMultiTexCoord1dv:
+        case FEnum_glMultiTexCoord1dvARB:
         case FEnum_glMultiTexCoord1fv:
         case FEnum_glMultiTexCoord1fvARB:
         case FEnum_glMultiTexCoord1iv:
         case FEnum_glMultiTexCoord1ivARB:
-        case FEnum_glVertexAttrib1fv:
-        case FEnum_glVertexAttrib1fvARB:
-        case FEnum_glVertexWeightfvEXT:
-            s->datacb = ALIGNED(sizeof(uint32_t));
-            s->parg[0] = VAL(s->hshm);
-            s->parg[1] = VAL(s->hshm);
-            break;
-        case FEnum_glEvalCoord2fv:
-        case FEnum_glRasterPos2fv:
-        case FEnum_glRasterPos2iv:
-        case FEnum_glTexCoord2fv:
-        case FEnum_glTexCoord2iv:
-        case FEnum_glVertex2fv:
-        case FEnum_glVertex2iv:
+        case FEnum_glMultiTexCoord1sv:
+        case FEnum_glMultiTexCoord1svARB:
         case FEnum_glMultiTexCoord2fv:
         case FEnum_glMultiTexCoord2fvARB:
         case FEnum_glMultiTexCoord2iv:
         case FEnum_glMultiTexCoord2ivARB:
+        case FEnum_glMultiTexCoord2sv:
+        case FEnum_glMultiTexCoord2svARB:
+        case FEnum_glMultiTexCoord3sv:
+        case FEnum_glMultiTexCoord3svARB:
+        case FEnum_glMultiTexCoord4sv:
+        case FEnum_glMultiTexCoord4svARB:
+        case FEnum_glNormal3bv:
+        case FEnum_glNormal3sv:
+        case FEnum_glRasterPos2fv:
+        case FEnum_glRasterPos2iv:
+        case FEnum_glRasterPos2sv:
+        case FEnum_glRasterPos3sv:
+        case FEnum_glRasterPos4sv:
+        case FEnum_glSecondaryColor3bv:
+        case FEnum_glSecondaryColor3bvEXT:
+        case FEnum_glSecondaryColor3sv:
+        case FEnum_glSecondaryColor3svEXT:
+        case FEnum_glSecondaryColor3ubv:
+        case FEnum_glSecondaryColor3ubvEXT:
+        case FEnum_glSecondaryColor3usv:
+        case FEnum_glSecondaryColor3usvEXT:            
+        case FEnum_glTexCoord2fv:
+        case FEnum_glTexCoord2iv:
+        case FEnum_glTexCoord2sv:
+        case FEnum_glTexCoord3sv:
+        case FEnum_glTexCoord4sv:
+        case FEnum_glVertex2fv:
+        case FEnum_glVertex2iv:
+        case FEnum_glVertex2sv:
+        case FEnum_glVertex3sv:
+        case FEnum_glVertex4sv:
+        case FEnum_glVertexAttrib1dv:
+        case FEnum_glVertexAttrib1dvARB:
+        case FEnum_glVertexAttrib1dvNV:
+        case FEnum_glVertexAttrib1fv:
+        case FEnum_glVertexAttrib1fvARB:
+        case FEnum_glVertexAttrib1fvNV:
+        case FEnum_glVertexAttrib1sv:
+        case FEnum_glVertexAttrib1svARB:
+        case FEnum_glVertexAttrib1svNV:
         case FEnum_glVertexAttrib2fv:
-        case FEnum_glVertexAttrib2fvARB:            
-            s->datacb = 2*sizeof(uint32_t);
+        case FEnum_glVertexAttrib2fvARB:
+        case FEnum_glVertexAttrib2fvNV:
+        case FEnum_glVertexAttrib2sv:
+        case FEnum_glVertexAttrib2svARB:
+        case FEnum_glVertexAttrib2svNV:
+        case FEnum_glVertexAttrib3sv:
+        case FEnum_glVertexAttrib3svARB:
+        case FEnum_glVertexAttrib3svNV:
+        case FEnum_glVertexAttrib4Nbv:
+        case FEnum_glVertexAttrib4NbvARB:
+        case FEnum_glVertexAttrib4Nsv:
+        case FEnum_glVertexAttrib4NsvARB:
+        case FEnum_glVertexAttrib4Nubv:
+        case FEnum_glVertexAttrib4NubvARB:
+        case FEnum_glVertexAttrib4Nusv:
+        case FEnum_glVertexAttrib4NusvARB:
+        case FEnum_glVertexAttrib4bv:
+        case FEnum_glVertexAttrib4bvARB:
+        case FEnum_glVertexAttrib4sv:
+        case FEnum_glVertexAttrib4svARB:
+        case FEnum_glVertexAttrib4svNV:
+        case FEnum_glVertexAttrib4ubv:
+        case FEnum_glVertexAttrib4ubvARB:
+        case FEnum_glVertexAttrib4ubvNV:
+        case FEnum_glVertexAttrib4usv:
+        case FEnum_glVertexAttrib4usvARB:
+        case FEnum_glVertexWeightfvEXT:
+            s->datacb = ALIGNED(1) /* 1234ubv / 1234sv / 12fv / 1dv */;
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
             break;
@@ -794,13 +788,14 @@ static void processArgs(MesaPTState *s)
         case FEnum_glSecondaryColor3iv:
         case FEnum_glSecondaryColor3ivEXT:
         case FEnum_glSecondaryColor3uiv:
-        case FEnum_glSecondaryColor3uivEXT:            
+        case FEnum_glSecondaryColor3uivEXT:
         case FEnum_glTexCoord3fv:
         case FEnum_glTexCoord3iv:
         case FEnum_glVertex3fv:
         case FEnum_glVertex3iv:
         case FEnum_glVertexAttrib3fv:
         case FEnum_glVertexAttrib3fvARB:            
+        case FEnum_glVertexAttrib3fvNV:
             s->datacb = ALIGNED(3*sizeof(uint32_t));
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
@@ -820,6 +815,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMultiTexCoord4ivARB:
         case FEnum_glVertexAttrib4fv:
         case FEnum_glVertexAttrib4fvARB:
+        case FEnum_glVertexAttrib4fvNV:
         case FEnum_glVertexAttrib4iv:
         case FEnum_glVertexAttrib4ivARB:
         case FEnum_glVertexAttrib4Niv:
@@ -832,16 +828,6 @@ static void processArgs(MesaPTState *s)
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
             break;
-        case FEnum_glEvalCoord1dv:
-        case FEnum_glIndexdv:
-        case FEnum_glMultiTexCoord1dv:
-        case FEnum_glMultiTexCoord1dvARB:
-        case FEnum_glVertexAttrib1dv:
-        case FEnum_glVertexAttrib1dvARB:            
-            s->datacb = sizeof(double);
-            s->parg[0] = VAL(s->hshm);
-            s->parg[1] = VAL(s->hshm);
-            break;
         case FEnum_glEvalCoord2dv:
         case FEnum_glRasterPos2dv:
         case FEnum_glTexCoord2dv:
@@ -850,6 +836,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMultiTexCoord2dvARB:
         case FEnum_glVertexAttrib2dv:
         case FEnum_glVertexAttrib2dvARB:
+        case FEnum_glVertexAttrib2dvNV:
             s->datacb = 2*sizeof(double);
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
@@ -860,11 +847,12 @@ static void processArgs(MesaPTState *s)
         case FEnum_glNormal3dv:
         case FEnum_glRasterPos3dv:
         case FEnum_glSecondaryColor3dv:
-        case FEnum_glSecondaryColor3dvEXT:            
+        case FEnum_glSecondaryColor3dvEXT:
         case FEnum_glTexCoord3dv:
         case FEnum_glVertex3dv:
         case FEnum_glVertexAttrib3dv:
         case FEnum_glVertexAttrib3dvARB:
+        case FEnum_glVertexAttrib3dvNV:
             s->datacb = 3*sizeof(double);
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
@@ -877,6 +865,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMultiTexCoord4dvARB:
         case FEnum_glVertexAttrib4dv:
         case FEnum_glVertexAttrib4dvARB:
+        case FEnum_glVertexAttrib4dvNV:
             s->datacb = 4*sizeof(double);
             s->parg[0] = VAL(s->hshm);
             s->parg[1] = VAL(s->hshm);
@@ -884,9 +873,12 @@ static void processArgs(MesaPTState *s)
         case FEnum_glDeleteBuffers:
         case FEnum_glDeleteBuffersARB:
         case FEnum_glDeleteFencesAPPLE:
+        case FEnum_glDeleteFencesNV:
         case FEnum_glDeleteFramebuffers:
         case FEnum_glDeleteFramebuffersEXT:
+        case FEnum_glDeleteOcclusionQueriesNV:
         case FEnum_glDeleteProgramsARB:
+        case FEnum_glDeleteProgramsNV:
         case FEnum_glDeleteQueries:
         case FEnum_glDeleteQueriesARB:
         case FEnum_glDeleteRenderbuffers:
@@ -1038,9 +1030,12 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGenBuffers:
         case FEnum_glGenBuffersARB:
         case FEnum_glGenFencesAPPLE:
+        case FEnum_glGenFencesNV:
         case FEnum_glGenFramebuffers:
         case FEnum_glGenFramebuffersEXT:
+        case FEnum_glGenOcclusionQueriesNV:
         case FEnum_glGenProgramsARB:
+        case FEnum_glGenProgramsNV:
         case FEnum_glGenQueries:
         case FEnum_glGenQueriesARB:
         case FEnum_glGenRenderbuffers:
@@ -1077,11 +1072,12 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetPixelMapuiv:
         case FEnum_glGetPixelMapusv:
             *(int *)outshm = szglname(s->arg[0]);
-            s->parg[1] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
+            s->parg[1] = VAL(PTR(outshm, ALIGNED(sizeof(int))));
             break;
         case FEnum_glGetBufferParameteriv:
         case FEnum_glGetBufferParameterivARB:
         case FEnum_glGetCombinerStageParameterfvNV:
+        case FEnum_glGetFenceivNV:
         case FEnum_glGetFinalCombinerInputParameterfvNV:
         case FEnum_glGetFinalCombinerInputParameterivNV:
         case FEnum_glGetLightfv:
@@ -1090,6 +1086,8 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetMaterialiv:
         case FEnum_glGetObjectParameterfvARB:
         case FEnum_glGetObjectParameterivARB:
+        case FEnum_glGetOcclusionQueryivNV:
+        case FEnum_glGetOcclusionQueryuivNV:
         case FEnum_glGetProgramiv:
         case FEnum_glGetProgramivARB:
         case FEnum_glGetQueryiv:
@@ -1194,29 +1192,52 @@ static void processArgs(MesaPTState *s)
             if (s->arg[1])
                 PushVertexArray(s, s->hshm, s->arg[0], s->arg[0] + s->arg[1] - 1);
             break;
+        case FEnum_glProgramNamedParameter4dvNV:
+        case FEnum_glProgramNamedParameter4fvNV:
+            s->datacb = ALIGNED(s->arg[1]);
+            s->datacb += (s->FEnum == FEnum_glProgramNamedParameter4dvNV)?
+                (4*sizeof(double)):(4*sizeof(float));
+            s->parg[2] = VAL(s->hshm);
+            s->parg[3] = VAL(PTR(s->hshm, ALIGNED(s->arg[1])));
+            DPRINTF_COND((GLFuncTrace() == 2), "\"%s\"", PTR(s->hshm, 0));
+            break;
+        case FEnum_glProgramNamedParameter4dNV:
+        case FEnum_glProgramNamedParameter4fNV:
+            s->datacb = ALIGNED(s->arg[1]);
+            s->parg[2] = VAL(s->hshm);
+            DPRINTF_COND((GLFuncTrace() == 2), "\"%s\"", PTR(s->hshm, 0));
+            break;
         case FEnum_glProgramEnvParameter4dvARB:
         case FEnum_glProgramLocalParameter4dvARB:
+        case FEnum_glProgramParameter4dvNV:
             s->datacb = 4*sizeof(double);
             s->parg[2] = VAL(s->hshm);
             break;
+        case FEnum_glExecuteProgramNV:
         case FEnum_glProgramEnvParameter4fvARB:
         case FEnum_glProgramLocalParameter4fvARB:
+        case FEnum_glProgramParameter4fvNV:
             s->datacb = 4*sizeof(float);
             s->parg[2] = VAL(s->hshm);
             break;
+        case FEnum_glProgramParameters4dvNV:
+            s->datacb = 4*s->arg[2]*sizeof(double);
+            s->parg[3] = VAL(s->hshm);
+            break;
         case FEnum_glProgramEnvParameters4fvEXT:
         case FEnum_glProgramLocalParameters4fvEXT:
+        case FEnum_glProgramParameters4fvNV:
             s->datacb = 4*s->arg[2]*sizeof(float);
             s->parg[3] = VAL(s->hshm);
             break;
+        case FEnum_glLoadProgramNV:
         case FEnum_glProgramStringARB:
             s->datacb = ALIGNED(s->arg[2]);
             s->parg[3] = VAL(s->hshm);
-            if (0) {
-                char *prog = g_malloc0(s->arg[2] + 1);
-                memcpy(prog, s->hshm, s->arg[2]);
-                DPRINTF("ProgramString [ %d ]\n%s", s->arg[2], prog);
-                g_free(prog);
+            if (GLShaderDump()) {
+                DPRINTF("--------- ProgramString %04x ------>>>>", s->arg[1]);
+                fprintf(stderr, "%s[ %d ]\n", s->hshm, s->arg[2]);
+                DPRINTF("<<<<----- %04x ProgramString ----------", s->arg[1]);
             }
             break;
         case FEnum_glReadPixels:
@@ -1852,7 +1873,10 @@ static void processFRet(MesaPTState *s)
             break;
         case FEnum_glDisable:
         case FEnum_glDisableClientState:
-            vtxarry_state(s, s->arg[0], 0);
+            if ((s->arg[0] & 0xFFF0U) == GL_VERTEX_ATTRIB_ARRAY0_NV)
+                vtxarry_state(s, vattr2arry_state(s, s->arg[0] & 0xFU), 0);
+            else
+                vtxarry_state(s, s->arg[0], 0);
             break;
         case FEnum_glDisableVertexAttribArray:
         case FEnum_glDisableVertexAttribArrayARB:
@@ -1860,7 +1884,10 @@ static void processFRet(MesaPTState *s)
             break;
         case FEnum_glEnable:
         case FEnum_glEnableClientState:
-            vtxarry_state(s, s->arg[0], 1);
+            if ((s->arg[0] & 0xFFF0U) == GL_VERTEX_ATTRIB_ARRAY0_NV)
+                vtxarry_state(s, vattr2arry_state(s, s->arg[0] & 0xFU), 1);
+            else
+                vtxarry_state(s, s->arg[0], 1);
             break;
         case FEnum_glEnableVertexAttribArray:
         case FEnum_glEnableVertexAttribArrayARB:
@@ -1914,17 +1941,18 @@ static void processFRet(MesaPTState *s)
         case FEnum_glGetDoublev:
         case FEnum_glGetFloatv:
         case FEnum_glGetIntegerv:
-            if ((s->logpname[s->arg[0] >> 3] & (1 << (s->arg[0] % 8))) == 0) {
+            if ((GLFuncTrace() == 2) ||
+                ((s->logpname[s->arg[0] >> 3] & (1 << (s->arg[0] % 8))) == 0)) {
                 s->logpname[s->arg[0] >> 3] |= (1 << (s->arg[0] % 8));
                 fprintf(stderr, "mgl_trace: Get() %04x ( %04x ): ", s->arg[0], *(int *)outshm);
                 for (int i = 0; i < *(int *)outshm; i++) {
                     void *v = outshm + ALIGNED(sizeof(int));
                     if (s->FEnum == FEnum_glGetDoublev)
                         fprintf(stderr, "% .4f ", *(double *)PTR(v, i*sizeof(double)));
-                    if (s->FEnum == FEnum_glGetFloatv)
+                    else if (s->FEnum == FEnum_glGetFloatv)
                         fprintf(stderr, "% .2f ", *(float *)PTR(v, i*sizeof(float)));
-                    if ((s->FEnum != FEnum_glGetFloatv) && (s->FEnum != FEnum_glGetDoublev))
-                        fprintf(stderr, "%08X ", *(uint32_t *)PTR(v, i*sizeof(uint32_t)));
+                    else
+                        fprintf(stderr, "%08X ", *(int *)PTR(v, i*sizeof(int)));
                 }
                 fprintf(stderr, "\n");
             }
