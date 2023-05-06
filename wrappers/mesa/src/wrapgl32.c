@@ -393,7 +393,7 @@ static FILE * opt_fopen(void)
     return ret;
 }
 
-static void fltrxstr(const char *xstr, size_t len)
+static void fltrxstr(const char *xstr, size_t len, const int xstrYear)
 {
 #define MAX_XSTR 128
     char *str = (char *)xstr, *tmp = (char *)&fbtm[(MGLFBT_SIZE - (3*PAGE_SIZE)) >> 2];
@@ -403,12 +403,13 @@ static void fltrxstr(const char *xstr, size_t len)
     *(tmp + 1) = '\0';
     if (f) {
         char *stok, line[MAX_XSTR];
+        size_t slen;
         stok = strtok(str, " ");
         while (stok) {
             size_t xlen = strnlen(stok, MAX_XSTR);
             int fltr = 0;
             while(fgets(line, MAX_XSTR, f)) {
-                size_t slen = strnlen(line, MAX_XSTR) - 1;
+                slen = strnlen(line, MAX_XSTR) - 1;
                 if ((slen == xlen) && !strncmp(stok, line, xlen)) {
                     fltr = 1;
                     OHST_DMESG("..ignoring %s", stok);
@@ -418,11 +419,20 @@ static void fltrxstr(const char *xstr, size_t len)
             if (!fltr) {
                 memcpy(tmp, stok, xlen);
                 tmp += xlen;
-                *tmp = ' ';
-                tmp++;
+                *(tmp++) = ' ';
             }
             fseek(f, 0, SEEK_SET);
             stok = strtok(NULL, " ");
+        }
+        while(fgets(line, MAX_XSTR, f)) {
+            slen = strnlen(line, MAX_XSTR) - 1;
+            if (xstrYear && !memcmp(line, "+GL_", 4)) {
+                line[slen] = '\0';
+                OHST_DMESG("..blessing %s", &line[1]);
+                memcpy(tmp, &line[1], slen - 1);
+                tmp += slen - 1;
+                *(tmp++) = ' ';
+            }
         }
         *(--tmp) = '\0';
         fclose(f);
@@ -5383,7 +5393,7 @@ uint8_t * PT_CALL glGetString(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetString;
     fifoOutData(0, (uint32_t)cstrTbl[sel], cstrsz[sel]);
     if (sel == 0x03U)
-        fltrxstr(cstrTbl[sel], cstrsz[sel]);
+        fltrxstr(cstrTbl[sel], cstrsz[sel], cfg.xstrYear);
     //DPRINTF("%s [ %04x ]", cstrTbl[sel], arg0);
     return (uint8_t *)cstrTbl[sel];
 }
@@ -16548,7 +16558,7 @@ static uint32_t PT_CALL wglGetExtensionsStringARB(uint32_t arg0)
     WGL_FUNCP("wglGetExtensionsStringARB");
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
     strncpy((char *)wstrtbl[0], (char *)&mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2], PAGE_SIZE);
-    fltrxstr(wstrtbl[0], PAGE_SIZE - 1);
+    fltrxstr(wstrtbl[0], PAGE_SIZE - 1, 0);
     //DPRINTF("GetExtensionsStringARB %s", wstrtbl[0]);
     return (uint32_t)wstrtbl[0];
 }
