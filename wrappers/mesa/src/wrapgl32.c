@@ -1349,12 +1349,14 @@ void PT_CALL glClearTexSubImage(uint32_t arg0, uint32_t arg1, uint32_t arg2, uin
 void PT_CALL glClientActiveTexture(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClientActiveTexture, 1);
-    vtxArry.texUnit = ((arg0 & 0xFFF0U) == GL_TEXTURE0_ARB)? (arg0 & 0x0FU):0;
+    if ((arg0 & 0xFFE0U) == GL_TEXTURE0)
+        vtxArry.texUnit = arg0 & (MAX_TEXUNIT - 1);
 }
 void PT_CALL glClientActiveTextureARB(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClientActiveTextureARB, 1);
-    vtxArry.texUnit = ((arg0 & 0xFFF0U) == GL_TEXTURE0_ARB)? (arg0 & 0x0FU):0;
+    if ((arg0 & 0xFFE0U) == GL_TEXTURE0_ARB)
+        vtxArry.texUnit = arg0 & (MAX_TEXUNIT - 1);
 }
 void PT_CALL glClientActiveVertexStreamATI(uint32_t arg0) {
     pt[1] = arg0; 

@@ -1870,7 +1870,10 @@ static void processFRet(MesaPTState *s)
             break;
         case FEnum_glClientActiveTexture:
         case FEnum_glClientActiveTextureARB:
-            s->texUnit = ((s->arg[0] & 0xFFF0U) == GL_TEXTURE0_ARB)? (s->arg[0] & 0x0FU):0;
+            if ((s->arg[0] & 0xFFE0U) == GL_TEXTURE0) {
+                s->texUnit = s->arg[0] & (MAX_TEXUNIT - 1);
+                DPRINTF_COND(((s->arg[0] & 0x1FU) >= MAX_TEXUNIT), " *WARN* MAX_TEXUNIT exceeded %04x", s->arg[0]);
+            }
             break;
         case FEnum_glDisable:
         case FEnum_glDisableClientState:
