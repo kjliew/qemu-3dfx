@@ -1090,6 +1090,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetOcclusionQueryuivNV:
         case FEnum_glGetProgramiv:
         case FEnum_glGetProgramivARB:
+        case FEnum_glGetProgramivNV:
         case FEnum_glGetQueryiv:
         case FEnum_glGetQueryivARB:
         case FEnum_glGetRenderbufferParameteriv:

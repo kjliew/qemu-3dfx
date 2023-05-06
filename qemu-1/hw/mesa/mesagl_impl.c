@@ -786,6 +786,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetOcclusionQueryuivNV:
         case FEnum_glGetProgramiv:
         case FEnum_glGetProgramivARB:
+        case FEnum_glGetProgramivNV:
         case FEnum_glGetQueryObjecti64v:
         case FEnum_glGetQueryObjecti64vEXT:
         case FEnum_glGetQueryObjectiv:
