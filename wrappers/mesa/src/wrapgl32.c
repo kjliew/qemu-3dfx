@@ -15,6 +15,11 @@
 #define COMPACT __attribute__((optimize("Os")))
 #define COMPACT_FRAME COMPACT __attribute__((optimize("-fno-omit-frame-pointer")))
 #define LOG_NAME "C:\\WRAPGL32.LOG"
+#define TRACE_PNAME(p) \
+    if ((logpname[p>>3] & (1<<(p%8))) == 0) { \
+        logpname[p>>3] |= (1<<(p%8)); \
+        char str[255]; wsprintf(str, "%s() %04X\n", __func__ , p); OutputDebugString(str); \
+    } \
 
 #ifdef DEBUG_GLSTUB
 static FILE *logfp = NULL;
@@ -120,6 +125,7 @@ static char rendstr[128];
 static char vernstr[80];
 static char extnstr[3*PAGE_SIZE];
 static char glslstr[48];
+static char *logpname;
 static struct {
     vtxarry_t Color, EdgeFlag, Index, Normal, TexCoord[MAX_TEXUNIT], Vertex,
               SecondaryColor, FogCoord, Weight, GenAttrib[2];
@@ -372,7 +378,7 @@ static void InitClientStates(void)
     do { void PT_CALL glDebugMessageInsertARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5); \
         FILE *f = fopen("NUL", "w"); int c = fprintf(f, fmt, ##__VA_ARGS__); fclose(f); \
         char *str = HeapAlloc(GetProcessHeap(), 0, ALIGNED((c+1))); \
-        sprintf(str, fmt, ##__VA_ARGS__); \
+        wsprintf(str, fmt, ##__VA_ARGS__); \
         glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW_ARB, -1, (c+1), (uint32_t)str); \
         HeapFree(GetProcessHeap(), 0, str); \
     } while(0)
@@ -17052,6 +17058,9 @@ mglMakeCurrent (uint32_t arg0, uint32_t arg1)
         }
         else if (cfg.ovrdSync && (cfg.ovrdSync != wglGetSwapIntervalEXT()))
             wglSwapIntervalEXT(cfg.ovrdSync);
+        if (logpname)
+            HeapFree(GetProcessHeap(), 0, logpname);
+        logpname = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 0x2000);
         DPRINTF("%s", icdBuild);
     }
     currGLRC = (level && ((arg1 + level) == MESAGL_MAGIC))?

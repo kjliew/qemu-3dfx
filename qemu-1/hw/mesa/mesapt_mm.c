@@ -2270,10 +2270,12 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         DPRINTF("wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
                         DPRINTF("%sWRAPGL32", (char *)&ptVer[1]);
                         s->mglCntxCurrent = MGLMakeCurrent(ptVer[0], level)? 0:1;
-                        s->logpname = g_new0(uint8_t, 0x2000);
                         s->extnYear = GetGLExtYear();
                         s->extnLength = GetGLExtLength();
                         s->szVertCache = GetVertCacheMB() << 19;
+                        if (s->logpname)
+                            g_free(s->logpname);
+                        s->logpname = g_new0(uint8_t, 0x2000);
                         snprintf(xLen, 8, "%u", (uint32_t)s->extnLength);
                         snprintf(xYear, 8, "%d", s->extnYear);
                         snprintf(strTimerMS, 8, "%dms", disptmr);
@@ -2302,7 +2304,6 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 if (s->mglContext && s->mglCntxCurrent && (val == MESAGL_MAGIC)) {
                     s->perfs.last();
                     MGLDeleteContext(0);
-                    g_free(s->logpname);
                     if (s->dispTimer) {
                         timer_del(s->dispTimer);
                         timer_free(s->dispTimer);
@@ -2381,10 +2382,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     if (strncmp((const char *)func, "wglCreateContextAttribsARB", 64) == 0) {
                         uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
                         if (argsp[0] && (argsp[1] == 0)) {
-                            if (s->mglCntxCurrent) {
-                                g_free(s->logpname);
-                                s->mglCntxCurrent = 0;
-                            }
+                            s->mglCntxCurrent = 0;
                             s->mglContext = argsp[0];
                             s->mglCntxWGL = argsp[0];
                             ContextCreateCommon(s);
