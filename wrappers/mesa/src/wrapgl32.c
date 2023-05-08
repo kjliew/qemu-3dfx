@@ -3791,9 +3791,12 @@ void PT_CALL glGenFencesNV(uint32_t arg0, uint32_t arg1) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGenFencesNV;
     fifoOutData(0, arg1, arg0*sizeof(uint32_t));
 }
-void PT_CALL glGenFragmentShadersATI(uint32_t arg0) {
+uint32_t PT_CALL glGenFragmentShadersATI(uint32_t arg0) {
+    uint32_t ret;
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGenFragmentShadersATI;
+    ret = *pt0;
+    return ret;
 }
 void PT_CALL glGenFramebuffers(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 

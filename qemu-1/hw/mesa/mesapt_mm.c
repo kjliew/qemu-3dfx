@@ -1237,7 +1237,7 @@ static void processArgs(MesaPTState *s)
             s->parg[3] = VAL(s->hshm);
             if (GLShaderDump()) {
                 DPRINTF("--------- ProgramString %04x ------>>>>", s->arg[1]);
-                fprintf(stderr, "%s[ %d ]\n", s->hshm, s->arg[2]);
+                fprintf(stderr, "%s[ %d ]\n", (char *)s->hshm, s->arg[2]);
                 DPRINTF("<<<<----- %04x ProgramString ----------", s->arg[1]);
             }
             break;
