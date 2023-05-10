@@ -115,6 +115,8 @@ static INLINE void fifoOutData(int offs, uint32_t darg, int cbData)
     if (x) ptm[0x0FCU >> 2] = MESAGL_MAGIC
 #define FBTMMCPY(d,s,n) \
     if (n <= MGLFBT_SIZE) memcpy(d,s,n)
+#define RENDERER_VALID(x) \
+    if (memcmp(rendstr, x, strlen(x))) return
 static HWND GLwnd;
 static HHOOK hHook;
 static int currPixFmt;
@@ -1713,32 +1715,39 @@ void PT_CALL glColorTableSGI(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glColorTableSGI;
 }
 void PT_CALL glCombinerInputNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
+    RENDERER_VALID("NVIDIA ");
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerInputNV, 6);
 }
 void PT_CALL glCombinerOutputNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6, uint32_t arg7, uint32_t arg8, uint32_t arg9) {
+    RENDERER_VALID("NVIDIA ");
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; pt[6] = arg5; pt[7] = arg6; pt[8] = arg7; pt[9] = arg8; pt[10] = arg9; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerOutputNV, 10);
 }
 void PT_CALL glCombinerParameterfNV(uint32_t arg0, uint32_t arg1) {
+    RENDERER_VALID("NVIDIA ");
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerParameterfNV, 2);
 }
 void PT_CALL glCombinerParameterfvNV(uint32_t arg0, uint32_t arg1) {
+    RENDERER_VALID("NVIDIA ");
     fifoAddData(0, arg1, szglname(arg0)*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerParameterfvNV, 2);
 }
 void PT_CALL glCombinerParameteriNV(uint32_t arg0, uint32_t arg1) {
+    RENDERER_VALID("NVIDIA ");
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerParameteriNV, 2);
 }
 void PT_CALL glCombinerParameterivNV(uint32_t arg0, uint32_t arg1) {
+    RENDERER_VALID("NVIDIA ");
     fifoAddData(0, arg1, szglname(arg0)*sizeof(int));
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerParameterivNV, 2);
 }
 void PT_CALL glCombinerStageParameterfvNV(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    RENDERER_VALID("NVIDIA ");
     fifoAddData(0, arg2, szglname(arg1)*sizeof(float));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glCombinerStageParameterfvNV, 3);
@@ -3424,6 +3433,7 @@ uint32_t PT_CALL glFenceSync(uint32_t arg0, uint32_t arg1) {
     return ret;
 }
 void PT_CALL glFinalCombinerInputNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    RENDERER_VALID("NVIDIA ");
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glFinalCombinerInputNV, 4);
 }
@@ -16999,6 +17009,16 @@ mglGetProcAddress (uint32_t arg0)
     /* WGL_NV_allocate_memory */
     FUNC_WGL_EXT(wglAllocateMemoryNV);
     FUNC_WGL_EXT(wglFreeMemoryNV);
+    /* GL_NV_register_combiners */
+    FUNC_WGL_EXT(glCombinerInputNV);
+    FUNC_WGL_EXT(glCombinerOutputNV);
+    FUNC_WGL_EXT(glCombinerParameterfNV);
+    FUNC_WGL_EXT(glCombinerParameterfvNV);
+    FUNC_WGL_EXT(glCombinerParameteriNV);
+    FUNC_WGL_EXT(glCombinerParameterivNV);
+    FUNC_WGL_EXT(glFinalCombinerInputNV);
+    /* GL_NV_register_combiners2 */
+    FUNC_WGL_EXT(glCombinerStageParameterfvNV);
     /* GL_ARB_debug_output */
     FUNC_WGL_EXT(glDebugMessageCallbackARB);
     FUNC_WGL_EXT(glDebugMessageControlARB);
@@ -17006,6 +17026,13 @@ mglGetProcAddress (uint32_t arg0)
 #undef FUNC_WGL_EXT
 
     ret = (uint32_t)fptr;
+    do {
+        static int once;
+        if (!once) {
+            once = !once;
+            glGetString(GL_RENDERER);
+        }
+    } while(0);
     if (ret == 0) {
         strncpy((char *)proc, (char *)arg0, 64);
         ptm[0xFE0U >> 2] = MESAGL_MAGIC;
