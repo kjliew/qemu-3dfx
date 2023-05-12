@@ -16831,6 +16831,30 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
     return ret;
 }
 
+/* WGL_ARB_make_current_read */
+uint32_t PT_CALL mglCreateContext (uint32_t arg0);
+uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1);
+static uint32_t WINAPI wglMakeContextCurrentARB(uint32_t arg0,
+                              uint32_t arg1,
+                              uint32_t arg2)
+{
+    uint32_t currRC, ret = 0;
+    if (arg0 == arg1) {
+        uint32_t i = arg0 & (MAX_PBUFFER - 1);
+        if (arg0 == currDC)
+            ret = mglMakeCurrent(arg0, arg2);
+        else if (arg0 == ((MESAGL_HPBDC & 0xFFFFFFF0U) | i)) {
+            currRC = mglCreateContext(arg0);
+            ret = mglMakeCurrent(arg0, currRC);
+        }
+    }
+    return ret;
+}
+static HDC WINAPI wglGetCurrentReadDCARB(VOID)
+{
+    return NULL;
+}
+
 /* WGL_NV_allocate_memory */
 static void * WINAPI wglAllocateMemoryNV(int size,
                          float readFrequency,
@@ -17006,6 +17030,9 @@ mglGetProcAddress (uint32_t arg0)
     FUNC_WGL_EXT(wglGetDeviceGammaRamp3DFX);
     FUNC_WGL_EXT(wglSetDeviceGammaRamp3DFX);
     FUNC_WGL_EXT(wglSetDeviceCursor3DFX);
+    /* WGL_ARB_make_current_read */
+    FUNC_WGL_EXT(wglMakeContextCurrentARB);
+    FUNC_WGL_EXT(wglGetCurrentReadDCARB);
     /* WGL_NV_allocate_memory */
     FUNC_WGL_EXT(wglAllocateMemoryNV);
     FUNC_WGL_EXT(wglFreeMemoryNV);
