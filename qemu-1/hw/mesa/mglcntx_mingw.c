@@ -571,7 +571,7 @@ static int LookupAttribArray(const int *attrib, const int attr)
 void MGLFuncHandler(const char *name)
 {
     char fname[64];
-    uint32_t *argsp = (uint32_t *)(name + ALIGNED(strnlen(name, sizeof(fname))));
+    uint32_t *argsp = (uint32_t *)(name + ALIGNED((strnlen(name, sizeof(fname))+1)));
     strncpy(fname, name, sizeof(fname)-1);
 
 #define FUNCP_HANDLER(a) \

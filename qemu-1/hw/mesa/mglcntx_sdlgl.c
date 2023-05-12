@@ -482,7 +482,7 @@ static int LookupAttribArray(const int *attrib, const int attr)
 void MGLFuncHandler(const char *name)
 {
     char fname[64];
-    uint32_t *argsp = (uint32_t *)(name + ALIGNED(strnlen(name, sizeof(fname))));
+    uint32_t *argsp = (uint32_t *)(name + ALIGNED((strnlen(name, sizeof(fname))+1)));
     strncpy(fname, name, sizeof(fname)-1);
 
 #define FUNCP_HANDLER(a) \
@@ -591,7 +591,7 @@ void MGLFuncHandler(const char *name)
             argsp[1] = 0x02;
         }
         else {
-            DPRINTF("wglChoosePixelFormatARB()");
+            DPRINTF("%-32s", "wglChoosePixelFormatARB()");
             argsp[1] = MGLChoosePixelFormat();
         }
         argsp[0] = 1;
