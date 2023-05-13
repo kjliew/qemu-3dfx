@@ -139,10 +139,22 @@ typedef struct tagPIXELFORMATDESCRIPTOR {
 #define WGL_TYPE_COLORINDEX_ARB                 0x202C
 #define WGL_SAMPLE_BUFFERS_ARB                  0x2041
 #define WGL_SAMPLES_ARB                         0x2042
+/*
+ * WGL_ARB_render_texture
+ * WGL_NV_render_texture_rectangle
+*/
+#define WGL_TEXTURE_FORMAT_ARB                  0x2072
+#define WGL_TEXTURE_RGB_ARB                     0x2075
+#define WGL_TEXTURE_RGBA_ARB                    0x2076
+#define WGL_TEXTURE_TARGET_ARB                  0x2073
+#define WGL_TEXTURE_2D_ARB                      0x207A
+#define WGL_TEXTURE_RECTANGLE_NV                0x20A2
+#define WGL_MIPMAP_LEVEL_ARB                    0x207B
 
 typedef struct tagFakePBuffer {
     int width;
     int height;
+    int target, format, level;
 } HPBUFFERARB;
 
 static const PIXELFORMATDESCRIPTOR pfd = {
@@ -576,6 +588,42 @@ int NumPbuffer(void)
     return c;
 }
 
+static int PbufferGLBinding(const int target)
+{
+    int ret;
+    switch (target) {
+        case WGL_TEXTURE_2D_ARB:
+            ret = GL_TEXTURE_BINDING_2D;
+            break;
+        case WGL_TEXTURE_RECTANGLE_NV:
+            ret = GL_TEXTURE_BINDING_RECTANGLE_NV;
+            break;
+        default:
+            return 0;
+    }
+    return ret;
+}
+static int PbufferGLAttrib(const int attr)
+{
+    int ret;
+    switch (attr) {
+        case WGL_TEXTURE_2D_ARB:
+            ret = GL_TEXTURE_2D;
+            break;
+        case WGL_TEXTURE_RECTANGLE_NV:
+            ret = GL_TEXTURE_RECTANGLE_NV;
+            break;
+        case WGL_TEXTURE_RGB_ARB:
+            ret = GL_RGB;
+            break;
+        case WGL_TEXTURE_RGBA_ARB:
+            ret = GL_RGBA;
+            break;
+        default:
+            return 0;
+    }
+    return ret;
+}
 static int LookupAttribArray(const int *attrib, const int attr)
 {
     int ret = 0;
@@ -685,7 +733,7 @@ void MGLFuncHandler(const char *name)
                 "WGL_ARB_extensions_string "
                 "WGL_ARB_multisample "
                 "WGL_ARB_pixel_format "
-                "WGL_ARB_pbuffer WGL_ARB_render_texture "
+                "WGL_ARB_pbuffer WGL_ARB_render_texture WGL_NV_render_texture_rectangle "
                 "WGL_EXT_extensions_string "
                 "WGL_EXT_swap_control "
                 ;
@@ -770,14 +818,17 @@ void MGLFuncHandler(const char *name)
     }
     FUNCP_HANDLER("wglBindTexImageARB") {
         uint32_t i = argsp[0] & (MAX_PBUFFER - 1);
-        int prev_binded_texture = 0;
-        GLXContext prev_context = glXGetCurrentContext();
-        GLXDrawable prev_drawable = glXGetCurrentDrawable();
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_binded_texture);
-        glXMakeCurrent(dpy, PBDC[i], PBRC[i]);
-        glBindTexture(GL_TEXTURE_2D, prev_binded_texture);
-        glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, hPbuffer[i].width, hPbuffer[i].height, 0);
-        glXMakeCurrent(dpy, prev_drawable, prev_context);
+        if (PbufferGLBinding(hPbuffer[i].target) && PbufferGLAttrib(hPbuffer[i].format)) {
+            int prev_binded_texture = 0;
+            GLXContext prev_context = glXGetCurrentContext();
+            GLXDrawable prev_drawable = glXGetCurrentDrawable();
+            glGetIntegerv(PbufferGLBinding(hPbuffer[i].target), &prev_binded_texture);
+            glXMakeCurrent(dpy, PBDC[i], PBRC[i]);
+            glBindTexture(PbufferGLAttrib(hPbuffer[i].target), prev_binded_texture);
+            glCopyTexImage2D(PbufferGLAttrib(hPbuffer[i].target), hPbuffer[i].level,
+                PbufferGLAttrib(hPbuffer[i].format), 0, 0, hPbuffer[i].width, hPbuffer[i].height, 0);
+            glXMakeCurrent(dpy, prev_drawable, prev_context);
+        }
         argsp[0] = 1;
         return;
     }
@@ -795,6 +846,10 @@ void MGLFuncHandler(const char *name)
         }
         hPbuffer[i].width = argsp[1];
         hPbuffer[i].height = argsp[2];
+        const int *pattr = (const int *)&argsp[4];
+        hPbuffer[i].target = LookupAttribArray(pattr, WGL_TEXTURE_TARGET_ARB);
+        hPbuffer[i].format = LookupAttribArray(pattr, WGL_TEXTURE_FORMAT_ARB);
+        hPbuffer[i].level = LookupAttribArray(pattr, WGL_MIPMAP_LEVEL_ARB);
         const int ia[] = {
             GLX_X_RENDERABLE    , True,
             GLX_DRAWABLE_TYPE   , GLX_PBUFFER_BIT,
@@ -835,16 +890,24 @@ void MGLFuncHandler(const char *name)
         switch(argsp[1]) {
             case WGL_PBUFFER_WIDTH_ARB:
                 argsp[2] = hPbuffer[i].width;
-                argsp[0] = 1;
                 break;
             case WGL_PBUFFER_HEIGHT_ARB:
                 argsp[2] = hPbuffer[i].height;
-                argsp[0] = 1;
+                break;
+            case WGL_TEXTURE_TARGET_ARB:
+                argsp[2] = hPbuffer[i].target;
+                break;
+            case WGL_TEXTURE_FORMAT_ARB:
+                argsp[2] = hPbuffer[i].format;
+                break;
+            case WGL_MIPMAP_LEVEL_ARB:
+                argsp[2] = hPbuffer[i].level;
                 break;
             default:
                 argsp[0] = 0;
-                break;
+                return;
         }
+        argsp[0] = 1;
         return;
     }
     FUNCP_HANDLER("wglGetDeviceGammaRamp3DFX") {
