@@ -228,13 +228,13 @@ static XVisualInfo *xvi;
 static int          xvidmode;
 static const char  *xstr, *xcstr;
 static GLXContext   ctx[MAX_LVLCNTX];
-
-static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 static GLXPbuffer PBDC[MAX_PBUFFER];
 static GLXContext PBRC[MAX_PBUFFER];
+
+static HPBUFFERARB hPbuffer[MAX_PBUFFER];
 static int wnd_ready;
-static int cDepthBits, cStencilBits, cAuxBuffers;
-static int cSampleBuf[2];
+static int cAlphaBits, cDepthBits, cStencilBits;
+static int cAuxBuffers, cSampleBuf[2];
 
 static struct {
     int (*SwapIntervalEXT)(unsigned int);
@@ -504,6 +504,7 @@ static int MGLPresetPixelFormat(void)
     }
     xvi = glXGetVisualFromFBConfig(dpy, fbcnf[0]);
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_FBCONFIG_ID, &fbid);
+    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_ALPHA_SIZE, &cAlphaBits);
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_DEPTH_SIZE, &cDepthBits);
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_STENCIL_SIZE, &cStencilBits);
     glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_AUX_BUFFERS, &cAuxBuffers);
@@ -683,9 +684,8 @@ void MGLFuncHandler(const char *name)
                 "WGL_ARB_create_context_profile "
                 "WGL_ARB_extensions_string "
                 "WGL_ARB_multisample "
-                "WGL_ARB_pbuffer "
                 "WGL_ARB_pixel_format "
-                "WGL_ARB_render_texture "
+                "WGL_ARB_pbuffer WGL_ARB_render_texture "
                 "WGL_EXT_extensions_string "
                 "WGL_EXT_swap_control "
                 ;
@@ -769,6 +769,15 @@ void MGLFuncHandler(const char *name)
         return;
     }
     FUNCP_HANDLER("wglBindTexImageARB") {
+        uint32_t i = argsp[0] & (MAX_PBUFFER - 1);
+        int prev_binded_texture = 0;
+        GLXContext prev_context = glXGetCurrentContext();
+        GLXDrawable prev_drawable = glXGetCurrentDrawable();
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_binded_texture);
+        glXMakeCurrent(dpy, PBDC[i], PBRC[i]);
+        glBindTexture(GL_TEXTURE_2D, prev_binded_texture);
+        glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, hPbuffer[i].width, hPbuffer[i].height, 0);
+        glXMakeCurrent(dpy, prev_drawable, prev_context);
         argsp[0] = 1;
         return;
     }
@@ -786,13 +795,14 @@ void MGLFuncHandler(const char *name)
         }
         hPbuffer[i].width = argsp[1];
         hPbuffer[i].height = argsp[2];
-        int ia[] = {
+        const int ia[] = {
             GLX_X_RENDERABLE    , True,
             GLX_DRAWABLE_TYPE   , GLX_PBUFFER_BIT,
             GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-            GLX_RED_SIZE        , 8,
-            GLX_GREEN_SIZE      , 8,
-            GLX_BLUE_SIZE       , 8,
+            GLX_DOUBLEBUFFER    , False,
+            GLX_BUFFER_SIZE     , 32,
+            GLX_ALPHA_SIZE      , cAlphaBits,
+            GLX_DEPTH_SIZE      , cDepthBits,
             None,
         };
         int pbcnt, pa[] = {
@@ -802,7 +812,7 @@ void MGLFuncHandler(const char *name)
         };
         GLXFBConfig *pbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), ia, &pbcnt);
         PBDC[i] = glXCreatePbuffer(dpy, pbcnf[0], pa);
-        PBRC[i] = glXCreateNewContext(dpy, pbcnf[0], GLX_RGBA_TYPE, ctx[0], true);
+        PBRC[i] = glXCreateNewContext(dpy, pbcnf[0], GLX_RGBA_TYPE, glXGetCurrentContext(), true);
         XFree(pbcnf);
         argsp[0] = 1;
         argsp[1] = i;
@@ -814,19 +824,27 @@ void MGLFuncHandler(const char *name)
         glXDestroyContext(dpy, PBRC[i]);
         glXDestroyPbuffer(dpy, PBDC[i]);
         PBRC[i] = 0; PBDC[i] = 0;
-        memset(&hPbuffer[i], 0, sizeof(HPBUFFERARB));
         argsp[0] = 1;
+        memset(&hPbuffer[i], 0, sizeof(HPBUFFERARB));
         return;
     }
     FUNCP_HANDLER("wglQueryPbufferARB") {
-        uint32_t i;
+        uint32_t i = argsp[0] & (MAX_PBUFFER - 1);
 #define WGL_PBUFFER_WIDTH_ARB   0x2034
 #define WGL_PBUFFER_HEIGHT_ARB  0x2035
-        int attr = argsp[1];
-        i = argsp[0] & (MAX_PBUFFER - 1);
-        argsp[1] = (attr == WGL_PBUFFER_WIDTH_ARB)? hPbuffer[i].width:argsp[1];
-        argsp[1] = (attr == WGL_PBUFFER_HEIGHT_ARB)? hPbuffer[i].height:argsp[1];
-        argsp[0] = (argsp[1] == attr)? 0:1;
+        switch(argsp[1]) {
+            case WGL_PBUFFER_WIDTH_ARB:
+                argsp[2] = hPbuffer[i].width;
+                argsp[0] = 1;
+                break;
+            case WGL_PBUFFER_HEIGHT_ARB:
+                argsp[2] = hPbuffer[i].height;
+                argsp[0] = 1;
+                break;
+            default:
+                argsp[0] = 0;
+                break;
+        }
         return;
     }
     FUNCP_HANDLER("wglGetDeviceGammaRamp3DFX") {
