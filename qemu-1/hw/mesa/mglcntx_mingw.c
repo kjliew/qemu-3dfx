@@ -143,6 +143,7 @@ static int wnd_ready, GLon12;
 
 static struct {
     HGLRC (WINAPI *CreateContext)(HDC);
+    HGLRC (WINAPI *GetCurrentContext)(VOID);
     BOOL  (WINAPI *MakeCurrent)(HDC, HGLRC);
     BOOL  (WINAPI *DeleteContext)(HGLRC);
     BOOL  (WINAPI *UseFontBitmapsA)(HDC, DWORD, DWORD, DWORD);
@@ -178,76 +179,6 @@ static void MesaInitGammaRamp(void)
     SetDeviceGammaRamp(hDC, &GammaRamp);
 }
 
-static void MesaDisplayModeset(const int modeset)
-{
-    switch(modeset) {
-        case 1:
-            do {
-                int w, h, fullscreen = mesa_gui_fullscreen(&w, &h), scale_x = GetGLScaleWidth();
-                DEVMODE DevMode;
-                memset(&DevMode, 0, sizeof(DEVMODE));
-                DevMode.dmSize = sizeof(DEVMODE);
-                if (scale_x) {
-                    h = ((1.f * h) / w) * scale_x;
-                    w = scale_x;
-                }
-
-                if (fullscreen && EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &DevMode)) {
-                    DWORD vidBpp = DevMode.dmBitsPerPel, vidRef = DevMode.dmDisplayFrequency;
-                    DPRINTF_COND(GLFuncTrace(), "Current %4lux%lu %lubpp %luHz",
-                        DevMode.dmPelsWidth, DevMode.dmPelsHeight,
-                        DevMode.dmBitsPerPel, DevMode.dmDisplayFrequency);
-                    if ((DevMode.dmPelsWidth == w) && (DevMode.dmPelsHeight == h)) { }
-                    else {
-                        for (int i = 0; EnumDisplaySettings(NULL, i, &DevMode); i++) {
-                            DPRINTF_COND(GLFuncTrace(), "  Mode 0x%02x %4lu %4lu %2lubpp %3luHz", i,
-                                DevMode.dmPelsWidth, DevMode.dmPelsHeight,
-                                DevMode.dmBitsPerPel, DevMode.dmDisplayFrequency);
-                            if ((DevMode.dmPelsWidth == w) && (DevMode.dmPelsHeight == h) &&
-                                (DevMode.dmBitsPerPel == vidBpp)) {
-                                DevMode.dmDisplayFrequency = vidRef;
-                                DevMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
-                                LONG ret = ChangeDisplaySettings(&DevMode, 0);
-                                Sleep(1000 / DevMode.dmDisplayFrequency);
-                                DPRINTF("Modeset 0x%02x Fullscreen %4lux%lu %lubpp %luHz ret %d", i,
-                                    DevMode.dmPelsWidth, DevMode.dmPelsHeight,
-                                    DevMode.dmBitsPerPel, DevMode.dmDisplayFrequency,
-                                    (ret == DISP_CHANGE_SUCCESSFUL)? 1:0);
-                                break;
-                            }
-                        }
-                    }
-                }
-            } while(0);
-            break;
-        case 0:
-            do {
-                int w, h, fullscreen = mesa_gui_fullscreen(&w, &h);
-                DEVMODE DevMode;
-                memset(&DevMode, 0, sizeof(DEVMODE));
-                DevMode.dmSize = sizeof(DEVMODE);
-                DevMode.dmPelsWidth = w; DevMode.dmPelsHeight = h;
-                DevMode.dmDisplayFrequency = GetDeviceCaps(hDC, VREFRESH);
-
-                if (fullscreen && (ChangeDisplaySettings(NULL, 0) == DISP_CHANGE_SUCCESSFUL)) {
-                    Sleep(1000 / DevMode.dmDisplayFrequency);
-                    int ret = 1;
-                    while ((ret < (1000 / DevMode.dmDisplayFrequency)) &&
-                            EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &DevMode) &&
-                            (DevMode.dmPelsWidth == w) && (DevMode.dmPelsHeight == h)) {
-                        ret++;
-                        Sleep(1000 / DevMode.dmDisplayFrequency);
-                    }
-                    DPRINTF("Restore mode %4lux%lu %lubpp %luHz ret %d", DevMode.dmPelsWidth, DevMode.dmPelsHeight,
-                        DevMode.dmBitsPerPel, DevMode.dmDisplayFrequency, ret);
-                }
-            } while(0);
-            break;
-        default:
-            break;
-    }
-}
-
 static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
 {
     ReleaseDC(hwnd, hDC);
@@ -271,6 +202,7 @@ void SetMesaFuncPtr(void *p)
 {
     HINSTANCE hDLL = (HINSTANCE)p;
     wglFuncs.GetProcAddress = (PROC (WINAPI *)(LPCSTR))GetProcAddress(hDLL, "wglGetProcAddress");
+    wglFuncs.GetCurrentContext = (HGLRC (WINAPI *)(VOID))GetProcAddress(hDLL, "wglGetCurrentContext");
     wglFuncs.CreateContext = (HGLRC (WINAPI *)(HDC))GetProcAddress(hDLL, "wglCreateContext");
     wglFuncs.MakeCurrent   = (BOOL (WINAPI *)(HDC, HGLRC))GetProcAddress(hDLL, "wglMakeCurrent");
     wglFuncs.DeleteContext = (BOOL (WINAPI *)(HGLRC))GetProcAddress(hDLL, "wglDeleteContext");
@@ -361,7 +293,6 @@ void MGLDeleteContext(int level)
 void MGLWndRelease(void)
 {
     if (hwnd) {
-        MesaDisplayModeset(0);
         MesaInitGammaRamp();
         ReleaseDC(hwnd, hDC);
         TmpContextPurge();
@@ -531,29 +462,17 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
     return curr;
 }
 
-void MGLActivateHandler(const int i, const int d)
-{
-    static int last;
-
-    if (i != last) {
-        last = i;
-        DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
-        if (i) {
-            deactivateGuiRefSched();
-            MesaDisplayModeset(i);
-            mesa_renderer_stat(i);
-        }
-        else
-            deactivateSched(d);
-    }
-}
-
 int NumPbuffer(void)
 {
     int i, c;
     for (i = 0, c = 0; i < MAX_PBUFFER;)
         if (hPbuffer[i++]) c++;
     return c;
+}
+
+int DrawableContext(void)
+{
+    return (hRC[0] == wglFuncs.GetCurrentContext());
 }
 
 static int LookupAttribArray(const int *attrib, const int attr)
@@ -814,6 +733,58 @@ void MGLFuncHandler(const char *name)
 
 #endif //CONFIG_WIN32
 
+void MGLActivateHandler(const int i, const int d)
+{
+    static int last;
+
+    if (i != last) {
+        last = i;
+        DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
+        if (i) {
+            deactivateGuiRefSched();
+            mesa_renderer_stat(i);
+        }
+        else
+            deactivateSched(d);
+    }
+}
+
+void MGLScaleHandler(const uint32_t FEnum, const int aspect, uint32_t *args)
+{
+    int v[4], fullscreen, blit_adj = 0;
+    uint32_t *box;
+    fullscreen = mesa_gui_fullscreen(v);
+
+    switch(FEnum) {
+        case FEnum_glBlitFramebuffer:
+        case FEnum_glBlitFramebufferEXT:
+            box = &args[4];
+            blit_adj = 1;
+            break;
+        case FEnum_glScissor:
+        case FEnum_glViewport:
+            box = args;
+            break;
+        default:
+            return;
+    }
+    if (fullscreen && !wrCurrBinding(GL_FRAMEBUFFER_BINDING) &&
+        DrawableContext()) {
+        int offs_x = v[2] - ((1.f * v[0] * v[3]) / v[1]);
+        offs_x >>= 1;
+        for (int i = 0; i < 4; i++)
+            box[i] *= (1.f * v[3]) / v[1];
+        if (aspect) {
+            box[0] += offs_x;
+            box[2] += (blit_adj)? box[0]:0;
+        }
+        else {
+            box[0] *= (1.f * v[2]) / box[2];
+            box[2] = v[2];
+        }
+    }
+}
+
 void MGLCursorDefine(int hot_x, int hot_y, int width, int height,
                         const void *data)
 {
@@ -938,7 +909,7 @@ static void profile_stat(void)
     if (p->last == 0) {
 	p->fcount = 0;
 	p->ftime = 0;
-	p->last = (mesa_gui_fullscreen(0, 0))? 0:get_clock();
+	p->last = (mesa_gui_fullscreen(0))? 0:get_clock();
 	return;
     }
 

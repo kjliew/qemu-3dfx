@@ -494,30 +494,17 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
     return 1;
 }
 
-void MGLActivateHandler(const int i, const int d)
-{
-    static int last;
-
-#define WA_ACTIVE 1
-#define WA_INACTIVE 0
-    if (i != last) {
-        last = i;
-        DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
-        if (i) {
-            deactivateGuiRefSched();
-            mesa_renderer_stat(i);
-        }
-        else
-            deactivateSched(d);
-    }
-}
-
 int NumPbuffer(void)
 {
     int i, c;
     for (i = 0, c = 0; i < MAX_PBUFFER;)
         if (hPbuffer[i++].width) c++;
     return c;
+}
+
+int DrawableContext(void)
+{
+    return SDL_GL_GetCurrentContext()? 1:0;
 }
 
 static int PbufferGLBinding(const int target)

@@ -1596,6 +1596,12 @@ static void processArgs(MesaPTState *s)
             s->parg[2] = VAL(outshm);
             s->parg[3] = VAL(PTR(outshm, ALIGNED(1)));
             break;
+        case FEnum_glBlitFramebuffer:
+        case FEnum_glBlitFramebufferEXT:
+        case FEnum_glScissor:
+        case FEnum_glViewport:
+            MGLScaleHandler(s->FEnum, !ScaleAspectOff(), s->arg);
+            break;
         case FEnum_glDebugMessageInsertARB:
             s->datacb = ALIGNED(s->arg[4]);
             if ((s->arg[0] == GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB) &&
@@ -2330,32 +2336,29 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 } while(0);
                 break;
             case 0xFEC:
+#define PPFD_CONFIG_DISPATCH() \
+    int enable = (*(int *)ppfd) & 0x01U, \
+        aspect = (*(int *)ppfd) & 0x02U, \
+        msaa = (*(int *)ppfd) & 0x0CU, \
+        width = (*(int *)ppfd) >> 16, \
+        msec = *(int *)PTR(ppfd, sizeof(int)); \
+    GLBufOAccelCfg(enable); \
+    GLScaleAspect(aspect); \
+    GLContextMSAA(msaa); \
+    GLScaleWidth(width); \
+    GLDispTimerCfg(msec)
                 do {
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
-                    int enable = (*(int *)ppfd) & 0x01U;
-                    int msaa = (*(int *)ppfd) & 0x0CU;
-                    int width = (*(int *)ppfd) >> 16;
-                    int msec = *(int *)PTR(ppfd, sizeof(int));
-                    GLBufOAccelCfg(enable);
-                    GLContextMSAA(msaa);
-                    GLScaleWidth(width);
-                    GLDispTimerCfg(msec);
+                    PPFD_CONFIG_DISPATCH();
                 } while(0);
                 s->pixfmt = MGLChoosePixelFormat();
                 break;
             case 0xFE8:
                 do {
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
-                    int enable = (*(int *)ppfd) & 0x01U;
-                    int msaa = (*(int *)ppfd) & 0x0CU;
-                    int width = (*(int *)ppfd) >> 16;
-                    int msec = *(int *)PTR(ppfd, sizeof(int));
                     int pixfmt = *(int *)PTR(ppfd, 2*sizeof(int));
                     unsigned int nbytes = *(uint32_t *)PTR(ppfd, 3*sizeof(int));
-                    GLBufOAccelCfg(enable);
-                    GLContextMSAA(msaa);
-                    GLScaleWidth(width);
-                    GLDispTimerCfg(msec);
+                    PPFD_CONFIG_DISPATCH();
                     s->pixfmtMax = ((uint32_t *)s->fifo_ptr)[1]? MGLDescribePixelFormat(pixfmt, nbytes, ppfd):0;
                 } while(0);
                 break;

@@ -455,6 +455,7 @@ struct mglOptions {
     int useMSAA;
     int useSRGB;
     int vsyncOff;
+    int aspectOff;
     int xstrYear;
 };
 static int swapFps;
@@ -487,6 +488,8 @@ static void parse_options(struct mglOptions *opt)
             opt->useSRGB = ((i == 1) && v)? 1:opt->useSRGB;
             i = parse_value(line, "ContextVsyncOff,", &v);
             opt->vsyncOff = ((i == 1) && v)? 1:opt->vsyncOff;
+            i = parse_value(line, "ScaleAspectOff,", &v);
+            opt->aspectOff = ((i == 1) && v)? 2:opt->aspectOff;
             i = parse_value(line, "ExtensionsYear,", &v);
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
             i = parse_value(line, "FpsLimit,", &v);
@@ -17263,14 +17266,17 @@ wgdSwapBuffers(HDC hdc) { return wglSwapBuffers(hdc); }
 
 int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wgdSwapBuffers(hdc); }
 
+#define PPFD_CONFIG() \
+    struct mglOptions cfg; \
+    parse_options(&cfg); \
+    xppfd[0] = (cfg.scaleX << 16) | cfg.useMSAA | cfg.aspectOff | cfg.bufoAcc; \
+    xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT
+
 int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
 {
     uint32_t ret, ready = 0;
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
-    struct mglOptions cfg;
-    parse_options(&cfg);
-    xppfd[0] = (cfg.scaleX << 16) | cfg.useMSAA | cfg.bufoAcc;
-    xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT;
+    PPFD_CONFIG();
     memcpy(&xppfd[2], ppfd, sizeof(PIXELFORMATDESCRIPTOR));
     ptm[0xFEC >> 2] = MESAGL_MAGIC;
     while (!ready)
@@ -17286,10 +17292,7 @@ int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXE
 {
     uint32_t ret;
     uint32_t *xppfd = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
-    struct mglOptions cfg;
-    parse_options(&cfg);
-    xppfd[0] = (cfg.scaleX << 16) | cfg.useMSAA | cfg.bufoAcc;
-    xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT;
+    PPFD_CONFIG();
     xppfd[2] = iPixelFormat;
     xppfd[3] = nBytes;
     ptm[0xFE8 >> 2] = MESAGL_MAGIC;
