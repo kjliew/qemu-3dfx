@@ -455,7 +455,6 @@ struct mglOptions {
     int useMSAA;
     int useSRGB;
     int vsyncOff;
-    int aspectOff;
     int xstrYear;
 };
 static int swapFps;
@@ -488,8 +487,6 @@ static void parse_options(struct mglOptions *opt)
             opt->useSRGB = ((i == 1) && v)? 1:opt->useSRGB;
             i = parse_value(line, "ContextVsyncOff,", &v);
             opt->vsyncOff = ((i == 1) && v)? 1:opt->vsyncOff;
-            i = parse_value(line, "ScaleAspectOff,", &v);
-            opt->aspectOff = ((i == 1) && v)? 2:opt->aspectOff;
             i = parse_value(line, "ExtensionsYear,", &v);
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
             i = parse_value(line, "FpsLimit,", &v);
@@ -17269,7 +17266,7 @@ int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wgdSwapBuffers(hdc);
 #define PPFD_CONFIG() \
     struct mglOptions cfg; \
     parse_options(&cfg); \
-    xppfd[0] = (cfg.scaleX << 16) | cfg.useMSAA | cfg.aspectOff | cfg.bufoAcc; \
+    xppfd[0] = (cfg.scaleX << 16) | cfg.useMSAA | cfg.bufoAcc; \
     xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT
 
 int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)

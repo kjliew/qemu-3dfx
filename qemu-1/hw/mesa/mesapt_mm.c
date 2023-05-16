@@ -1600,7 +1600,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glBlitFramebufferEXT:
         case FEnum_glScissor:
         case FEnum_glViewport:
-            MGLScaleHandler(s->FEnum, !ScaleAspectOff(), s->arg);
+            MGLScaleHandler(s->FEnum, s->arg);
             break;
         case FEnum_glDebugMessageInsertARB:
             s->datacb = ALIGNED(s->arg[4]);
@@ -2338,12 +2338,10 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xFEC:
 #define PPFD_CONFIG_DISPATCH() \
     int enable = (*(int *)ppfd) & 0x01U, \
-        aspect = (*(int *)ppfd) & 0x02U, \
         msaa = (*(int *)ppfd) & 0x0CU, \
         width = (*(int *)ppfd) >> 16, \
         msec = *(int *)PTR(ppfd, sizeof(int)); \
     GLBufOAccelCfg(enable); \
-    GLScaleAspect(aspect); \
     GLContextMSAA(msaa); \
     GLScaleWidth(width); \
     GLDispTimerCfg(msec)

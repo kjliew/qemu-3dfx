@@ -749,11 +749,12 @@ void MGLActivateHandler(const int i, const int d)
     }
 }
 
-void MGLScaleHandler(const uint32_t FEnum, const int aspect, uint32_t *args)
+void MGLScaleHandler(const uint32_t FEnum, uint32_t *args)
 {
-    int v[4], fullscreen, blit_adj = 0;
+    int v[4], fullscreen, aspect, blit_adj = 0;
     uint32_t *box;
     fullscreen = mesa_gui_fullscreen(v);
+    aspect = (v[1] & (1 << 15))? 0:1;
 
     switch(FEnum) {
         case FEnum_glBlitFramebuffer:
@@ -770,10 +771,10 @@ void MGLScaleHandler(const uint32_t FEnum, const int aspect, uint32_t *args)
     }
     if (fullscreen && !wrCurrBinding(GL_FRAMEBUFFER_BINDING) &&
         DrawableContext()) {
-        int offs_x = v[2] - ((1.f * v[0] * v[3]) / v[1]);
+        int offs_x = v[2] - ((1.f * v[0] * v[3]) / (v[1] & 0x7FFFU));
         offs_x >>= 1;
         for (int i = 0; i < 4; i++)
-            box[i] *= (1.f * v[3]) / v[1];
+            box[i] *= (1.f * v[3]) / (v[1] & 0x7FFFU);
         if (aspect) {
             box[0] += offs_x;
             box[2] += (blit_adj)? box[0]:0;
