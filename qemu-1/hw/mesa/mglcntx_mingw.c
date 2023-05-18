@@ -766,7 +766,7 @@ void MGLScaleHandler(const uint32_t FEnum, void *args)
     switch(FEnum) {
         case FEnum_glBlitFramebuffer:
         case FEnum_glBlitFramebufferEXT:
-            box = &args[4];
+            box = &((uint32_t *)args)[4];
             blit_adj = 1;
             break;
         case FEnum_glScissor:
