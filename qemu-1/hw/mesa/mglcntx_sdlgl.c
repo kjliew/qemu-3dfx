@@ -39,7 +39,10 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #define GL_RENDER_TEXTURE_STR
 #define GL_RENDER_TEXTURE_VAR
 #define GL_PBUFFER_CONTEXT(x) { /* Pbuffer unsupported */ }
-#define GL_TEXIMAGE_BIND(x) (void)x
+#define GL_TEXIMAGE_BIND(x) \
+    (void)PbufferGLBinding(GL_NONE); \
+    (void)PbufferGLAttrib(GL_NONE); \
+    (void)x
 #define GL_PBUFFER_CREATE(x) \
     DPRINTF("Unsupported %s", "wglCreatePbufferARB"); argsp[0] = 0
 #define GL_PBUFFER_DESTROY(x) \

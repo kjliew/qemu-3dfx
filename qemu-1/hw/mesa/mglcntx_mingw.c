@@ -749,10 +749,17 @@ void MGLActivateHandler(const int i, const int d)
     }
 }
 
-void MGLScaleHandler(const uint32_t FEnum, uint32_t *args)
+void MGLScaleHandler(const uint32_t FEnum, void *args)
 {
+    static int scissor_last[4], viewport_last[4];
     int v[4], fullscreen, aspect, blit_adj = 0;
     uint32_t *box;
+
+    if (!args) {
+        memset(scissor_last, 0, sizeof(v));
+        memset(viewport_last, 0, sizeof(v));
+        return;
+    }
     fullscreen = mesa_gui_fullscreen(v);
     aspect = (v[1] & (1 << 15))? 0:1;
 
@@ -764,9 +771,17 @@ void MGLScaleHandler(const uint32_t FEnum, uint32_t *args)
             break;
         case FEnum_glScissor:
         case FEnum_glViewport:
+            memcpy((FEnum == FEnum_glScissor)? scissor_last:viewport_last,
+                    args, sizeof(v));
             box = args;
             break;
         default:
+            if (fullscreen) {
+                if ((FEnum == GL_SCISSOR_BOX) && scissor_last[3])
+                    memcpy(args, scissor_last, sizeof(v));
+                if ((FEnum == GL_VIEWPORT) && viewport_last[3])
+                    memcpy(args, viewport_last, sizeof(v));
+            }
             return;
     }
     if (fullscreen && !wrCurrBinding(GL_FRAMEBUFFER_BINDING) &&

@@ -351,6 +351,8 @@ static void InitClientStates(MesaPTState *s)
     s->pixPackBuf = 0; s->pixUnpackBuf = 0;
     s->szPackWidth = 0; s->szUnpackWidth = 0;
     s->szPackHeight = 0; s->szUnpackHeight = 0;
+    if (s->mglCntxWGL)
+        GLExtUncapped();
 }
 
 static void dispTimerProc(void *opaque)
@@ -1945,18 +1947,18 @@ static void processFRet(MesaPTState *s)
             //DPRINTF("PixelStorei %x %x", s->arg[0], s->arg[1]);
             break;
 #undef MGL_BUFO_TRACE
-#define MGL_TRACE 0
-#if defined(MGL_TRACE) && MGL_TRACE
+        case FEnum_glGetIntegerv:
+            MGLScaleHandler(s->arg[0], PTR(outshm, ALIGNED(sizeof(int))));
+            /* fall through */
         case FEnum_glGetBooleanv:
         case FEnum_glGetDoublev:
         case FEnum_glGetFloatv:
-        case FEnum_glGetIntegerv:
-            if ((GLFuncTrace() == 2) ||
-                ((s->logpname[s->arg[0] >> 3] & (1 << (s->arg[0] % 8))) == 0)) {
+            if (GLFuncTrace() && ((GLFuncTrace() == 2) ||
+                ((s->logpname[s->arg[0] >> 3] & (1 << (s->arg[0] % 8))) == 0))) {
                 s->logpname[s->arg[0] >> 3] |= (1 << (s->arg[0] % 8));
                 fprintf(stderr, "mgl_trace: Get() %04x ( %04x ): ", s->arg[0], *(int *)outshm);
                 for (int i = 0; i < *(int *)outshm; i++) {
-                    void *v = outshm + ALIGNED(sizeof(int));
+                    void *v = PTR(outshm, ALIGNED(sizeof(int)));
                     if (s->FEnum == FEnum_glGetDoublev)
                         fprintf(stderr, "% .4f ", *(double *)PTR(v, i*sizeof(double)));
                     else if (s->FEnum == FEnum_glGetFloatv)
@@ -1967,6 +1969,8 @@ static void processFRet(MesaPTState *s)
                 fprintf(stderr, "\n");
             }
             break;
+#define MGL_TRACE 0
+#if defined(MGL_TRACE) && MGL_TRACE
         case FEnum_glGetTexLevelParameteriv:
             if ((s->logpname[s->arg[2] >> 3] & (1 << (s->arg[2] % 8))) == 0) {
                 s->logpname[s->arg[2] >> 3] |= (1 << (s->arg[2] % 8));
@@ -2187,8 +2191,7 @@ static void ContextCreateCommon(MesaPTState *s)
     InitBufObj();
     InitClientStates(s);
     ImplMesaGLReset();
-    if (s->mglCntxWGL)
-        GLExtUncapped();
+    MGLScaleHandler(0, 0);
 }
 
 static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
