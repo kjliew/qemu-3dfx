@@ -1407,7 +1407,7 @@ static void processArgs(MesaPTState *s)
             s->BufObj->acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
             s->BufObj->acc |= (s->arg[1] == GL_WRITE_ONLY)? GL_MAP_WRITE_BIT:0;
             s->BufObj->acc |= (s->arg[1] == GL_READ_WRITE)? (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT):0;
-            s->BufObj->mapsz = wrGetParamIa1p2(s->FEnum, s->arg[0], GL_BUFFER_SIZE);
+            s->BufObj->mapsz = wrSizeMapBuffer(s->arg[0]);
             wrFillBufObj(s->arg[0], (s->fbtm_ptr + MGLFBT_SIZE - s->szUsedBuf), s->BufObj);
             break;
         case FEnum_glUnmapBuffer:
@@ -1423,7 +1423,7 @@ static void processArgs(MesaPTState *s)
             if (s->pixPackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)s->fbtm_ptr;
-                texPtr[0] = wrTexSizeTexture(s->arg[0], s->arg[1], 0)*szgldata(s->arg[2], s->arg[3]);
+                texPtr[0] = wrSizeTexture(s->arg[0], s->arg[1], 0)*szgldata(s->arg[2], s->arg[3]);
                 SZFBT_VALID(texPtr[0], s->arg[4]);
                 s->parg[0] = VAL(&texPtr[ALIGNED(1) >> 2]);
             }
@@ -1487,7 +1487,7 @@ static void processArgs(MesaPTState *s)
             if (s->pixPackBuf == 0) {
                 uint32_t *texPtr;
                 texPtr = (uint32_t *)s->fbtm_ptr;
-                texPtr[0] = wrTexSizeTexture(s->arg[0], s->arg[1], 1);
+                texPtr[0] = wrSizeTexture(s->arg[0], s->arg[1], 1);
                 SZFBT_VALID(texPtr[0], s->arg[2]);
                 s->parg[2] = VAL(&texPtr[ALIGNED(1) >> 2]);
             }
@@ -1602,7 +1602,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glBlitFramebufferEXT:
         case FEnum_glScissor:
         case FEnum_glViewport:
-            MGLScaleHandler(s->FEnum, s->arg);
+            MesaRenderScaler(s->FEnum, s->arg);
             break;
         case FEnum_glDebugMessageInsertARB:
             s->datacb = ALIGNED(s->arg[4]);
@@ -1896,6 +1896,11 @@ static void processFRet(MesaPTState *s)
             break;
         case FEnum_glEnable:
         case FEnum_glEnableClientState:
+            if (GLFuncTrace() && ((GLFuncTrace() == 2) ||
+                ((s->logpname[s->arg[0] >> 3] & (1 << (s->arg[0] % 8))) == 0))) {
+                s->logpname[s->arg[0] >> 3] |= (1 << (s->arg[0] % 8));
+                fprintf(stderr, "mgl_trace: Enable() %s\n", tokglstr(s->arg[0]));
+            }
             if ((s->arg[0] & 0xFFF0U) == GL_VERTEX_ATTRIB_ARRAY0_NV)
                 vtxarry_state(s, vattr2arry_state(s, s->arg[0] & 0xFU), 1);
             else
@@ -1947,16 +1952,14 @@ static void processFRet(MesaPTState *s)
             //DPRINTF("PixelStorei %x %x", s->arg[0], s->arg[1]);
             break;
 #undef MGL_BUFO_TRACE
-        case FEnum_glGetIntegerv:
-            MGLScaleHandler(s->arg[0], PTR(outshm, ALIGNED(sizeof(int))));
-            /* fall through */
         case FEnum_glGetBooleanv:
         case FEnum_glGetDoublev:
         case FEnum_glGetFloatv:
+        case FEnum_glGetIntegerv:
             if (GLFuncTrace() && ((GLFuncTrace() == 2) ||
                 ((s->logpname[s->arg[0] >> 3] & (1 << (s->arg[0] % 8))) == 0))) {
                 s->logpname[s->arg[0] >> 3] |= (1 << (s->arg[0] % 8));
-                fprintf(stderr, "mgl_trace: Get() %04x ( %04x ): ", s->arg[0], *(int *)outshm);
+                fprintf(stderr, "mgl_trace: Get() ( %04x ) %s : ", *(int *)outshm, tokglstr(s->arg[0]));
                 for (int i = 0; i < *(int *)outshm; i++) {
                     void *v = PTR(outshm, ALIGNED(sizeof(int)));
                     if (s->FEnum == FEnum_glGetDoublev)
@@ -1974,7 +1977,8 @@ static void processFRet(MesaPTState *s)
         case FEnum_glGetTexLevelParameteriv:
             if ((s->logpname[s->arg[2] >> 3] & (1 << (s->arg[2] % 8))) == 0) {
                 s->logpname[s->arg[2] >> 3] |= (1 << (s->arg[2] % 8));
-                fprintf(stderr, "mgl_trace: GetTexLevelParameteriv() %x %x %04x ( %04x ): ", s->arg[0], s->arg[1], s->arg[2], *(int *)outshm);
+                fprintf(stderr, "mgl_trace: GetTexLevelParameteriv() %x %x ( %04x ) %s : ",
+                    s->arg[0], s->arg[1], *(int *)outshm, tokglstr(s->arg[2]));
                 for (int i = 0; i < *(int *)outshm; i++) {
                     void *v = outshm + ALIGNED(sizeof(int));
                     fprintf(stderr, "%08X ", *(uint32_t *)PTR(v, i*sizeof(uint32_t)));
@@ -2191,7 +2195,6 @@ static void ContextCreateCommon(MesaPTState *s)
     InitBufObj();
     InitClientStates(s);
     ImplMesaGLReset();
-    MGLScaleHandler(0, 0);
 }
 
 static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
@@ -2289,7 +2292,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         snprintf(xYear, 8, "%d", s->extnYear);
                         snprintf(strTimerMS, 8, "%dms", disptmr);
                         DPRINTF_COND(GetContextMSAA(), "ContextMSAA %dx", GetContextMSAA());
-                        DPRINTF_COND(ContextVsyncOff(), "ContextVsyncOff");
+                        DPRINTF_COND(ContextVsyncOff(), "%s", "ContextVsyncOff");
+                        DPRINTF_COND(RenderScalerOff(), "%s", "RenderScalerOff");
                         DPRINTF_COND(GetFpsLimit(), "FpsLimit [ %d FPS ]", GetFpsLimit());
                         DPRINTF("VertexArrayCache %dMB", GetVertCacheMB());
                         DPRINTF("DispTimerSched %s", disptmr? strTimerMS:"disabled");
@@ -2341,12 +2345,12 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             case 0xFEC:
 #define PPFD_CONFIG_DISPATCH() \
     int enable = (*(int *)ppfd) & 0x01U, \
+        disable = (*(int *)ppfd) & 0x02U, \
         msaa = (*(int *)ppfd) & 0x0CU, \
-        width = (*(int *)ppfd) >> 16, \
         msec = *(int *)PTR(ppfd, sizeof(int)); \
     GLBufOAccelCfg(enable); \
+    GLRenderScaler(disable); \
     GLContextMSAA(msaa); \
-    GLScaleWidth(width); \
     GLDispTimerCfg(msec)
                 do {
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);

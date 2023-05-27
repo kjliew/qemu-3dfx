@@ -3,6 +3,7 @@
 
 int szgldata(int, int);
 int szglname(int);
+const char *tokglstr(const int);
 
 typedef struct {
     int enable;

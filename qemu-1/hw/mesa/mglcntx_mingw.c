@@ -265,8 +265,7 @@ void MGLTmpContext(void)
     CreateMesaWindow("MesaGL", 640, 480, 1); \
     wnd_ready = 0; \
     ImplMesaGLReset(); \
-    DPRINTF_COND(GetGLScaleWidth(), "MESAGL window scaled at width %d", GetGLScaleWidth()); \
-    mesa_prepare_window(GetContextMSAA(), GLon12, GetGLScaleWidth(), &cwnd_mesagl); hDC = GetDC(hwnd); }
+    mesa_prepare_window(GetContextMSAA(), GLon12, 0, &cwnd_mesagl); hDC = GetDC(hwnd); }
 
 #define GLWINDOW_FINI() \
     if (0) { } \
@@ -283,6 +282,7 @@ void MGLDeleteContext(int level)
                 hRC[i] = 0;
             }
         }
+        MesaBlitFree();
     }
     wglFuncs.DeleteContext(hRC[n]);
     hRC[n] = 0;
@@ -349,6 +349,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
 int MGLSwapBuffers(void)
 {
     MGLActivateHandler(1, 0);
+    MesaBlitScale();
     return SwapBuffers(hDC);
 }
 
@@ -746,58 +747,6 @@ void MGLActivateHandler(const int i, const int d)
         }
         else
             deactivateSched(d);
-    }
-}
-
-void MGLScaleHandler(const uint32_t FEnum, void *args)
-{
-    static int scissor_last[4], viewport_last[4];
-    int v[4], fullscreen, aspect, blit_adj = 0;
-    uint32_t *box;
-
-    if (!args) {
-        memset(scissor_last, 0, sizeof(v));
-        memset(viewport_last, 0, sizeof(v));
-        return;
-    }
-    fullscreen = mesa_gui_fullscreen(v);
-    aspect = (v[1] & (1 << 15))? 0:1;
-
-    switch(FEnum) {
-        case FEnum_glBlitFramebuffer:
-        case FEnum_glBlitFramebufferEXT:
-            box = &((uint32_t *)args)[4];
-            blit_adj = 1;
-            break;
-        case FEnum_glScissor:
-        case FEnum_glViewport:
-            memcpy((FEnum == FEnum_glScissor)? scissor_last:viewport_last,
-                    args, sizeof(v));
-            box = args;
-            break;
-        default:
-            if (fullscreen) {
-                if ((FEnum == GL_SCISSOR_BOX) && scissor_last[3])
-                    memcpy(args, scissor_last, sizeof(v));
-                if ((FEnum == GL_VIEWPORT) && viewport_last[3])
-                    memcpy(args, viewport_last, sizeof(v));
-            }
-            return;
-    }
-    if (fullscreen && !wrCurrBinding(GL_FRAMEBUFFER_BINDING) &&
-        DrawableContext()) {
-        int offs_x = v[2] - ((1.f * v[0] * v[3]) / (v[1] & 0x7FFFU));
-        offs_x >>= 1;
-        for (int i = 0; i < 4; i++)
-            box[i] *= (1.f * v[3]) / (v[1] & 0x7FFFU);
-        if (aspect) {
-            box[0] += offs_x;
-            box[2] += (blit_adj)? box[0]:0;
-        }
-        else {
-            box[0] *= (1.f * v[2]) / box[2];
-            box[2] = v[2];
-        }
     }
 }
 

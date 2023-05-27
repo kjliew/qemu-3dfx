@@ -1,5 +1,6 @@
 i386_softmmu_ss.add(files(
   'extensions_table.c',
+  'mesagl_blit.c',
   'mesagl_impl.c',
   'mesapt_mm.c',
   'mglcntx_linux.c',
@@ -7,4 +8,5 @@ i386_softmmu_ss.add(files(
   'mglmapbo.c',
   'mglvarry.c',
   'szgldata.c',
+  'tokglstr.c',
 ))

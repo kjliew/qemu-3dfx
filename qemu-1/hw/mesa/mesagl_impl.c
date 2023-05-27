@@ -52,13 +52,17 @@ static int getNumArgs(const char *sym)
     return (atoi(++p) >> 2);
 }
 
-int GLFEnumArgsCnt(int FEnum)
+int GLFEnumArgsCnt(const int FEnum)
 {
-    int val = getNumArgs(tblMesaGL[FEnum].sym);
-    return val;
+    return getNumArgs(tblMesaGL[FEnum].sym);
 }
 
-int ExtFuncIsValid(char *name)
+void * GLFEnumFuncPtr(const int FEnum)
+{
+    return (void *)tblMesaGL[FEnum].ptr;
+}
+
+int ExtFuncIsValid(const char *name)
 {
     int i;
     for (i = 0; i < FEnum_zzMGLFuncEnum_max; i++) {
@@ -78,82 +82,57 @@ int ExtFuncIsValid(char *name)
 
 int GLIsD3D12(void)
 {
-    const char d3d12[] = "D3D12";
-    const char * (__stdcall *p_glGetString)(int) = (const char *(__stdcall *)(int))
-        tblMesaGL[FEnum_glGetString].ptr;
-    return (!memcmp(p_glGetString(GL_RENDERER), d3d12, sizeof(d3d12) - 1));
-}
-
-int wrCurrBinding(const uint32_t binding)
-{
-    int ret;
-    void (__stdcall *p_glGetIntegerv)(int, int *) = (void (__stdcall *)(int, int *))
-        tblMesaGL[FEnum_glGetIntegerv].ptr;
-    p_glGetIntegerv(binding, &ret);
-    return ret;
+    MESA_PFN(PFNGLGETSTRINGPROC,glGetString);
+    const unsigned char d3d12[] = "D3D12",
+          *str = PFN_CALL(glGetString(GL_RENDERER));
+    return (!memcmp(str, d3d12, sizeof(d3d12) - 1));
 }
 
 int wrMapOrderPoints(uint32_t target)
 {
+    MESA_PFN(PFNGLGETMAPIVPROC, glGetMapiv);
     int v[2] = {1, 1};
-    void (__stdcall *fpa1p2)(uint32_t, uint32_t, int *);
-    fpa1p2 = tblMesaGL[FEnum_glGetMapiv].ptr;
-    fpa1p2(target, GL_ORDER, v);
+    PFN_CALL(glGetMapiv(target, GL_ORDER, v));
     return (v[0]*v[1]);
 }
 
-int wrTexSizeTexture(uint32_t target, uint32_t level, int compressed)
+int wrSizeTexture(const int target, const int level, const int compressed)
 {
+    MESA_PFN(PFNGLGETTEXLEVELPARAMETERIVPROC,glGetTexLevelParameteriv);
     int ret;
-    void (__stdcall *fpra2p3)(uint32_t arg0, uint32_t arg1, uint32_t arg2, uintptr_t arg3);
-    fpra2p3 = tblMesaGL[FEnum_glGetTexLevelParameteriv].ptr;
-
-    if (compressed == 0) {
+    if (compressed)
+        PFN_CALL(glGetTexLevelParameteriv(target, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &ret));
+    else {
         int w, h, d;
-        fpra2p3(target, level, GL_TEXTURE_WIDTH, (uintptr_t)&w);
-        fpra2p3(target, level, GL_TEXTURE_HEIGHT, (uintptr_t)&h);
-        fpra2p3(target, level, GL_TEXTURE_DEPTH, (uintptr_t)&d);
+        PFN_CALL(glGetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &w));
+        PFN_CALL(glGetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &h));
+        PFN_CALL(glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH, &d));
         ret = (w * h * d);
     }
-    else
-        fpra2p3(target, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, (uintptr_t)&ret);
-
     return ret;
 }
 
-int wrGetParamIa1p2(int FEnum, uint32_t arg0, uint32_t arg1)
+int wrSizeMapBuffer(const int target)
 {
-    int ret, sel;
-    void (__stdcall *fpa1p2)(uint32_t arg0, uint32_t arg1, uintptr_t arg2);
-    switch (FEnum) {
-        case FEnum_glMapBuffer:
-            sel = FEnum_glGetBufferParameteriv;
-                break;
-        case FEnum_glMapBufferARB:
-            sel = FEnum_glGetBufferParameterivARB;
-                break;
-        default:
-            return 0;
-    }
-    fpa1p2 = tblMesaGL[sel].ptr;
-    fpa1p2(arg0, arg1, (uintptr_t)&ret);
+    MESA_PFN(PFNGLGETBUFFERPARAMETERIVPROC, glGetBufferParameteriv);
+    int ret;
+    PFN_CALL(glGetBufferParameteriv(target, GL_BUFFER_SIZE, &ret));
     return ret;
 }
 
-void wrCompileShaderStatus(uint32_t shader)
+void wrCompileShaderStatus(const int shader)
 {
+    MESA_PFN(PFNGLGETSHADERIVPROC, glGetShaderiv);
+    MESA_PFN(PFNGLGETSHADERINFOLOGPROC, glGetShaderInfoLog);
     int status, length, type;
     char *errmsg;
-    void (__stdcall *wrGetShaderiv)(uint32_t, uint32_t, int *) =
-        tblMesaGL[FEnum_glGetShaderiv].ptr;
-    void (__stdcall *wrGetShaderInfoLog)(uint32_t, int, int *, char *) =
-        tblMesaGL[FEnum_glGetShaderInfoLog].ptr;
-    wrGetShaderiv(shader, GL_SHADER_TYPE, &type);
-    wrGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    PFN_CALL(glGetShaderiv(shader, GL_SHADER_TYPE, &type));
+    PFN_CALL(glGetShaderiv(shader, GL_SHADER_TYPE, &type));
+    PFN_CALL(glGetShaderiv(shader, GL_COMPILE_STATUS, &status));
     if (!status) {
-        wrGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+        PFN_CALL(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length));
         errmsg = g_malloc(length);
-        wrGetShaderInfoLog(shader, length, &length, errmsg);
+        PFN_CALL(glGetShaderInfoLog(shader, length, &length, errmsg));
         fprintf(stderr, "%s\n", errmsg);
         g_free(errmsg);
     }
@@ -163,10 +142,10 @@ void wrCompileShaderStatus(uint32_t shader)
 
 void wrFillBufObj(uint32_t target, void *dst, mapbufo_t *bufo)
 {
+    MESA_PFN(PFNGLMAPBUFFERRANGEPROC, glMapBufferRange);
+    MESA_PFN(PFNGLMAPBUFFERPROC, glMapBuffer);
+    MESA_PFN(PFNGLUNMAPBUFFERPROC, glUnmapBuffer);
     void *src;
-    void *(__stdcall *wrMapRange)(uint32_t arg0, uintptr_t arg1, uintptr_t arg2, uint32_t arg3);
-    void *(__stdcall *wrMap)(uint32_t arg0, uint32_t arg1);
-    uint32_t (__stdcall *wrUnmap)(uint32_t arg0);
 
     if (MGLUpdateGuestBufo(0, 0))
         return;
@@ -175,14 +154,13 @@ void wrFillBufObj(uint32_t target, void *dst, mapbufo_t *bufo)
         case GL_PIXEL_UNPACK_BUFFER:
             break;
         default:
-            wrMapRange = tblMesaGL[FEnum_glMapBufferRange].ptr;
-            wrMap = tblMesaGL[FEnum_glMapBuffer].ptr;
-            wrUnmap = tblMesaGL[FEnum_glUnmapBuffer].ptr;
-            src = (bufo->range)? wrMapRange(target, bufo->offst, bufo->range, GL_MAP_READ_BIT):wrMap(target, GL_READ_ONLY);
+            src = (bufo->range)?
+                PFN_CALL(glMapBufferRange(target, bufo->offst, bufo->range, GL_MAP_READ_BIT)):
+                PFN_CALL(glMapBuffer(target, GL_READ_ONLY));
             if (src) {
                 uint32_t szBuf = (bufo->range)? bufo->range:bufo->mapsz;
                 memcpy((dst - ALIGNBO(szBuf)), src, szBuf);
-                wrUnmap(target);
+                PFN_CALL(glUnmapBuffer(target));
             }
             break;
     }
@@ -201,42 +179,35 @@ void wrFlushBufObj(uint32_t target, mapbufo_t *bufo)
 
 void wrContextSRGB(int use_srgb)
 {
-    void (__stdcall *wrEnable)(uint32_t arg0);
-    if (use_srgb) {
-        wrEnable = tblMesaGL[FEnum_glEnable].ptr;
-        wrEnable(GL_FRAMEBUFFER_SRGB);
-    }
+    MESA_PFN(PFNGLENABLEPROC, glEnable);
+    if (use_srgb)
+        PFN_CALL(glEnable(GL_FRAMEBUFFER_SRGB));
 }
 
 void fgFontGenList(int first, int count, uint32_t listBase)
 {
-    void (__stdcall *wrBitmap)(uint32_t width, uint32_t height, float xorig, float yorig, float xmove, float ymove, const void *bitmap);
-    void (__stdcall *wrEndList)(void);
-    void (__stdcall *wrGetIntegerv)(uint32_t arg0, uintptr_t arg1);
-    void (__stdcall *wrNewList)(uint32_t list, uint32_t mode);
-    void (__stdcall *wrPixelStorei)(uint32_t arg0, uint32_t arg1);
-    wrBitmap = tblMesaGL[FEnum_glBitmap].ptr;
-    wrEndList = tblMesaGL[FEnum_glEndList].ptr;
-    wrGetIntegerv = tblMesaGL[FEnum_glGetIntegerv].ptr;
-    wrNewList = tblMesaGL[FEnum_glNewList].ptr;
-    wrPixelStorei = tblMesaGL[FEnum_glPixelStorei].ptr;
+    MESA_PFN(PFNGLBITMAPPROC, glBitmap);
+    MESA_PFN(PFNGLGETINTEGERVPROC, glGetIntegerv);
+    MESA_PFN(PFNGLNEWLISTPROC, glNewList);
+    MESA_PFN(PFNGLPIXELSTOREIPROC, glPixelStorei);
+    MESA_PFN(PFNGLENDLISTPROC, glEndList);
 
     const SFG_Font *font = &fgFontFixed8x13;
     int org_alignment;
-    wrGetIntegerv(GL_UNPACK_ALIGNMENT, (uintptr_t)&org_alignment);
-    wrPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    PFN_CALL(glGetIntegerv(GL_UNPACK_ALIGNMENT, &org_alignment));
+    PFN_CALL(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
     for (int i = first; i < (first + count); i++) {
         const unsigned char *face = font->Characters[i];
-        wrNewList(listBase++, GL_COMPILE);
-        wrBitmap(
+        PFN_CALL(glNewList(listBase++, GL_COMPILE));
+        PFN_CALL(glBitmap(
             face[ 0 ], font->Height,
             font->xorig, font->yorig,
             ( float )( face [ 0 ] ), 0.0,
             ( face + 1 )
-        );
-        wrEndList();
+        ));
+        PFN_CALL(glEndList());
     }
-    wrPixelStorei(GL_UNPACK_ALIGNMENT, org_alignment);
+    PFN_CALL(glPixelStorei(GL_UNPACK_ALIGNMENT, org_alignment));
 }
 
 const char *getGLFuncStr(int FEnum)
@@ -1575,10 +1546,10 @@ static int cfg_xLength;
 static int cfg_vertCacheMB;
 static int cfg_dispTimerMS;
 static int cfg_bufoAccelEN;
-static int cfg_scaleX;
 static int cfg_cntxMSAA;
 static int cfg_cntxSRGB;
 static int cfg_cntxVsyncOff;
+static int cfg_renderScalerOff;
 static int cfg_fpsLimit;
 static int cfg_shaderDump;
 static int cfg_traceFifo;
@@ -1609,14 +1580,14 @@ static void conf_MGLOptions(void)
             cfg_dispTimerMS = (i == 1)? v:cfg_dispTimerMS;
             i = sscanf(line, "BufOAccelEN,%d", &v);
             cfg_bufoAccelEN = ((i == 1) && v)? 1:cfg_bufoAccelEN;
-            i = sscanf(line, "ScaleWidth,%d", &v);
-            cfg_scaleX = ((i == 1) && v)? (v & 0x7FFFU):cfg_scaleX;
             i = sscanf(line, "ContextMSAA,%d", &v);
             cfg_cntxMSAA = (i == 1)? ((v & 0x03U) << 2):cfg_cntxMSAA;
             i = sscanf(line, "ContextSRGB,%d", &v);
             cfg_cntxSRGB = ((i == 1) && v)? 1:cfg_cntxSRGB;
             i = sscanf(line, "ContextVsyncOff,%d", &v);
             cfg_cntxVsyncOff = ((i == 1) && v)? 1:cfg_cntxVsyncOff;
+            i = sscanf(line, "RenderScalerOff,%d", &v);
+            cfg_renderScalerOff = ((i == 1) && v)? 1:cfg_renderScalerOff;
             i = sscanf(line, "DumpShader,%d", &v);
             cfg_shaderDump = ((i == 1) && v)? 1:cfg_shaderDump;
             i = sscanf(line, "FpsLimit,%d", &v);
@@ -1632,9 +1603,8 @@ static void conf_MGLOptions(void)
 
 int ContextUseSRGB(void)
 {
-    int (__stdcall *wrIsEnabled)(uint32_t arg0);
-    wrIsEnabled = tblMesaGL[FEnum_glIsEnabled].ptr;
-    return (cfg_cntxSRGB | wrIsEnabled(GL_FRAMEBUFFER_SRGB)? 1:0);
+    MESA_PFN(PFNGLISENABLEDPROC, glIsEnabled);
+    return (cfg_cntxSRGB | PFN_CALL(glIsEnabled(GL_FRAMEBUFFER_SRGB)))? 1:0;
 }
 int SwapFpsLimit(int fps)
 {
@@ -1648,18 +1618,18 @@ int SwapFpsLimit(int fps)
     return ret;
 }
 void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = enable; }
-void GLScaleWidth(int width) { cfg_scaleX = width; }
+void GLRenderScaler(int disable) { cfg_renderScalerOff = disable; }
 void GLContextMSAA(int msaa) { cfg_cntxMSAA = msaa; }
 void GLDispTimerCfg(int msec) { cfg_dispTimerMS = msec; }
 void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
 int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }
-int GetGLScaleWidth(void) { return cfg_scaleX; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
 int GetContextMSAA(void) { return (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
+int RenderScalerOff(void) { return cfg_renderScalerOff; }
 int GLShaderDump(void) { return cfg_shaderDump; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GLFifoTrace(void) { return cfg_traceFifo; }

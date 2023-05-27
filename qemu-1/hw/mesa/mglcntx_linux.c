@@ -352,6 +352,7 @@ void MGLDeleteContext(int level)
                 ctx[i] = 0;
             }
         }
+        MesaBlitFree();
     }
     glXDestroyContext(dpy, ctx[n]);
     ctx[n] = 0;
@@ -424,6 +425,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
 int MGLSwapBuffers(void)
 {
     MGLActivateHandler(1, 0);
+    MesaBlitScale();
     glXSwapBuffers(dpy, win);
     return 1;
 }
@@ -434,8 +436,7 @@ static int MGLPresetPixelFormat(void)
     dpy = XOpenDisplay(NULL);
     wnd_ready = 0;
     ImplMesaGLReset();
-    DPRINTF_COND(GetGLScaleWidth(), "MESAGL window scaled at width %d", GetGLScaleWidth());
-    mesa_prepare_window(GetContextMSAA(), memcmp(xcstr, nvstr, sizeof(nvstr) - 1), GetGLScaleWidth(), &cwnd_mesagl);
+    mesa_prepare_window(GetContextMSAA(), memcmp(xcstr, nvstr, sizeof(nvstr) - 1), 0, &cwnd_mesagl);
 
     int fbid, fbcnt, *attrib = iattribs_fb(dpy, GetContextMSAA());
     GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);

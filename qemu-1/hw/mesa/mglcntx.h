@@ -37,7 +37,6 @@ void MGLCursorDefine(int, int, int, int, const void *);
 void MGLMouseWarp(const uint32_t);
 int NumPbuffer(void);
 int DrawableContext(void);
-void MGLScaleHandler(const uint32_t, void *);
 void MGLFuncHandler(const char *);
 void MGLDeleteContext(int);
 int MGLCreateContext(uint32_t);

@@ -451,9 +451,9 @@ struct mglOptions {
     int bufoAcc;
     int dispTimerMS;
     int ovrdSync;
-    int scaleX;
     int useMSAA;
     int useSRGB;
+    int scalerOff;
     int vsyncOff;
     int xstrYear;
 };
@@ -475,8 +475,6 @@ static void parse_options(struct mglOptions *opt)
         while(fgets(line, MAX_XSTR, f)) {
             i = parse_value(line, "DispTimerMS,", &v);
             opt->dispTimerMS = (i == 1)? (0x8000U | (v & 0x7FFFU)):opt->dispTimerMS;
-            i = parse_value(line, "ScaleWidth,", &v);
-            opt->scaleX = (i == 1)? (v & 0x7FFFU):opt->scaleX;
             i = parse_value(line, "OverrideSync,", &v);
             opt->ovrdSync = (i == 1)? (v & 0x03U):opt->ovrdSync;
             i = parse_value(line, "BufOAccelEN,", &v);
@@ -485,6 +483,8 @@ static void parse_options(struct mglOptions *opt)
             opt->useMSAA = ((i == 1) && v)? ((v & 0x03U) << 2):opt->useMSAA;
             i = parse_value(line, "ContextSRGB,", &v);
             opt->useSRGB = ((i == 1) && v)? 1:opt->useSRGB;
+            i = parse_value(line, "RenderScalerOff,", &v);
+            opt->scalerOff = ((i == 1) && v)? 2:opt->scalerOff;
             i = parse_value(line, "ContextVsyncOff,", &v);
             opt->vsyncOff = ((i == 1) && v)? 1:opt->vsyncOff;
             i = parse_value(line, "ExtensionsYear,", &v);
@@ -17266,7 +17266,7 @@ int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wgdSwapBuffers(hdc);
 #define PPFD_CONFIG() \
     struct mglOptions cfg; \
     parse_options(&cfg); \
-    xppfd[0] = (cfg.scaleX << 16) | cfg.useMSAA | cfg.bufoAcc; \
+    xppfd[0] = cfg.useMSAA | cfg.scalerOff | cfg.bufoAcc; \
     xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT
 
 int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)
