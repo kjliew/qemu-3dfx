@@ -130,8 +130,8 @@ static int blit_program_buffer(void *save_map, const int size, const void *data)
     MESA_PFN(PFNGLDISABLEPROC,         glDisable);
     MESA_PFN(PFNGLGENBUFFERSPROC,      glGenBuffers);
     MESA_PFN(PFNGLGENVERTEXARRAYSPROC, glGenVertexArrays);
-    MESA_PFN(PFNGLGETBOOLEANVPROC,     glGetBooleanv);
     MESA_PFN(PFNGLGETINTEGERVPROC,     glGetIntegerv);
+    MESA_PFN(PFNGLISENABLEDPROC,       glIsEnabled);
 
     int view[4];
     struct save_states *last = (struct save_states *)save_map;
@@ -155,10 +155,10 @@ static int blit_program_buffer(void *save_map, const int size, const void *data)
         PFN_CALL(glGetIntegerv(mapping[i].gl_enum, mapping[i].iv));
     last->boolean_map &= GL_CONTEXT_CORE_PROFILE_BIT;
 
-    for (int v, i = 0; boolean_states[i]; i++) {
-        PFN_CALL(glGetBooleanv(boolean_states[i], (unsigned char *)&v));
-        PFN_CALL(glDisable(boolean_states[i]));
-        last->boolean_map |= (v)? (2 << i):0;
+    for (int i = 0; boolean_states[i]; i++) {
+        last->boolean_map |= PFN_CALL(glIsEnabled(boolean_states[i]))? (2 << i):0;
+        if (last->boolean_map & (2 << i))
+            PFN_CALL(glDisable(boolean_states[i]));
     }
     if (last->boolean_map & GL_CONTEXT_CORE_PROFILE_BIT) {
         if (!blit.vao)
