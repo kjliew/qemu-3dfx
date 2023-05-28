@@ -292,7 +292,7 @@ diff -Nru ../orig/qemu-7.2.0/ui/console.c ./ui/console.c
 diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-7.2.0/ui/sdl2.c	2022-12-14 08:28:45.000000000 -0800
 +++ ./ui/sdl2.c	2023-03-19 00:00:32.532892200 -0700
-@@ -765,6 +765,352 @@
+@@ -765,6 +765,353 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -325,6 +325,7 @@ diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
 +#ifndef CONFIG_WIN32
 +        y -= top;
 +#endif
++    }
 +    sdl_grab_end(scon);
 +    sdl2_window_destroy(scon);
 +    sdl2_window_create(scon);
@@ -645,7 +646,7 @@ diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -924,6 +1270,7 @@
+@@ -924,6 +1271,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
