@@ -2168,3 +2168,5 @@
 #define GL_TEXTURE29_ARB                  0x84DD
 #define GL_TEXTURE30_ARB                  0x84DE
 #define GL_TEXTURE31_ARB                  0x84DF
+#define GL_POINT_SMOOTH 0x0B10
+#define GL_ALPHA_TEST 0x0BC0

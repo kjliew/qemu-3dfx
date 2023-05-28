@@ -114,6 +114,7 @@ struct states_mapping {
     int gl_enum, *iv;
 };
 static const int boolean_states[] = {
+    GL_FRAMEBUFFER_SRGB,
     GL_BLEND,
     GL_CULL_FACE,
     GL_DEPTH_TEST,
@@ -241,7 +242,7 @@ void MesaBlitScale(void)
                 PFN_CALL(glBindTexture(GL_TEXTURE_2D, screen_texture));
                 PFN_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
                 PFN_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-                PFN_CALL(glCopyTexImage2D(GL_TEXTURE_2D, 0, ContextUseSRGB()? GL_SRGB:GL_RGBA, 0,0, w,h, 0));
+                PFN_CALL(glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0,0, w,h, 0));
                 if (aspect) {
                     PFN_CALL(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)); /* clear */
                     PFN_CALL(glDrawArrays(GL_TRIANGLE_STRIP, 4, 4)); /* clear */
