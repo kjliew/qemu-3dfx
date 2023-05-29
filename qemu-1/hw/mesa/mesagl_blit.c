@@ -31,17 +31,24 @@ static struct {
 static unsigned blit_program_setup(void)
 {
     MESA_PFN(PFNGLATTACHSHADERPROC,       glAttachShader);
+    MESA_PFN(PFNGLBINDATTRIBLOCATIONPROC, glBindAttribLocation);
     MESA_PFN(PFNGLCOMPILESHADERPROC,      glCompileShader);
     MESA_PFN(PFNGLCREATEPROGRAMPROC,      glCreateProgram);
     MESA_PFN(PFNGLCREATESHADERPROC,       glCreateShader);
     MESA_PFN(PFNGLGETINTEGERVPROC,        glGetIntegerv);
-    MESA_PFN(PFNGLGETPROGRAMIVPROC,       glGetProgramiv);
-    MESA_PFN(PFNGLGETSHADERIVPROC,        glGetShaderiv);
+    MESA_PFN(PFNGLGETSTRINGPROC,          glGetString);
+    MESA_PFN(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocation);
     MESA_PFN(PFNGLLINKPROGRAMPROC,        glLinkProgram);
     MESA_PFN(PFNGLSHADERSOURCEPROC,       glShaderSource);
     MESA_PFN(PFNGLUSEPROGRAMPROC,         glUseProgram);
-    MESA_PFN(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocation);
-    const char *vert_src =
+    const char *vert_src[] = {
+        "#version 120\n"
+        "attribute vec2 in_position;\n"
+        "varying vec2 texcoord;\n"
+        "void main() {\n"
+        "  texcoord = vec2(1 + in_position.x, 1 + in_position.y) * 0.5;\n"
+        "  gl_Position = vec4(in_position, 0, 1);\n"
+        "}\n",
         "#version 140\n"
         "#extension GL_ARB_explicit_attrib_location : require\n"
         "layout (location = 0) in vec2 in_position;\n"
@@ -50,13 +57,22 @@ static unsigned blit_program_setup(void)
         "  texcoord = vec2(1 + in_position.x, 1 + in_position.y) * 0.5;\n"
         "  gl_Position = vec4(in_position, 0, 1);\n"
         "}\n"
-        ;
-    const char *frag_src =
-        "#version 140\n"
-        "#extension GL_ARB_shading_language_420pack : require\n"
-        "layout (binding = 0) uniform sampler2D screen_texture;\n"
-        "in vec2 texcoord;\n"
+    };
+    const char *frag_src[] = {
+        "#version 120\n"
+        "uniform sampler2D screen_texture;\n"
         "uniform bool frag_just_black;\n"
+        "varying vec2 texcoord;\n"
+        "void main() {\n"
+        "  if (frag_just_black)\n"
+        "    gl_FragColor = vec4(0,0,0,1);\n"
+        "  else\n"
+        "    gl_FragColor = texture2D(screen_texture, texcoord);\n"
+        "}\n",
+        "#version 140\n"
+        "uniform sampler2D screen_texture;\n"
+        "uniform bool frag_just_black;\n"
+        "in vec2 texcoord;\n"
         "out vec4 fragColor;\n"
         "void main() {\n"
         "  if (frag_just_black)\n"
@@ -64,23 +80,23 @@ static unsigned blit_program_setup(void)
         "  else\n"
         "    fragColor = texture(screen_texture, texcoord);\n"
         "}\n"
-        ;
+    };
     unsigned prog;
     if (!blit.prog) {
-        int status;
+        int i = memcmp(PFN_CALL(glGetString(GL_VERSION)), "2.1 Metal",
+                sizeof("2.1 Metal") - 1)? 1:0;
         blit.vert = PFN_CALL(glCreateShader(GL_VERTEX_SHADER));
-        PFN_CALL(glShaderSource(blit.vert, 1, &vert_src, 0));
+        PFN_CALL(glShaderSource(blit.vert, 1, &vert_src[i], 0));
         PFN_CALL(glCompileShader(blit.vert));
-        PFN_CALL(glGetShaderiv(blit.vert, GL_COMPILE_STATUS, &status));
         blit.frag = PFN_CALL(glCreateShader(GL_FRAGMENT_SHADER));
-        PFN_CALL(glShaderSource(blit.frag, 1, &frag_src, 0));
+        PFN_CALL(glShaderSource(blit.frag, 1, &frag_src[i], 0));
         PFN_CALL(glCompileShader(blit.frag));
-        PFN_CALL(glGetShaderiv(blit.frag, GL_COMPILE_STATUS, &status));
         prog = PFN_CALL(glCreateProgram());
         PFN_CALL(glAttachShader(prog, blit.vert));
         PFN_CALL(glAttachShader(prog, blit.frag));
+        if (!i)
+            PFN_CALL(glBindAttribLocation(prog, 0, "in_position"));
         PFN_CALL(glLinkProgram(prog));
-        PFN_CALL(glGetProgramiv(prog, GL_LINK_STATUS, &status));
         blit.prog = prog;
     }
     PFN_CALL(glGetIntegerv(GL_CURRENT_PROGRAM, (int *)&prog));
