@@ -48,7 +48,8 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #define GL_PBUFFER_DESTROY(x) \
     DPRINTF("Unsupported %s", "wglDestroyPbufferARB"); argsp[0] = 0
 #define GL_DELETECONTEXT(x)
-#define GL_CONTEXTATTRIB(x)
+#define GL_CONTEXTATTRIB(x) \
+    if (0) ContextAttribWindowPosition()
 #define GL_CREATECONTEXT(x)
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
@@ -528,7 +529,7 @@ static void attribWindowPos(void *opaque)
 }
 static void ContextAttribWindowPosition(void)
 {
-    if ( !mesa_gui_fullscreen(0)) {
+    if (!mesa_gui_fullscreen(0)) {
         int x, y;
         SDL_GetWindowPosition(window, &x, &y);
         struct attrib_winpos *pos = g_new(struct attrib_winpos, 1);
@@ -536,7 +537,6 @@ static void ContextAttribWindowPosition(void)
         pos->tp = timer_new_ms(QEMU_CLOCK_VIRTUAL, attribWindowPos, pos);
         timer_mod(pos->tp, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + GUI_REFRESH_INTERVAL_DEFAULT);
     }
-
 }
 static int PbufferGLBinding(const int target)
 {
