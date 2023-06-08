@@ -1,7 +1,7 @@
 format os2 le dll initglobal
 #debug all
 name glide2x.ovl
-file glideovl.obj
+file glideovl.o
 #library clib3s.lib
 option description 'GLIDE2X.OVL'
 option map
