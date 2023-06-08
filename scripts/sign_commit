@@ -4,7 +4,7 @@ TOP=.
 GIT=`echo $@ | sed "s/\-git=\(.*\)/\1/;s/\ .*//"`
 if [ -z $GIT ]; then GIT=.; fi; shift
 ARG=$@; if [ -z $ARG ]; then ARG=HEAD; fi
-REV=`cd $GIT; git rev-parse $ARG | sed "s/\(.......\).*/\1\-/"`
+if [ ! $REV ]; then REV=`cd $GIT; git rev-parse $ARG | sed "s/\(.......\).*/\1\-/"`; fi
 if [ -z $REV ]; then exit 1; fi
 VLC=$(find $TOP -maxdepth 2 -name vl.c)
 SRC=" \
