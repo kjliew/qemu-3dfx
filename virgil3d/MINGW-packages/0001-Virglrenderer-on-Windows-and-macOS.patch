@@ -1,6 +1,6 @@
 diff -Nru orig/virglrenderer-0.10.4/meson.build src/virglrenderer-0.10.4/meson.build
---- orig/virglrenderer-0.10.4/meson.build	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/meson.build	2023-01-07 00:46:30.802648300 -0800
+--- orig/virglrenderer-0.10.4/meson.build
++++ src/virglrenderer-0.10.4/meson.build
 @@ -53,6 +53,7 @@
     '-Wmissing-prototypes',
     '-Werror=incompatible-pointer-types',
@@ -42,8 +42,8 @@ diff -Nru orig/virglrenderer-0.10.4/meson.build src/virglrenderer-0.10.4/meson.b
  if with_render_server
  subdir('server')
 diff -Nru orig/virglrenderer-0.10.4/src/meson.build src/virglrenderer-0.10.4/src/meson.build
---- orig/virglrenderer-0.10.4/src/meson.build	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/meson.build	2023-01-07 00:46:30.802648300 -0800
+--- orig/virglrenderer-0.10.4/src/meson.build
++++ src/virglrenderer-0.10.4/src/meson.build
 @@ -171,7 +171,6 @@
  virgl_depends = [
     gallium_dep,
@@ -62,8 +62,8 @@ diff -Nru orig/virglrenderer-0.10.4/src/meson.build src/virglrenderer-0.10.4/src
  
  if have_glx
 diff -Nru orig/virglrenderer-0.10.4/src/virglrenderer.c src/virglrenderer-0.10.4/src/virglrenderer.c
---- orig/virglrenderer-0.10.4/src/virglrenderer.c	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/virglrenderer.c	2023-01-07 00:46:30.818273600 -0800
+--- orig/virglrenderer-0.10.4/src/virglrenderer.c
++++ src/virglrenderer-0.10.4/src/virglrenderer.c
 @@ -31,7 +31,11 @@
  #include <fcntl.h>
  #include <errno.h>
@@ -125,8 +125,8 @@ diff -Nru orig/virglrenderer-0.10.4/src/virglrenderer.c src/virglrenderer-0.10.4
        return -EINVAL;
     }
 diff -Nru orig/virglrenderer-0.10.4/src/vrend_blitter.h src/virglrenderer-0.10.4/src/vrend_blitter.h
---- orig/virglrenderer-0.10.4/src/vrend_blitter.h	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/vrend_blitter.h	2023-01-07 00:46:30.818273600 -0800
+--- orig/virglrenderer-0.10.4/src/vrend_blitter.h
++++ src/virglrenderer-0.10.4/src/vrend_blitter.h
 @@ -30,7 +30,7 @@
  /* shaders for blitting */
 
@@ -146,8 +146,8 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_blitter.h src/virglrenderer-0.10.4
 
  #define HEADER_GLES                             \
 diff -Nru orig/virglrenderer-0.10.4/src/vrend_debug.c src/virglrenderer-0.10.4/src/vrend_debug.c
---- orig/virglrenderer-0.10.4/src/vrend_debug.c	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/vrend_debug.c	2023-01-07 00:46:30.833900100 -0800
+--- orig/virglrenderer-0.10.4/src/vrend_debug.c
++++ src/virglrenderer-0.10.4/src/vrend_debug.c
 @@ -25,6 +25,11 @@
  #include "vrend_debug.h"
  #include "vrend_renderer.h"
@@ -161,8 +161,8 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_debug.c src/virglrenderer-0.10.4/s
  #include <stdio.h>
  
 diff -Nru orig/virglrenderer-0.10.4/src/vrend_renderer.c src/virglrenderer-0.10.4/src/vrend_renderer.c
---- orig/virglrenderer-0.10.4/src/vrend_renderer.c	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/vrend_renderer.c	2023-01-07 00:46:30.833900100 -0800
+--- orig/virglrenderer-0.10.4/src/vrend_renderer.c
++++ src/virglrenderer-0.10.4/src/vrend_renderer.c
 @@ -358,6 +358,7 @@
     uint64_t features[feat_last / 64 + 1];
  
@@ -223,8 +223,8 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_renderer.c src/virglrenderer-0.10.
     else
        glReadPixels(x, y, width, height, format, type, data);
 diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.c src/virglrenderer-0.10.4/src/vrend_shader.c
---- orig/virglrenderer-0.10.4/src/vrend_shader.c	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/vrend_shader.c	2023-01-07 01:06:32.778530200 -0800
+--- orig/virglrenderer-0.10.4/src/vrend_shader.c
++++ src/virglrenderer-0.10.4/src/vrend_shader.c
 @@ -1514,6 +1514,8 @@
              }
           }
@@ -273,8 +273,8 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.c src/virglrenderer-0.10.4/
 
        if (ctx->num_cull_dist_prop || ctx->key->num_in_cull || ctx->key->num_out_cull)
 diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.h src/virglrenderer-0.10.4/src/vrend_shader.h
---- orig/virglrenderer-0.10.4/src/vrend_shader.h	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/vrend_shader.h	2023-01-07 00:46:30.849602900 -0800
+--- orig/virglrenderer-0.10.4/src/vrend_shader.h
++++ src/virglrenderer-0.10.4/src/vrend_shader.h
 @@ -236,6 +236,7 @@
     uint32_t glsl_version : 12;
     uint32_t max_draw_buffers : 4;
@@ -284,8 +284,8 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.h src/virglrenderer-0.10.4/
     uint32_t use_core_profile : 1;
     uint32_t use_explicit_locations : 1;
 diff -Nru orig/virglrenderer-0.10.4/src/vrend_winsys.c src/virglrenderer-0.10.4/src/vrend_winsys.c
---- orig/virglrenderer-0.10.4/src/vrend_winsys.c	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/vrend_winsys.c	2023-01-07 00:46:30.849602900 -0800
+--- orig/virglrenderer-0.10.4/src/vrend_winsys.c
++++ src/virglrenderer-0.10.4/src/vrend_winsys.c
 @@ -22,6 +22,7 @@
   *
   **************************************************************************/
@@ -295,8 +295,8 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_winsys.c src/virglrenderer-0.10.4/
  
  #ifdef HAVE_EPOXY_GLX_H
 diff -Nru orig/virglrenderer-0.10.4/src/vrend_winsys_gbm.h src/virglrenderer-0.10.4/src/vrend_winsys_gbm.h
---- orig/virglrenderer-0.10.4/src/vrend_winsys_gbm.h	2023-01-02 08:12:17.000000000 -0800
-+++ src/virglrenderer-0.10.4/src/vrend_winsys_gbm.h	2023-01-07 00:46:30.865149900 -0800
+--- orig/virglrenderer-0.10.4/src/vrend_winsys_gbm.h
++++ src/virglrenderer-0.10.4/src/vrend_winsys_gbm.h
 @@ -25,7 +25,9 @@
  #ifndef VIRGL_GBM_H
  #define VIRGL_GBM_H

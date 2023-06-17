@@ -1,6 +1,6 @@
 diff -Nru ../orig/qemu-7.2.0/include/ui/egl-helpers.h ./include/ui/egl-helpers.h
---- ../orig/qemu-7.2.0/include/ui/egl-helpers.h	2022-12-14 08:28:45.000000000 -0800
-+++ ./include/ui/egl-helpers.h	2022-12-15 18:43:11.087459300 -0800
+--- ../orig/qemu-7.2.0/include/ui/egl-helpers.h
++++ ./include/ui/egl-helpers.h
 @@ -2,7 +2,15 @@
  #define EGL_HELPERS_H
 
@@ -18,9 +18,9 @@ diff -Nru ../orig/qemu-7.2.0/include/ui/egl-helpers.h ./include/ui/egl-helpers.h
  #include <gbm.h>
  #endif
 diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
---- ../orig/qemu-7.2.0/meson.build	2022-12-15 18:39:56.193799300 -0800
-+++ ./meson.build	2022-12-15 18:43:11.099877200 -0800
-@@ -1141,12 +1141,14 @@
+--- ../orig/qemu-7.2.0/meson.build
++++ ./meson.build
+@@ -1142,12 +1142,14 @@
                           required: get_option('coreaudio'))
  endif
 
@@ -36,7 +36,7 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
    elif get_option('opengl').enabled()
      error('epoxy/egl.h not found')
    endif
-@@ -1833,6 +1835,7 @@
+@@ -1834,6 +1836,7 @@
  config_host_data.set('CONFIG_BLKIO', blkio.found())
  config_host_data.set('CONFIG_CURL', curl.found())
  config_host_data.set('CONFIG_CURSES', curses.found())
@@ -44,7 +44,7 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
  config_host_data.set('CONFIG_GBM', gbm.found())
  config_host_data.set('CONFIG_GIO', gio.found())
  config_host_data.set('CONFIG_GLUSTERFS', glusterfs.found())
-@@ -3961,6 +3964,7 @@
+@@ -3966,6 +3969,7 @@
  summary_info += {'libusb':            libusb}
  summary_info += {'usb net redir':     usbredir}
  summary_info += {'OpenGL support (epoxy)': opengl}
@@ -53,8 +53,8 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
  summary_info += {'libiscsi support':  libiscsi}
  summary_info += {'libnfs support':    libnfs}
 diff -Nru ../orig/qemu-7.2.0/ui/egl-helpers.c ./ui/egl-helpers.c
---- ../orig/qemu-7.2.0/ui/egl-helpers.c	2022-12-14 08:28:45.000000000 -0800
-+++ ./ui/egl-helpers.c	2022-12-15 18:43:11.103387100 -0800
+--- ../orig/qemu-7.2.0/ui/egl-helpers.c
++++ ./ui/egl-helpers.c
 @@ -334,6 +334,8 @@
 
  /* ---------------------------------------------------------------------- */
@@ -71,8 +71,8 @@ diff -Nru ../orig/qemu-7.2.0/ui/egl-helpers.c ./ui/egl-helpers.c
 +
 +#endif //#ifdef CONFIG_EGL
 diff -Nru ../orig/qemu-7.2.0/ui/meson.build ./ui/meson.build
---- ../orig/qemu-7.2.0/ui/meson.build	2022-12-14 08:28:45.000000000 -0800
-+++ ./ui/meson.build	2022-12-15 18:43:11.119058300 -0800
+--- ../orig/qemu-7.2.0/ui/meson.build
++++ ./ui/meson.build
 @@ -59,13 +59,15 @@
    opengl_ss = ss.source_set()
    opengl_ss.add(gbm)
