@@ -1,6 +1,6 @@
 diff -Nru ../orig/qemu-5.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
---- ../orig/qemu-5.2.0/accel/kvm/kvm-all.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./accel/kvm/kvm-all.c	2021-08-02 15:00:59.892830900 -0700
+--- ../orig/qemu-5.2.0/accel/kvm/kvm-all.c
++++ ./accel/kvm/kvm-all.c
 @@ -1216,6 +1216,41 @@
      kvm_slots_unlock(kml);
  }
@@ -44,8 +44,8 @@ diff -Nru ../orig/qemu-5.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
                             MemoryRegionSection *section)
  {
 diff -Nru ../orig/qemu-5.2.0/hw/i386/pc.c ./hw/i386/pc.c
---- ../orig/qemu-5.2.0/hw/i386/pc.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./hw/i386/pc.c	2021-08-02 15:00:59.905830500 -0700
+--- ../orig/qemu-5.2.0/hw/i386/pc.c
++++ ./hw/i386/pc.c
 @@ -1190,6 +1190,28 @@
  
      /* Super I/O */
@@ -75,9 +75,10 @@ diff -Nru ../orig/qemu-5.2.0/hw/i386/pc.c ./hw/i386/pc.c
  }
  
  void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
+diff -Nru ../orig/qemu-5.2.0/hw/meson.build ./hw/meson.build
 diff -Nru ../orig/qemu-5.2.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
---- ../orig/qemu-5.2.0/include/hw/i386/pc.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/hw/i386/pc.h	2021-08-02 15:00:59.923829900 -0700
+--- ../orig/qemu-5.2.0/include/hw/i386/pc.h
++++ ./include/hw/i386/pc.h
 @@ -182,6 +182,22 @@
  
  #define TYPE_PORT92 "port92"
@@ -102,8 +103,8 @@ diff -Nru ../orig/qemu-5.2.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
  void pc_system_flash_create(PCMachineState *pcms);
  void pc_system_flash_cleanup_unused(PCMachineState *pcms);
 diff -Nru ../orig/qemu-5.2.0/include/sysemu/kvm.h ./include/sysemu/kvm.h
---- ../orig/qemu-5.2.0/include/sysemu/kvm.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/sysemu/kvm.h	2021-08-02 15:00:59.934830200 -0700
+--- ../orig/qemu-5.2.0/include/sysemu/kvm.h
++++ ./include/sysemu/kvm.h
 @@ -480,6 +480,8 @@
  
  #endif /* NEED_CPU_H */
@@ -114,8 +115,8 @@ diff -Nru ../orig/qemu-5.2.0/include/sysemu/kvm.h ./include/sysemu/kvm.h
  
  void kvm_init_cpu_signals(CPUState *cpu);
 diff -Nru ../orig/qemu-5.2.0/include/sysemu/whpx.h ./include/sysemu/whpx.h
---- ../orig/qemu-5.2.0/include/sysemu/whpx.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/sysemu/whpx.h	2021-08-02 15:00:59.946832100 -0700
+--- ../orig/qemu-5.2.0/include/sysemu/whpx.h
++++ ./include/sysemu/whpx.h
 @@ -15,6 +15,8 @@
 
  #ifdef CONFIG_WHPX
@@ -126,8 +127,8 @@ diff -Nru ../orig/qemu-5.2.0/include/sysemu/whpx.h ./include/sysemu/whpx.h
 
  #else /* CONFIG_WHPX */
 diff -Nru ../orig/qemu-5.2.0/include/ui/console.h ./include/ui/console.h
---- ../orig/qemu-5.2.0/include/ui/console.h	2020-12-08 08:59:44.000000000 -0800
-+++ ./include/ui/console.h	2023-05-15 14:05:50.777522300 -0700
+--- ../orig/qemu-5.2.0/include/ui/console.h
++++ ./include/ui/console.h
 @@ -370,6 +370,7 @@
                                 void *opaque);
  void graphic_console_close(QemuConsole *con);
@@ -157,8 +158,8 @@ diff -Nru ../orig/qemu-5.2.0/include/ui/console.h ./include/ui/console.h
 +
  #endif
 diff -Nru ../orig/qemu-5.2.0/meson.build ./meson.build
---- ../orig/qemu-5.2.0/meson.build	2020-12-08 08:59:44.000000000 -0800
-+++ ./meson.build	2023-04-04 17:43:52.914380500 -0700
+--- ../orig/qemu-5.2.0/meson.build
++++ ./meson.build
 @@ -589,6 +589,7 @@
      error('sdl-image required, but SDL was @0@'.format(
            get_option('sdl').disabled() ? 'disabled' : 'not found'))
@@ -189,8 +190,8 @@ diff -Nru ../orig/qemu-5.2.0/meson.build ./meson.build
    if target.endswith('-softmmu')
      qemu_target_name = 'qemu-system-' + target_name
 diff -Nru ../orig/qemu-5.2.0/softmmu/vl.c ./softmmu/vl.c
---- ../orig/qemu-5.2.0/softmmu/vl.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./softmmu/vl.c	2021-08-02 15:00:59.989830200 -0700
+--- ../orig/qemu-5.2.0/softmmu/vl.c
++++ ./softmmu/vl.c
 @@ -1682,6 +1682,13 @@
      }
  }
@@ -214,8 +215,8 @@ diff -Nru ../orig/qemu-5.2.0/softmmu/vl.c ./softmmu/vl.c
                  break;
              case QEMU_OPTION_m:
 diff -Nru ../orig/qemu-5.2.0/target/i386/whpx-all.c ./target/i386/whpx-all.c
---- ../orig/qemu-5.2.0/target/i386/whpx-all.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./target/i386/whpx-all.c	2021-08-02 15:01:00.004833500 -0700
+--- ../orig/qemu-5.2.0/target/i386/whpx-all.c
++++ ./target/i386/whpx-all.c
 @@ -10,6 +10,7 @@
 
  #include "qemu/osdep.h"
@@ -264,8 +265,8 @@ diff -Nru ../orig/qemu-5.2.0/target/i386/whpx-all.c ./target/i386/whpx-all.c
                             MemoryRegionSection *section)
  {
 diff -Nru ../orig/qemu-5.2.0/ui/console.c ./ui/console.c
---- ../orig/qemu-5.2.0/ui/console.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./ui/console.c	2023-03-19 00:11:25.865625200 -0700
+--- ../orig/qemu-5.2.0/ui/console.c
++++ ./ui/console.c
 @@ -262,6 +262,13 @@
      ds->have_text = have_text;
  }
@@ -290,9 +291,9 @@ diff -Nru ../orig/qemu-5.2.0/ui/console.c ./ui/console.c
          async = con->hw_ops->gfx_update_async;
      }
 diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
---- ../orig/qemu-5.2.0/ui/sdl2.c	2020-12-08 08:59:44.000000000 -0800
-+++ ./ui/sdl2.c	2023-05-15 14:05:06.148520800 -0700
-@@ -755,6 +755,353 @@
+--- ../orig/qemu-5.2.0/ui/sdl2.c
++++ ./ui/sdl2.c
+@@ -755,6 +755,355 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -318,12 +319,11 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +} scon_cb;
 +static void sdl_gui_restart(struct sdl2_console *scon, SDL_Surface *icon)
 +{
-+    int x, y, top;
++    int top = 0;
 +    if (!gui_fullscreen) {
-+        SDL_GetWindowPosition(scon->real_window, &x, &y);
-+        SDL_GetWindowBordersSize(scon->real_window, &top, 0, 0, 0);
++        SDL_GetWindowPosition(scon->real_window, &scon->x, &scon->y);
 +#ifndef CONFIG_WIN32
-+        y -= top;
++        SDL_GetWindowBordersSize(scon->real_window, &top, 0, 0, 0);
 +#endif
 +    }
 +    sdl_grab_end(scon);
@@ -332,7 +332,7 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +    if (icon)
 +        SDL_SetWindowIcon(scon->real_window, icon);
 +    if (!gui_fullscreen)
-+        SDL_SetWindowPosition(scon->real_window, x, y);
++        SDL_SetWindowPosition(scon->real_window, scon->x, scon->y - top);
 +}
 +static void sched_wndproc(void *opaque)
 +{
@@ -346,8 +346,11 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
 +        else {
 +            if (!s->scon->real_renderer)
 +                s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
-+            if (!s->scon->opengl)
++            if (!s->scon->opengl) {
 +                sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++                if (!gui_fullscreen)
++                    SDL_SetWindowPosition(s->scon->real_window, s->scon->x, s->scon->y);
++            }
 +        }
 +    }
 +    else if (s->gui_saved_res) {
@@ -646,7 +649,7 @@ diff -Nru ../orig/qemu-5.2.0/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -889,6 +1236,7 @@
+@@ -889,6 +1238,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);

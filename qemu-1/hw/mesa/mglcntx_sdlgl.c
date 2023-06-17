@@ -48,8 +48,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #define GL_PBUFFER_DESTROY(x) \
     DPRINTF("Unsupported %s", "wglDestroyPbufferARB"); argsp[0] = 0
 #define GL_DELETECONTEXT(x)
-#define GL_CONTEXTATTRIB(x) \
-    if (0) ContextAttribWindowPosition()
+#define GL_CONTEXTATTRIB(x)
 #define GL_CREATECONTEXT(x)
 #endif
 #if defined(CONFIG_LINUX) && CONFIG_LINUX
@@ -134,7 +133,6 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
         if (major) { \
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major); \
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor); \
-            ContextAttribWindowPosition(); \
         } \
         if (pfmsk) \
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, pfmsk); \
@@ -513,31 +511,6 @@ int DrawableContext(void)
     return SDL_GL_GetCurrentContext()? 1:0;
 }
 
-struct attrib_winpos {
-    QEMUTimer *tp;
-    int x, y;
-};
-static void attribWindowPos(void *opaque)
-{
-    struct attrib_winpos *s = opaque;
-    if (s->tp) {
-        timer_del(s->tp);
-        timer_free(s->tp);
-    }
-    SDL_SetWindowPosition(window, s->x, s->y);
-    g_free(s);
-}
-static void ContextAttribWindowPosition(void)
-{
-    if (!mesa_gui_fullscreen(0)) {
-        int x, y;
-        SDL_GetWindowPosition(window, &x, &y);
-        struct attrib_winpos *pos = g_new(struct attrib_winpos, 1);
-        pos->x = x; pos->y = y;
-        pos->tp = timer_new_ms(QEMU_CLOCK_VIRTUAL, attribWindowPos, pos);
-        timer_mod(pos->tp, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + GUI_REFRESH_INTERVAL_DEFAULT);
-    }
-}
 static int PbufferGLBinding(const int target)
 {
     int ret;
