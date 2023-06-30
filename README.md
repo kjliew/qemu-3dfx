@@ -70,13 +70,7 @@ Simple guide to apply the patch:<br>
 ## Donation
 If this project helps you relive the nostalgic memory of Good Old Windows Games, you can now donate in the course of supporting **Games Preservation** with QEMU. Your donation also motivates and encourages further research in making QEMU the ultimate platform for Retro Windows Games.
 
-For $59.99 donation, you will deserve the following donor's privileges:
-- QEMU binary package built for platform of your choice (choose **ONE**: Windows 10/11, Ubuntu, etc.)
-- QEMU-enhanced OpenGLide **Host-side wrappers** built for platform of your choice (choose **ONE**: Windows 10/11, Ubuntu, etc.)
-- QEMU-enhanced [**WineD3D libraries for Win98/2K/ME/XP VMs**](https://www.winehq.org) for DirectDraw/Direct3D games up to DirectX 9.0c
-- Game controllers support with [**QEMU USB Gamepad**](https://github.com/kjliew/qemu-3dfx/wiki/QEMU-USB-Gamepad)
-- OpenGLide **Guest-side wrappers** for Windows
-- Elect up to 3 games for priority support and your name as the honorary sponsor in the supported & tested list of games.
+**Donor's priviledges in build service is temporary HALTED indefinitely. Donations remain welcomed and accepted but no build for platform of choice can be delivered nor fulfiling Game Election services for Game Preservation.**
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XE47KTASERX4A)
 ### A Note to Donation
