@@ -259,7 +259,7 @@ void HookTimeGetTime(const uint32_t caddr)
         TICK_HOOK(modList.modName[i]);
     }
 #undef TICK_HOOK
-compat_patched:
+compat_patched: ;
     PCOMPATFX nptr = fxCompatTblPtr();
     for (int i = 0; nptr && nptr[i].modName; i++) {
         if (nptr[i].op_mask & HP_DONE)
