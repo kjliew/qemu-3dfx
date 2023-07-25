@@ -33,7 +33,7 @@ Simple guide to apply the patch:<br>
     $ patch -p0 -i ../00-qemu720-mesa-glide.patch
     $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
-    $ ../qemu-7.2.0/configure --prefix=$HOME/dist/qemu-3dfx --target-list=i386-softmmu --disable-werror && make
+    $ ../qemu-7.2.0/configure --prefix=$HOME/dist/qemu-3dfx --target-list=i386-softmmu --disable-werror --disable-qga-vss   && make
 
 ## Building Guest Wrappers
 **Requirements:**
