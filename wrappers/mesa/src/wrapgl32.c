@@ -457,7 +457,7 @@ struct mglOptions {
     int vsyncOff;
     int xstrYear;
 };
-static int swapFps;
+static int swapCur, swapFps;
 static int parse_value(const char *str, const char *tok, int *val)
 {
     int ret = (memcmp(str, tok, strlen(tok)))? 0:1;
@@ -489,10 +489,17 @@ static void parse_options(struct mglOptions *opt)
             opt->vsyncOff = ((i == 1) && v)? 1:opt->vsyncOff;
             i = parse_value(line, "ExtensionsYear,", &v);
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
+            i = parse_value(line, "HCursorSync,", &v);
+            swapCur = ((i == 1) && v)? 1:swapCur;
             i = parse_value(line, "FpsLimit,", &v);
             swapFps = (i == 1)? (v & 0x7FU):swapFps;
         }
         fclose(f);
+        /* Sync host color cursor only for Bochs SVGA */
+        DISPLAY_DEVICE dd = { .cb = sizeof(DISPLAY_DEVICE) };
+        const char vidstr[] = "QEMU Bochs";
+        swapCur = (EnumDisplayDevices(NULL, 0, &dd, 0) &&
+            !memcmp(dd.DeviceString, vidstr, strlen(vidstr)))? swapCur:0;
     }
 }
 
@@ -17248,6 +17255,7 @@ uint32_t PT_CALL mglUseFontOutlinesW(uint32_t arg0, uint32_t arg1, uint32_t arg2
 
 int WINAPI wglSwapBuffers (HDC hdc)
 {
+    static HCURSOR hcur;
     static POINT last_pos;
     static uint32_t timestamp;
     uint32_t ret, *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
@@ -17270,6 +17278,10 @@ int WINAPI wglSwapBuffers (HDC hdc)
                 ci.ptScreenPos.y = MulDiv(ci.ptScreenPos.y, GetSystemMetrics(SM_CYSCREEN) - 1,
                         (wr.bottom - wr.top - 1));
                 memcpy(&last_pos, &ci.ptScreenPos, sizeof(POINT));
+                if (swapCur && hcur != ci.hCursor) {
+                    hcur = ci.hCursor;
+                    wglSetDeviceCursor3DFX(hcur);
+                }
             }
         }
     }
