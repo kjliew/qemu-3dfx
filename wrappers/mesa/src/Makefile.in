@@ -11,6 +11,7 @@ LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base,--no-seh,--dynamicbase,--nxcompat
 SRCDIR=../src
 TARGET=opengl32.dll
+TARGETICD=qmfxgl32.dll
 TOOLS=wglinfo.exe
 GENDEF=gendef
 
@@ -22,13 +23,25 @@ C_OBJS:=\
     md5.o \
 
 
-all: fxlib $(TARGET) $(TOOLS)
+all: fxlib $(TARGET) $(TARGETICD) $(TOOLS)
 
 $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
 	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/;/CallWndProc/d;s/^mgl/wgl/;s/wgd//" | \
+		sed "s/\ ;\ Check!!!.*//" | \
+		grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
+	@echo "  LD  $@"
+	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
+
+wrapgl32_icd.o: wrapgl32.o
+
+$(TARGETICD): $(C_OBJS) szdata.o wrapgl32_icd.o icddrv.o stamp.o
+	@echo "  CFLAGS  $(CFLAGS)"
+	@echo "  LDFLAGS $(LDFLAGS)"
+	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
+	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/;/CallWndProc/d;s/^mgl/wgl/;s/wgd//;s/^mgd/Drv/;/^private/d" | \
 		sed "s/\ ;\ Check!!!.*//" | \
 		grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
 	@echo "  LD  $@"

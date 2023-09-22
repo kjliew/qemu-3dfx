@@ -16699,10 +16699,16 @@ wglChoosePixelFormatARB (HDC hdc,
 
 /* WGL_ARB_create_context */
 static int level;
+#ifndef ICDDRIVER
 static HGLRC WINAPI COMPACT
 wglCreateContextAttribsARB(HDC hDC,
                            HGLRC hShareContext,
                            const int *attribList)
+#else
+HGLRC WINAPI wglCreateContextAttribsARB(HDC hDC, HGLRC hShareContext, const int *attribList);
+HGLRC WINAPI COMPACT
+private_wglCreateContextAttribsARB(HDC hDC, HGLRC hShareContext, const int *attribList)
+#endif
 {
   uint32_t i, ret;
   WGL_FUNCP("wglCreateContextAttribsARB");
@@ -16874,9 +16880,15 @@ wglSetDeviceGammaRamp3DFX(HDC hdc, LPVOID arrays)
 /* WGL_ARB_make_current_read */
 uint32_t PT_CALL mglCreateContext (uint32_t arg0);
 uint32_t PT_CALL mglMakeCurrent (uint32_t arg0, uint32_t arg1);
+#ifndef ICDDRIVER
 static uint32_t WINAPI wglMakeContextCurrentARB(uint32_t arg0,
                               uint32_t arg1,
                               uint32_t arg2)
+#else
+BOOL WINAPI wglMakeContextCurrentARB(HDC hDrawDC, HDC hReadDC, HGLRC hglrc);
+
+uint32_t WINAPI private_wglMakeContextCurrentARB(uint32_t arg0, uint32_t arg1, uint32_t arg2)
+#endif
 {
     uint32_t currRC, ret = 0;
     if (arg0 == arg1) {
@@ -17406,6 +17418,10 @@ LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(hHook, nCode, wParam, lParam);
 }
 
+#ifdef ICDDRIVER
+HINSTANCE DLLModule = NULL;
+#endif
+
 BOOL APIENTRY DllMain( HINSTANCE hModule,
         DWORD dwReason,
         LPVOID lpReserved
@@ -17445,6 +17461,18 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
                 drv.Fini();
                 mdata[1] = 1;
                 refcnt = (char *)&mdata[1];
+
+#ifdef ICDDRIVER
+                {
+                    DLLModule = hModule;
+                    /* load self again to protect from unload */
+                    char sz[MAX_PATH];
+                    if(GetModuleFileName(hModule, sz, MAX_PATH))
+                    {
+                        LoadLibrary(sz);
+                    }
+                }
+#endif
             }
             else {
                 refcnt = &cbref;
