@@ -873,23 +873,28 @@ int init_glide2x(const char *dllname)
 #if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
     (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
     int enWrap3x = 0;
+    const char *soname[] = {
+#if defined(CONFIG_LINUX) && CONFIG_LINUX
+        "libglide2x.so",
+        "libglide3x.so",
+#elif defined(CONFIG_DARWIN) && CONFIG_DARWIN
+        "libglide2x.dylib",
+        "libglide3x.dylib",
+#else
+#error Unknown dynamic load library
+#endif
+    };
     if (!strncmp(dllname, "glide2x.dll", sizeof("glide2x.dll")))
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
-        hDll = dlopen("libglide2x.so", RTLD_NOW);
-#elif defined(CONFIG_DARWIN) && CONFIG_DARWIN
-        hDll = dlopen("libglide2x.dylib", RTLD_NOW);
-#else
-#error Unknown dynamic load library
-#endif
-    if (!strncmp(dllname, "glide3x.dll", sizeof("glide3x.dll"))) {
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
-        hDll = dlopen("libglide3x.so", RTLD_NOW);
-#elif defined(CONFIG_DARWIN) && CONFIG_DARWIN
-        hDll = dlopen("libglide3x.dylib", RTLD_NOW);
-#else
-#error Unknown dynamic load library
-#endif
+        enWrap3x = 0;
+    if (!strncmp(dllname, "glide3x.dll", sizeof("glide3x.dll")))
         enWrap3x = 1;
+    hDll = dlopen(soname[enWrap3x], RTLD_NOW);
+    if (!hDll) {
+        const char *local_lib;
+        char local_path[] = "/usr/local/lib/libglideXX.soname";
+        local_path[strlen("/usr/local/lib/")] = '\x0';
+        local_lib = strcat(local_path, soname[enWrap3x]);
+        hDll = dlopen(local_lib, RTLD_NOW);
     }
     setConfig = (void (*)(const uint32_t, void *))dlsym(hDll, "setConfig");
     setConfigRes = (void (*)(const int, void *))dlsym(hDll, "setConfigRes");
