@@ -150,6 +150,15 @@ diff -ru ../orig/virglrenderer-1.0.0/src/vrend_renderer.c ./src/vrend_renderer.c
        glReadnPixelsKHR(x, y, width, height, format, type, bufSize, data);
     else
        glReadPixels(x, y, width, height, format, type, data);
+@@ -10160,7 +10166,7 @@
+    slice_offset = src_box->z * slice_size;
+    cube_slice = (src_res->target == GL_TEXTURE_CUBE_MAP) ? src_box->z + src_box->depth : cube_slice;
+    i = (src_res->target == GL_TEXTURE_CUBE_MAP) ? src_box->z : 0;
+-   if (slice_offset + src_box->width * src_box->height + cube_slice * slice_size > total_size) {
++   if (src_box->z && (slice_offset + src_box->width * src_box->height + cube_slice * slice_size > total_size)) {
+       virgl_error("Offset out of bound: %d\n", src_box->z);
+       goto cleanup;
+    }
 diff -ru ../orig/virglrenderer-1.0.0/src/vrend_shader.c ./src/vrend_shader.c
 --- ../orig/virglrenderer-1.0.0/src/vrend_shader.c
 +++ ./src/vrend_shader.c
