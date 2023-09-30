@@ -1,169 +1,97 @@
-diff -Nru orig/virglrenderer-0.10.4/meson.build src/virglrenderer-0.10.4/meson.build
---- orig/virglrenderer-0.10.4/meson.build
-+++ src/virglrenderer-0.10.4/meson.build
-@@ -53,6 +53,7 @@
-    '-Wmissing-prototypes',
-    '-Werror=incompatible-pointer-types',
+diff -ru ../orig/virglrenderer-1.0.0/meson.build ./meson.build
+--- ../orig/virglrenderer-1.0.0/meson.build
++++ ./meson.build
+@@ -57,6 +57,7 @@
     '-Werror=int-to-pointer-cast',
-+   '-Wno-unused-parameter',
+    '-Werror=switch',
     '-Wno-overlength-strings',
++   '-Wno-unknown-attributes', '-Wno-unused-parameter',
+    '-Wno-missing-field-initializers',
  ]
-
-@@ -63,10 +64,10 @@
- ]
-
- add_project_arguments(cc.get_supported_arguments(flags), language : 'c')
-+add_project_link_arguments('-static-libgcc', language : 'c')
  
- prog_python = import('python').find_installation('python3')
+diff -ru ../orig/virglrenderer-1.0.0/src/mesa/compat/c11/threads_win32.h ./src/mesa/compat/c11/threads_win32.h
+--- ../orig/virglrenderer-1.0.0/src/mesa/compat/c11/threads_win32.h
++++ ./src/mesa/compat/c11/threads_win32.h
+@@ -175,7 +175,7 @@
+     return 0;
+ }
  
--libdrm_dep = dependency('libdrm', version : '>=2.4.50')
- thread_dep = dependency('threads')
- epoxy_dep = dependency('epoxy', version: '>= 1.5.4')
- m_dep = cc.find_library('m', required : false)
-@@ -205,8 +206,9 @@
+-static void impl_tss_dtor_invoke()
++static void impl_tss_dtor_invoke(void)
+ {
+     int i;
+     for (i = 0; i < EMULATED_THREADS_TSS_DTOR_SLOTNUM; i++) {
+diff -ru ../orig/virglrenderer-1.0.0/src/virgl_context.c ./src/virgl_context.c
+--- ../orig/virglrenderer-1.0.0/src/virgl_context.c
++++ ./src/virgl_context.c
+@@ -26,7 +26,9 @@
  
- if with_egl
-    if cc.has_header('epoxy/egl.h', dependencies: epoxy_dep) and epoxy_dep.get_pkgconfig_variable('epoxy_has_egl') == '1'
-+      libdrm_dep = dependency('libdrm', required: require_egl, version : '>=2.4.50')
-       gbm_dep = dependency('gbm', version: '>= ' + _gbm_ver, required: require_egl)
--      have_egl = gbm_dep.found()
-+      have_egl = libdrm_dep.found() and gbm_dep.found()
-       if (have_egl)
-          conf_data.set('HAVE_EPOXY_EGL_H', 1)
-       else
-@@ -301,7 +303,7 @@
- with_valgrind = get_option('valgrind')
- 
- subdir('src')
--subdir('vtest')
-+#subdir('vtest')
- 
- if with_render_server
- subdir('server')
-diff -Nru orig/virglrenderer-0.10.4/src/meson.build src/virglrenderer-0.10.4/src/meson.build
---- orig/virglrenderer-0.10.4/src/meson.build
-+++ src/virglrenderer-0.10.4/src/meson.build
-@@ -171,7 +171,6 @@
- virgl_depends = [
-    gallium_dep,
-    epoxy_dep,
--   libdrm_dep,
-    thread_dep,
-    m_dep,
- ]
-@@ -188,7 +187,7 @@
- 
- if have_egl
-    virgl_sources += vrend_winsys_egl_sources
--   virgl_depends += [gbm_dep]
-+   virgl_depends += [libdrm_dep, gbm_dep]
- endif
- 
- if have_glx
-diff -Nru orig/virglrenderer-0.10.4/src/virglrenderer.c src/virglrenderer-0.10.4/src/virglrenderer.c
---- orig/virglrenderer-0.10.4/src/virglrenderer.c
-+++ src/virglrenderer-0.10.4/src/virglrenderer.c
-@@ -31,7 +31,11 @@
- #include <fcntl.h>
  #include <errno.h>
- #include <unistd.h>
-+#if !defined(__MINGW32__)
- #include <sys/mman.h>
-+#else
-+#define MAP_FAILED ((void *)-1)
+ 
++#ifndef WIN32
+ #include "util/libsync.h"
 +#endif
-
- #include "pipe/p_state.h"
- #include "util/u_format.h"
-@@ -1054,11 +1058,13 @@
-          res->map_size = map_size;
-    } else {
-       switch (res->fd_type) {
-+#if !defined(__MINGW32__)
-       case VIRGL_RESOURCE_FD_DMABUF:
-       case VIRGL_RESOURCE_FD_SHM:
-          map = mmap(NULL, res->map_size, PROT_WRITE | PROT_READ, MAP_SHARED, res->fd, 0);
-          map_size = res->map_size;
-          break;
+ #include "util/os_misc.h"
+ #include "util/u_hash_table.h"
+ #include "util/u_pointer.h"
+diff -ru ../orig/virglrenderer-1.0.0/src/virgl_util.h ./src/virgl_util.h
+--- ../orig/virglrenderer-1.0.0/src/virgl_util.h
++++ ./src/virgl_util.h
+@@ -29,6 +29,9 @@
+ #include <stdbool.h>
+ #include <stdint.h>
+ 
++#ifdef WIN32
++#include <io.h>
 +#endif
-       case VIRGL_RESOURCE_FD_OPAQUE:
-          ret = vkr_allocator_resource_map(res, &map, &map_size);
-          break;
-@@ -1088,9 +1094,12 @@
-       ret = vrend_renderer_resource_unmap(res->pipe_resource);
-    } else {
-       switch (res->fd_type) {
-+#if !defined(__MINGW32__)
-       case VIRGL_RESOURCE_FD_DMABUF:
-+      case VIRGL_RESOURCE_FD_SHM:
-          ret = munmap(res->mapped, res->map_size);
-          break;
-+#endif
-       case VIRGL_RESOURCE_FD_OPAQUE:
-          ret = vkr_allocator_resource_unmap(res);
-          break;
-@@ -1169,15 +1178,17 @@
-
-    enum virgl_resource_fd_type fd_type = VIRGL_RESOURCE_FD_INVALID;
-    switch (args->fd_type) {
-+#if !defined(__MINGW32__)
-    case VIRGL_RENDERER_BLOB_FD_TYPE_DMABUF:
-       fd_type = VIRGL_RESOURCE_FD_DMABUF;
-       break;
--   case VIRGL_RENDERER_BLOB_FD_TYPE_OPAQUE:
--      fd_type = VIRGL_RESOURCE_FD_OPAQUE;
--      break;
-    case VIRGL_RENDERER_BLOB_FD_TYPE_SHM:
-       fd_type = VIRGL_RESOURCE_FD_SHM;
-       break;
-+#endif
-+   case VIRGL_RENDERER_BLOB_FD_TYPE_OPAQUE:
-+      fd_type = VIRGL_RESOURCE_FD_OPAQUE;
-+      break;
-    default:
-       return -EINVAL;
-    }
-diff -Nru orig/virglrenderer-0.10.4/src/vrend_blitter.h src/virglrenderer-0.10.4/src/vrend_blitter.h
---- orig/virglrenderer-0.10.4/src/vrend_blitter.h
-+++ src/virglrenderer-0.10.4/src/vrend_blitter.h
+ #ifdef HAVE_CONFIG_H
+ #include "config.h"
+ #endif
+diff -ru ../orig/virglrenderer-1.0.0/src/vrend_blitter.c ./src/vrend_blitter.c
+--- ../orig/virglrenderer-1.0.0/src/vrend_blitter.c
++++ ./src/vrend_blitter.c
+@@ -92,11 +92,11 @@
+ 
+ #pragma pack(push,1)
+ struct PACKED blit_prog_key {
+-   bool is_color: 1;
+-   bool is_msaa: 1;
+-   bool manual_srgb_decode: 1;
+-   bool manual_srgb_encode: 1;
+-   enum pipe_texture_target pipe_tex_target: 4;
++   uint8_t is_color: 1;
++   uint8_t is_msaa: 1;
++   uint8_t manual_srgb_decode: 1;
++   uint8_t manual_srgb_encode: 1;
++   uint8_t pipe_tex_target: 4;
+    uint8_t num_samples;
+    struct {
+       bool has_swizzle: 1;
+diff -ru ../orig/virglrenderer-1.0.0/src/vrend_blitter.h ./src/vrend_blitter.h
+--- ../orig/virglrenderer-1.0.0/src/vrend_blitter.h
++++ ./src/vrend_blitter.h
 @@ -30,7 +30,7 @@
  /* shaders for blitting */
-
+ 
  #define FS_HEADER_GL                               \
 -   "#version 130\n"                             \
 +   "#version 140\n"                             \
     "// Blitter\n"                               \
     "%s"                                         \
-
+ 
 @@ -48,7 +48,7 @@
     "precision mediump float;\n"                 \
-
+ 
  #define HEADER_GL                               \
 -   "#version 130\n"                             \
 +   "#version 140\n"                             \
     "// Blitter\n"                               \
-
- #define HEADER_GLES                             \
-diff -Nru orig/virglrenderer-0.10.4/src/vrend_debug.c src/virglrenderer-0.10.4/src/vrend_debug.c
---- orig/virglrenderer-0.10.4/src/vrend_debug.c
-+++ src/virglrenderer-0.10.4/src/vrend_debug.c
-@@ -25,6 +25,11 @@
- #include "vrend_debug.h"
- #include "vrend_renderer.h"
- #include "util/u_debug.h"
-+#ifdef __MINGW32__
-+#include <process.h>
-+#define setenv(a,b,c)
-+#define unsetenv(a)
-+#endif
- #include <stdlib.h>
- #include <stdio.h>
  
-diff -Nru orig/virglrenderer-0.10.4/src/vrend_renderer.c src/virglrenderer-0.10.4/src/vrend_renderer.c
---- orig/virglrenderer-0.10.4/src/vrend_renderer.c
-+++ src/virglrenderer-0.10.4/src/vrend_renderer.c
-@@ -358,6 +358,7 @@
+ #define HEADER_GLES                             \
+diff -ru ../orig/virglrenderer-1.0.0/src/vrend_renderer.c ./src/vrend_renderer.c
+--- ../orig/virglrenderer-1.0.0/src/vrend_renderer.c
++++ ./src/vrend_renderer.c
+@@ -379,6 +379,7 @@
     uint64_t features[feat_last / 64 + 1];
  
     bool finishing : 1;
@@ -171,32 +99,32 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_renderer.c src/virglrenderer-0.10.
     bool use_gles : 1;
     bool use_core_profile : 1;
     bool use_external_blob : 1;
-@@ -7065,6 +7066,8 @@
+@@ -7292,6 +7293,8 @@
     GLenum err;
-
+ 
     err = glGetError();
 +   if (err == GL_INVALID_ENUM && vrend_state.gl_apple)
 +       err = glGetError();
     if (err == GL_NO_ERROR)
        return true;
  
-@@ -7167,6 +7170,7 @@
-       vrend_printf( "gl_version %d - compat profile\n", gl_ver);
+@@ -7397,6 +7400,7 @@
+       virgl_info("gl_version %d - compat profile\n", gl_ver);
     }
  
 +   vrend_state.gl_apple = (strcmp((const char *)glGetString(GL_VENDOR), "Apple") == 0);
     vrend_state.use_integer = use_integer();
  
     init_features(gles ? 0 : gl_ver,
-@@ -7444,6 +7448,7 @@
+@@ -7736,6 +7740,7 @@
+    grctx->shader_cfg.has_gpu_shader5 = has_feature(feat_gpu_shader5);
     grctx->shader_cfg.has_es31_compat = has_feature(feat_gles31_compatibility);
     grctx->shader_cfg.has_conservative_depth = has_feature(feat_conservative_depth);
-    grctx->shader_cfg.use_integer = vrend_state.use_integer;
 +   grctx->shader_cfg.gl_apple = vrend_state.gl_apple;
+    grctx->shader_cfg.use_integer = vrend_state.use_integer;
     grctx->shader_cfg.has_dual_src_blend = has_feature(feat_dual_src_blend);
     grctx->shader_cfg.has_fbfetch_coherent = has_feature(feat_framebuffer_fetch);
-    grctx->shader_cfg.has_cull_distance = has_feature(feat_cull_distance);
-@@ -7914,6 +7919,7 @@
+@@ -8363,6 +8368,7 @@
  
     const bool format_can_texture_storage = has_feature(feat_texture_storage) &&
          (tex_conv_table[format].flags & VIRGL_TEXTURE_CAN_TEXTURE_STORAGE);
@@ -204,78 +132,60 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_renderer.c src/virglrenderer-0.10.
  
     if (format_can_texture_storage)
        gr->storage_bits |= VREND_STORAGE_GL_IMMUTABLE;
-@@ -7986,7 +7992,7 @@
+@@ -8436,7 +8442,7 @@
        }
  
-       if (pr->nr_samples > 0) {
+       if (pr->nr_samples > 1) {
 -         if (format_can_texture_storage) {
 +         if (format_can_texture_storage && format_has_storage_multisample) {
              if (gr->target == GL_TEXTURE_2D_MULTISAMPLE) {
                 glTexStorage2DMultisample(gr->target, pr->nr_samples,
                                           internalformat, pr->width0, pr->height0,
-@@ -8846,7 +8852,7 @@
- 
-    if (has_feature(feat_arb_robustness))
+@@ -9321,7 +9327,7 @@
        glReadnPixelsARB(x, y, width, height, format, type, bufSize, data);
+    else if (epoxy_gl_version() >= 45)
+       glReadnPixels(x, y, width, height, format, type, bufSize, data);
 -   else if (has_feature(feat_gles_khr_robustness))
 +   else if (vrend_state.use_gles && has_feature(feat_gles_khr_robustness))
        glReadnPixelsKHR(x, y, width, height, format, type, bufSize, data);
     else
        glReadPixels(x, y, width, height, format, type, data);
-diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.c src/virglrenderer-0.10.4/src/vrend_shader.c
---- orig/virglrenderer-0.10.4/src/vrend_shader.c
-+++ src/virglrenderer-0.10.4/src/vrend_shader.c
-@@ -1514,6 +1514,8 @@
-             }
-          }
-          break;
-+      case TGSI_SEMANTIC_FOG:
-+         break;
-       default:
-          vrend_printf("unhandled input semantic: %x\n", ctx->inputs[i].name);
-          break;
-@@ -1764,6 +1766,8 @@
-             }
-          }
-          break;
-+      case TGSI_SEMANTIC_FOG:
-+         break;
-       default:
-          vrend_printf("unhandled output semantic: %x\n", ctx->outputs[i].name);
-          break;
-@@ -3241,6 +3245,7 @@
-
+diff -ru ../orig/virglrenderer-1.0.0/src/vrend_shader.c ./src/vrend_shader.c
+--- ../orig/virglrenderer-1.0.0/src/vrend_shader.c
++++ ./src/vrend_shader.c
+@@ -3342,6 +3342,7 @@
+    bool has_offset = strbuf_get_len (&offset_buf) != 0;
     // EXT_texture_shadow_lod defines a few more functions handling bias
-    if (bias &&
+    if (has_bias &&
 +       ctx->cfg->has_texture_shadow_lod &&
         (inst->Texture.Texture == TGSI_TEXTURE_SHADOW2D_ARRAY ||
          inst->Texture.Texture == TGSI_TEXTURE_SHADOWCUBE ||
          inst->Texture.Texture == TGSI_TEXTURE_SHADOWCUBE_ARRAY))
-@@ -3248,6 +3253,7 @@
-
+@@ -3349,6 +3350,7 @@
+ 
     // EXT_texture_shadow_lod also adds the missing textureOffset for 2DArrayShadow in GLES
-    if ((bias || offset) && ctx->cfg->use_gles &&
+    if ((has_bias || has_offset) && ctx->cfg->use_gles &&
 +       ctx->cfg->has_texture_shadow_lod &&
         (inst->Texture.Texture == TGSI_TEXTURE_SHADOW1D_ARRAY ||
          inst->Texture.Texture == TGSI_TEXTURE_SHADOW2D_ARRAY))
        ctx->shader_req_bits |= SHADER_REQ_TEXTURE_SHADOW_LOD;
-@@ -6087,10 +6093,10 @@
-
+@@ -6287,10 +6289,10 @@
+ 
        if (ctx->prog_type == TGSI_PROCESSOR_VERTEX && ctx->cfg->use_explicit_locations)
           emit_ext(glsl_strbufs, "ARB_explicit_attrib_location", "require");
 -      if (ctx->prog_type == TGSI_PROCESSOR_FRAGMENT && fs_emit_layout(ctx))
 +      if (ctx->prog_type == TGSI_PROCESSOR_FRAGMENT && fs_emit_layout(ctx) && !ctx->cfg->gl_apple)
           emit_ext(glsl_strbufs, "ARB_fragment_coord_conventions", "require");
-
+ 
 -      if (ctx->ubo_used_mask)
 +      if (ctx->ubo_used_mask && !ctx->cfg->gl_apple)
           emit_ext(glsl_strbufs, "ARB_uniform_buffer_object", "require");
-
+ 
        if (ctx->num_cull_dist_prop || ctx->key->num_in_cull || ctx->key->num_out_cull)
-diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.h src/virglrenderer-0.10.4/src/vrend_shader.h
---- orig/virglrenderer-0.10.4/src/vrend_shader.h
-+++ src/virglrenderer-0.10.4/src/vrend_shader.h
-@@ -236,6 +236,7 @@
+diff -ru ../orig/virglrenderer-1.0.0/src/vrend_shader.h ./src/vrend_shader.h
+--- ../orig/virglrenderer-1.0.0/src/vrend_shader.h
++++ ./src/vrend_shader.h
+@@ -244,6 +244,7 @@
     uint32_t glsl_version : 12;
     uint32_t max_draw_buffers : 4;
     uint32_t max_shader_patch_varyings : 6;
@@ -283,41 +193,3 @@ diff -Nru orig/virglrenderer-0.10.4/src/vrend_shader.h src/virglrenderer-0.10.4/
     uint32_t use_gles : 1;
     uint32_t use_core_profile : 1;
     uint32_t use_explicit_locations : 1;
-diff -Nru orig/virglrenderer-0.10.4/src/vrend_winsys.c src/virglrenderer-0.10.4/src/vrend_winsys.c
---- orig/virglrenderer-0.10.4/src/vrend_winsys.c
-+++ src/virglrenderer-0.10.4/src/vrend_winsys.c
-@@ -22,6 +22,7 @@
-  *
-  **************************************************************************/
- 
-+#include "vrend_debug.h"
- #include "vrend_winsys.h"
- 
- #ifdef HAVE_EPOXY_GLX_H
-diff -Nru orig/virglrenderer-0.10.4/src/vrend_winsys_gbm.h src/virglrenderer-0.10.4/src/vrend_winsys_gbm.h
---- orig/virglrenderer-0.10.4/src/vrend_winsys_gbm.h
-+++ src/virglrenderer-0.10.4/src/vrend_winsys_gbm.h
-@@ -25,7 +25,9 @@
- #ifndef VIRGL_GBM_H
- #define VIRGL_GBM_H
- 
-+#ifdef HAVE_EPOXY_EGL_H
- #include <gbm.h>
-+#endif
- #include "vrend_iov.h"
- #include "virglrenderer.h"
- 
-@@ -96,6 +98,7 @@
-  * query. If fd < 0, the gbm device was opened with the fd provided by the
-  * (*get_drm_fd) hook.
-  */
-+#ifdef HAVE_EPOXY_EGL_H
- struct virgl_gbm {
-    int fd;
-    struct gbm_device *device;
-@@ -123,4 +126,5 @@
- bool virgl_gbm_external_allocation_preferred(uint32_t flags);
- bool virgl_gbm_gpu_import_required(uint32_t flags);
- 
-+#endif //HAVE_EPOXY_EGL_H
- #endif
