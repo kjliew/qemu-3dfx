@@ -18,9 +18,12 @@ _tag=$pkgver
 source=("virglrenderer-$pkgver.tar.bz2::https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/$_tag/virglrenderer-$_tag.tar.bz2"
         "0001-Virglrenderer-on-Windows-and-macOS.patch")
 sha256sums=('28c18f3f631eb804c71572abe685bd1ee14e326998a669152ef32f422d1c11d8'
-            '82a03e05adf12869c95faacda22dec65f517595cc9558cf929eeeca6efb93c0e')
+            '90367a5caf50f0a0ff97fda409994593b66fd923a4b0f77bd7a04eebc9193eed')
+
 prepare() {
   cd virglrenderer-$_tag
+  sed "s/\(error=switch\)/\1\',\'\-Wno\-unknown\-attributes\',\'\-Wno\-unused\-parameter/" -i meson.build
+  sed "s/\(fvisibility=hidden\)/\1\',\'\-mno\-ms\-bitfields/" -i meson.build
   patch -p0 -i ${srcdir}/0001-Virglrenderer-on-Windows-and-macOS.patch
 }
 
