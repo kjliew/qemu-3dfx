@@ -16980,7 +16980,7 @@ static void HookPatchGamma(const uint32_t start, const uint32_t *iat, const DWOR
 
 void HookDeviceGammaRamp(const uint32_t caddr)
 {
-    uint32_t addr, *patch;
+    uint32_t addr, *patch, range;
 
     if (caddr && !IsBadReadPtr((void *)(caddr - 0x06), 0x06)) {
         uint16_t *callOp = (uint16_t *)(caddr - 0x06);
@@ -16999,9 +16999,11 @@ void HookDeviceGammaRamp(const uint32_t caddr)
     } \
     addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
     patch = (uint32_t *)(addr & ~(PAGE_SIZE - 1)); \
-    HookParseRange(&addr, &patch, PAGE_SIZE); \
-    HookPatchGamma(addr, patch, PAGE_SIZE - (((uint32_t)patch) & (PAGE_SIZE - 1)));
+    range = PAGE_SIZE; \
+    HookParseRange(&addr, &patch, &range); \
+    HookPatchGamma(addr, patch, range - (((uint32_t)patch) & (PAGE_SIZE - 1)));
     GLGAMMA_HOOK("opengldrv.dll");
+    GLGAMMA_HOOK(0);
 #undef GLGAMMA_HOOK
 }
 

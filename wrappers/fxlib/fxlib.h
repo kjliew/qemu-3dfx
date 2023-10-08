@@ -109,7 +109,7 @@ void vxdDrvInit(PDRVFUNC);
 void kmdDrvInit(PDRVFUNC);
 /* fxhook.c */
 void HookEntryHook(unsigned int *, const unsigned int);
-void HookParseRange(unsigned int *, unsigned int **, const DWORD);
+void HookParseRange(unsigned int *, unsigned int **, unsigned int *);
 void HookTimeGetTime(const unsigned int);
 /* fxhpat.c */
 void HookPatchfxCompat(const DWORD);
