@@ -110,7 +110,7 @@ static DWORD WINAPI TimeHookProc(void)
 
 void HookParseRange(uint32_t *start, uint32_t **iat, uint32_t *eoffs)
 {
-    const char idata[] = ".idata", rdata[] = ".rdata";
+    const char idata[] = ".idata", rdata[] = ".rdata", dtext[] = ".text";
     uint32_t addr = *start, range = *eoffs;
 
     if (addr && (0x4550U == *(uint32_t *)addr)) {
@@ -123,10 +123,16 @@ void HookParseRange(uint32_t *start, uint32_t **iat, uint32_t *eoffs)
                 break;
             }
         }
-        for (int i = 0; i < range; i += 0x04) {
-            if (addr == (uint32_t)(*iat))
-                break;
+        for (int i = 0; (addr != (uint32_t)(*iat)) && (i < range); i += 0x04) {
             if (!memcmp((void *)(addr + i), rdata, sizeof(rdata))) {
+                addr = (addr & ~(range - 1)) + ((uint32_t *)(addr + i))[3];
+                *iat = (uint32_t *)addr;
+                *start = addr;
+                break;
+            }
+        }
+        for (int i = 0; (addr != (uint32_t)(*iat)) && (i < range); i += 0x04) {
+            if(!memcmp((void *)(addr + i), dtext, sizeof(dtext))) {
                 addr = (addr & ~(range - 1)) + ((uint32_t *)(addr + i))[3];
                 *iat = (uint32_t *)addr;
                 *start = addr;
@@ -248,6 +254,7 @@ void HookTimeGetTime(const uint32_t caddr)
     }
 #define TICK_HOOK(mod) \
     addr = (uint32_t)GetModuleHandle(mod); \
+    addr = (addr)? addr:((uint32_t)LoadLibrary(mod)); \
     for (int i = 0; addr && (i < si.dwPageSize); i+=0x04) { \
         if (0x4550U == *(uint32_t *)addr) break; \
         addr += 0x04; \
