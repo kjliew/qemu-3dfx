@@ -31,8 +31,7 @@
 
 
 #if defined(CONFIG_WIN32) && CONFIG_WIN32
-#include <GL/gl.h>
-#include <GL/wglext.h>
+#include <GL/wgl.h>
 #include "sysemu/whpx.h"
 
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
