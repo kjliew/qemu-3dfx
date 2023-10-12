@@ -1,4 +1,4 @@
-#include "SDL2/SDL_opengl.h"
+#include <GL/glcorearb.h>
 #define MESA_PFN(p,f) \
     p p_##f = (p)GLFEnumFuncPtr(FEnum_##f)
 #define PFN_CALL(f) \
