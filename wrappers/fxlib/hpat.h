@@ -21,5 +21,6 @@ typedef struct fxCompatTbl {
     struct E_PATCH *ptr;
 } COMPATFX, * PCOMPATFX;
 
+const int fxCompatPlatformId(const int);
 const PCOMPATFX fxCompatTblPtr(void);
 #endif //__HPAT_H

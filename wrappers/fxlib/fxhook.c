@@ -75,7 +75,7 @@ static BOOL WINAPI elapsedTickProc(LARGE_INTEGER *count)
     uintptr_t aligned = (uintptr_t)count;
     HookTimeTckRef(&tick);
 
-    if (tick->freq.QuadPart < TICK_8254) {
+    if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (tick->freq.QuadPart < TICK_8254)) {
         DWORD t = acpi_tick_asm();
         if ((tick->run.u.LowPart & 0x00FFFFFFU) > t)
             __atomic_store_n(&tick->run.QuadPart, ((((tick->run.QuadPart >> 24) + 1) << 24) | t), __ATOMIC_RELAXED);
@@ -116,7 +116,8 @@ void HookParseRange(uint32_t *start, uint32_t **iat, uint32_t *eoffs)
     if (addr && (0x4550U == *(uint32_t *)addr)) {
         for (int i = 0; i < range; i += 0x04) {
             if (!memcmp((void *)(addr + i), idata, sizeof(idata))) {
-                *eoffs = ((uint32_t *)(addr + i))[2];
+                *eoffs = (((uint32_t *)(addr + i))[2])?
+                    ((uint32_t *)(addr + i))[2]:((uint32_t *)(addr + i))[4];
                 addr = (addr & ~(range - 1)) + ((uint32_t *)(addr + i))[3];
                 *iat = (uint32_t *)addr;
                 *start = addr;
@@ -168,7 +169,8 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWOR
     if (addr && (addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
         DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcTime),
-              hkPerf = (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf);
+              hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))?
+                  (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf):0;
         for (int i = 0; i < (range >> 2); i++) {
             if (hkTime && (hkTime == patch[i])) {
                 HookEntryHook(&patch[i], patch[i]);

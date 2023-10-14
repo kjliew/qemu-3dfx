@@ -86,6 +86,12 @@ static COMPATFX fxCompatTbl[] = {
    
 const char *basename(const char *name);
 const char *md5page(const char *msg);
+const int fxCompatPlatformId(const int id)
+{
+    static int PlatformId;
+    PlatformId = (id)? id:PlatformId;
+    return PlatformId;
+}
 const PCOMPATFX fxCompatTblPtr(void)
 {
     static int once;
@@ -98,6 +104,7 @@ const PCOMPATFX fxCompatTblPtr(void)
 void HookPatchfxCompat(const DWORD hpMask)
 {
     TCHAR modName[MAX_PATH];
+    fxCompatPlatformId(hpMask);
     if (GetModuleFileName(NULL, modName, MAX_PATH) < MAX_PATH) {
         int i = 0, j;
         while (fxCompatTbl[i].modName) {
