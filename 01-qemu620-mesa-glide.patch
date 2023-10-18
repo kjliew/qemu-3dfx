@@ -292,7 +292,54 @@ diff -Nru ../orig/qemu-6.2.0/ui/console.c ./ui/console.c
 diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 --- ../orig/qemu-6.2.0/ui/sdl2.c
 +++ ./ui/sdl2.c
-@@ -758,6 +758,359 @@
+@@ -545,6 +545,29 @@
+     qemu_input_event_sync();
+ }
+
++static int fxui_grab_val(const int grab)
++{
++    static int fxui_grab;
++    fxui_grab = (grab & 0x80U)? (grab & 0x01U):fxui_grab;
++    return fxui_grab;
++}
++static int fxui_focus_lost(void)
++{
++    int ret = fxui_grab_val(0);
++    fxui_grab_val(0x80);
++    return ret;
++}
++static void fxui_focus_gained(struct sdl2_console *scon)
++{
++    if (fxui_grab_val(0)) {
++        if (gui_grab) {
++            sdl_grab_end(scon);
++            fxui_grab_val(0x80);
++        }
++        sdl_grab_start(scon);
++    }
++}
++
+ static void handle_windowevent(SDL_Event *ev)
+ {
+     struct sdl2_console *scon = get_scon_from_window(ev->window.windowID);
+@@ -569,6 +592,7 @@
+         sdl2_redraw(scon);
+         break;
+     case SDL_WINDOWEVENT_FOCUS_GAINED:
++        fxui_focus_gained(scon);
+         win32_kbd_set_grab(gui_grab);
+         if (qemu_console_is_graphic(scon->dcl.con)) {
+             win32_kbd_set_window(sdl2_win32_get_hwnd(scon));
+@@ -591,7 +615,7 @@
+         if (qemu_console_is_graphic(scon->dcl.con)) {
+             win32_kbd_set_window(NULL);
+         }
+-        if (gui_grab && !gui_fullscreen) {
++        if (!fxui_focus_lost() && gui_grab && !gui_fullscreen) {
+             sdl_grab_end(scon);
+         }
+         break;
+@@ -758,6 +782,360 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -325,6 +372,7 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +        SDL_GetWindowBordersSize(scon->real_window, &top, 0, 0, 0);
 +#endif
 +    }
++    fxui_grab_val(0x80 | gui_grab);
 +    sdl_grab_end(scon);
 +    sdl2_window_destroy(scon);
 +    sdl2_window_create(scon);
@@ -652,7 +700,7 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -894,6 +1247,7 @@
+@@ -894,6 +1272,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
