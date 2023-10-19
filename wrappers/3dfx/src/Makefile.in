@@ -17,6 +17,22 @@ TARGET3=glide3x.dll
 GENDEF=gendef
 OUTDIR=$(shell basename `pwd`)
 
+PCINOOP=\
+    Close@0 \
+    DeviceExists@4 \
+    FindCard@12 \
+    FindCardMulti@16 \
+    FindFreeMTRR@4 \
+    FindMTRRMatch@16 \
+    GetConfigData@20 \
+    MapCard@20 \
+    MapCardMulti@24 \
+    MapPhysicalToLinear@12 \
+    Open@0 \
+    SetConfigData@20 \
+    SetMTRR@16 \
+    UnmapPhysical@8 \
+
 C_OBJS:=\
     fxhook.o \
     fxhpat.o \
@@ -32,7 +48,7 @@ fxdrv:
 	@make -C ../ovl OUTDIR=$(OUTDIR)
 	@make -C ../drv OUTDIR=$(OUTDIR) CROSS=$(CROSS)
 
-$(TARGET2): $(C_OBJS) glidedll.o
+$(TARGET2): $(C_OBJS) pciNoop.o glidedll.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@echo "  RC  $(@:.dll=_res.o)"
@@ -79,6 +95,22 @@ fxlib:
 		$(CC) $(CFLAGS) -c -o $$i $(FXLIB)/`echo $$i | sed "s/\.o/\.c/"`; \
 	done
 
+pciNoop.o:
+	@echo "#include <stdint.h>" > $(@:.o=.c)
+	@echo "#define PT_CALL __stdcall" >> $(@:.o=.c)
+	@for i in $(PCINOOP); do \
+		ARGS=`echo $$i | sed "s/.*@//"`; \
+		FUNC=`echo $$i | sed "s/@[0-9]*//"`; \
+		echo -n "void PT_CALL pci$$FUNC(" >>$(@:.o=.c); \
+		if [ $$ARGS -eq 0 ]; then echo -n "void" >>$(@:.o=.c); \
+		else echo -n "uint32_t arg0" >>$(@:.o=.c); \
+		for j in $$(seq 1 $$[(ARGS>>2) - 1]); do \
+			echo -n ", uint32_t arg$$j" >>$(@:.o=.c); \
+		done; fi; echo ") { }" >>$(@:.o=.c); \
+	done
+	@echo "  CC  $@"
+	@$(CC) -c -o $@ $(@:.o=.c)
+
 %.o: $(SRCDIR)/%.c
 	@echo "  CC  $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
@@ -86,10 +118,10 @@ fxlib:
 clean:
 	@make -C ../dxe $@
 	@make -C ../ovl $@
-	@rm -f *.o *.def
+	@rm -f *.[co] *.def
 	@if [ ! -z "$$(find . | grep "\.dll\.a$$")" ]; then \
-	    $(STRIP) --strip-unneeded *.dll *.a; \
-	    sh -c 'ls -l glide*'; fi
+		$(STRIP) --strip-unneeded *.dll *.a; \
+		sh -c 'ls -l glide*'; fi
 
 distclean: clean
 	@make -C ../dxe $@ OUTDIR=$(OUTDIR)
