@@ -29,15 +29,14 @@
 #define DPRINTF_COND(cond,fmt, ...) \
     if (cond) { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); }
 
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
 #include <GL/glx.h>
 #include <X11/extensions/xf86vmode.h>
-#if defined(CONFIG_DARWIN) && CONFIG_DARWIN
+#ifdef CONFIG_DARWIN
 const char dllname[] = "/opt/X11/lib/libGL.dylib";
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#ifdef CONFIG_LINUX
 #include "sysemu/kvm.h"
 
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)

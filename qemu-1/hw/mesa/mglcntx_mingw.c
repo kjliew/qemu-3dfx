@@ -30,7 +30,7 @@
     if (cond) { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); }
 
 
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
+#if defined(CONFIG_WIN32)
 #include <GL/wgl.h>
 #include "sysemu/whpx.h"
 

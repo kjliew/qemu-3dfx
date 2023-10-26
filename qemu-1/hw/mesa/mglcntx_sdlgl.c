@@ -29,10 +29,9 @@
 #define DPRINTF_COND(cond,fmt, ...) \
     if (cond) { fprintf(stderr, "glcntx: " fmt "\n" , ## __VA_ARGS__); }
 
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
 #define MESAGL_SDLGL 1
-#if defined(CONFIG_DARWIN) && CONFIG_DARWIN
+#ifdef CONFIG_DARWIN
 const char dllname[] = "/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib";
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #define GL_CONTEXTALPHA GetDispTimerMS()
@@ -51,7 +50,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #define GL_CONTEXTATTRIB(x)
 #define GL_CREATECONTEXT(x)
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#ifdef CONFIG_LINUX
 #include <GL/glx.h>
 #include "sysemu/kvm.h"
 

@@ -32,11 +32,9 @@
 #define DPRINTF(fmt, ...)
 #endif
 
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
 #include <dlfcn.h>
-  #if (defined(HOST_X86_64) && HOST_X86_64) || \
-      (defined(HOST_AARCH64) && HOST_AARCH64)
+  #if defined(HOST_X86_64) || defined(HOST_AARCH64)
   #define __stdcall
   #endif
 #endif
@@ -771,11 +769,10 @@ void doGlideFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret, int 
 
 }
 
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
+#ifdef CONFIG_WIN32
 static HINSTANCE hDll = 0;
 #endif
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
 static void *hDll = 0;
 #endif
 void __stdcall (*setConfig)(const uint32_t flags, void *magic);
@@ -841,11 +838,10 @@ void cwnd_glide2x(void *swnd, void *nwnd, void *opaque)
 void fini_glide2x(void)
 {
     if (hDll) {
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
+#ifdef CONFIG_WIN32
         FreeLibrary(hDll);
 #endif
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
 	dlclose(hDll);
 #endif
     }
@@ -860,7 +856,7 @@ int init_glide2x(const char *dllname)
 {
     int i;
     
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
+#ifdef CONFIG_WIN32
     hDll = LoadLibrary(dllname);
     if (!hDll) {
         char prefix[32] = "lib";
@@ -870,14 +866,13 @@ int init_glide2x(const char *dllname)
     setConfig = (void (*)(const uint32_t, void *))GetProcAddress(hDll, "_setConfig@8");
     setConfigRes = (void (*)(const int, void *))GetProcAddress(hDll, "_setConfigRes@8");
 #endif
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
     int enWrap3x = 0;
     const char *soname[] = {
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#ifdef CONFIG_LINUX
         "libglide2x.so",
         "libglide3x.so",
-#elif defined(CONFIG_DARWIN) && CONFIG_DARWIN
+#elif defined(CONFIG_DARWIN)
         "libglide2x.dylib",
         "libglide3x.dylib",
 #else
@@ -905,11 +900,10 @@ int init_glide2x(const char *dllname)
     }
 
     for (i = 0; i < FEnum_zzG2xFuncEnum_max; i++) {
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
+#ifdef CONFIG_WIN32
         tblGlide2x[i].ptr = (void *)(GetProcAddress(hDll, tblGlide2x[i].sym));
 #endif
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
 	char lnxsym[128], wrapsym[128] = "wrap3x_", *pws = wrapsym;
 	strncpy(lnxsym, tblGlide2x[i].sym + 1, sizeof(lnxsym)-1);
 	for (int i = 0; i < sizeof(lnxsym); i++) {

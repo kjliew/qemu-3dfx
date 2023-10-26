@@ -71,10 +71,10 @@ static int cfg_traceFifo;
 static int cfg_traceFunc;
 static void *hwnd;
 
-#if defined(CONFIG_DARWIN) && CONFIG_DARWIN
+#ifdef CONFIG_DARWIN
 int glide_mapbufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX
+#ifdef CONFIG_LINUX
 #include "sysemu/kvm.h"
 
 int glide_mapbufo(mapbufo_t *bufo, int add)
@@ -92,7 +92,7 @@ int glide_mapbufo(mapbufo_t *bufo, int add)
     return ret;
 }
 #endif
-#if defined(CONFIG_WIN32) && CONFIG_WIN32
+#ifdef CONFIG_WIN32
 #include "sysemu/whpx.h"
 
 int glide_mapbufo(mapbufo_t *bufo, int add)
@@ -163,7 +163,7 @@ static HWND CreateGlideWindow(const char *title, int w, int h)
 
     return hWnd;
 }
-#endif // defined(CONFIG_WIN32) && CONFIG_WIN32
+#endif // CONFIG_WIN32
 
 static int scaledRes(int w, float r)
 {
@@ -220,14 +220,13 @@ void fini_window(void *opaque)
 {
     window_cb *disp_cb = opaque;
     disp_cb->activate = 0;
-#if defined(CONFIG_WIN32) && CONFIG_WIN32	    
+#ifdef CONFIG_WIN32
     if (cfg_createWnd)
         DestroyWindow(hwnd);
     if (hwnd)
         glide_release_window(disp_cb, &cwnd_glide2x);
 #endif
-#if defined(CONFIG_LINUX) && CONFIG_LINUX || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
     if (hwnd)
         glide_release_window(disp_cb, &cwnd_glide2x);
 #endif	    
@@ -324,14 +323,13 @@ void init_window(const int res, const char *wndTitle, void *opaque)
 
     disp_cb->activate = 1;
     hwnd = (void *)(uintptr_t)(((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w);
-#if defined(CONFIG_WIN32) && CONFIG_WIN32	    
+#ifdef CONFIG_WIN32
     if (cfg_createWnd)
         hwnd = CreateGlideWindow(wndTitle, tblRes[sel].w, tblRes[sel].h);
     glide_prepare_window(((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w,
             (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA, disp_cb, &cwnd_glide2x);
 #endif
-#if (defined(CONFIG_LINUX) && CONFIG_LINUX) || \
-    (defined(CONFIG_DARWIN) && CONFIG_DARWIN)
+#if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
     glide_prepare_window(((tblRes[sel].h & 0x7FFFU) << 0x10) | tblRes[sel].w,
             (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA, disp_cb, &cwnd_glide2x);
 #endif	
