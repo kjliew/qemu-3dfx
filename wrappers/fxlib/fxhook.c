@@ -191,6 +191,15 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWOR
     }
 }
 
+static void dolog_compat_patched(void)
+{
+    PCOMPATFX nptr = fxCompatTblPtr();
+    for (int i = 0; nptr && nptr[i].modName; i++) {
+        if (nptr[i].op_mask & HP_DONE)
+            OHST_DMESG("..%s patched", nptr[i].modName);
+    }
+}
+
 void HookTimeGetTime(const uint32_t caddr)
 {
     uint32_t addr, *patch, range;
@@ -239,8 +248,10 @@ void HookTimeGetTime(const uint32_t caddr)
                 }
             }
             fclose(fp);
-            if (modList.modNum == 0)
-                goto compat_patched;
+            if (modList.modNum == 0) {
+                dolog_compat_patched();
+                return;
+            }
         }
         modList.modName[modList.modNum] = NULL;
     }
@@ -270,11 +281,6 @@ void HookTimeGetTime(const uint32_t caddr)
         TICK_HOOK(modList.modName[i]);
     }
 #undef TICK_HOOK
-compat_patched:
-    PCOMPATFX nptr = fxCompatTblPtr();
-    for (int i = 0; nptr && nptr[i].modName; i++) {
-        if (nptr[i].op_mask & HP_DONE)
-            OHST_DMESG("..%s patched", nptr[i].modName);
-    }
+    dolog_compat_patched();
 }
 
