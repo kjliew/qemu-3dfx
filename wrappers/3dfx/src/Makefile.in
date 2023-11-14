@@ -104,7 +104,7 @@ pciNoop.o:
 		echo -n "void PT_CALL pci$$FUNC(" >>$(@:.o=.c); \
 		if [ $$ARGS -eq 0 ]; then echo -n "void" >>$(@:.o=.c); \
 		else echo -n "uint32_t arg0" >>$(@:.o=.c); \
-		for j in $$(seq 1 $$[(ARGS>>2) - 1]); do \
+		for j in $$(seq 1 $$(((ARGS>>2) - 1))); do \
 			echo -n ", uint32_t arg$$j" >>$(@:.o=.c); \
 		done; fi; echo ") { }" >>$(@:.o=.c); \
 	done
