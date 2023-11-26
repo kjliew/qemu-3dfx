@@ -12,7 +12,7 @@ KJ Liew \<liewkj@yahoo.com\>
     01-qemu620-mesa-glide.patch - Patch for QEMU version 6.2x (MESA & Glide)
     02-qemu520-mesa-glide.patch - Patch for QEMU version 5.2x (MESA & Glide)
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
-Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, Windows 10/11 and modern Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to make them work on newer version of Windows.
+Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, Windows 10/11 and modern Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to play them on Windows 10/later or modern Linux/Wine.
 - YouTube channel (https://www.youtube.com/channel/UCl8InhZs1ixZBcLrMDSWd0A/videos)
 - VOGONS forums (https://www.vogons.org)
 - Wiki (https://github.com/kjliew/qemu-3dfx/wiki)
@@ -28,8 +28,7 @@ Simple guide to apply the patch:<br>
     $ wget https://download.qemu.org/qemu-7.2.0.tar.xz
     $ tar xf qemu-7.2.0.tar.xz
     $ cd qemu-7.2.0
-    $ rsync -r ../qemu-0/hw/3dfx ./hw/
-    $ rsync -r ../qemu-1/hw/mesa ./hw/
+    $ rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
     $ patch -p0 -i ../00-qemu720-mesa-glide.patch
     $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
@@ -84,4 +83,4 @@ The purpose of the donation is for preserving retailed CD/DVD games in their ori
 
 Donations without leaving notes on **Platform of Choice** are regarded as upper-class donors who have no desire in exercising donor's privileges. A measure to avoid unneccessary spamming on emails. Donors are expected to proactively follow up the communication to exercise donor's privileges as wished. All donations are tracked in PayPal transaction history. Only **"ONE"** platform of choice per donation. Upgrades eligibility are limited to the **SAME** platform of choice.
 ### About Game Election
-The game election serves the purpose of allocating additional focus and resources to make them work. Sometimes, it means considerable efforts in researching, debugging and tracing the games to root cause the failures and come up with solutions. It is **optional** to make game election upon donation. My YouTube channel has video demos of games which already worked and more may be showing up periodically. It is typically a safe assumption that games using the same engine (IdTech1/2/3, LithTech, Unreal etc.) would also work, too. The 3 counts of eligibility would only be accounted once the game were made to work. If upgrades were neccessary, it would be a **free upgrade** for QEMU binary packages.
+The game election serves the purpose of allocating additional focus and resources to make them work. Sometimes, it means considerable efforts in researching, debugging and tracing the games to root cause the failures and come up with solutions. It is **optional** to make game election upon donation. My YouTube channel has video demos of games which already worked and more may be showing up periodically. It is typically a safe assumption that games using the same engine (IdTech1/2/3, LithTech, Unreal etc.) would also work, too. The _N_ counts of eligibility would only be accounted once the game were made to work. If upgrades were neccessary, it would be a **free upgrade** for QEMU binary packages.
