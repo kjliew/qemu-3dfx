@@ -67,7 +67,7 @@ static int InitMesaPTMMBase(PDRVFUNC pDrv)
         return 1;
     mdata = &mfifo[MAX_FIFO];
     pt = &mfifo[1];
-    if (mfifo[1] == (uint32_t)(ptm + (0xFC0U >> 2)))
+    if ((mfifo[1] & 0xFFFU) == ((uint32_t)(ptm + (0xFC0U >> 2)) & 0xFFFU))
         return 1;
     mfifo[0] = FIRST_FIFO;
     mdata[0] = ALIGNED(1) >> 2;

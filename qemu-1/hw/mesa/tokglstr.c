@@ -1137,6 +1137,7 @@ static const struct { int tok; const char *name; } nameTbl[] = {
 { .tok = GL_NOOP, .name = "GL_NOOP" },
 { .tok = GL_NOP_COMMAND_NV, .name = "GL_NOP_COMMAND_NV" },
 { .tok = GL_NOR, .name = "GL_NOR" },
+{ .tok = GL_NORMALIZE, .name = "GL_NORMALIZE" },
 { .tok = GL_NORMAL_ARRAY, .name = "GL_NORMAL_ARRAY" },
 { .tok = GL_NORMAL_ARRAY_ADDRESS_NV, .name = "GL_NORMAL_ARRAY_ADDRESS_NV" },
 { .tok = GL_NORMAL_ARRAY_LENGTH_NV, .name = "GL_NORMAL_ARRAY_LENGTH_NV" },
