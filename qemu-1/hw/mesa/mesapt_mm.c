@@ -2338,7 +2338,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 s->perfs.stat();
                 do {
                     uint32_t *swapRet = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - ALIGNED(1)));
-                    DPRINTF_COND(SwapFpsLimit(swapRet[0]), "Guest GL Swap limit [ %d FPS ]", GetFpsLimit());
+                    DPRINTF_COND((SwapFpsLimit(swapRet[0]) && swapRet[0] != 0x7FU),
+                            "Guest GL Swap limit [ %d FPS ]", GetFpsLimit());
                     swapRet[0] = MGLSwapBuffers()? ((GetFpsLimit() << 1) | 1):0;
                     MGLMouseWarp(swapRet[1]);
                     dispTimerSched(s->dispTimer);

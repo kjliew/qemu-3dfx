@@ -16615,6 +16615,7 @@ static uint32_t PT_CALL wglSwapIntervalEXT (uint32_t arg0)
     parse_options(&cfg);
     WGL_FUNCP("wglSwapIntervalEXT");
     argsp[0] = (cfg.vsyncOff)? 0:arg0;
+    swapFps = (argsp[0] > 0)? 0x7FU:swapFps;
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
     WGL_FUNCP_RET(ret);
     return ret;
