@@ -95,7 +95,7 @@ static void MGLTmpContext(char **str, char **wstr)
         const char *namestr;
         char *namebuf;
         namestr = (const char *)glGetString(strname[i].enm);
-        namebuf = HeapAlloc(GetProcessHeap(), 0, 1 + strlen(namestr));
+        namebuf = (namestr)? HeapAlloc(GetProcessHeap(), 0, 1 + strlen(namestr)):0;
         if (namestr && namebuf) {
             lstrcpy(namebuf, namestr);
             printf(strname[i].fmt, namebuf, 1 + strlen(namestr));
@@ -135,8 +135,8 @@ static void MGLTmpContext(char **str, char **wstr)
     const char *glstr = (const char *)glGetString(GL_EXTENSIONS),
               *wglstr = (const char *)wglGetString(tmpDC);
 
-    *str = HeapAlloc(GetProcessHeap(), 0, 1 + strlen(glstr));
-    *wstr = HeapAlloc(GetProcessHeap(), 0, 1 + strlen(wglstr));
+    *str = HeapAlloc(GetProcessHeap(), 0, (glstr)? (1 + strlen(glstr)):sizeof(void *));
+    *wstr = HeapAlloc(GetProcessHeap(), 0, (wglstr)? (1 + strlen(wglstr)):sizeof(void *));
     if (*str)
         lstrcpy(*str, glstr);
     if (*wstr)

@@ -59,6 +59,14 @@ static struct E_PATCH go_g400_3[] = {
     PATCH_D(0x097a9, "\xEB"),
     E_PATCH_END()
 };
+static struct E_PATCH turok_dem[] = {
+    PATCH_D(0x0c6e2, "\xEB\x06"),
+    E_PATCH_END()
+};
+static struct E_PATCH turok_exe[] = {
+    PATCH_D(0x0c122, "\xEB\x06"),
+    E_PATCH_END()
+};
 static COMPATFX fxCompatTbl[] = {
     /* Rage Expendable Retailed & G400 EMBM */
     { "go.exe", "330113cfeb00ae4de299f041fb5714ba", HP_ANYO, go_g400_3 },
@@ -81,6 +89,10 @@ static COMPATFX fxCompatTbl[] = {
     { "hg.exe",    "4685aa795e3916c1bb0de5616a86bfa0", HP_2KXP, hg_exe },
     /* Tomb Raider IV */
     { "tomb4.exe", "e720ab3d4682cbd563a9c3943812fcac", HP_2KXP, tomb4_exe },
+    /* Turok Demo v1.01 */
+    { "TurokDemo.exe", "58d26953c755bcc64f330f1a3c0441bd", HP_ANYO, turok_dem },
+    /* Turok Dinosaur Hunter USA v1.0 */
+    { "Turok.exe", "cba05017b943451e8a7b55f22a3d0de9", HP_ANYO, turok_exe },
     E_PATCH_END()
 };
    
