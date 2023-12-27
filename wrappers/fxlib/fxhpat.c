@@ -29,6 +29,10 @@ static struct E_PATCH engrel_cursor[] = {
     PATCH_D(0x1805a, "\x38\xC4"),
     E_PATCH_END()
 };
+static struct E_PATCH req_demo[] = {
+    PATCH_D(0x64a0c, "\xEB"),
+    E_PATCH_END()
+};
 static struct E_PATCH d3d_exe[] = {
     PATCH_D(0x65b2d, "\xEB"),
     E_PATCH_END()
@@ -83,6 +87,8 @@ static COMPATFX fxCompatTbl[] = {
     /* Warhammer: Dark Omen */
     { "engrel.exe", "8dc25757be926088167cb1663b7c7b76", HP_ANYO, engrel_blit },
     { "engrel.exe", "1a0b17352c8fee8c62732ef4f7aae95f", HP_2KXP, engrel_cursor },
+    /* Requiem Demo D3D */
+    { "reqdemo_d3d.exe", "2ee1cf9120c4f13eef06da62600b0c23", HP_ANYO, req_demo },
     /* Requiem D3D 1.2 */
     { "d3d.exe",   "b783b9fbca594286b606eb07912740b6", HP_ANYO, d3d_exe },
     /* Heavy Gear 1.2 */
