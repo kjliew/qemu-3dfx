@@ -41,6 +41,16 @@ static struct E_PATCH hg_exe[] = {
     PATCH_D(0x0133e, "\x90\x90"),
     E_PATCH_END()
 };
+static struct E_PATCH tomb3_exe_1[] = {
+    PATCH_D(0x8ec41, "\xB4\x01\x90"),
+    PATCH_D(0x8ec52, "\xB0\x00\x90"),
+    E_PATCH_END()
+};
+static struct E_PATCH tomb3_exe_2[] = {
+    PATCH_D(0x97321, "\xB4\x01\x90"),
+    PATCH_D(0x97332, "\xB0\x00\x90"),
+    E_PATCH_END()
+};
 static struct E_PATCH tomb4_exe[] = {
     PATCH_D(0x8da53, "\x90\xB4\x00"),
     PATCH_D(0x8da64, "\x90\xB0\x00"),
@@ -93,6 +103,9 @@ static COMPATFX fxCompatTbl[] = {
     { "d3d.exe",   "b783b9fbca594286b606eb07912740b6", HP_ANYO, d3d_exe },
     /* Heavy Gear 1.2 */
     { "hg.exe",    "4685aa795e3916c1bb0de5616a86bfa0", HP_2KXP, hg_exe },
+    /* Tomb Raider III */
+    { "tomb3.exe", "47c2bb0445fce035d2d264b71bf1faae", HP_2KXP, tomb3_exe_1 },
+    { "tomb3.exe", "160e4d0cc6740731ff4598c47c75719c", HP_2KXP, tomb3_exe_2 },
     /* Tomb Raider IV */
     { "tomb4.exe", "e720ab3d4682cbd563a9c3943812fcac", HP_2KXP, tomb4_exe },
     /* Turok Demo v1.01 */
