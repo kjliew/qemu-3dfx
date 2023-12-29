@@ -906,9 +906,9 @@ int init_glide2x(const char *dllname)
 #if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
 	char lnxsym[128], wrapsym[128] = "wrap3x_", *pws = wrapsym;
 	strncpy(lnxsym, tblGlide2x[i].sym + 1, sizeof(lnxsym)-1);
-	for (int i = 0; i < sizeof(lnxsym); i++) {
-	    if (lnxsym[i] == '@') {
-		lnxsym[i] = 0;
+	for (int j = 0; j < sizeof(lnxsym); j++) {
+	    if (lnxsym[j] == '@') {
+		lnxsym[j] = 0;
 		break;
 	    }
 	}

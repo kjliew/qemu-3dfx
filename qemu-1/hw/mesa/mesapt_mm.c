@@ -2079,7 +2079,7 @@ static void processFRet(MesaPTState *s)
                         "WGL_3DFX_gamma_control"
                         ;
 #define XSTR_ADD(s) { \
-    size_t len = strnlen(s, sizeof(s)); \
+    len = strnlen(s, sizeof(s)); \
     memcpy(xbuf, s, len); \
     xbuf += len; \
     *(xbuf++) = ' '; }
