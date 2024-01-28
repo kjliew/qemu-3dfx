@@ -1635,7 +1635,7 @@ void PT_CALL glColorMask(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t a
 }
 void PT_CALL glColorMaskIndexedEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glColorMaskIndexedEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glColorMaskIndexedEXT, 5);
 }
 void PT_CALL glColorMaski(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
@@ -2637,7 +2637,7 @@ void PT_CALL glDisableClientStateiEXT(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glDisableIndexedEXT(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glDisableIndexedEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glDisableIndexedEXT, 2);
 }
 void PT_CALL glDisableVariantClientStateEXT(uint32_t arg0) {
     pt[1] = arg0; 
@@ -3283,7 +3283,7 @@ void PT_CALL glEnableClientStateiEXT(uint32_t arg0, uint32_t arg1) {
 }
 void PT_CALL glEnableIndexedEXT(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glEnableIndexedEXT;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glEnableIndexedEXT, 2);
 }
 void PT_CALL glEnableVariantClientStateEXT(uint32_t arg0) {
     pt[1] = arg0; 
@@ -6452,9 +6452,12 @@ uint32_t PT_CALL glIsEnabled(uint32_t arg0) {
     ret = *pt0;
     return ret;
 }
-void PT_CALL glIsEnabledIndexedEXT(uint32_t arg0, uint32_t arg1) {
+uint32_t PT_CALL glIsEnabledIndexedEXT(uint32_t arg0, uint32_t arg1) {
+    uint32_t ret;
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glIsEnabledIndexedEXT;
+    ret = *pt0;
+    return ret;
 }
 uint32_t PT_CALL glIsEnabledi(uint32_t arg0, uint32_t arg1) {
     uint32_t ret;
@@ -10531,7 +10534,7 @@ void PT_CALL glTexBufferEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glTexBufferRange(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; pt[5] = arg4; 
-    pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexBufferRange;
+    pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glTexBufferRange, 5);
 }
 void PT_CALL glTexBumpParameterfvATI(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 

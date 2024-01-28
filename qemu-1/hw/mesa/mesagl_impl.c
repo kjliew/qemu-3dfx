@@ -261,6 +261,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         uintptr_t (__stdcall *rpfpa0)(uint32_t);
         uintptr_t (__stdcall *rpfpa0p2a3)(uint32_t, uintptr_t, uintptr_t, uint32_t);
         uintptr_t (__stdcall *rpfpa1)(uint32_t, uint32_t);
+        /* int64 func proto */
+        uint32_t (__stdcall *fpa1x2)(uint32_t, uint32_t, uint64_t);
         /* float func proto */
         uint32_t (__stdcall *fpa0f1)(uint32_t, float);
         uint32_t (__stdcall *fpa0f2)(uint32_t, float, float);
@@ -919,6 +921,19 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glDebugMessageControlARB:
         case FEnum_glDebugMessageInsert:
         case FEnum_glDebugMessageInsertARB:
+            GLDONE();
+
+        /* GLFuncs with int64 args */
+#define GLARGSX_N(a,i) \
+            memcpy(&a, &arg[i], sizeof(uint64_t))
+        case FEnum_glClientWaitSync:
+        case FEnum_glWaitSync:
+            {
+                uint64_t x2;
+                GLARGSX_N(x2, 2);
+                usfp.fpa1x2 = tblMesaGL[FEnum].ptr;
+                *ret = (*usfp.fpa1x2)(arg[0], arg[1], x2);
+            }
             GLDONE();
 
         /* GLFuncs with float args */

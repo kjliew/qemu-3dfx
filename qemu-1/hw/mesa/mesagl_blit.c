@@ -153,7 +153,7 @@ static int blit_program_buffer(void *save_map, const int size, const void *data)
     struct save_states *last = (struct save_states *)save_map;
 
     PFN_CALL(glGetIntegerv(GL_VIEWPORT, view));
-    if (view[0] || last->view[0] == view[2])
+    if (view[0] || view[1] || last->view[0] == view[2])
         return 1;
     memcpy(last->view, view, sizeof(view));
 
