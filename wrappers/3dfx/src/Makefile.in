@@ -101,12 +101,14 @@ pciNoop.o:
 	@for i in $(PCINOOP); do \
 		ARGS=`echo $$i | sed "s/.*@//"`; \
 		FUNC=`echo $$i | sed "s/@[0-9]*//"`; \
-		echo -n "void PT_CALL pci$$FUNC(" >>$(@:.o=.c); \
-		if [ $$ARGS -eq 0 ]; then echo -n "void" >>$(@:.o=.c); \
-		else echo -n "uint32_t arg0" >>$(@:.o=.c); \
-		for j in $$(seq 1 $$(((ARGS>>2) - 1))); do \
-			echo -n ", uint32_t arg$$j" >>$(@:.o=.c); \
-		done; fi; echo ") { }" >>$(@:.o=.c); \
+		printf "%s" "void PT_CALL pci$$FUNC(" >>$(@:.o=.c); \
+		if [ $$ARGS -eq 0 ]; then printf "%s" "void" >>$(@:.o=.c); \
+		else printf "%s" "uint32_t arg0" >>$(@:.o=.c); \
+		    if [ $$(((ARGS>>2)-1)) -ne 0 ]; then \
+		        for j in $$(seq 1 $$(((ARGS>>2)-1))); do \
+			    printf "%s" ", uint32_t arg$$j" >>$(@:.o=.c); \
+		        done; fi; \
+		fi; printf "%s\n" ") { }" >>$(@:.o=.c); \
 	done
 	@echo "  CC  $@"
 	@$(CC) -c -o $@ $(@:.o=.c)
