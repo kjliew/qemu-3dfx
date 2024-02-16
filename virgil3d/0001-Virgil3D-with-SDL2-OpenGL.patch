@@ -55,7 +55,25 @@ diff -Nru ../orig/qemu-8.2.1/meson.build ./meson.build
 diff -Nru ../orig/qemu-8.2.1/ui/egl-helpers.c ./ui/egl-helpers.c
 --- ../orig/qemu-8.2.1/ui/egl-helpers.c
 +++ ./ui/egl-helpers.c
-@@ -394,6 +394,8 @@
+@@ -33,6 +33,7 @@
+
+ const char *qemu_egl_get_error_string(void)
+ {
++#ifdef CONFIG_EGL
+     EGLint error = eglGetError();
+
+     switch (error) {
+@@ -69,6 +70,9 @@
+     default:
+         return "Unknown EGL error";
+     }
++#else
++    return "Unknown error";
++#endif //CONFIG_EGL
+ }
+
+ static void egl_fb_delete_texture(egl_fb *fb)
+@@ -394,6 +398,8 @@
 
  /* ---------------------------------------------------------------------- */
 
@@ -64,7 +82,7 @@ diff -Nru ../orig/qemu-8.2.1/ui/egl-helpers.c ./ui/egl-helpers.c
  EGLSurface qemu_egl_init_surface_x11(EGLContext ectx, EGLNativeWindowType win)
  {
      EGLSurface esurface;
-@@ -661,3 +663,5 @@
+@@ -661,3 +667,5 @@
      display_opengl = 1;
      return true;
  }
