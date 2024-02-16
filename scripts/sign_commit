@@ -2,10 +2,16 @@
 
 TOP=.
 GIT=`echo $@ | sed "s/\-git=\(.*\)/\1/;s/\ .*//"`
-if [ -z $GIT ]; then GIT=.; fi; shift
+if [ -z $GIT ]; then GIT=.; else shift; fi;
 ARG=$@; if [ -z $ARG ]; then ARG=HEAD; fi
 REV=`cd $GIT; git rev-parse $ARG | sed "s/\(.......\).*/\1\-/"`
 if [ -z $REV ]; then exit 1; fi
+MODS=$(cat $TOP/target/i386/meson.build | tail -n 2 | head -n 1 | \
+    sed "s/.*:\ //;s/\}//")
+sed -i -e "s/i386_ss/$MODS/" \
+    $TOP/hw/3dfx/meson.build \
+    $TOP/hw/mesa/meson.build \
+
 VLC=$(find $TOP -maxdepth 2 -name vl.c)
 SRC=" \
     $TOP/hw/3dfx/g2xfuncs.h \

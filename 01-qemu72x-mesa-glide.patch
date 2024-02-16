@@ -1,5 +1,5 @@
-diff -Nru ../orig/qemu-7.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
---- ../orig/qemu-7.2.0/accel/kvm/kvm-all.c
+diff -Nru ../orig/qemu-7.2.9/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
+--- ../orig/qemu-7.2.9/accel/kvm/kvm-all.c
 +++ ./accel/kvm/kvm-all.c
 @@ -1451,6 +1451,41 @@
      return 0;
@@ -43,8 +43,8 @@ diff -Nru ../orig/qemu-7.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
  static void kvm_region_add(MemoryListener *listener,
                             MemoryRegionSection *section)
  {
-diff -Nru ../orig/qemu-7.2.0/hw/i386/pc.c ./hw/i386/pc.c
---- ../orig/qemu-7.2.0/hw/i386/pc.c
+diff -Nru ../orig/qemu-7.2.9/hw/i386/pc.c ./hw/i386/pc.c
+--- ../orig/qemu-7.2.9/hw/i386/pc.c
 +++ ./hw/i386/pc.c
 @@ -1320,6 +1320,28 @@
      /* Super I/O */
@@ -75,8 +75,8 @@ diff -Nru ../orig/qemu-7.2.0/hw/i386/pc.c ./hw/i386/pc.c
  }
  
  void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
-diff -Nru ../orig/qemu-7.2.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
---- ../orig/qemu-7.2.0/include/hw/i386/pc.h
+diff -Nru ../orig/qemu-7.2.9/include/hw/i386/pc.h ./include/hw/i386/pc.h
+--- ../orig/qemu-7.2.9/include/hw/i386/pc.h
 +++ ./include/hw/i386/pc.h
 @@ -181,6 +181,22 @@
  
@@ -101,10 +101,10 @@ diff -Nru ../orig/qemu-7.2.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
  /* pc_sysfw.c */
  void pc_system_flash_create(PCMachineState *pcms);
  void pc_system_flash_cleanup_unused(PCMachineState *pcms);
-diff -Nru ../orig/qemu-7.2.0/include/sysemu/kvm.h ./include/sysemu/kvm.h
---- ../orig/qemu-7.2.0/include/sysemu/kvm.h
+diff -Nru ../orig/qemu-7.2.9/include/sysemu/kvm.h ./include/sysemu/kvm.h
+--- ../orig/qemu-7.2.9/include/sysemu/kvm.h
 +++ ./include/sysemu/kvm.h
-@@ -478,6 +478,8 @@
+@@ -480,6 +480,8 @@
  
  #endif /* NEED_CPU_H */
  
@@ -113,8 +113,8 @@ diff -Nru ../orig/qemu-7.2.0/include/sysemu/kvm.h ./include/sysemu/kvm.h
  void kvm_cpu_synchronize_state(CPUState *cpu);
  
  void kvm_init_cpu_signals(CPUState *cpu);
-diff -Nru ../orig/qemu-7.2.0/include/sysemu/whpx.h ./include/sysemu/whpx.h
---- ../orig/qemu-7.2.0/include/sysemu/whpx.h
+diff -Nru ../orig/qemu-7.2.9/include/sysemu/whpx.h ./include/sysemu/whpx.h
+--- ../orig/qemu-7.2.9/include/sysemu/whpx.h
 +++ ./include/sysemu/whpx.h
 @@ -17,6 +17,8 @@
 
@@ -125,8 +125,8 @@ diff -Nru ../orig/qemu-7.2.0/include/sysemu/whpx.h ./include/sysemu/whpx.h
  int whpx_enabled(void);
  bool whpx_apic_in_platform(void);
  
-diff -Nru ../orig/qemu-7.2.0/include/ui/console.h ./include/ui/console.h
---- ../orig/qemu-7.2.0/include/ui/console.h
+diff -Nru ../orig/qemu-7.2.9/include/ui/console.h ./include/ui/console.h
+--- ../orig/qemu-7.2.9/include/ui/console.h
 +++ ./include/ui/console.h
 @@ -445,6 +445,7 @@
                                 void *opaque);
@@ -156,8 +156,8 @@ diff -Nru ../orig/qemu-7.2.0/include/ui/console.h ./include/ui/console.h
 +int mesa_gui_fullscreen(int *);
 +
  #endif
-diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
---- ../orig/qemu-7.2.0/meson.build
+diff -Nru ../orig/qemu-7.2.9/meson.build ./meson.build
+--- ../orig/qemu-7.2.9/meson.build
 +++ ./meson.build
 @@ -995,6 +995,7 @@
      error('sdl-image required, but SDL was @0@'.format(
@@ -167,7 +167,7 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
    sdl_image = not_found
  endif
 
-@@ -3060,6 +3061,8 @@
+@@ -3058,6 +3059,8 @@
                           arguments: ['@INPUT@', '@EXTRA_ARGS@', '-o', '@OUTPUT@'])
    subdir('libdecnumber')
    subdir('target')
@@ -176,7 +176,7 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
  endif
  
  subdir('audio')
-@@ -3397,6 +3400,11 @@
+@@ -3395,6 +3398,11 @@
    target_inc = [include_directories('target' / config_target['TARGET_BASE_ARCH'])]
    if targetos == 'linux'
      target_inc += include_directories('linux-headers', is_system: true)
@@ -188,8 +188,8 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
    endif
    if target.endswith('-softmmu')
      target_type='system'
-diff -Nru ../orig/qemu-7.2.0/softmmu/vl.c ./softmmu/vl.c
---- ../orig/qemu-7.2.0/softmmu/vl.c
+diff -Nru ../orig/qemu-7.2.9/softmmu/vl.c ./softmmu/vl.c
+--- ../orig/qemu-7.2.9/softmmu/vl.c
 +++ ./softmmu/vl.c
 @@ -828,6 +828,13 @@
      return default_machineclass;
@@ -205,7 +205,7 @@ diff -Nru ../orig/qemu-7.2.0/softmmu/vl.c ./softmmu/vl.c
  static void version(void)
  {
      printf("QEMU emulator version " QEMU_FULL_VERSION "\n"
-@@ -2896,6 +2903,7 @@
+@@ -2900,6 +2907,7 @@
                  break;
              case QEMU_OPTION_version:
                  version();
@@ -213,8 +213,8 @@ diff -Nru ../orig/qemu-7.2.0/softmmu/vl.c ./softmmu/vl.c
                  exit(0);
                  break;
              case QEMU_OPTION_m:
-diff -Nru ../orig/qemu-7.2.0/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx-all.c
---- ../orig/qemu-7.2.0/target/i386/whpx/whpx-all.c
+diff -Nru ../orig/qemu-7.2.9/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx-all.c
+--- ../orig/qemu-7.2.9/target/i386/whpx/whpx-all.c
 +++ ./target/i386/whpx/whpx-all.c
 @@ -10,6 +10,7 @@
 
@@ -263,8 +263,8 @@ diff -Nru ../orig/qemu-7.2.0/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx
  static void whpx_region_add(MemoryListener *listener,
                             MemoryRegionSection *section)
  {
-diff -Nru ../orig/qemu-7.2.0/ui/console.c ./ui/console.c
---- ../orig/qemu-7.2.0/ui/console.c
+diff -Nru ../orig/qemu-7.2.9/ui/console.c ./ui/console.c
+--- ../orig/qemu-7.2.9/ui/console.c
 +++ ./ui/console.c
 @@ -212,6 +212,13 @@
      ds->have_text = have_text;
@@ -289,8 +289,8 @@ diff -Nru ../orig/qemu-7.2.0/ui/console.c ./ui/console.c
          con->hw_ops->gfx_update(con->hw);
          async = con->hw_ops->gfx_update_async;
      }
-diff -Nru ../orig/qemu-7.2.0/ui/sdl2.c ./ui/sdl2.c
---- ../orig/qemu-7.2.0/ui/sdl2.c
+diff -Nru ../orig/qemu-7.2.9/ui/sdl2.c ./ui/sdl2.c
+--- ../orig/qemu-7.2.9/ui/sdl2.c
 +++ ./ui/sdl2.c
 @@ -552,6 +552,29 @@
      qemu_input_event_sync();
