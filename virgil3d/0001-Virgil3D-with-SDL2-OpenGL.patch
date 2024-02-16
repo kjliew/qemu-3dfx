@@ -1,5 +1,5 @@
-diff -Nru ../orig/qemu-7.2.0/include/ui/egl-helpers.h ./include/ui/egl-helpers.h
---- ../orig/qemu-7.2.0/include/ui/egl-helpers.h
+diff -Nru ../orig/qemu-8.2.1/include/ui/egl-helpers.h ./include/ui/egl-helpers.h
+--- ../orig/qemu-8.2.1/include/ui/egl-helpers.h
 +++ ./include/ui/egl-helpers.h
 @@ -2,7 +2,15 @@
  #define EGL_HELPERS_H
@@ -17,10 +17,10 @@ diff -Nru ../orig/qemu-7.2.0/include/ui/egl-helpers.h ./include/ui/egl-helpers.h
  #ifdef CONFIG_GBM
  #include <gbm.h>
  #endif
-diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
---- ../orig/qemu-7.2.0/meson.build
+diff -Nru ../orig/qemu-8.2.1/meson.build ./meson.build
+--- ../orig/qemu-8.2.1/meson.build
 +++ ./meson.build
-@@ -1142,12 +1142,14 @@
+@@ -1431,12 +1431,14 @@
                           required: get_option('coreaudio'))
  endif
 
@@ -28,7 +28,7 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
  opengl = not_found
  if not get_option('opengl').auto() or have_system or have_vhost_user_gpu
    epoxy = dependency('epoxy', method: 'pkg-config',
-                       required: get_option('opengl'), kwargs: static_kwargs)
+                       required: get_option('opengl'))
 +  opengl = epoxy
    if cc.has_header('epoxy/egl.h', dependencies: epoxy)
 -    opengl = epoxy
@@ -36,15 +36,15 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
    elif get_option('opengl').enabled()
      error('epoxy/egl.h not found')
    endif
-@@ -1834,6 +1836,7 @@
- config_host_data.set('CONFIG_BLKIO', blkio.found())
+@@ -2122,6 +2124,7 @@
+ endif
  config_host_data.set('CONFIG_CURL', curl.found())
  config_host_data.set('CONFIG_CURSES', curses.found())
 +config_host_data.set('CONFIG_EGL', egl.found())
  config_host_data.set('CONFIG_GBM', gbm.found())
  config_host_data.set('CONFIG_GIO', gio.found())
  config_host_data.set('CONFIG_GLUSTERFS', glusterfs.found())
-@@ -3966,6 +3969,7 @@
+@@ -4369,6 +4372,7 @@
  summary_info += {'libusb':            libusb}
  summary_info += {'usb net redir':     usbredir}
  summary_info += {'OpenGL support (epoxy)': opengl}
@@ -52,10 +52,10 @@ diff -Nru ../orig/qemu-7.2.0/meson.build ./meson.build
  summary_info += {'GBM':               gbm}
  summary_info += {'libiscsi support':  libiscsi}
  summary_info += {'libnfs support':    libnfs}
-diff -Nru ../orig/qemu-7.2.0/ui/egl-helpers.c ./ui/egl-helpers.c
---- ../orig/qemu-7.2.0/ui/egl-helpers.c
+diff -Nru ../orig/qemu-8.2.1/ui/egl-helpers.c ./ui/egl-helpers.c
+--- ../orig/qemu-8.2.1/ui/egl-helpers.c
 +++ ./ui/egl-helpers.c
-@@ -334,6 +334,8 @@
+@@ -394,6 +394,8 @@
 
  /* ---------------------------------------------------------------------- */
 
@@ -64,34 +64,34 @@ diff -Nru ../orig/qemu-7.2.0/ui/egl-helpers.c ./ui/egl-helpers.c
  EGLSurface qemu_egl_init_surface_x11(EGLContext ectx, EGLNativeWindowType win)
  {
      EGLSurface esurface;
-@@ -527,3 +529,5 @@
-
-     return ectx;
+@@ -661,3 +663,5 @@
+     display_opengl = 1;
+     return true;
  }
 +
 +#endif //#ifdef CONFIG_EGL
-diff -Nru ../orig/qemu-7.2.0/ui/meson.build ./ui/meson.build
---- ../orig/qemu-7.2.0/ui/meson.build
+diff -Nru ../orig/qemu-8.2.1/ui/meson.build ./ui/meson.build
+--- ../orig/qemu-8.2.1/ui/meson.build
 +++ ./ui/meson.build
-@@ -59,13 +59,15 @@
+@@ -62,13 +62,15 @@
    opengl_ss = ss.source_set()
-   opengl_ss.add(gbm)
-   opengl_ss.add(when: [opengl, pixman],
+   opengl_ss.add(gbm, pixman)
+   opengl_ss.add(when: [opengl],
 -               if_true: files('shader.c', 'console-gl.c', 'egl-helpers.c', 'egl-context.c'))
 +               if_true: files('shader.c', 'console-gl.c', 'egl-helpers.c'))
-+  opengl_ss.add(when: [opengl, pixman, egl],
++  opengl_ss.add(when: [opengl, egl],
 +               if_true: files('egl-context.c'))
    ui_modules += {'opengl' : opengl_ss}
  endif
  
- if opengl.found() and gbm.found()
+ if opengl.found()
    egl_headless_ss = ss.source_set()
--  egl_headless_ss.add(when: [opengl, gbm, pixman],
-+  egl_headless_ss.add(when: [opengl, gbm, pixman, egl],
-                       if_true: files('egl-headless.c'))
+-  egl_headless_ss.add(when: [opengl, pixman],
++  egl_headless_ss.add(when: [opengl, egl, pixman],
+                       if_true: [files('egl-headless.c'), gbm])
    ui_modules += {'egl-headless' : egl_headless_ss}
  endif
-@@ -102,8 +104,8 @@
+@@ -114,8 +116,8 @@
      gtk_ss.add(files('gtk-clipboard.c'))
    endif
    gtk_ss.add(when: x11, if_true: files('x_keymap.c'))
