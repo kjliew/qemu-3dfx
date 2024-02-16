@@ -8,9 +8,9 @@ KJ Liew \<liewkj@yahoo.com\>
     wrappers/3dfx       - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
     wrappers/mesa       - MESA GL wrapper for supported guest OS/environment (Windows)
 ## Patch
-    00-qemu720-mesa-glide.patch - Patch for QEMU version 7.2x (MESA & Glide)
-    01-qemu620-mesa-glide.patch - Patch for QEMU version 6.2x (MESA & Glide)
-    02-qemu520-mesa-glide.patch - Patch for QEMU version 5.2x (MESA & Glide)
+    00-qemu82x-mesa-glide.patch - Patch for QEMU version 8.2.x (MESA & Glide)
+    01-qemu72x-mesa-glide.patch - Patch for QEMU version 7.2.x (MESA & Glide)
+    02-qemu620-mesa-glide.patch - Patch for QEMU version 6.2.0 (MESA & Glide)
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
 Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, Windows 10/11 and modern Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to play them on Windows 10/later or modern Linux/Wine.
 - YouTube channel (https://www.youtube.com/channel/UCl8InhZs1ixZBcLrMDSWd0A/videos)
@@ -20,19 +20,19 @@ Witness, experience and share your thoughts on modern CPU/GPU prowess for retro 
 Following instructions are based on `MSYS2/mingw-w64` BASH shell environment on Windows 10/11. It is meant to be simple and minor variations are inevitable due to different flavors of Linux distributions.
 
 Simple guide to apply the patch:<br>
-(using `00-qemu720-mesa-glide.patch`)
+(using `00-qemu82x-mesa-glide.patch`)
 
     $ mkdir ~/myqemu && cd ~/myqemu
     $ git clone https://github.com/kjliew/qemu-3dfx.git
     $ cd qemu-3dfx
-    $ wget https://download.qemu.org/qemu-7.2.0.tar.xz
-    $ tar xf qemu-7.2.0.tar.xz
-    $ cd qemu-7.2.0
+    $ wget https://download.qemu.org/qemu-8.2.1.tar.xz
+    $ tar xf qemu-8.2.1.tar.xz
+    $ cd qemu-8.2.1
     $ rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
-    $ patch -p0 -i ../00-qemu720-mesa-glide.patch
+    $ patch -p0 -i ../00-qemu82x-mesa-glide.patch
     $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
-    $ ../qemu-7.2.0/configure && make
+    $ ../qemu-8.2.1/configure && make
 
 ## Building Guest Wrappers
 **Requirements:**
