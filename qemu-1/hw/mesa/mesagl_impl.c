@@ -1561,6 +1561,7 @@ static int cfg_dispTimerMS;
 static int cfg_bufoAccelEN;
 static int cfg_cntxMSAA;
 static int cfg_cntxSRGB;
+static int cfg_blitFlip;
 static int cfg_cntxVsyncOff;
 static int cfg_renderScalerOff;
 static int cfg_fpsLimit;
@@ -1633,6 +1634,7 @@ int SwapFpsLimit(int fps)
 void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = enable; }
 void GLRenderScaler(int disable) { cfg_renderScalerOff = disable; }
 void GLContextMSAA(int msaa) { cfg_cntxMSAA = msaa; }
+void GLBlitFlip(int flip) { cfg_blitFlip = flip; }
 void GLDispTimerCfg(int msec) { cfg_dispTimerMS = msec; }
 void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
 int GetGLExtYear(void) { return cfg_xYear; }
@@ -1643,6 +1645,7 @@ int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
 int GetContextMSAA(void) { return (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
 int RenderScalerOff(void) { return cfg_renderScalerOff; }
+int ScalerBlitFlip(void) { return cfg_blitFlip; }
 int GLShaderDump(void) { return cfg_shaderDump; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GLFifoTrace(void) { return cfg_traceFifo; }

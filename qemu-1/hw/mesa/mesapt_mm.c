@@ -2350,10 +2350,12 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
     int enable = (*(int *)ppfd) & 0x01U, \
         disable = (*(int *)ppfd) & 0x02U, \
         msaa = (*(int *)ppfd) & 0x0CU, \
+        flip = (*(int *)ppfd) & 0x10U, \
         msec = *(int *)PTR(ppfd, sizeof(int)); \
     GLBufOAccelCfg(enable); \
     GLRenderScaler(disable); \
     GLContextMSAA(msaa); \
+    GLBlitFlip(flip); \
     GLDispTimerCfg(msec)
                 do {
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
@@ -2407,7 +2409,9 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     }
                     if (strncmp((const char *)func, "wglSetDeviceCursor3DFX", 64) == 0) {
                         uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
-                        uint8_t *data = s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(argsp[2] * argsp[3] * sizeof(uint32_t)));
+                        uint8_t *data = (argsp[3] & 1)?
+                            s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(argsp[2] *(argsp[3] >> 3))):
+                            s->fbtm_ptr + (MGLFBT_SIZE - ALIGNED(argsp[2] * argsp[3] * sizeof(uint32_t)));
                         MGLCursorDefine(argsp[0], argsp[1], argsp[2], argsp[3], data);
                     }
                 } while(0);

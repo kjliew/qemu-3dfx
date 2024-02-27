@@ -453,6 +453,7 @@ struct mglOptions {
     int ovrdSync;
     int useMSAA;
     int useSRGB;
+    int bltFlip;
     int scalerOff;
     int vsyncOff;
     int xstrYear;
@@ -483,6 +484,8 @@ static void parse_options(struct mglOptions *opt)
             opt->useMSAA = ((i == 1) && v)? ((v & 0x03U) << 2):opt->useMSAA;
             i = parse_value(line, "ContextSRGB,", &v);
             opt->useSRGB = ((i == 1) && v)? 1:opt->useSRGB;
+            i = parse_value(line, "ScalerBltFlip,", &v);
+            opt->bltFlip = ((i == 1) && v)? 0x12U:opt->bltFlip;
             i = parse_value(line, "RenderScalerOff,", &v);
             opt->scalerOff = ((i == 1) && v)? 2:opt->scalerOff;
             i = parse_value(line, "ContextVsyncOff,", &v);
@@ -16940,12 +16943,11 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
         unsigned char binfo[SIZE_BMPINFO];
         BITMAPINFO *pbmi = (BITMAPINFO *)binfo;
         HDC hdc = GetDC(GLwnd);
+        HBITMAP hBmp = (ic.hbmColor)? ic.hbmColor:ic.hbmMask;
         memset(pbmi, 0, SIZE_BMPINFO);
         pbmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
         pbmi->bmiHeader.biPlanes = 1;
-        if (hdc && ic.hbmColor && p_GetDIBits(hdc, ic.hbmColor, 0, 0, NULL, pbmi, DIB_RGB_COLORS) &&
-            (pbmi->bmiHeader.biSizeImage == (32 * 32 * sizeof(uint32_t))) &&
-            (pbmi->bmiHeader.biBitCount == 32) &&
+        if (hdc && hBmp && p_GetDIBits(hdc, hBmp, 0, 0, NULL, pbmi, DIB_RGB_COLORS) &&
             (pbmi->bmiHeader.biWidth > ic.xHotspot) &&
             (pbmi->bmiHeader.biHeight > ic.yHotspot)) {
             WGL_FUNCP("wglSetDeviceCursor3DFX");
@@ -16954,9 +16956,10 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
             argsp[2] = pbmi->bmiHeader.biWidth;
             argsp[3] = pbmi->bmiHeader.biHeight;
             pbmi->bmiHeader.biHeight = 0 - pbmi->bmiHeader.biHeight;
-            p_GetDIBits(hdc, ic.hbmColor, 0, argsp[3],
+            p_GetDIBits(hdc, hBmp, 0, argsp[3],
                 &fbtm[(MGLFBT_SIZE - pbmi->bmiHeader.biSizeImage) >> 2],
                 pbmi, DIB_RGB_COLORS);
+            argsp[3] |= (pbmi->bmiHeader.biBitCount == 1)? 1:0;
             ptm[0xFDC >> 2] = MESAGL_MAGIC;
         }
     }
@@ -17333,7 +17336,7 @@ int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wgdSwapBuffers(hdc);
 #define PPFD_CONFIG() \
     struct mglOptions cfg; \
     parse_options(&cfg); \
-    xppfd[0] = cfg.useMSAA | cfg.scalerOff | cfg.bufoAcc; \
+    xppfd[0] = cfg.bltFlip | cfg.useMSAA | cfg.scalerOff | cfg.bufoAcc; \
     xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT
 
 int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)

@@ -26,7 +26,7 @@ int mesa_gui_fullscreen(const void *);
 
 static struct {
     unsigned prog, vert, frag, black, vao, vbo;
-    int adj;
+    int adj, flip;
 } blit;
 static unsigned blit_program_setup(void)
 {
@@ -84,9 +84,17 @@ static unsigned blit_program_setup(void)
     unsigned prog;
     if (!blit.prog) {
         int i = memcmp(PFN_CALL(glGetString(GL_VERSION)), "2.1 Metal",
-                sizeof("2.1 Metal") - 1)? 1:0;
+                sizeof("2.1 Metal") - 1)? 1:0,
+            srclen = ALIGNED((strlen(vert_src[i])+1));
+        char srcbuf[srclen];
+        const char *vert_buf[] = { srcbuf };
+        strncpy(srcbuf, vert_src[i], srclen);
+        if (blit.flip) {
+            char *flip = strstr(srcbuf, "+ in_position.y");
+            *flip = '-';
+        }
         blit.vert = PFN_CALL(glCreateShader(GL_VERTEX_SHADER));
-        PFN_CALL(glShaderSource(blit.vert, 1, &vert_src[i], 0));
+        PFN_CALL(glShaderSource(blit.vert, 1, vert_buf, 0));
         PFN_CALL(glCompileShader(blit.vert));
         blit.frag = PFN_CALL(glCreateShader(GL_FRAGMENT_SHADER));
         PFN_CALL(glShaderSource(blit.frag, 1, &frag_src[i], 0));
@@ -153,7 +161,8 @@ static int blit_program_buffer(void *save_map, const int size, const void *data)
     struct save_states *last = (struct save_states *)save_map;
 
     PFN_CALL(glGetIntegerv(GL_VIEWPORT, view));
-    if (view[0] || view[1] || last->view[0] == view[2])
+    if (view[0] || view[1] ||
+        (!blit.flip && (last->view[0] == view[2])))
         return 1;
     memcpy(last->view, view, sizeof(view));
 
@@ -228,8 +237,9 @@ void MesaBlitScale(void)
         blit.adj = !blit.adj;
         return;
     }
+    blit.flip = ScalerBlitFlip();
 
-    if (DrawableContext() && (fullscreen || (v[3] > (v[1] & 0x7FFFU)))) {
+    if (DrawableContext() && (fullscreen || blit.flip || (v[3] > (v[1] & 0x7FFFU)))) {
         unsigned screen_texture, w = v[0], h = v[1] & 0x7FFFU,
                 last_prog = blit_program_setup();
         int aspect = (v[1] & (1 << 15))? 0:1,
