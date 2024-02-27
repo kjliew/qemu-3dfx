@@ -16951,15 +16951,22 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
             (pbmi->bmiHeader.biWidth > ic.xHotspot) &&
             (pbmi->bmiHeader.biHeight > ic.yHotspot)) {
             WGL_FUNCP("wglSetDeviceCursor3DFX");
+            uint32_t *data = &fbtm[(MGLFBT_SIZE - pbmi->bmiHeader.biSizeImage) >> 2];
             argsp[0] = ic.xHotspot;
             argsp[1] = ic.yHotspot;
             argsp[2] = pbmi->bmiHeader.biWidth;
             argsp[3] = pbmi->bmiHeader.biHeight;
             pbmi->bmiHeader.biHeight = 0 - pbmi->bmiHeader.biHeight;
-            p_GetDIBits(hdc, hBmp, 0, argsp[3],
-                &fbtm[(MGLFBT_SIZE - pbmi->bmiHeader.biSizeImage) >> 2],
-                pbmi, DIB_RGB_COLORS);
-            argsp[3] |= (pbmi->bmiHeader.biBitCount == 1)? 1:0;
+            p_GetDIBits(hdc, hBmp, 0, argsp[3], data, pbmi, DIB_RGB_COLORS);
+            ReleaseDC(GLwnd, hdc);
+            if (pbmi->bmiHeader.biBitCount == 1)
+                argsp[3] |= 1;
+            if (pbmi->bmiHeader.biBitCount > 16)
+#define ALPHA_MASK 0xFF000000U
+#define COLOR_MASK 0x00FFFFFFU
+                for (int i = 0; i < (pbmi->bmiHeader.biSizeImage >> 2); i++)
+                    data[i] = (data[i] && (data[i] ^ COLOR_MASK))?
+                        (data[i] | ALPHA_MASK):COLOR_MASK;
             ptm[0xFDC >> 2] = MESAGL_MAGIC;
         }
     }
