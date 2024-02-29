@@ -35,6 +35,7 @@ typedef struct {
 #define MAX_TEXUNIT                             8
 #define MAX_PBUFFER                             16
 #define DISPTMR_DEFAULT                         2000
+#define MESAGL_CRASH_RC                         3000
 
 #ifdef QEMU_OSDEP_H
 #if (((QEMU_VERSION_MAJOR << 8) | \

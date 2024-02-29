@@ -35,9 +35,6 @@ static void MGLTmpContext(char **str, char **wstr)
     BOOL (WINAPI *wglGetPixelFormatAttribivARB)(HDC, int, int, UINT, const int *, int *) =
         (BOOL (WINAPI *)(HDC, int, int, UINT, const int *, int *))
         wglGetProcAddress("wglGetPixelFormatAttribivARB");
-    void (WINAPI *p_glDebugMessageInsertARB)(int, int, UINT, int, size_t, const char *) =
-        (void (WINAPI *)(int, int, UINT, int, size_t, const char *))
-        wglGetProcAddress("glDebugMessageInsertARB");
 
     const int na[] = { WGL_NUMBER_PIXEL_FORMATS_ARB },
           piAttr[] = {
@@ -144,10 +141,6 @@ static void MGLTmpContext(char **str, char **wstr)
 
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(tmpGL);
-#define MESAGL_MAGIC    0x5b5eb5e5
-    if (p_glDebugMessageInsertARB)
-        p_glDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB, GL_DEBUG_TYPE_ERROR_ARB,
-                MESAGL_MAGIC, -1, 0, 0);
     ReleaseDC(tmpWin, tmpDC);
     DestroyWindow(tmpWin);
 }

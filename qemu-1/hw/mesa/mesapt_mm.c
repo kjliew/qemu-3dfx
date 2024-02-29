@@ -2374,10 +2374,23 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFE4:
                 do {
+                    static int64_t pixfmt_ts;
+                    int64_t curr_ts = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
                     int pixfmt = *(int *)ppfd;
+                    int ptm = *(int *)PTR(ppfd, sizeof(int));
                     s->procRet = MGLSetPixelFormat(pixfmt, PTR(ppfd, ALIGNED(sizeof(int))))?
                         (((uint32_t*)s->fifo_ptr)[1]? MESAGL_MAGIC:0):0;
+                    if ((curr_ts - pixfmt_ts) > MESAGL_CRASH_RC) {
+                        uint32_t *fifoptr = (uint32_t *)s->fifo_ptr,
+                                 *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
+                        pixfmt_ts = curr_ts;
+                        if ((fifoptr[1] & 0xFFFFF000U) != ptm) {
+                            DPRINTF("..warped %08x-%08x", fifoptr[1] & 0xFFFFF000U, ptm);
+                            fifoptr[1] = (fifoptr[1] & 0xFFFU) | ptm;
+                        }
+                        DPRINTF_COND((dataptr[1] > 1), "..reset refcnt %04x", dataptr[1]--);
+                    }
                 } while(0);
                 break;
             case 0xFE0:
