@@ -16915,7 +16915,12 @@ static void wglFreeMemoryNV(void *pointer) { }
 static void WINAPI
 wglSetDeviceCursor3DFX(HCURSOR hCursor)
 {
+    static HCURSOR last_cur;
     ICONINFO ic;
+
+    if (last_cur == hCursor)
+        return;
+
     BOOL (WINAPI *p_DeleteObject)(HANDLE) = (BOOL (WINAPI *)(HANDLE))
         GetProcAddress(GetModuleHandle("gdi32.dll"), "DeleteObject");
     int (WINAPI *p_GetDIBits)(HDC, HBITMAP, UINT, UINT, LPVOID, LPBITMAPINFO, UINT) =
@@ -16952,6 +16957,7 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
                     data[i] = (data[i] && (data[i] ^ COLOR_MASK))?
                         (data[i] | ALPHA_MASK):COLOR_MASK;
             ptm[0xFDC >> 2] = MESAGL_MAGIC;
+            last_cur = hCursor;
         }
     }
     if (p_DeleteObject) {
@@ -17271,7 +17277,6 @@ uint32_t PT_CALL mglUseFontOutlinesW(uint32_t arg0, uint32_t arg1, uint32_t arg2
 
 int WINAPI wglSwapBuffers (HDC hdc)
 {
-    static HCURSOR hcur;
     static POINT last_pos;
     static uint32_t timestamp;
     uint32_t ret, *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
@@ -17294,10 +17299,8 @@ int WINAPI wglSwapBuffers (HDC hdc)
                 ci.ptScreenPos.y = MulDiv(ci.ptScreenPos.y, GetSystemMetrics(SM_CYSCREEN) - 1,
                         (wr.bottom - wr.top - 1));
                 memcpy(&last_pos, &ci.ptScreenPos, sizeof(POINT));
-                if (swapCur && hcur != ci.hCursor) {
-                    hcur = ci.hCursor;
-                    wglSetDeviceCursor3DFX(hcur);
-                }
+                if (swapCur)
+                    wglSetDeviceCursor3DFX(ci.hCursor);
             }
         }
     }
