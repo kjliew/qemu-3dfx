@@ -5,9 +5,9 @@ GIT=`echo $@ | sed "s/\-git=\(.*\)/\1/;s/\ .*//"`
 if [ -z $GIT ]; then GIT=.; else shift; fi;
 ARG=$@; if [ -z $ARG ]; then ARG=HEAD; fi
 REV=`cd $GIT; git rev-parse $ARG | sed "s/\(.......\).*/\1\-/"`
-if [ -z $REV ]; then exit 1; fi
 MODS=$(cat $TOP/target/i386/meson.build | tail -n 2 | head -n 1 | \
     sed "s/.*:\ //;s/\}//")
+if [ -z $REV ] || [ -z $MODS ]; then exit 1; fi
 sed -i -e "s/i386_ss/$MODS/" \
     $TOP/hw/3dfx/meson.build \
     $TOP/hw/mesa/meson.build \
