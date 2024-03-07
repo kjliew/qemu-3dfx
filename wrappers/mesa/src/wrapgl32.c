@@ -470,6 +470,11 @@ static void parse_options(struct mglOptions *opt)
 {
     FILE *f = opt_fopen();
     memset(opt, 0, sizeof(struct mglOptions));
+    /* Sync host color cursor only for Bochs SVGA */
+    DISPLAY_DEVICE dd = { .cb = sizeof(DISPLAY_DEVICE) };
+    const char vidstr[] = "QEMU Bochs";
+    swapCur = (EnumDisplayDevices(NULL, 0, &dd, 0) &&
+        !memcmp(dd.DeviceString, vidstr, strlen(vidstr)))? 1:0;
     if (f) {
         char line[MAX_XSTR];
         int i, v;
@@ -492,17 +497,12 @@ static void parse_options(struct mglOptions *opt)
             opt->vsyncOff = ((i == 1) && v)? 1:opt->vsyncOff;
             i = parse_value(line, "ExtensionsYear,", &v);
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
-            i = parse_value(line, "HCursorSync,", &v);
-            swapCur = ((i == 1) && v)? 1:swapCur;
+            i = parse_value(line, "CursorSyncOff,", &v);
+            swapCur = ((i == 1) && v)? 0:swapCur;
             i = parse_value(line, "FpsLimit,", &v);
             swapFps = (i == 1)? (v & 0x7FU):swapFps;
         }
         fclose(f);
-        /* Sync host color cursor only for Bochs SVGA */
-        DISPLAY_DEVICE dd = { .cb = sizeof(DISPLAY_DEVICE) };
-        const char vidstr[] = "QEMU Bochs";
-        swapCur = (EnumDisplayDevices(NULL, 0, &dd, 0) &&
-            !memcmp(dd.DeviceString, vidstr, strlen(vidstr)))? swapCur:0;
     }
 }
 
