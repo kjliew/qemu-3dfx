@@ -81,6 +81,14 @@ static struct E_PATCH turok_exe[] = {
     PATCH_D(0x0c122, "\xEB\x06"),
     E_PATCH_END()
 };
+static struct E_PATCH pod_d3d[] = {
+    PATCH_D(0xc7a5a, "\x04"),
+    E_PATCH_END()
+};
+static struct E_PATCH pod_3dfx[] = {
+    PATCH_D(0x86347, "\x04"),
+    E_PATCH_END()
+};
 static COMPATFX fxCompatTbl[] = {
     /* Rage Expendable Retailed & G400 EMBM */
     { "go.exe", "330113cfeb00ae4de299f041fb5714ba", HP_ANYO, go_g400_3 },
@@ -112,6 +120,10 @@ static COMPATFX fxCompatTbl[] = {
     { "TurokDemo.exe", "58d26953c755bcc64f330f1a3c0441bd", HP_ANYO, turok_dem },
     /* Turok Dinosaur Hunter USA v1.0 */
     { "Turok.exe", "cba05017b943451e8a7b55f22a3d0de9", HP_ANYO, turok_exe },
+    /* P.O.D 2.0 Gold/MMX - D3D */
+    { "podd3dx.exe", "63313d5b17e048b2fff0dd65e81c22da", HP_ANYO, pod_d3d },
+    /* P.O.D 2.0 Gold/MMX - 3Dfx */
+    { "podx3dfx.exe", "81176f654fca4af5f50b5636b993a953", HP_ANYO, pod_3dfx },
     E_PATCH_END()
 };
    
