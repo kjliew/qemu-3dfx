@@ -59,11 +59,12 @@ static void HookTimeTckRef(struct tckRef **tick)
     static struct tckRef ref;
 
     if (!tick) {
-        DWORD (WINAPI *mmTime)(void) = (DWORD (WINAPI *)(void))
-            GetProcAddress(GetModuleHandle("winmm.dll"), "timeGetTime");
-        LONGLONG mmTick = (mmTime)? mmTime():0;
         QueryPerformanceFrequency(&ref.freq);
-        __atomic_store_n(&ref.run.QuadPart, (((((mmTick * TICK_ACPI) / 1000) >> 24) + 1) << 24), __ATOMIC_RELAXED);
+        if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (ref.freq.QuadPart < TICK_8254)) {
+            LONGLONG mmTick = GetTickCount();
+            __atomic_store_n(&ref.run.QuadPart, ((mmTick * TICK_ACPI) / 1000), __ATOMIC_RELAXED);
+            while (acpi_tick_asm() < (ref.run.u.LowPart & 0x00FFFFFFU));
+        }
     }
     else
         *tick = &ref;
@@ -172,18 +173,14 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWOR
               hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf):0;
         for (int i = 0; i < (range >> 2); i++) {
-            if (hkTime && (hkTime == patch[i])) {
-                HookEntryHook(&patch[i], patch[i]);
-                patch[i] = (uint32_t)&TimeHookProc;
-                hkTime = 0;
-                OHST_DMESG("..hooked %s", funcTime);
-            }
-            if (hkPerf && (hkPerf == patch[i])) {
-                HookEntryHook(&patch[i], patch[i]);
-                patch[i] = (uint32_t)&elapsedTickProc;
-                hkPerf = 0;
-                OHST_DMESG("..hooked %s", funcPerf);
-            }
+#define HOOKPROC(haddr, proc, name) \
+            if (haddr && (haddr == patch[i])) { \
+                HookEntryHook(&patch[i], patch[i]); \
+                patch[i] = (uint32_t)&proc; \
+                haddr = 0; \
+                OHST_DMESG("..hooked %s", name); }
+            HOOKPROC(hkTime, TimeHookProc, funcTime);
+            HOOKPROC(hkPerf, elapsedTickProc, funcPerf);
             if (!hkTime && !hkPerf)
                 break;
         }
