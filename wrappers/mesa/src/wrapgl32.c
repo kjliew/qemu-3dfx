@@ -13,7 +13,9 @@
 #define INLINE inline
 #define PT_CALL __stdcall
 #define COMPACT __attribute__((optimize("Os")))
-#define COMPACT_FRAME COMPACT __attribute__((optimize("-fno-omit-frame-pointer")))
+#define COMPACT_FRAME COMPACT \
+    __attribute__((target("no-sse2"))) \
+    __attribute__((optimize("-fno-omit-frame-pointer")))
 #define LOG_NAME "C:\\WRAPGL32.LOG"
 #define TRACE_PNAME(p) \
     if ((logpname[p>>3] & (1<<(p%8))) == 0) { \

@@ -161,15 +161,21 @@ void HookParseRange(uint32_t *start, uint32_t **iat, uint32_t *eoffs)
         HeapFree(GetProcessHeap(), 0, str); \
     } while(0)
 #endif
-static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWORD range)
+#define FFOP_KERNELTICK 0x0001
+static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
+        const DWORD range, const DWORD dwFFop)
 {
     DWORD oldProt;
     uint32_t addr = start, *patch = (uint32_t *)iat;
-    const char funcTime[] = "timeGetTime", funcPerf[] = "QueryPerformanceCounter";
+    const char funcTime[] = "timeGetTime",
+          funcTick[] = "GetTickCount",
+          funcPerf[] = "QueryPerformanceCounter";
 
     if (addr && (addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
         DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcTime),
+              hkTick = (dwFFop & FFOP_KERNELTICK)?
+                  (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcTick):0,
               hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf):0;
         for (int i = 0; i < (range >> 2); i++) {
@@ -180,8 +186,9 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat, const DWOR
                 haddr = 0; \
                 OHST_DMESG("..hooked %s", name); }
             HOOKPROC(hkTime, TimeHookProc, funcTime);
+            HOOKPROC(hkTick, TimeHookProc, funcTick);
             HOOKPROC(hkPerf, elapsedTickProc, funcPerf);
-            if (!hkTime && !hkPerf)
+            if (!hkTime && !hkTick && !hkPerf)
                 break;
         }
         VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt);
@@ -223,6 +230,7 @@ void HookTimeGetTime(const uint32_t caddr)
 
     GetSystemInfo(&si);
     HookTimeTckRef(0);
+    DWORD dwFFop = 0;
 
     if (len && len < (MAX_PATH - sizeof(dotstr))) {
         strncat(buffer, dotstr, MAX_PATH);
@@ -231,12 +239,15 @@ void HookTimeGetTime(const uint32_t caddr)
             char line[32];
             while(fgets(line, sizeof(line), fp)) {
                 addr = strtoul(line, 0, 16);
-                if (addr) {
+                if (addr > 0x1000) {
                     addr &= ~(si.dwPageSize - 1);
                     patch = (uint32_t *)addr;
-                    HookPatchTimer(addr, patch, si.dwPageSize);
+                    HookPatchTimer(addr, patch, si.dwPageSize, dwFFop);
+                    dwFFop = 0;
                 }
                 else {
+                    if (!memcmp(line, "0xFF,KernelTick", strlen("0xFF,KernelTick")))
+                        dwFFop |= FFOP_KERNELTICK;
                     if (!memcmp(line, "0x0,", strlen("0x0,")) && modList.modName[modList.modNum]) {
                         line[strcspn(line, "\r\n")] = 0;
                         strncpy(modList.modName[modList.modNum], line + strlen("0x0,"), (MAX_PATH / 8));
@@ -245,7 +256,7 @@ void HookTimeGetTime(const uint32_t caddr)
                 }
             }
             fclose(fp);
-            if (modList.modNum == 0) {
+            if (!modList.modNum && !dwFFop) {
                 dolog_compat_patched();
                 return;
             }
@@ -255,11 +266,19 @@ void HookTimeGetTime(const uint32_t caddr)
 
     if (caddr && !IsBadReadPtr((void *)(caddr - 0x06), 0x06)) {
         uint16_t *callOp = (uint16_t *)(caddr - 0x06);
-        if (0x15ff == (*callOp)) {
+        uint8_t *callOp2 = (uint8_t *)(caddr - 0x05);
+        if (0x15ff == (*callOp))
             addr = *(uint32_t *)(caddr - 0x04);
+        if (0xe8 == (*callOp2)) {
+            uint32_t rel = *(uint32_t *)(caddr - 0x04);
+            uint16_t *jmpOp = (uint16_t *)(caddr + rel);
+            if (0x25ff == (*jmpOp))
+                addr = *(uint32_t *)(caddr + rel + 0x02);
+        }
+        if (addr > 0x1000) {
             addr &= ~(si.dwPageSize - 1);
             patch = (uint32_t *)addr;
-            HookPatchTimer(addr, patch, si.dwPageSize);
+            HookPatchTimer(addr, patch, si.dwPageSize, dwFFop);
         }
     }
 #define TICK_HOOK(mod) \
@@ -273,7 +292,7 @@ void HookTimeGetTime(const uint32_t caddr)
     patch = (uint32_t *)(addr & ~(si.dwPageSize - 1)); \
     range = si.dwPageSize; \
     HookParseRange(&addr, &patch, &range); \
-    HookPatchTimer(addr, patch, range - (((uint32_t)patch) & (si.dwPageSize - 1)));
+    HookPatchTimer(addr, patch, range - (((uint32_t)patch) & (si.dwPageSize - 1)), dwFFop);
     for (int i = 0; i <= modList.modNum; i++) {
         TICK_HOOK(modList.modName[i]);
     }
