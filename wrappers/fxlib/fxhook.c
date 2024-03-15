@@ -109,6 +109,11 @@ static DWORD WINAPI TimeHookProc(void)
 #undef TICK_8254
 #undef TICK_ACPI
 
+/* fxtime.c */
+MMRESULT WINAPI HookSetEvent(UINT wDelay, UINT wResol, LPTIMECALLBACK lpFunc, DWORD_PTR dwUser, UINT wFlags);
+MMRESULT WINAPI HookKillEvent(UINT wID);
+DWORD (WINAPI *fxTick)(void) = (DWORD (WINAPI *)(void))&TimeHookProc;
+
 void HookParseRange(uint32_t *start, uint32_t **iat, uint32_t *eoffs)
 {
     const char idata[] = ".idata", rdata[] = ".rdata", dtext[] = ".text";
@@ -162,18 +167,25 @@ void HookParseRange(uint32_t *start, uint32_t **iat, uint32_t *eoffs)
     } while(0)
 #endif
 #define FFOP_KERNELTICK 0x0001
+#define FFOP_TIMEEVENT  0x0002
 static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
         const DWORD range, const DWORD dwFFop)
 {
     DWORD oldProt;
     uint32_t addr = start, *patch = (uint32_t *)iat;
     const char funcTime[] = "timeGetTime",
+          funcEventKill[] = "timeKillEvent",
+          funcEventSet[] = "timeSetEvent",
           funcTick[] = "GetTickCount",
           funcPerf[] = "QueryPerformanceCounter";
 
     if (addr && (addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
         DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcTime),
+              hkEventKill = (dwFFop & FFOP_TIMEEVENT)?
+                  (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcEventKill):0,
+              hkEventSet = (dwFFop & FFOP_TIMEEVENT)?
+                  (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcEventSet):0,
               hkTick = (dwFFop & FFOP_KERNELTICK)?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcTick):0,
               hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))?
@@ -186,10 +198,10 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
                 haddr = 0; \
                 OHST_DMESG("..hooked %s", name); }
             HOOKPROC(hkTime, TimeHookProc, funcTime);
+            HOOKPROC(hkEventKill, HookKillEvent, funcEventKill);
+            HOOKPROC(hkEventSet, HookSetEvent, funcEventSet);
             HOOKPROC(hkTick, TimeHookProc, funcTick);
             HOOKPROC(hkPerf, elapsedTickProc, funcPerf);
-            if (!hkTime && !hkTick && !hkPerf)
-                break;
         }
         VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt);
     }
@@ -248,6 +260,8 @@ void HookTimeGetTime(const uint32_t caddr)
                 else {
                     if (!memcmp(line, "0xFF,KernelTick", strlen("0xFF,KernelTick")))
                         dwFFop |= FFOP_KERNELTICK;
+                    if (!memcmp(line, "0xFF,TimeEvent", strlen("0xFF,TimeEvent")))
+                        dwFFop |= FFOP_TIMEEVENT;
                     if (!memcmp(line, "0x0,", strlen("0x0,")) && modList.modName[modList.modNum]) {
                         line[strcspn(line, "\r\n")] = 0;
                         strncpy(modList.modName[modList.modNum], line + strlen("0x0,"), (MAX_PATH / 8));

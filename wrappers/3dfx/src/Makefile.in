@@ -38,6 +38,7 @@ C_OBJS:=\
     fxhpat.o \
     fxlib9x.o \
     fxlibnt.o \
+    fxtime.o \
     md5.o \
 
 

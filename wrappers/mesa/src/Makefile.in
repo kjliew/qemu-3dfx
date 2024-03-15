@@ -19,6 +19,7 @@ C_OBJS:=\
     fxhpat.o \
     fxlib9x.o \
     fxlibnt.o \
+    fxtime.o \
     md5.o \
 
 
@@ -28,8 +29,8 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@echo "  CFLAGS  $(CFLAGS)"
 	@echo "  LDFLAGS $(LDFLAGS)"
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
-	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/;/CallWndProc/d;s/^mgl/wgl/;s/wgd//" | \
-		sed "s/\ ;\ Check!!!.*//" | \
+	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/;s/^mgl/wgl/;s/wgd//" | \
+		sed "s/\ ;\ Check!!!.*//;/lto_priv/d;/CallWndProc/d" | \
 		grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
