@@ -281,8 +281,7 @@ void HookTimeGetTime(const uint32_t caddr)
     if (caddr && !IsBadReadPtr((void *)(caddr - 0x06), 0x06)) {
         uint16_t *callOp = (uint16_t *)(caddr - 0x06);
         uint8_t *callOp2 = (uint8_t *)(caddr - 0x05);
-        if (0x15ff == (*callOp))
-            addr = *(uint32_t *)(caddr - 0x04);
+        addr = (0x15ff == (*callOp))? *(uint32_t *)(caddr - 0x04):0;
         if (0xe8 == (*callOp2)) {
             uint32_t rel = *(uint32_t *)(caddr - 0x04);
             uint16_t *jmpOp = (uint16_t *)(caddr + rel);
