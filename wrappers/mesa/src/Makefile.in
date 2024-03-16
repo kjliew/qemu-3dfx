@@ -23,7 +23,12 @@ C_OBJS:=\
     md5.o \
 
 
-all: fxlib $(TARGET) $(TOOLS)
+all: fxlib $(TARGET) exports-check $(TOOLS)
+
+exports-check: $(TARGET)
+	@if [ $$(objdump -x $(TARGET) | grep "\[[\ 0-9]*\]" | grep -v "^\[" | \
+		grep -v -e reloc -e Export\ RVA | wc -l) -ne 2976 ]; \
+		then exit 1; fi
 
 $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@echo "  CFLAGS  $(CFLAGS)"

@@ -42,12 +42,21 @@ C_OBJS:=\
     md5.o \
 
 
-all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) fxdrv
+all: fxlib $(TARGET1) $(TARGET2) $(TARGET3) exports-check fxdrv
 
 fxdrv:
 	@make -C ../dxe OUTDIR=$(OUTDIR)
 	@make -C ../ovl OUTDIR=$(OUTDIR)
 	@make -C ../drv OUTDIR=$(OUTDIR) CROSS=$(CROSS)
+
+exports-check: $(TARGET1) $(TARGET2) $(TARGET3)
+	@if [ $$(objdump -x $(TARGET2) | grep "\[[\ 0-9]*\]" | grep -v "^\[" | \
+		grep -v -e reloc -e Export\ RVA | wc -l) -ne 144 ] || \
+	    [ $$(objdump -x $(TARGET1) | grep "\[[\ 0-9]*\]" | grep -v "^\[" | \
+		grep -v -e reloc -e Export\ RVA | wc -l) -ne 131 ] || \
+	    [ $$(objdump -x $(TARGET3) | grep "\[[\ 0-9]*\]" | grep -v "^\[" | \
+		grep -v -e reloc -e Export\ RVA | wc -l) -ne 94 ]; \
+		then exit 1; fi
 
 $(TARGET2): $(C_OBJS) pciNoop.o glidedll.o
 	@echo "  CFLAGS  $(CFLAGS)"

@@ -112,9 +112,6 @@ static DWORD WINAPI TimeHookProc(void)
 #undef TICK_8254
 #undef TICK_ACPI
 
-/* fxtime.c */
-MMRESULT WINAPI HookSetEvent(UINT wDelay, UINT wResol, LPTIMECALLBACK lpFunc, DWORD_PTR dwUser, UINT wFlags);
-MMRESULT WINAPI HookKillEvent(UINT wID);
 DWORD (WINAPI *fxTick)(void) = (DWORD (WINAPI *)(void))&TimeHookProc;
 
 void HookParseRange(uint32_t *start, uint32_t **iat, uint32_t *eoffs)
@@ -193,18 +190,20 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcTick):0,
               hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf):0;
+        EVENTFX timeEvent;
+        fxEventHookPtr(&timeEvent);
         for (int i = 0; i < (range >> 2); i++) {
 #define HOOKPROC(haddr, proc, name) \
             if (haddr && (haddr == patch[i])) { \
                 HookEntryHook(&patch[i], patch[i]); \
-                patch[i] = (uint32_t)&proc; \
+                patch[i] = (uint32_t)proc; \
                 haddr = 0; \
                 OHST_DMESG("..hooked %s", name); }
-            HOOKPROC(hkTime, TimeHookProc, funcTime);
-            HOOKPROC(hkEventKill, HookKillEvent, funcEventKill);
-            HOOKPROC(hkEventSet, HookSetEvent, funcEventSet);
-            HOOKPROC(hkTick, TimeHookProc, funcTick);
-            HOOKPROC(hkPerf, elapsedTickProc, funcPerf);
+            HOOKPROC(hkTime, &TimeHookProc, funcTime);
+            HOOKPROC(hkEventKill, timeEvent.Kill, funcEventKill);
+            HOOKPROC(hkEventSet, timeEvent.Set, funcEventSet);
+            HOOKPROC(hkTick, &TimeHookProc, funcTick);
+            HOOKPROC(hkPerf, &elapsedTickProc, funcPerf);
         }
         VirtualProtect(patch, sizeof(intptr_t), oldProt, &oldProt);
     }

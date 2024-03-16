@@ -19,6 +19,7 @@
  */
 
 #include <windows.h>
+#include "hpat.h"
 
 typedef struct tagWINE_TIMERENTRY {
     UINT                        wDelay;
@@ -152,7 +153,7 @@ static void TIME_MMTimeStart(void)
     SetThreadPriority(TIME_hMMTimer, THREAD_PRIORITY_TIME_CRITICAL);
 }
 
-MMRESULT WINAPI HookSetEvent(UINT wDelay, UINT wResol, LPTIMECALLBACK lpFunc,
+static MMRESULT WINAPI HookSetEvent(UINT wDelay, UINT wResol, LPTIMECALLBACK lpFunc,
                             DWORD_PTR dwUser, UINT wFlags)
 {
     WORD new_id = 0;
@@ -196,7 +197,7 @@ MMRESULT WINAPI HookSetEvent(UINT wDelay, UINT wResol, LPTIMECALLBACK lpFunc,
     return new_id;
 }
 
-MMRESULT WINAPI HookKillEvent(UINT wID)
+static MMRESULT WINAPI HookKillEvent(UINT wID)
 {
     WINE_TIMERENTRY *timer;
     WORD flags;
@@ -232,3 +233,8 @@ MMRESULT WINAPI HookKillEvent(UINT wID)
     return TIMERR_NOERROR;
 }
 
+void fxEventHookPtr(const PEVENTFX e)
+{
+    e->Kill = &HookKillEvent;
+    e->Set = &HookSetEvent;
+}
