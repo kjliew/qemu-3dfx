@@ -17390,7 +17390,8 @@ wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 {
     uint32_t ret, *rsp, *xppfd;
     asm volatile("lea 0x04(%%ebp), %0;":"=rm"(rsp));
-    ret = (rsp[5] == rsp[1])? rsp[4]:((rsp[9] == rsp[1])? rsp[8]:rsp[0]);
+    ret = ((rsp[5] == rsp[1]) && (rsp[6] == rsp[2]))? rsp[4]:
+          ((rsp[9] == rsp[1])? rsp[8]:rsp[0]);
     HookDeviceGammaRamp(ret);
     HookTimeGetTime(ret);
     if (currGLRC) {
