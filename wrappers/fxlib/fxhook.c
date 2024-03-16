@@ -59,11 +59,14 @@ static void HookTimeTckRef(struct tckRef **tick)
     static struct tckRef ref;
 
     if (!tick) {
-        QueryPerformanceFrequency(&ref.freq);
-        if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (ref.freq.QuadPart < TICK_8254)) {
-            LONGLONG mmTick = GetTickCount();
-            __atomic_store_n(&ref.run.QuadPart, ((mmTick * TICK_ACPI) / 1000), __ATOMIC_RELAXED);
-            while (acpi_tick_asm() < (ref.run.u.LowPart & 0x00FFFFFFU));
+        if (!ref.freq.u.LowPart) {
+            QueryPerformanceFrequency(&ref.freq);
+            if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (ref.freq.QuadPart < TICK_8254)) {
+                LONGLONG mmTick = GetTickCount();
+                __atomic_store_n(&ref.run.QuadPart, ((mmTick * TICK_ACPI) / 1000), __ATOMIC_RELAXED);
+                while (acpi_tick_asm() < (ref.run.u.LowPart & 0x00FFFFFFU))
+                    asm volatile("pause\n");
+            }
         }
     }
     else
