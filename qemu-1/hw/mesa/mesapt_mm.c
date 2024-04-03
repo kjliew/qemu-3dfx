@@ -83,6 +83,7 @@ typedef struct MesaPTState
     int BufIdx;
     uint32_t szUsedBuf;
     QEMUTimer *dispTimer;
+    int64_t crashRC;
     PERFSTAT perfs;
 
 } MesaPTState;
@@ -362,11 +363,13 @@ static void dispTimerProc(void *opaque)
     MGLActivateHandler(0, 1);
 }
 
-static void dispTimerSched(QEMUTimer *ts)
+static void dispTimerSched(QEMUTimer *ts, int64_t *crashRC)
 {
     int timer_ms = (ts)? GetDispTimerMS():0;
     if (timer_ms)
         timer_mod(ts, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) + timer_ms);
+    if (crashRC)
+        *crashRC = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
 }
 
 static uint64_t mesapt_read(void *opaque, hwaddr addr, unsigned size)
@@ -1915,7 +1918,7 @@ static void processFRet(MesaPTState *s)
         case FEnum_glFinish:
         case FEnum_glFlush:
             MGLActivateHandler(1, 0);
-            dispTimerSched(s->dispTimer);
+            dispTimerSched(s->dispTimer, &s->crashRC);
             break;
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
@@ -2303,7 +2306,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         DPRINTF("Guest GL Extensions pass-through for Year %s Length %s",
                                 (s->extnYear)? xYear:"ALL", (s->extnLength)? xLen:"ANY");
                         s->dispTimer = (disptmr)? timer_new_ms(QEMU_CLOCK_VIRTUAL, dispTimerProc, s):0;
-                        dispTimerSched(s->dispTimer);
+                        dispTimerSched(s->dispTimer, &s->crashRC);
                     }
                     else {
                         static int lvl_prev;
@@ -2342,7 +2345,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                             "Guest GL Swap limit [ %d FPS ]", GetFpsLimit());
                     swapRet[0] = MGLSwapBuffers()? ((GetFpsLimit() << 1) | 1):0;
                     MGLMouseWarp(swapRet[1]);
-                    dispTimerSched(s->dispTimer);
+                    dispTimerSched(s->dispTimer, &s->crashRC);
                 } while(0);
                 break;
             case 0xFEC:
@@ -2374,17 +2377,15 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 break;
             case 0xFE4:
                 do {
-                    static int64_t pixfmt_ts;
                     int64_t curr_ts = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
                     uint8_t *ppfd = s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE);
                     int pixfmt = *(int *)ppfd;
                     int ptm = *(int *)PTR(ppfd, sizeof(int));
                     s->procRet = MGLSetPixelFormat(pixfmt, PTR(ppfd, ALIGNED(sizeof(int))))?
                         (((uint32_t*)s->fifo_ptr)[1]? MESAGL_MAGIC:0):0;
-                    if ((curr_ts - pixfmt_ts) > MESAGL_CRASH_RC) {
+                    if ((curr_ts - s->crashRC) > MESAGL_CRASH_RC) {
                         uint32_t *fifoptr = (uint32_t *)s->fifo_ptr,
                                  *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
-                        pixfmt_ts = curr_ts;
                         if ((fifoptr[1] & 0xFFFFF000U) != ptm) {
                             DPRINTF("..warped %08x-%08x", fifoptr[1] & 0xFFFFF000U, ptm);
                             fifoptr[1] = (fifoptr[1] & 0xFFFU) | ptm;
@@ -2436,7 +2437,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         DPRINTF_COND((GLFuncTrace()), "ActivateHandler %d", i[0]);
                         MGLActivateHandler(i[0], 0);
                         if (i[0])
-                            dispTimerSched(s->dispTimer);
+                            dispTimerSched(s->dispTimer, &s->crashRC);
                     }
                 } while(0);
                 break;
