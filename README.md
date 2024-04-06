@@ -84,6 +84,7 @@ For $89.99 donation, you will deserve the following donor's privileges:
 - QEMU-enhanced OpenGLide **Host-side wrappers** built for platform of your choice (choose **ONE**: Windows 10/11, Ubuntu, etc.)
 - QEMU-enhanced [**WineD3D libraries for Win98/2K/ME/XP VMs**](https://www.winehq.org) for DirectDraw/Direct3D games up to DirectX 9.0c
 - Game controllers support with [**QEMU USB Gamepad**](https://github.com/kjliew/qemu-3dfx/wiki/QEMU-USB-Gamepad)
+- SDL2 clipboard sharing through built-in [**QEMU vdagent**](https://www.kraxel.org/blog/2021/05/qemu-cut-paste/)
 - OpenGLide **Guest-side wrappers** for Windows
 - Elect up to 5 games for priority support and your name as the honorary sponsor in the supported & tested list of games.
 
