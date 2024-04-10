@@ -19,7 +19,6 @@ struct gl_extensions
    uint32_t ARB_bindless_texture;
    uint32_t ARB_blend_func_extended;
    uint32_t ARB_buffer_storage;
-   uint32_t ARB_clear_texture;
    uint32_t ARB_clip_control;
    uint32_t ARB_color_buffer_float;
    uint32_t ARB_compatibility;
@@ -29,7 +28,6 @@ struct gl_extensions
    uint32_t ARB_conservative_depth;
    uint32_t ARB_copy_image;
    uint32_t ARB_cull_distance;
-   uint32_t EXT_color_buffer_half_float;
    uint32_t ARB_depth_buffer_float;
    uint32_t ARB_depth_clamp;
    uint32_t ARB_derivative_control;
@@ -61,7 +59,6 @@ struct gl_extensions
    uint32_t ARB_occlusion_query;
    uint32_t ARB_occlusion_query2;
    uint32_t ARB_pipeline_statistics_query;
-   uint32_t ARB_point_sprite;
    uint32_t ARB_polygon_offset_clamp;
    uint32_t ARB_post_depth_coverage;
    uint32_t ARB_query_buffer_object;
@@ -127,6 +124,8 @@ struct gl_extensions
    uint32_t ARB_vertex_type_2_10_10_10_rev;
    uint32_t ARB_viewport_array;
    uint32_t EXT_blend_equation_separate;
+   uint32_t EXT_color_buffer_float;
+   uint32_t EXT_color_buffer_half_float;
    uint32_t EXT_demote_to_helper_invocation;
    uint32_t EXT_depth_bounds_test;
    uint32_t EXT_disjoint_timer_query;
@@ -143,7 +142,6 @@ struct gl_extensions
    uint32_t EXT_memory_object_win32;
    uint32_t EXT_multisampled_render_to_texture;
    uint32_t EXT_packed_float;
-   uint32_t EXT_pixel_buffer_object;
    uint32_t EXT_provoking_vertex;
    uint32_t EXT_render_snorm;
    uint32_t EXT_semaphore;
@@ -216,6 +214,7 @@ struct gl_extensions
    uint32_t KHR_texture_compression_astc_ldr;
    uint32_t KHR_texture_compression_astc_sliced_3d;
    uint32_t MESA_framebuffer_flip_y;
+   uint32_t MESA_texture_const_bandwidth;
    uint32_t MESA_pack_invert;
    uint32_t MESA_tile_raster_order;
    uint32_t EXT_shader_framebuffer_fetch;

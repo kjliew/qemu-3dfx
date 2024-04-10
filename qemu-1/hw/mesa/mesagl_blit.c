@@ -18,8 +18,8 @@
  * if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
-#include <stdio.h>
+#include "qemu/osdep.h"
+
 #include "mesagl_impl.h"
 
 int mesa_gui_fullscreen(const void *);
@@ -86,7 +86,7 @@ static unsigned blit_program_setup(void)
         int i = memcmp(PFN_CALL(glGetString(GL_VERSION)), "2.1 Metal",
                 sizeof("2.1 Metal") - 1)? 1:0,
             srclen = ALIGNED((strlen(vert_src[i])+1));
-        char srcbuf[srclen];
+        char *srcbuf = g_new0(char, srclen);
         const char *vert_buf[] = { srcbuf };
         strncpy(srcbuf, vert_src[i], srclen);
         if (blit.flip) {
@@ -96,6 +96,7 @@ static unsigned blit_program_setup(void)
         blit.vert = PFN_CALL(glCreateShader(GL_VERTEX_SHADER));
         PFN_CALL(glShaderSource(blit.vert, 1, vert_buf, 0));
         PFN_CALL(glCompileShader(blit.vert));
+        g_free(srcbuf);
         blit.frag = PFN_CALL(glCreateShader(GL_FRAGMENT_SHADER));
         PFN_CALL(glShaderSource(blit.frag, 1, &frag_src[i], 0));
         PFN_CALL(glCompileShader(blit.frag));
