@@ -16,14 +16,14 @@ diff -Nru ../orig/qemu-6.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
 +
 +    memset(&ram_block, 0, sizeof(RAMBlock));
 +    ram_block.mr = &mr;
-+    ram_block.used_length = HOST_PAGE_ALIGN(size);
-+    ram_block.max_length = HOST_PAGE_ALIGN(size);
++    ram_block.used_length = REAL_HOST_PAGE_ALIGN(size);
++    ram_block.max_length = REAL_HOST_PAGE_ALIGN(size);
 +    ram_block.fd = -1;
 +    ram_block.page_size = getpagesize();
 +    ram_block.host = host_va;
 +    ram_block.flags |= RAM_PREALLOC;
 +
-+    memory_region_init(&mr, NULL, NULL, HOST_PAGE_ALIGN(size));
++    memory_region_init(&mr, NULL, NULL, REAL_HOST_PAGE_ALIGN(size));
 +    mr.ram = true;
 +    mr.ram_block = &ram_block;
 +    mr.readonly = readonly;
@@ -236,14 +236,14 @@ diff -Nru ../orig/qemu-6.2.0/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx
 +
 +    memset(&ram_block, 0, sizeof(RAMBlock));
 +    ram_block.mr = &mr;
-+    ram_block.used_length = HOST_PAGE_ALIGN(size);
-+    ram_block.max_length = HOST_PAGE_ALIGN(size);
++    ram_block.used_length = REAL_HOST_PAGE_ALIGN(size);
++    ram_block.max_length = REAL_HOST_PAGE_ALIGN(size);
 +    ram_block.fd = -1;
 +    ram_block.page_size = getpagesize();
 +    ram_block.host = host_va;
 +    ram_block.flags |= RAM_PREALLOC;
 +
-+    memory_region_init(&mr, NULL, NULL, HOST_PAGE_ALIGN(size));
++    memory_region_init(&mr, NULL, NULL, REAL_HOST_PAGE_ALIGN(size));
 +    mr.ram = true;
 +    mr.ram_block = &ram_block;
 +    mr.readonly = readonly;
