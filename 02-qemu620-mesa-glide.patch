@@ -675,8 +675,8 @@ diff -Nru ../orig/qemu-6.2.0/ui/sdl2.c ./ui/sdl2.c
 +    struct sdl_console_cb *s = &scon_cb;
 +
 +    QemuConsole *con = s->scon ? s->scon->dcl.con : NULL;
-+    QEMUCursor *c = cursor_alloc(width, (height & 1)? (height >> 1):height);
-+    if (con && c) {
++    if (con) {
++        QEMUCursor *c = cursor_alloc(width, (height & 1)? (height >> 1):height);
 +        c->hot_x = hot_x;
 +        c->hot_y = hot_y;
 +        if (height &  1) {
