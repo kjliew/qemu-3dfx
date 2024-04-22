@@ -128,15 +128,24 @@ diff -Nru ../orig/qemu-7.2.9/include/sysemu/whpx.h ./include/sysemu/whpx.h
 diff -Nru ../orig/qemu-7.2.9/include/ui/console.h ./include/ui/console.h
 --- ../orig/qemu-7.2.9/include/ui/console.h
 +++ ./include/ui/console.h
-@@ -445,6 +445,7 @@
+@@ -141,6 +141,8 @@
+     uint32_t  width;
+     uint32_t  height;
+     uint32_t  refresh_rate;
++    /* passthrough */
++    bool passthrough;
+ } QemuUIInfo;
+
+ /* cursor data format is 32bit RGBA */
+@@ -445,6 +447,7 @@
                                 void *opaque);
  void graphic_console_close(QemuConsole *con);
 
-+int graphic_hw_halt(const int);
++void graphic_hw_passthrough(QemuConsole *con, bool passthrough);
  void graphic_hw_update(QemuConsole *con);
  void graphic_hw_update_done(QemuConsole *con);
  void graphic_hw_invalidate(QemuConsole *con);
-@@ -536,4 +537,19 @@
+@@ -536,4 +539,19 @@
                                        size_t size,
                                        Error **errp);
  
@@ -266,25 +275,23 @@ diff -Nru ../orig/qemu-7.2.9/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx
 diff -Nru ../orig/qemu-7.2.9/ui/console.c ./ui/console.c
 --- ../orig/qemu-7.2.9/ui/console.c
 +++ ./ui/console.c
-@@ -212,6 +212,13 @@
+@@ -212,6 +212,11 @@
      ds->have_text = have_text;
  }
 
-+int graphic_hw_halt(const int enable)
++void graphic_hw_passthrough(QemuConsole *con, bool passthrough)
 +{
-+    static int halt_en;
-+    halt_en = (enable & 0x80U)? (enable & 0x01U):halt_en;
-+    return halt_en;
++    con->ui_info.passthrough = passthrough;
 +}
 +
  void graphic_hw_update_done(QemuConsole *con)
  {
      if (con) {
-@@ -227,6 +234,8 @@
+@@ -227,6 +232,8 @@
          return;
      }
      if (con->hw_ops->gfx_update) {
-+        if (graphic_hw_halt(0)) { }
++        if (con->ui_info.passthrough) { }
 +        else
          con->hw_ops->gfx_update(con->hw);
          async = con->hw_ops->gfx_update_async;
@@ -483,7 +490,7 @@ diff -Nru ../orig/qemu-7.2.9/ui/sdl2.c ./ui/sdl2.c
 +    if (s->res > 0)
 +        SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
 +    if (s->opaque || !s->render_pause)
-+        graphic_hw_halt(0x80U | s->render_pause);
++        graphic_hw_passthrough(s->scon->dcl.con, s->render_pause);
 +}
 +
 +static int sdl_gui_fullscreen(int *sizev, const char *feat)

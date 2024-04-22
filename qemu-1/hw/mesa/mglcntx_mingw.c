@@ -799,7 +799,7 @@ void deactivateSched(const int deferred)
 static void deactivateGuiRefOneshot(void *opaque)
 {
     deactivateCancel();
-    graphic_hw_halt(0x81U);
+    graphic_hw_passthrough(qemu_console_lookup_by_index(0), 1);
 }
 void deactivateGuiRefSched(void)
 {
