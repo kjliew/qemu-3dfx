@@ -468,15 +468,19 @@ static int parse_value(const char *str, const char *tok, int *val)
         *val = strtol(str + strlen(tok), 0, 10);
     return ret;
 }
+static int display_device_supported(void)
+{
+    DISPLAY_DEVICE dd = { .cb = sizeof(DISPLAY_DEVICE) };
+    const char vidstr[] = "QEMU Bochs";
+    return (EnumDisplayDevices(NULL, 0, &dd, 0) &&
+        !memcmp(dd.DeviceString, vidstr, strlen(vidstr)))? 1:0;
+}
 static void parse_options(struct mglOptions *opt)
 {
     FILE *f = opt_fopen();
     memset(opt, 0, sizeof(struct mglOptions));
     /* Sync host color cursor only for Bochs SVGA */
-    DISPLAY_DEVICE dd = { .cb = sizeof(DISPLAY_DEVICE) };
-    const char vidstr[] = "QEMU Bochs";
-    swapCur = (EnumDisplayDevices(NULL, 0, &dd, 0) &&
-        !memcmp(dd.DeviceString, vidstr, strlen(vidstr)))? 1:0;
+    swapCur = display_device_supported();
     if (f) {
         char line[MAX_XSTR];
         int i, v;
@@ -16920,7 +16924,7 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
     static HCURSOR last_cur;
     ICONINFO ic;
 
-    if (last_cur == hCursor)
+    if (!swapCur || (last_cur == hCursor))
         return;
 
     BOOL (WINAPI *p_DeleteObject)(HANDLE) = (BOOL (WINAPI *)(HANDLE))
@@ -17284,7 +17288,8 @@ int WINAPI wglSwapBuffers (HDC hdc)
     uint32_t ret, *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
     uint32_t t = GetTickCount();
     CURSORINFO ci = { .cbSize = sizeof(CURSORINFO) };
-    if (((t - timestamp) > (1000/60)) && GetCursorInfo(&ci)) {
+    if (((t - timestamp) >= 16) &&
+            display_device_supported() && GetCursorInfo(&ci)) {
         if (ci.flags != CURSOR_SHOWING)
             memset(&last_pos, 0, sizeof(POINT));
         else {
@@ -17301,8 +17306,7 @@ int WINAPI wglSwapBuffers (HDC hdc)
                 ci.ptScreenPos.y = MulDiv(ci.ptScreenPos.y, GetSystemMetrics(SM_CYSCREEN) - 1,
                         (wr.bottom - wr.top - 1));
                 memcpy(&last_pos, &ci.ptScreenPos, sizeof(POINT));
-                if (swapCur)
-                    wglSetDeviceCursor3DFX(ci.hCursor);
+                wglSetDeviceCursor3DFX(ci.hCursor);
             }
         }
     }
