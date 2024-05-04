@@ -17449,7 +17449,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
     if (osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) {
         DWORD affinityMask[2];
         GetProcessAffinityMask(GetCurrentProcess(), &affinityMask[0], &affinityMask[1]);
-        SetThreadAffinityMask(GetCurrentThread(), (1 << ((GetCurrentThreadId() >> 2) &
+        SetProcessAffinityMask(GetCurrentProcess(), (1 << ((GetCurrentProcessId() >> 2) &
                         ((sizeof(DWORD) << 3) - __builtin_clz(affinityMask[0]) - 1))));
         kmdDrvInit(&drv);
     }
