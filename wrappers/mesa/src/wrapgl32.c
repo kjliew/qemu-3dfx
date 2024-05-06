@@ -17398,6 +17398,8 @@ wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
           ((rsp[9] == rsp[1])? rsp[8]:rsp[0]);
     HookDeviceGammaRamp(ret);
     HookTimeGetTime(ret);
+    if (!hdc && !format)
+        return 0;
     if (currGLRC) {
         mglMakeCurrent(0, 0);
         mglDeleteContext(MESAGL_MAGIC);
