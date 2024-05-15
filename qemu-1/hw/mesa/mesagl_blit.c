@@ -25,7 +25,8 @@
 int mesa_gui_fullscreen(const void *);
 
 static struct {
-    unsigned prog, vert, frag, black, vao, vbo;
+    unsigned vao, vbo;
+    int prog, vert, frag, black;
     int adj, flip;
 } blit;
 static unsigned blit_program_setup(void)
@@ -81,7 +82,7 @@ static unsigned blit_program_setup(void)
         "    fragColor = texture(screen_texture, texcoord);\n"
         "}\n"
     };
-    unsigned prog;
+    int prog;
     if (!blit.prog) {
         int i = memcmp(PFN_CALL(glGetString(GL_VERSION)), "2.1 Metal",
                 sizeof("2.1 Metal") - 1)? 1:0,
@@ -108,7 +109,7 @@ static unsigned blit_program_setup(void)
         PFN_CALL(glLinkProgram(prog));
         blit.prog = prog;
     }
-    PFN_CALL(glGetIntegerv(GL_CURRENT_PROGRAM, (int *)&prog));
+    PFN_CALL(glGetIntegerv(GL_CURRENT_PROGRAM, &prog));
     PFN_CALL(glUseProgram(blit.prog));
     blit.black = PFN_CALL(glGetUniformLocation(blit.prog, "frag_just_black"));
     return prog;
@@ -131,9 +132,9 @@ void MesaBlitFree(void)
     memset(&blit, 0, sizeof(blit));
 }
 struct save_states {
-    unsigned view[4];
-    unsigned texture, texture_binding,
-             vao_binding, vbo_binding, boolean_map;
+    int view[4];
+    int draw_binding, read_binding, texture, texture_binding,
+        vao_binding, vbo_binding, boolean_map;
 };
 struct states_mapping {
     int gl_enum, *iv;
@@ -158,23 +159,17 @@ static int blit_program_buffer(void *save_map, const int size, const void *data)
     MESA_PFN(PFNGLGETINTEGERVPROC,     glGetIntegerv);
     MESA_PFN(PFNGLISENABLEDPROC,       glIsEnabled);
 
-    int view[4];
     struct save_states *last = (struct save_states *)save_map;
 
-    PFN_CALL(glGetIntegerv(GL_VIEWPORT, view));
-    if (view[0] || view[1] ||
-        (!blit.flip && (last->view[0] == view[2])))
-        return 1;
-    memcpy(last->view, view, sizeof(view));
-
     struct states_mapping mapping[] = {
-        { GL_FRAMEBUFFER_BINDING, (int *)&last->view[0] },
-        { GL_READ_FRAMEBUFFER_BINDING, (int *)&last->view[1] },
-        { GL_ACTIVE_TEXTURE, (int *)&last->texture },
-        { GL_TEXTURE_BINDING_2D, (int *)&last->texture_binding },
-        { GL_VERTEX_ARRAY_BINDING, (int *)&last->vao_binding },
-        { GL_ARRAY_BUFFER_BINDING, (int *)&last->vbo_binding },
-        { GL_CONTEXT_PROFILE_MASK, (int *)&last->boolean_map },
+        { GL_VIEWPORT, last->view },
+        { GL_FRAMEBUFFER_BINDING, &last->draw_binding },
+        { GL_READ_FRAMEBUFFER_BINDING, &last->read_binding },
+        { GL_ACTIVE_TEXTURE, &last->texture },
+        { GL_TEXTURE_BINDING_2D, &last->texture_binding },
+        { GL_VERTEX_ARRAY_BINDING, &last->vao_binding },
+        { GL_ARRAY_BUFFER_BINDING, &last->vbo_binding },
+        { GL_CONTEXT_PROFILE_MASK, &last->boolean_map },
         { 0, 0 },
     };
     for (int i = 0; mapping[i].gl_enum; i++)
@@ -195,7 +190,7 @@ static int blit_program_buffer(void *save_map, const int size, const void *data)
         PFN_CALL(glGenBuffers(1, &blit.vbo));
     PFN_CALL(glBindBuffer(GL_ARRAY_BUFFER, blit.vbo));
     PFN_CALL(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
-    return last->view[0];
+    return 0;
 }
 static void blit_restore_savemap(const void *save_map)
 {
@@ -240,7 +235,8 @@ void MesaBlitScale(void)
     }
     blit.flip = ScalerBlitFlip();
 
-    if (DrawableContext() && (fullscreen || blit.flip || (v[3] > (v[1] & 0x7FFFU)))) {
+    if (DrawableContext() && ((!fullscreen && (v[3] > (v[1] & 0x7FFFU)))
+            || RenderScalerOff())) {
         unsigned screen_texture, w = v[0], h = v[1] & 0x7FFFU,
                 last_prog = blit_program_setup();
         int aspect = (v[1] & (1 << 15))? 0:1,
@@ -255,15 +251,15 @@ void MesaBlitScale(void)
             -1, 1, ((1.f * v[2] - v[0]) / v[2])-1, 1,
             -1,-1,  1,-1,  -1,1,  1,1,
         };
-        struct save_states save_map = {
-            .view[0] = v[0], .view[1] = v[1],
-        };
+
+        struct save_states save_map;
+
         if (!blit_program_buffer(&save_map, sizeof(coord), coord)) {
             PFN_CALL(glUniform1i(blit.black, GL_TRUE));
             PFN_CALL(glViewport(0,0,  v[2], v[3]));
             PFN_CALL(glEnableVertexAttribArray(0));
             PFN_CALL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0));
-            if (save_map.view[1] == save_map.view[0]) {
+            if (save_map.read_binding == save_map.draw_binding) {
                 PFN_CALL(glActiveTexture(GL_TEXTURE0));
                 PFN_CALL(glGenTextures(1, &screen_texture));
                 PFN_CALL(glBindTexture(GL_TEXTURE_2D, screen_texture));
@@ -295,7 +291,8 @@ void MesaBlitScale(void)
                         GL_NEAREST));
             }
             PFN_CALL(glDisableVertexAttribArray(0));
-            PFN_CALL(glViewport(0,0, save_map.view[2],save_map.view[3]));
+            PFN_CALL(glViewport(save_map.view[0], save_map.view[1],
+                                save_map.view[2], save_map.view[3]));
             blit_restore_savemap(&save_map);
         }
         PFN_CALL(glUseProgram(last_prog));
@@ -325,8 +322,8 @@ void MesaRenderScaler(const uint32_t FEnum, void *args)
         default:
             return;
     }
-    if (!RenderScalerOff() && !framebuffer_binding
-            && fullscreen && DrawableContext()) {
+    if (DrawableContext() && !framebuffer_binding
+            && fullscreen && !RenderScalerOff()) {
         int offs_x = v[2] - ((1.f * v[0] * v[3]) / (v[1] & 0x7FFFU));
         offs_x >>= 1;
         for (int i = 0; i < 4; i++)
