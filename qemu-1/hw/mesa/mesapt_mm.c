@@ -352,8 +352,7 @@ static void InitClientStates(MesaPTState *s)
     s->pixPackBuf = 0; s->pixUnpackBuf = 0;
     s->szPackWidth = 0; s->szUnpackWidth = 0;
     s->szPackHeight = 0; s->szUnpackHeight = 0;
-    if (s->mglCntxWGL)
-        GLExtUncapped();
+    GLExtUncapped(s->mglCntxWGL);
 }
 
 static void dispTimerProc(void *opaque)

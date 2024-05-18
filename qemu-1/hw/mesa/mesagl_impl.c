@@ -1556,6 +1556,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
 
 static int cfg_xYear;
 static int cfg_xLength;
+static int cfg_xWine;
 static int cfg_vertCacheMB;
 static int cfg_dispTimerMS;
 static int cfg_bufoAccelEN;
@@ -1636,7 +1637,7 @@ void GLRenderScaler(int disable) { cfg_renderScalerOff = disable; }
 void GLContextMSAA(int msaa) { cfg_cntxMSAA = msaa; }
 void GLBlitFlip(int flip) { cfg_blitFlip = flip; }
 void GLDispTimerCfg(int msec) { cfg_dispTimerMS = msec; }
-void GLExtUncapped(void) { cfg_xYear = 0; cfg_xLength = 0; }
+void GLExtUncapped(int xwine) { cfg_xWine = xwine; if (cfg_xWine) { cfg_xYear = 0; cfg_xLength = 0; }}
 int GetGLExtYear(void) { return cfg_xYear; }
 int GetGLExtLength(void) { return cfg_xLength; }
 int GetVertCacheMB(void) { return cfg_vertCacheMB; }
@@ -1646,6 +1647,7 @@ int GetContextMSAA(void) { return (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
 int RenderScalerOff(void) { return cfg_renderScalerOff; }
 int ScalerBlitFlip(void) { return cfg_blitFlip; }
+int ScalerSRGBCorr(void) { return cfg_xWine; }
 int GLShaderDump(void) { return cfg_shaderDump; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GLFifoTrace(void) { return cfg_traceFifo; }

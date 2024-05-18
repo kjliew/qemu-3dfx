@@ -136,6 +136,8 @@ struct save_states {
     int draw_binding, read_binding, texture, texture_binding,
         vao_binding, vbo_binding, boolean_map;
 };
+#define FRAMEBUFFER_SRGB_(s) \
+    (s.boolean_map & 2)
 struct states_mapping {
     int gl_enum, *iv;
 };
@@ -206,6 +208,9 @@ static void blit_restore_savemap(const void *save_map)
     PFN_CALL(glBindBuffer(GL_ARRAY_BUFFER, last->vbo_binding));
 
     for (int i = 0; boolean_states[i]; i++) {
+        if ((boolean_states[i] == GL_FRAMEBUFFER_SRGB)
+                && !(last->read_binding == last->draw_binding))
+            continue;
         if (last->boolean_map & (2 << i))
             PFN_CALL(glEnable(boolean_states[i]));
     }
@@ -219,6 +224,7 @@ void MesaBlitScale(void)
     MESA_PFN(PFNGLDELETETEXTURESPROC,           glDeleteTextures);
     MESA_PFN(PFNGLDISABLEVERTEXATTRIBARRAYPROC, glDisableVertexAttribArray);
     MESA_PFN(PFNGLDRAWARRAYSPROC,               glDrawArrays);
+    MESA_PFN(PFNGLENABLEPROC,                   glEnable);
     MESA_PFN(PFNGLENABLEVERTEXATTRIBARRAYPROC,  glEnableVertexAttribArray);
     MESA_PFN(PFNGLGENTEXTURESPROC,              glGenTextures);
     MESA_PFN(PFNGLTEXPARAMETERIPROC,            glTexParameteri);
@@ -265,7 +271,8 @@ void MesaBlitScale(void)
                 PFN_CALL(glBindTexture(GL_TEXTURE_2D, screen_texture));
                 PFN_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
                 PFN_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-                PFN_CALL(glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0,0, w,h, 0));
+                PFN_CALL(glCopyTexImage2D(GL_TEXTURE_2D, 0, (FRAMEBUFFER_SRGB_(save_map) && ScalerSRGBCorr())?
+                            GL_SRGB:GL_RGBA, 0,0, w,h, 0));
                 if (aspect) {
                     PFN_CALL(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)); /* clear */
                     PFN_CALL(glDrawArrays(GL_TRIANGLE_STRIP, 4, 4)); /* clear */
@@ -278,6 +285,8 @@ void MesaBlitScale(void)
                 PFN_CALL(glBindTexture(GL_TEXTURE_2D, save_map.texture_binding));
             }
             else {
+                if (FRAMEBUFFER_SRGB_(save_map))
+                    PFN_CALL(glEnable(boolean_states[0]));
                 if (aspect) {
                     PFN_CALL(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)); /* clear */
                     PFN_CALL(glDrawArrays(GL_TRIANGLE_STRIP, 4, 4)); /* clear */
