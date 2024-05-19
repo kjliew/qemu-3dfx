@@ -73,16 +73,24 @@ if [ ! -f ../src/Makefile.in ]; then
     exit 1
 fi
 cat ../src/Makefile.in | sed "s/^\(CROSS=\).*/\1$CROSS/" > $MKFILE
+INCLUDES_OVL='-I..\\..\\..\\qemu-0\\hw\\3dfx -I..\\src'
 if [ $CC_CHECK -eq 2 ]; then
+    INCLUDES_OVL='-I../../../qemu-0/hw/3dfx -I../src'
     sed -i -e "s/^\(RC=\)/\1\$(CROSS)/" $MKFILE
     sed -i -e "s/^\(STRIP=\)/\1\$(CROSS)/" $MKFILE
     sed -i -e "s/^\(DLLTOOL=\)/\1\$(CROSS)/" $MKFILE
     sed -i -e "s/^\(TOOLS=\)wglinfo.exe.*/\1/" $MKFILE
     sed -i -e "/.*MSYSTEM\"\ !=\ \"MINGW32\".*/d" $MKFILE
 fi
+
+sed -i -e "s#^\(INCLUDES_OVL=\)#\1${INCLUDES_OVL}#" $MKFILE
+
 if [ -z $(which wcc386 2>/dev/null) ]; then
     echo -- DOS32 OVL not supported --
     sed -i -e "/.*make\ \-C\ .*ovl/d" $MKFILE
+else
+    WATCOM_PATH="$(dirname $(which wcc386))"
+    sed -i -e "s#^\(WATCOM_PATH=\)#\1${WATCOM_PATH}#" $MKFILE
 fi
 if [ -z $(which i686-pc-msdosdjgpp-gcc 2>/dev/null) ]; then
     echo -- DJGPP DXE not supported --
