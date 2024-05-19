@@ -1,0 +1,18 @@
+#!/bin/bash
+cd /root/source
+export PATH=/usr/i686-w64-mingw32/bin/:/usr/local/i686-pc-msdosdjgpp/bin/:/opt/openwatcom/binl64:$PATH
+
+rm -rf wrappers/3dfx/build
+mkdir -p wrappers/3dfx/build
+pushd wrappers/3dfx/build
+bash ../../../scripts/conf_wrapper
+make && make clean
+popd
+
+rm -rf wrappers/mesa/build
+mkdir -p wrappers/mesa/build
+pushd wrappers/mesa/build
+bash ../../../scripts/conf_wrapper
+make && make clean
+popd
+

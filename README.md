@@ -63,6 +63,11 @@ An old-stable version of GCC was cherry-picked to re-target for DJGPP. There wer
     $ bash ../../../scripts/conf_wrapper
     $ make && make clean
 
+Alternatively it is possible to build the guest wrappers on Linux using a docker/podman container.
+<br>
+
+    $ scripts/build_wrapper_container
+
 ## Installing Guest Wrappers
 **For Win9x/ME:**  
  - Copy `FXMEMMAP.VXD` to `C:\WINDOWS\SYSTEM`  

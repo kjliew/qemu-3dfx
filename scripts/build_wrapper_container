@@ -1,0 +1,23 @@
+#!/bin/bash
+
+podman=podman
+volume_opts=":z"
+container_name=qemu-3dfx-build:latest
+basedir="$(dirname $(realpath "$0"))"
+sourcedir="${basedir}/../"
+
+if ! which podman > /dev/null; then
+  if ! which docker > /dev/null; then
+    echo "Neither podman nor docker found, cannot continue"
+    exit 1
+  else
+    podman=docker
+    volume_opts=""
+  fi
+fi
+
+echo "Using ${podman} to build"
+   
+${podman} build "${basedir}/docker" -t "${container_name}"
+${podman} run --rm -v "${sourcedir}:/root/source${volume_opts}" "${container_name}"
+
