@@ -4,12 +4,14 @@ MKFILE=Makefile
 CROSS=
 CC=gcc
 CHECK_DEPS=" \
+    dirname \
+    gendef \
+    git \
     make \
     sed \
-    xxd \
-    gendef \
     shasum \
-    git \
+    uname \
+    xxd \
 " \
 
 CC_CHECK=0
@@ -18,6 +20,12 @@ CHECK_CC=" \
     i686-w64-mingw32-$CC \
 " \
 
+echo -n "checking for which... "
+if [ ! -x /usr/bin/which ]; then
+    echo not found
+    exit 1
+fi
+echo $(which which)
 for i in $CHECK_DEPS; do
     echo -n "checking for $i... "
     if [ -z $(which $i 2>/dev/null) ]; then
