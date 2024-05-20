@@ -1016,7 +1016,7 @@ void PT_CALL guTexDownloadMipMap(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL guTexDownloadMipMapLevel(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     void **src = (void **)arg2;
-    uint8_t pad[ALIGNED(1)];
+    uint8_t pad[ALIGNED(1)] = { 0 };
     uint32_t texBytes  = guTexSize(arg0, arg1);
     if (texBytes) {
         fifoAddData(0, (uint32_t)(*src), texBytes);
