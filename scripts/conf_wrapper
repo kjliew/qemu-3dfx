@@ -7,6 +7,8 @@ CHECK_DEPS=" \
     dirname \
     gendef \
     git \
+    grep \
+    head \
     make \
     sed \
     shasum \
@@ -88,13 +90,21 @@ if [ $CC_CHECK -eq 2 ]; then
     sed -i -e "s/^\(TOOLS=\)wglinfo.exe.*/\1/" $MKFILE
     sed -i -e "/.*MSYSTEM\"\ !=\ \"MINGW32\".*/d" $MKFILE
 fi
-if [ -z $(which wcc386 2>/dev/null) ]; then
-    echo -- DOS32 OVL not supported --
-    sed -i -e "/.*make\ \-C\ .*ovl/d" $MKFILE
-fi
-if [ -z $(which i686-pc-msdosdjgpp-gcc 2>/dev/null) ]; then
+DJGPP_DXE=`which {i586,i686}-pc-msdosdjgpp-gcc 2>/dev/null`
+DXE_X86=`echo $DJGPP_DXE | sed "s/.*bin\///;s/.pc\-msdosdjgpp.*//"`
+if [ -z $DJGPP_DXE ]; then
     echo -- DJGPP DXE not supported --
     sed -i -e "/.*make\ \-C\ .*dxe/d" $MKFILE
+else
+    echo "  DXE "`$DJGPP_DXE -v 2>&1 | grep ^Target`
+    sed -i -e "s/\(dxe\ OUTDIR.*\)/\1\ X86=$DXE_X86/" $MKFILE
+fi
+DOS32_OVL=`which wcc386 2>/dev/null`
+if [ -z $DOS32_OVL ]; then
+    echo -- DOS32 OVL not supported --
+    sed -i -e "/.*make\ \-C\ .*ovl/d" $MKFILE
+else
+    echo "  OVL "`$DOS32_OVL | head -n 1`
 fi
 echo "conf_wrapper: creating $MKFILE"
 
