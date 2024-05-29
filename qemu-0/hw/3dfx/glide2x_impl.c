@@ -867,7 +867,6 @@ int init_glide2x(const char *dllname)
     setConfigRes = (void (*)(const int, void *))GetProcAddress(hDll, "_setConfigRes@8");
 #endif
 #if defined(CONFIG_LINUX) || defined(CONFIG_DARWIN)
-    int enWrap3x = 0;
     const char *soname[] = {
 #ifdef CONFIG_LINUX
         "libglide2x.so",
@@ -879,10 +878,11 @@ int init_glide2x(const char *dllname)
 #error Unknown dynamic load library
 #endif
     };
-    if (!strncmp(dllname, "glide2x.dll", sizeof("glide2x.dll")))
-        enWrap3x = 0;
+    int enWrap3x = 0;
     if (!strncmp(dllname, "glide3x.dll", sizeof("glide3x.dll")))
         enWrap3x = 1;
+    else if (strncmp(dllname, "glide2x.dll", sizeof("glide2x.dll")))
+        return 1;
     hDll = dlopen(soname[enWrap3x], RTLD_NOW);
     if (!hDll) {
         const char *local_lib;
