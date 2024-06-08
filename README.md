@@ -43,16 +43,6 @@ Simple guide to apply the patch:<br>
  - `{i586,i686}-pc-msdosdjgpp` cross toolchain (`binutils, gcc, dxe3gen`) for DJGPP DXE wrappers
 <br>
 
-**GCC Re-Targeting for DJGPP**<br>
-An old-stable version of GCC was cherry-picked to re-target for DJGPP. There were no specific reason and no customization on GCC sources.
-
-    Target: i686-pc-msdosdjgpp
-    Configured with: ../gcc-7.5.0/configure --prefix=/opt/djgpp --target=i686-pc-msdosdjgpp --enable-languages=c,lto,c++ \
-        --enable-lto --enable-graphite --disable-nls --disable-win32-registry --with-arch=i686 --with-tune=generic
-    Thread model: single
-    gcc version 7.5.0 (GCC)
-<br>
-
     $ cd ~/myqemu/qemu-3dfx/wrappers/3dfx
     $ mkdir build && cd build
     $ bash ../../../scripts/conf_wrapper

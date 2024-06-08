@@ -331,6 +331,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         case FEnum_glGetFramebufferAttachmentParameterivEXT:
         case FEnum_glGetTexLevelParameterfv:
         case FEnum_glGetTexLevelParameteriv:
+        case FEnum_glGetTrackMatrixivNV:
         case FEnum_glIndexPointerEXT:
         case FEnum_glLoadProgramNV:
         case FEnum_glNormalPointerEXT:

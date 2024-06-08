@@ -1176,6 +1176,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glGetFramebufferAttachmentParameterivEXT:
         case FEnum_glGetTexLevelParameterfv:
         case FEnum_glGetTexLevelParameteriv:
+        case FEnum_glGetTrackMatrixivNV:
             *(int *)outshm = szglname(s->arg[2]);
             s->parg[3] = VAL(PTR(outshm, ALIGNED(sizeof(uint32_t))));
             break;

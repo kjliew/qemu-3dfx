@@ -5694,8 +5694,11 @@ void PT_CALL glGetTextureSubImage(uint32_t arg0, uint32_t arg1, uint32_t arg2, u
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetTextureSubImage;
 }
 void PT_CALL glGetTrackMatrixivNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    uint32_t n;
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glGetTrackMatrixivNV;
+    fifoOutData(0, (uint32_t)&n, sizeof(uint32_t));
+    fifoOutData(ALIGNED(sizeof(uint32_t)), arg3, n*sizeof(int));
 }
 void PT_CALL glGetTransformFeedbackVarying(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5, uint32_t arg6) {
     uint32_t n, e;
