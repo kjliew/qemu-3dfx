@@ -882,7 +882,7 @@ static void profile_stat(void)
     p->ftime += (curr - p->last) * (1.0f /  NANOSECONDS_PER_SECOND);
     p->last = curr;
 
-    i = (GLFifoTrace() || GLFuncTrace() || GLShaderDump())? 0:((int) p->ftime);
+    i = (GLFifoTrace() || GLFuncTrace() || GLShaderDump() || GLCheckError())? 0:((int) p->ftime);
     if (i && ((i % 5) == 0))
 	profile_dump();
 }

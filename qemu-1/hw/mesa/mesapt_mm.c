@@ -1240,7 +1240,7 @@ static void processArgs(MesaPTState *s)
             break;
         case FEnum_glLoadProgramNV:
         case FEnum_glProgramStringARB:
-            s->datacb = ALIGNED(s->arg[2]);
+            s->datacb = ALIGNED(1) + ALIGNED(s->arg[2]);
             s->parg[3] = VAL(s->hshm);
             if (GLShaderDump()) {
                 DPRINTF("--------- ProgramString %04x ------>>>>", s->arg[1]);

@@ -6815,7 +6815,9 @@ void PT_CALL glLoadName(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glLoadName, 1);
 }
 void PT_CALL glLoadProgramNV(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-    fifoAddData(0, arg3, arg2);
+    const int strz[2] = {0, 0};
+    fifoAddData(0, arg3, ALIGNED(arg2));
+    fifoAddData(0, (uint32_t)strz, ALIGNED(1));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glLoadProgramNV, 4);
 }
@@ -8868,7 +8870,9 @@ void PT_CALL glProgramPathFragmentInputGenNV(uint32_t arg0, uint32_t arg1, uint3
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glProgramPathFragmentInputGenNV;
 }
 void PT_CALL glProgramStringARB(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+    const int strz[2] = {0, 0};
     fifoAddData(0, arg3, ALIGNED(arg2));
+    fifoAddData(0, (uint32_t)strz, ALIGNED(1));
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; pt[4] = arg3; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glProgramStringARB, 4);
 }
