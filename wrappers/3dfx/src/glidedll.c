@@ -15,6 +15,10 @@
 
 #define INLINE inline
 #define PT_CALL __stdcall
+#define COMPACT __attribute__((optimize("Os")))
+#define COMPACT_FRAME COMPACT \
+    __attribute__((target("no-sse2"))) \
+    __attribute__((optimize("-fno-omit-frame-pointer")))
 #define LOG_FNAME "C:\\WRAPFX32.LOG"
 //#define DEBUG_FXSTUB
 
@@ -495,7 +499,8 @@ void PT_CALL grGlideGetVersion(uint32_t arg0) {
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_grGlideGetVersion;
     fifoOutData(0, arg0, sizeof(char[80]));
 }
-void PT_CALL grGlideInit(void) {
+void PT_CALL COMPACT_FRAME
+grGlideInit(void) {
 
     int fd;
     uint32_t len, *ptVer, *rsp, ret;

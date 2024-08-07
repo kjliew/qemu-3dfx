@@ -188,7 +188,8 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
                   (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcEventSet):0,
               hkTick = (dwFFop & FFOP_KERNELTICK)?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcTick):0,
-              hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))?
+              hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0) &&
+                      !(dwFFop & FFOP_KERNELTICK))?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf):0;
         EVENTFX timeEvent;
         fxEventHookPtr(&timeEvent);
