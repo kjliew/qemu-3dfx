@@ -628,7 +628,8 @@ static void processFRet(GlidePTState *s)
             break;
         case FEnum_grSstControl:
         case FEnum_grSstPassthruMode:
-            glide_renderer_stat(s->arg[0] & 0x01U);
+            if (s->disp_cb.activate)
+                glide_renderer_stat(s->arg[0] & 0x01U);
             break;
 	case FEnum_grSstOpen:
             s->disp_cb.arg = s->arg;
