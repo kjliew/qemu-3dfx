@@ -1733,7 +1733,7 @@ int InitMesaGL(void)
     const char dllname[] = "opengl32.dll";
     hDll = LoadLibrary(dllname);
 #elif defined(CONFIG_LINUX)
-    const char dllname[] = "libGL.so";
+    const char dllname[] = "libGL.so.1";
     hDll = dlopen(dllname, RTLD_NOW);
 #elif defined(CONFIG_DARWIN)
 /*
