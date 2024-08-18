@@ -4,6 +4,7 @@
 #include <GL/glext.h>
 #include <GL/wgl.h>
 #ifdef HAVE_XTRA
+#define __MSC__
 #include <sdk2_glide.h>
 /*
 ** grGetString types
