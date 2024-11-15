@@ -13,7 +13,7 @@ KJ Liew \<liewkj@yahoo.com\>
     02-qemu620-mesa-glide.patch - Patch for QEMU version 6.2.0 (MESA & Glide)
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
 Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, Windows 10/11 and modern Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to play them on Windows 10/later or modern Linux/Wine.
-- YouTube channel (https://www.youtube.com/channel/UCl8InhZs1ixZBcLrMDSWd0A/videos)
+- YouTube channel (https://www.youtube.com/@qemu-3dfx/videos)
 - VOGONS forums (https://www.vogons.org)
 - Wiki (https://github.com/kjliew/qemu-3dfx/wiki)
 ## Building QEMU

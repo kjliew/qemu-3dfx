@@ -78,15 +78,18 @@ diff -Nru ../orig/qemu-7.2.9/hw/i386/pc.c ./hw/i386/pc.c
 diff -Nru ../orig/qemu-7.2.9/include/hw/i386/pc.h ./include/hw/i386/pc.h
 --- ../orig/qemu-7.2.9/include/hw/i386/pc.h
 +++ ./include/hw/i386/pc.h
-@@ -181,6 +181,22 @@
+@@ -181,6 +181,25 @@
  
  #define TYPE_PORT92 "port92"
  
-+#if (((QEMU_VERSION_MAJOR << 8) | \
-+      (QEMU_VERSION_MINOR << 4) | \
-+       QEMU_VERSION_MICRO) < 0x510)
++#if (((QEMU_VERSION_MAJOR << 12) | (QEMU_VERSION_MINOR << 8) \
++     | QEMU_VERSION_MICRO) < 0x5100)
 +#define qdev_new(x)         qdev_create(NULL,x)
 +#define sysbus_realize(x,y) qdev_init_nofail((DeviceState *)x)
++#endif
++#if (((QEMU_VERSION_MAJOR << 12) | (QEMU_VERSION_MINOR << 8) \
++     | QEMU_VERSION_MICRO) < 0x9132)
++#define device_class_set_legacy_reset(x,y) x->reset = y
 +#endif
 +/* GLIDE pass-through */
 +#define TYPE_GLIDEPT "glidept"

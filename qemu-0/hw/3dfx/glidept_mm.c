@@ -1179,7 +1179,7 @@ static void glidelfb_class_init(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->realize = glidelfb_realize;
-    dc->reset = glidelfb_reset;
+    device_class_set_legacy_reset(dc, glidelfb_reset);
 }
 
 static void glidept_class_init(ObjectClass *klass, void *data)
@@ -1187,7 +1187,7 @@ static void glidept_class_init(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->realize = glidept_realize;
-    dc->reset = glidept_reset;
+    device_class_set_legacy_reset(dc, glidept_reset);
 }
 
 static const TypeInfo glidelfb_info = {

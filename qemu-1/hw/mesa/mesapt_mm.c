@@ -2497,7 +2497,7 @@ static void mesapt_class_init(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->realize = mesapt_realize;
-    dc->reset = mesapt_reset;
+    device_class_set_legacy_reset(dc, mesapt_reset);
 }
 
 static const TypeInfo mesapt_info = {
