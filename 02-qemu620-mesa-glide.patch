@@ -1,7 +1,7 @@
 diff -Nru ../orig/qemu-6.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
 --- ../orig/qemu-6.2.0/accel/kvm/kvm-all.c
 +++ ./accel/kvm/kvm-all.c
-@@ -1488,6 +1488,41 @@
+@@ -1488,6 +1488,42 @@
      return 0;
  }
 
@@ -38,6 +38,7 @@ diff -Nru ../orig/qemu-6.2.0/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
 +    section.nonvolatile = mr.nonvolatile;
 +
 +    kvm_set_phys_mem(kml, &section, add);
++    object_unref(OBJECT(&mr));
 +}
 +
  static void kvm_region_add(MemoryListener *listener,
@@ -237,7 +238,7 @@ diff -Nru ../orig/qemu-6.2.0/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx
  #include "exec/address-spaces.h"
  #include "exec/ioport.h"
  #include "qemu-common.h"
-@@ -1563,6 +1564,38 @@
+@@ -1563,6 +1564,39 @@
                          memory_region_is_rom(mr), mr->name);
  }
 
@@ -271,6 +272,7 @@ diff -Nru ../orig/qemu-6.2.0/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx
 +    section.nonvolatile = mr.nonvolatile;
 +
 +    whpx_process_section(&section, add);
++    object_unref(OBJECT(&mr));
 +}
 +
  static void whpx_region_add(MemoryListener *listener,
