@@ -21,6 +21,8 @@
 #ifndef MGLCNTX_H
 #define MGLCNTX_H
 
+#include "qemu/atomic.h"
+
 void SetMesaFuncPtr(void *);
 void *MesaGLGetProc(const char *);
 int MGLExtIsAvail(const char *, const char *);

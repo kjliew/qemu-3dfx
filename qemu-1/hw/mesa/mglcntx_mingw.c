@@ -157,7 +157,7 @@ static struct {
     int (WINAPI *GetSwapIntervalEXT)(void);
 } wglFuncs;
 
-int glwnd_ready(void) { return wnd_ready; }
+int glwnd_ready(void) { return qatomic_read(&wnd_ready); }
 
 int MGLExtIsAvail(const char *xstr, const char *str)
 { return find_xstr(xstr, str); }
@@ -183,7 +183,7 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
     ReleaseDC(hwnd, hDC);
     hwnd = (HWND)nwnd;
     hDC = GetDC(hwnd);
-    wnd_ready = 1;
+    qatomic_set(&wnd_ready, 1);
     DPRINTF("MESAGL window [native %p] ready", nwnd);
 }
 
@@ -262,7 +262,7 @@ void MGLTmpContext(void)
 #define GLWINDOW_INIT() \
     if (hDC == 0) { if (0) \
     CreateMesaWindow("MesaGL", 640, 480, 1); \
-    wnd_ready = 0; \
+    qatomic_set(&wnd_ready, 0); \
     ImplMesaGLReset(); \
     mesa_prepare_window(GetContextMSAA(), GLon12, 0, &cwnd_mesagl); hDC = GetDC(hwnd); }
 

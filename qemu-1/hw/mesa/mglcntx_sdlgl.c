@@ -304,7 +304,7 @@ static int wnd_ready;
 static int cAlphaBits, cDepthBits, cStencilBits;
 static int cAuxBuffers, cSampleBuf[2];
 
-int glwnd_ready(void) { return wnd_ready; }
+int glwnd_ready(void) { return qatomic_read(&wnd_ready); }
 
 int MGLExtIsAvail(const char *xstr, const char *str)
 { return find_xstr(xstr, str); }
@@ -333,7 +333,7 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
 #ifdef CONFIG_DARWIN
     ctx[0] = SDL_GL_GetCurrentContext();
 #endif
-    wnd_ready = 1;
+    qatomic_set(&wnd_ready, 1);
     DPRINTF("MESAGL window [SDL2 %p] ready", swnd);
 }
 
@@ -427,7 +427,7 @@ int MGLSwapBuffers(void)
 
 static int MGLPresetPixelFormat(void)
 {
-    wnd_ready = 0;
+    qatomic_set(&wnd_ready, 0);
     ImplMesaGLReset();
     mesa_prepare_window(GetContextMSAA(), GL_CONTEXTALPHA, 0, &cwnd_mesagl);
 

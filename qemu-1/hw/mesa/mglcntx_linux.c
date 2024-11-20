@@ -252,7 +252,7 @@ static struct {
     int (*GetSwapIntervalEXT)(void);
 } xglFuncs;
 
-int glwnd_ready(void) { return wnd_ready; }
+int glwnd_ready(void) { return qatomic_read(&wnd_ready); }
 
 int MGLExtIsAvail(const char *xstr, const char *str)
 { return find_xstr(xstr, str); }
@@ -309,7 +309,7 @@ static void MesaInitGammaRamp(void)
 static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
 {
     win = (Window)nwnd;
-    wnd_ready = 1;
+    qatomic_set(&wnd_ready, 1);
     DPRINTF("MESAGL window [native %p] ready", nwnd);
 }
 
@@ -433,7 +433,7 @@ static int MGLPresetPixelFormat(void)
 {
     const char nvstr[] = "NVIDIA ";
     dpy = XOpenDisplay(NULL);
-    wnd_ready = 0;
+    qatomic_set(&wnd_ready, 0);
     ImplMesaGLReset();
     mesa_prepare_window(GetContextMSAA(), memcmp(xcstr, nvstr, sizeof(nvstr) - 1), 0, &cwnd_mesagl);
 
