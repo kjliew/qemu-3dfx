@@ -383,7 +383,7 @@ static void InitClientStates(void)
         FILE *f = fopen("NUL", "w"); int c = fprintf(f, fmt, ##__VA_ARGS__); fclose(f); \
         char *str = HeapAlloc(GetProcessHeap(), 0, ALIGNED((c+1))); \
         wsprintf(str, fmt, ##__VA_ARGS__); \
-        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW_ARB, -1, (c+1), (uint32_t)str); \
+        glDebugMessageInsertARB(GL_DEBUG_SOURCE_OTHER, GL_DEBUG_TYPE_OTHER, GL_DEBUG_SEVERITY_LOW, -1, (c+1), (uint32_t)str); \
         HeapFree(GetProcessHeap(), 0, str); \
     } while(0)
 
@@ -1379,7 +1379,7 @@ void PT_CALL glClientActiveTexture(uint32_t arg0) {
 void PT_CALL glClientActiveTextureARB(uint32_t arg0) {
     pt[1] = arg0; 
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glClientActiveTextureARB, 1);
-    if ((arg0 & 0xFFE0U) == GL_TEXTURE0_ARB)
+    if ((arg0 & 0xFFE0U) == GL_TEXTURE0)
         vtxArry.texUnit = arg0 & (MAX_TEXUNIT - 1);
 }
 void PT_CALL glClientActiveVertexStreamATI(uint32_t arg0) {
