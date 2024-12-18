@@ -66,7 +66,7 @@ $(TARGET2): $(C_OBJS) pciNoop.o glidedll.o
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
 	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*@[0-9]*\)/_\1\ =\ \1/" | \
 		sed "s/\ ;\ Check!!!.*//" | \
-		grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
+		grep -e ^LIB -e ^EXP -e " = " > $(@:.dll=.def)
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
 	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/^_//" > lib$(@:dll=def)
@@ -80,7 +80,7 @@ $(TARGET1): $(C_OBJS) gl211dll.o
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
 	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*@[0-9]*\)/_\1\ =\ \1/" | \
 		sed "s/\ ;\ Check!!!.*//" | \
-		grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
+		grep -e ^LIB -e ^EXP -e " = " > $(@:.dll=.def)
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
 
@@ -92,7 +92,7 @@ $(TARGET3): $(C_OBJS) gl301dll.o
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
 	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*@[0-9]*\)/_\1\ =\ \1/" | \
 		sed "s/\ ;\ Check!!!.*//" | \
-		grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
+		grep -e ^LIB -e ^EXP -e " = " > $(@:.dll=.def)
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $(@:.dll=_res.o) $+ $(LDFLAGS)
 	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/^_//" > lib$(@:dll=def)

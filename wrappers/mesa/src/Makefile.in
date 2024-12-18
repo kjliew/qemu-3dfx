@@ -36,7 +36,7 @@ $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
 	@$(CC) -shared $(CFLAGS) -o $@ $+ $(LDFLAGS)
 	@$(GENDEF) - $@ | sed "s/\(@[0-9]*\)@.*/\1/;s/\(^.*\)\(@[0-9]*\)/\1\ =\ \1\2/;s/^mgl/wgl/;s/wgd//" | \
 		sed "s/\ ;\ Check!!!.*//;/lto_priv/d;/CallWndProc/d" | \
-		grep -e ^LIB -e ^EXP -e "\ =\ " > $(@:.dll=.def)
+		grep -e ^LIB -e ^EXP -e " = " > $(@:.dll=.def)
 	@echo "  LD  $@"
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 
@@ -65,7 +65,7 @@ clean:
 	@if [ -f $(TARGET) ]; then \
 	    $(STRIP) --strip-unneeded $(TARGET); \
 	    sh -c 'ls -l $(TARGET)'; \
-	    strings $(TARGET) | grep "\ build\ "; fi
+	    strings $(TARGET) | grep " build "; fi
 
 distclean: clean
 	@rm -f $(TARGET) $(TOOLS)
