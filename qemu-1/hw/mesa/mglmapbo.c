@@ -54,7 +54,7 @@ uint32_t AddSyncObj(const uintptr_t sync)
     PSYNCO p = psynco;
 
     if (!sync)
-        return INT32_MAX;
+        return 0;
 
     if (!p) {
         p = g_new0(SYNCO, 1);
@@ -81,13 +81,13 @@ uintptr_t LookupSyncObj(const uint32_t g_sync)
     PSYNCO p = psynco;
 
     if (!p)
-        return (uintptr_t)(INT32_MAX);
+        return INT32_MAX;
 
     while (p->g_sync != g_sync && p->next)
         p = p->next;
 
     if (p->g_sync != g_sync)
-        return (uintptr_t)(INT32_MAX);
+        return INT32_MAX;
 
     return p->sync;
 }
