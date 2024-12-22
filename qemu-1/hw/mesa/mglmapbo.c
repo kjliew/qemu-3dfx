@@ -23,6 +23,7 @@
 #include "mglfuncs.h"
 #include "mglmapbo.h"
 
+#include <nmmintrin.h>
 
 typedef struct _bufobj {
     mapbufo_t bo;
@@ -59,7 +60,7 @@ uint32_t AddSyncObj(const uintptr_t sync)
     if (!p) {
         p = g_new0(SYNCO, 1);
         p->sync = sync;
-        p->g_sync = sync & INT32_MAX;
+        p->g_sync = _mm_crc32_u64(p->g_sync, p->sync);
         psynco = p;
     }
     else {
@@ -69,7 +70,7 @@ uint32_t AddSyncObj(const uintptr_t sync)
             p->next = g_new0(SYNCO, 1);
             p = p->next;
             p->sync = sync;
-            p->g_sync = sync & INT32_MAX;;
+            p->g_sync = _mm_crc32_u64(p->g_sync, p->sync);
 
         }
     }
