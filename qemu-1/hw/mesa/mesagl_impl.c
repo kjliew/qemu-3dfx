@@ -262,7 +262,8 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         uintptr_t (__stdcall *rpfpa0p2a3)(uint32_t, uintptr_t, uintptr_t, uint32_t);
         uintptr_t (__stdcall *rpfpa1)(uint32_t, uint32_t);
         /* int64 func proto */
-        uint32_t (__stdcall *fpa1x2)(uint32_t, uint32_t, uint64_t);
+        uint32_t (__stdcall *fpx2)(uintptr_t);
+        uint32_t (__stdcall *fpa1x2)(uintptr_t, uint32_t, uint64_t);
         /* float func proto */
         uint32_t (__stdcall *fpa0f1)(uint32_t, float);
         uint32_t (__stdcall *fpa0f2)(uint32_t, float, float);
@@ -436,6 +437,7 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
             usfp.rpfpa0 = tblMesaGL[FEnum].ptr;
             *ret = (*usfp.rpfpa0)(arg[0]);
             GLDONE();
+        case FEnum_glFenceSync:
         case FEnum_glGetStringi:
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
@@ -927,13 +929,19 @@ void doMesaFunc(int FEnum, uint32_t *arg, uintptr_t *parg, uintptr_t *ret)
         /* GLFuncs with int64 args */
 #define GLARGSX_N(a,i) \
             memcpy(&a, &arg[i], sizeof(uint64_t))
+        case FEnum_glDeleteSync:
+            {
+                usfp.fpx2 = tblMesaGL[FEnum].ptr;
+                *ret = (*usfp.fpx2)(DeleteSyncObj(LookupSyncObj(arg[0])));
+            }
+            GLDONE();
         case FEnum_glClientWaitSync:
         case FEnum_glWaitSync:
             {
                 uint64_t x2;
                 GLARGSX_N(x2, 2);
                 usfp.fpa1x2 = tblMesaGL[FEnum].ptr;
-                *ret = (*usfp.fpa1x2)(arg[0], arg[1], x2);
+                *ret = (*usfp.fpa1x2)(LookupSyncObj(arg[0]), arg[1], x2);
             }
             GLDONE();
 

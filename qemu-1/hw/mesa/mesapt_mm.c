@@ -1956,6 +1956,9 @@ static void processFRet(MesaPTState *s)
             s->szUnpackHeight = (s->arg[0] == GL_UNPACK_IMAGE_HEIGHT)? s->arg[1]:s->szUnpackHeight;
             //DPRINTF("PixelStorei %x %x", s->arg[0], s->arg[1]);
             break;
+        case FEnum_glFenceSync:
+            s->FRet = AddSyncObj(s->FRet);
+            break;
 #undef MGL_BUFO_TRACE
         case FEnum_glGetBooleanv:
         case FEnum_glGetDoublev:
@@ -2198,6 +2201,7 @@ static void ContextCreateCommon(MesaPTState *s)
     s->fifoMax = 0; s->dataMax = 0;
     s->szUsedBuf = 0;
     InitBufObj();
+    InitSyncObj();
     InitClientStates(s);
     ImplMesaGLReset();
 }

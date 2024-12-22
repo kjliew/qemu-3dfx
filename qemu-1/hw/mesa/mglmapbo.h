@@ -38,5 +38,10 @@ mapbufo_t *LookupBufObj(const int);
 int FreeBufObj(const int);
 int MapBufObjGpa(mapbufo_t *);
 
+void InitSyncObj(void);
+uint32_t AddSyncObj(const uintptr_t);
+uintptr_t LookupSyncObj(const uint32_t);
+uintptr_t DeleteSyncObj(const uintptr_t);
+
 #endif //_MGL_MAPBO_H
 
