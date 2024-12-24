@@ -23,7 +23,13 @@
 #include "mglfuncs.h"
 #include "mglmapbo.h"
 
+#if defined(__x86_64__)
 #include <nmmintrin.h>
+#elif defined(__aarch64__)
+#define _mm_crc32_u64 __builtin_arm_crc32cd
+#else
+#define _mm_crc32_u64(a,b) (b & INT32_MAX)
+#endif
 
 typedef struct _bufobj {
     mapbufo_t bo;
