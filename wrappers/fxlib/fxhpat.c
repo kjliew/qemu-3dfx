@@ -89,6 +89,14 @@ static struct E_PATCH pod_3dfx[] = {
     PATCH_D(0x86347, "\x04"),
     E_PATCH_END()
 };
+static struct E_PATCH matrox_reef_1[] = {
+    PATCH_D(0x03f57, "\xEB"),
+    E_PATCH_END()
+};
+static struct E_PATCH matrox_reef_2[] = {
+    PATCH_D(0x79935, "\x4B"),
+    E_PATCH_END()
+};
 static COMPATFX fxCompatTbl[] = {
     /* Rage Expendable Retailed & G400 EMBM */
     { "go.exe", "330113cfeb00ae4de299f041fb5714ba", HP_ANYO, go_g400_3 },
@@ -124,6 +132,9 @@ static COMPATFX fxCompatTbl[] = {
     { "podd3dx.exe", "63313d5b17e048b2fff0dd65e81c22da", HP_ANYO, pod_d3d },
     /* P.O.D 2.0 Gold/MMX - 3Dfx */
     { "podx3dfx.exe", "81176f654fca4af5f50b5636b993a953", HP_ANYO, pod_3dfx },
+    /* Matrox Reef Demo 1.1 */
+    { "FishDemoClient.exe", "f02a846eeb79b6bf68f48f8746931580", HP_ANYO, matrox_reef_1 },
+    { "FishDemoClient.exe", "016a923e609f837871396888e5a63fb9", HP_ANYO, matrox_reef_2 },
     E_PATCH_END()
 };
    
