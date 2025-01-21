@@ -718,7 +718,7 @@ static void processFRet(GlidePTState *s)
 	    break;
 
         case FEnum_grBufferSwap:
-            s->FRet = glide_fpslimit();
+            s->FRet = (s->arg[0] == 0)? glide_fpslimit():0xFEU;
             break;
 	case FEnum_grLfbLock:
 	    if (s->lfbDev->lock[s->arg[0] & 0x1U] == 1) {

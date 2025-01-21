@@ -1675,13 +1675,11 @@ int ContextUseSRGB(void)
 }
 int SwapFpsLimit(int fps)
 {
-    int ret;
+    int ret = 0;
     if (fps && (fps != cfg_fpsLimit)) {
         cfg_fpsLimit = fps;
         ret = 1;
     }
-    else
-        ret = 0;
     return ret;
 }
 void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = enable; }

@@ -16618,7 +16618,7 @@ static uint32_t PT_CALL wglSwapIntervalEXT (uint32_t arg0)
     parse_options(&cfg);
     WGL_FUNCP("wglSwapIntervalEXT");
     argsp[0] = (cfg.vsyncOff)? 0:arg0;
-    swapFps = (argsp[0] > 0)? 0x7FU:swapFps;
+    swapFps = (argsp[0] == 0)? swapFps:0xFEU;
     ptm[0xFDC >> 2] = MESAGL_MAGIC;
     WGL_FUNCP_RET(ret);
     return ret;
@@ -17323,9 +17323,9 @@ int WINAPI wglSwapBuffers (HDC hdc)
     swapRet[0] = swapFps;
     ptm[0xFF0 >> 2] = MESAGL_MAGIC;
     ret = swapRet[0];
-    if (ret & 0xFEU) {
+    if (ret & 0x1FEU) {
         static uint32_t nexttick;
-        const uint32_t maxFPS = (ret >> 1) & 0x7FU;
+        const uint32_t maxFPS = (ret & 0x1FEU) >> 1;
         while (GetTickCount() < nexttick)
             Sleep(0);
         nexttick = GetTickCount();
