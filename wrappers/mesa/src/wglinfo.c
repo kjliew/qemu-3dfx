@@ -39,6 +39,8 @@ static void MGLTmpContext(char **str, char **wstr)
 
     const char * (WINAPI *wglGetString)(HDC hdc) = (const char * (WINAPI *)(HDC))
         wglGetProcAddress("wglGetExtensionsStringARB");
+    int (WINAPI *wglGetSwapIntervalEXT)(void) = (int (WINAPI *)(void))
+        wglGetProcAddress("wglGetSwapIntervalEXT");
     /*
     BOOL (WINAPI *wglChoosePixelFormatARB)(HDC, const int *, const FLOAT *, UINT, int *, UINT *) =
         (BOOL (WINAPI *)(HDC, const int *, const FLOAT *, UINT, int *, UINT *))
@@ -113,7 +115,7 @@ static void MGLTmpContext(char **str, char **wstr)
     }
 
     wglGetPixelFormatAttribivARB(tmpDC, 1, 0, 1, na, &nPix);
-    printf("Total pixel formats %d\n", nPix);
+    printf("Total pixel formats %d swap interval %d\n", nPix, wglGetSwapIntervalEXT());
     printf("\n"
        "      w b a p n s s o u g o d s t                                                    a     \n"
        "      i m c a s l w v n d g b t y                                ac                  u    n\n"

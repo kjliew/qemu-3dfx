@@ -452,7 +452,7 @@ static void fltrxstr(const char *xstr, size_t len, const char *bless)
 struct mglOptions {
     int bufoAcc;
     int dispTimerMS;
-    int ovrdSync;
+    int swapInt;
     int useMSAA;
     int useSRGB;
     int bltFlip;
@@ -487,8 +487,8 @@ static void parse_options(struct mglOptions *opt)
         while(fgets(line, MAX_XSTR, f)) {
             i = parse_value(line, "DispTimerMS,", &v);
             opt->dispTimerMS = (i == 1)? (0x8000U | (v & 0x7FFFU)):opt->dispTimerMS;
-            i = parse_value(line, "OverrideSync,", &v);
-            opt->ovrdSync = (i == 1)? (v & 0x03U):opt->ovrdSync;
+            i = parse_value(line, "SwapInterval,", &v);
+            opt->swapInt = (i == 1)? (v & 0x03U):opt->swapInt;
             i = parse_value(line, "BufOAccelEN,", &v);
             opt->bufoAcc = ((i == 1) && v)? 1:opt->bufoAcc;
             i = parse_value(line, "ContextMSAA,", &v);
@@ -17188,8 +17188,8 @@ mglMakeCurrent (uint32_t arg0, uint32_t arg1)
             if (wglGetSwapIntervalEXT())
                 wglSwapIntervalEXT(0);
         }
-        else if (cfg.ovrdSync && (cfg.ovrdSync != wglGetSwapIntervalEXT()))
-            wglSwapIntervalEXT(cfg.ovrdSync);
+        else if (cfg.swapInt && (cfg.swapInt != wglGetSwapIntervalEXT()))
+            wglSwapIntervalEXT(cfg.swapInt);
         if (logpname)
             HeapFree(GetProcessHeap(), 0, logpname);
         logpname = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 0x2000);
