@@ -169,7 +169,7 @@ void wrFlushBufObj(uint32_t target, mapbufo_t *bufo)
     if (MGLUpdateGuestBufo(0, 0))
         return;
 
-    if (bufo->hva) {
+    if (bufo->hva && bufo->ocpy) {
         uint32_t szBuf = (bufo->range)? bufo->range:(bufo->mapsz - bufo->offst);
         memcpy((void *)(bufo->hva + bufo->offst), (void *)(bufo->gpa - ALIGNBO(bufo->mapsz) + bufo->offst), szBuf);
     }

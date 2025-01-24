@@ -22,15 +22,9 @@
 #define _MGL_MAPBO_H
 
 typedef struct {
-    int idx;
-    int lvl;
-    uintptr_t hva;
-    uintptr_t gpa;
-    uint32_t mused;
-    uint32_t mapsz;
-    uint32_t offst;
-    uint32_t range;
-    uint32_t acc;
+    int idx, lvl, tgt, ocpy;
+    uintptr_t hva, gpa;
+    uint32_t mused, mapsz, offst, range, acc;
 } mapbufo_t;
 
 void InitBufObj(void);

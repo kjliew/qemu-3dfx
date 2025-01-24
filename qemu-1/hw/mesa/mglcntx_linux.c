@@ -41,7 +41,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 {
-    int ret = GetBufOAccelEN()? kvm_enabled():0;
+    int ret = (GetBufOAccelEN() || (bufo && bufo->tgt == GL_PIXEL_UNPACK_BUFFER))? kvm_enabled():0;
 
     if (ret && bufo) {
         bufo->lvl = (add)? MapBufObjGpa(bufo):0;

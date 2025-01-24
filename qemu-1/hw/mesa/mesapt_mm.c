@@ -1383,6 +1383,7 @@ static void processArgs(MesaPTState *s)
             s->parg[1] = s->arg[1];
             s->parg[2] = s->arg[2];
             s->BufObj = LookupBufObj(s->BufIdx);
+            s->BufObj->tgt = s->arg[0];
             s->BufObj->offst = s->arg[1];
             s->BufObj->range = s->arg[2];
             if (s->FEnum == FEnum_glMapBufferRange) {
@@ -1408,6 +1409,7 @@ static void processArgs(MesaPTState *s)
         case FEnum_glMapBuffer:
         case FEnum_glMapBufferARB:
             s->BufObj = LookupBufObj(s->BufIdx);
+            s->BufObj->tgt = s->arg[0];
             s->BufObj->offst = s->BufObj->range = s->BufObj->acc = 0;
             s->BufObj->acc |= (s->arg[1] == GL_READ_ONLY)? GL_MAP_READ_BIT:0;
             s->BufObj->acc |= (s->arg[1] == GL_WRITE_ONLY)? GL_MAP_WRITE_BIT:0;
@@ -1934,6 +1936,7 @@ static void processFRet(MesaPTState *s)
             if (MGLUpdateGuestBufo(s->BufObj, 1))
                 s->FRet = s->BufObj->gpa;
             else {
+                s->BufObj->ocpy = 1;
                 s->szUsedBuf += ALIGNBO(s->BufObj->mapsz);
                 s->FRet = s->szUsedBuf + 1;
             }
