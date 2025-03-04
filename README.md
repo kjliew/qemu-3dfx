@@ -1,5 +1,5 @@
 # QEMU MESA GL/3Dfx Glide Pass-Through
-Copyright (C) 2018-2022<br>
+Copyright (C) 2018-2025<br>
 KJ Liew \<liewkj@yahoo.com\>
 ## Content
     qemu-0/hw/3dfx      - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
@@ -8,31 +8,31 @@ KJ Liew \<liewkj@yahoo.com\>
     wrappers/3dfx       - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
     wrappers/mesa       - MESA GL wrapper for supported guest OS/environment (Windows)
 ## Patch
-    00-qemu82x-mesa-glide.patch - Patch for QEMU version 8.2.x (MESA & Glide)
-    01-qemu72x-mesa-glide.patch - Patch for QEMU version 7.2.x (MESA & Glide)
-    02-qemu620-mesa-glide.patch - Patch for QEMU version 6.2.0 (MESA & Glide)
+    00-qemu92x-mesa-glide.patch - Patch for QEMU version 9.2.x (MESA & Glide)
+    01-qemu82x-mesa-glide.patch - Patch for QEMU version 8.2.x (MESA & Glide)
+    02-qemu72x-mesa-glide.patch - Patch for QEMU version 7.2.x (MESA & Glide)
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
-Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, Windows 10/11 and modern Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to play them on Windows 10/later or modern Linux/Wine.
+Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, modern Windows and Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to play them on modern Windows or Linux/Wine.
 - YouTube channel (https://www.youtube.com/@qemu-3dfx/videos)
 - VOGONS forums (https://www.vogons.org)
 - Wiki (https://github.com/kjliew/qemu-3dfx/wiki)
 ## Building QEMU
-Following instructions are based on `MSYS2/mingw-w64` BASH shell environment on Windows 10/11. It is meant to be simple and minor variations are inevitable due to different flavors of Linux distributions.
+Following instructions are based on `MSYS2/mingw-w64` BASH shell environment on modern Windows. It is meant to be simple and minor variations are inevitable due to different flavors of Linux distributions.
 
 Simple guide to apply the patch:<br>
-(using `00-qemu82x-mesa-glide.patch`)
+(using `00-qemu92x-mesa-glide.patch`)
 
     $ mkdir ~/myqemu && cd ~/myqemu
     $ git clone https://github.com/kjliew/qemu-3dfx.git
     $ cd qemu-3dfx
-    $ wget https://download.qemu.org/qemu-8.2.1.tar.xz
-    $ tar xf qemu-8.2.1.tar.xz
-    $ cd qemu-8.2.1
+    $ wget https://download.qemu.org/qemu-9.2.2.tar.xz
+    $ tar xf qemu-9.2.2.tar.xz
+    $ cd qemu-9.2.2
     $ rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
-    $ patch -p0 -i ../00-qemu82x-mesa-glide.patch
+    $ patch -p0 -i ../00-qemu92x-mesa-glide.patch
     $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
-    $ ../qemu-8.2.1/configure && make
+    $ ../qemu-9.2.2/configure && make
 
 ## Building Guest Wrappers
 **Requirements:**
@@ -80,8 +80,8 @@ For $89.99 donation, you will deserve the following donor's privileges:
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XE47KTASERX4A)
 ### A Note to Donation
-The purpose of the donation is for preserving retailed CD/DVD games in their originality. It may be used to purchase the game online or from local thrift shops. The donation is **NOT** the ticket for one to learn how to use QEMU Virtual Machine in general. Sometimes, it may be difficult to get virtualization acceleration working and that would result in serious degradation of game experience with QEMU. It is a **willing donation pledge and non-refundable**. Many classic Windows games also have re-releases from GOG/Steam that work on Windows 10/11 and modern Linux. It can be an option to consider before making a donation.
+The purpose of the donation is for preserving retailed CD/DVD games in their originality. It may be used to purchase the game online or from local thrift shops. The donation is **NOT** the ticket for one to learn how to use QEMU Virtual Machine in general. Sometimes, it may be difficult to get virtualization acceleration working and that would result in serious degradation of game experience with QEMU. It is a **willing donation pledge and non-refundable**. Many classic Windows games also have re-releases from GOG/Steam that work on modern Windows and Linux. It can be an option to consider before making a donation.
 
 Donations without leaving notes on **Platform of Choice** are regarded as upper-class donors who have no desire in exercising donor's privileges. A measure to avoid unneccessary spamming on emails. Donors are expected to proactively follow up the communication to exercise donor's privileges as wished. All donations are tracked in PayPal transaction history. Only **"ONE"** platform of choice per donation. Upgrades eligibility are limited to the **SAME** platform of choice.
 ### About Game Election
-The game election serves the purpose of allocating additional focus and resources to make them work. Sometimes, it means considerable efforts in researching, debugging and tracing the games to root cause the failures and come up with solutions. It is **optional** to make game election upon donation. My YouTube channel has video demos of games which already worked and more may be showing up periodically. It is typically a safe assumption that games using the same engine (IdTech1/2/3, LithTech, Unreal etc.) would also work, too. The _N_ counts of eligibility would only be accounted once the game were made to work. If upgrades were neccessary, it would be a **free upgrade** for QEMU binary packages.
+The game election serves the purpose of allocating additional focus and resources to make them work. Sometimes, it means considerable efforts in researching, debugging and tracing the games to root cause the failures and come up with solutions. It is **OPTIONAL** to make game election upon donation. My YouTube channel has video demos of games which already worked and more may be showing up periodically. It is typically a safe assumption that games using the same engine (IdTech1/2/3, LithTech, Unreal etc.) would work, too. The _N_ counts of eligibility would only be accounted once the game were made to work. If upgrades were neccessary, it would be a **FREE upgrade** for QEMU binary packages.
