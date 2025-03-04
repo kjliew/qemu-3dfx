@@ -342,16 +342,17 @@ diff -Nru ../orig/qemu-7.2.9/ui/sdl2.c ./ui/sdl2.c
          win32_kbd_set_grab(gui_grab);
          if (qemu_console_is_graphic(scon->dcl.con)) {
              win32_kbd_set_window(sdl2_win32_get_hwnd(scon));
-@@ -598,7 +622,7 @@
+@@ -598,7 +622,8 @@
          if (qemu_console_is_graphic(scon->dcl.con)) {
              win32_kbd_set_window(NULL);
          }
 -        if (gui_grab && !gui_fullscreen) {
 +        if (!fxui_focus_lost() && gui_grab && !gui_fullscreen) {
++            fxui_grab_val(0x80 | gui_grab);
              sdl_grab_end(scon);
          }
          break;
-@@ -765,6 +789,361 @@
+@@ -765,6 +790,361 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -713,7 +714,7 @@ diff -Nru ../orig/qemu-7.2.9/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -931,6 +1310,7 @@
+@@ -931,6 +1311,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);

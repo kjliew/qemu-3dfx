@@ -137,6 +137,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, pfmsk); \
         if (flags) \
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags); \
+        SDL_SetRelativeMouseMode(SDL_FALSE); \
     } while(0)
 #define GL_CREATECONTEXT(x) \
     do { x = SDL_GL_CreateContext(window); } while(0)
