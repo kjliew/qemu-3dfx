@@ -18,6 +18,9 @@
 
 static void MGLTmpContext(char **str, char **wstr)
 {
+#define  FATAL(s) \
+    do { fprintf(stderr, "%s failed\n", s); \
+        *str = NULL; *wstr = NULL; return; } while(0)
     HWND tmpWin = CreateWindow("STATIC", "dummy",
         WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
         0, 0, 640, 480, NULL, NULL, NULL, NULL);
@@ -33,9 +36,13 @@ static void MGLTmpContext(char **str, char **wstr)
     pfd.cDepthBits = 24;
     pfd.cAlphaBits = 8;
     pfd.cStencilBits = 8;
-    SetPixelFormat(tmpDC, ChoosePixelFormat(tmpDC, &pfd), &pfd);
-    HGLRC tmpGL = wglCreateContext(tmpDC);
-    wglMakeCurrent(tmpDC, tmpGL);
+    HGLRC tmpGL;
+    if (SetPixelFormat(tmpDC, ChoosePixelFormat(tmpDC, &pfd), &pfd)) {
+        tmpGL = wglCreateContext(tmpDC);
+        wglMakeCurrent(tmpDC, tmpGL);
+    }
+    else
+        FATAL("SetPixelFormat()");
 
     const char * (WINAPI *wglGetString)(HDC hdc) = (const char * (WINAPI *)(HDC))
         wglGetProcAddress("wglGetExtensionsStringARB");
@@ -114,6 +121,8 @@ static void MGLTmpContext(char **str, char **wstr)
         }
     }
 
+    if (!wglGetPixelFormatAttribivARB)
+        FATAL("wglGetPixelFormatAttribivARB()");
     wglGetPixelFormatAttribivARB(tmpDC, 1, 0, 1, na, &nPix);
     printf("Total pixel formats %d swap interval %d\n", nPix, wglGetSwapIntervalEXT());
     printf("\n"
@@ -235,8 +244,8 @@ int main()
         printf("%s [ %d ]\n%s [ %d ]\n", str, 1 + strlen(str), wstr, 1 + strlen(wstr));
         HeapFree(GetProcessHeap(), 0, str);
         HeapFree(GetProcessHeap(), 0, wstr);
+        fxprobe();
     }
-    fxprobe();
     return 0;
 }
 
