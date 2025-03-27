@@ -48,16 +48,21 @@ diff -Nru ../orig/qemu-9.2.2/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
 diff -Nru ../orig/qemu-9.2.2/hw/i386/pc.c ./hw/i386/pc.c
 --- ../orig/qemu-9.2.2/hw/i386/pc.c
 +++ ./hw/i386/pc.c
-@@ -1236,6 +1236,28 @@
-     /* Super I/O */
-     pc_superio_init(isa_bus, create_fdctrl, pcms->i8042_enabled,
-                     pcms->vmport != ON_OFF_AUTO_ON, &error_fatal);
+@@ -1233,6 +1233,10 @@
+             ? ON_OFF_AUTO_OFF : ON_OFF_AUTO_ON;
+     }
+
 +    /* Glide pass-through */
 +    glidept_mm_init();
 +    /* MESA pass-through */
 +    mesapt_mm_init();
-+}
-+
+     /* Super I/O */
+     pc_superio_init(isa_bus, create_fdctrl, pcms->i8042_enabled,
+                     pcms->vmport != ON_OFF_AUTO_ON, &error_fatal);
+@@ -1261,6 +1265,23 @@
+     rom_reset_order_override();
+ }
+
 +void glidept_mm_init(void)
 +{
 +    DeviceState *glidept_dev = NULL;
@@ -66,7 +71,6 @@ diff -Nru ../orig/qemu-9.2.2/hw/i386/pc.c ./hw/i386/pc.c
 +    sysbus_realize(SYS_BUS_DEVICE(glidept_dev), &error_fatal);
 +    sysbus_mmio_map(SYS_BUS_DEVICE(glidept_dev), 0, GLIDEPT_MM_BASE);
 +}
-+
 +void mesapt_mm_init(void)
 +{
 +    DeviceState *mesapt_dev = NULL;
@@ -74,9 +78,11 @@ diff -Nru ../orig/qemu-9.2.2/hw/i386/pc.c ./hw/i386/pc.c
 +    mesapt_dev = qdev_new(TYPE_MESAPT);
 +    sysbus_realize(SYS_BUS_DEVICE(mesapt_dev), &error_fatal);
 +    sysbus_mmio_map(SYS_BUS_DEVICE(mesapt_dev), 0, MESAPT_MM_BASE);
- }
- 
- void pc_nic_init(PCMachineClass *pcmc, ISABus *isa_bus, PCIBus *pci_bus)
++}
++
+ void pc_i8259_create(ISABus *isa_bus, qemu_irq *i8259_irqs)
+ {
+     qemu_irq *i8259;
 diff -Nru ../orig/qemu-9.2.2/include/hw/i386/pc.h ./include/hw/i386/pc.h
 --- ../orig/qemu-9.2.2/include/hw/i386/pc.h
 +++ ./include/hw/i386/pc.h
