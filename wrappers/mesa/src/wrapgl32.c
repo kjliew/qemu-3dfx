@@ -17291,30 +17291,25 @@ uint32_t PT_CALL mglUseFontOutlinesW(uint32_t arg0, uint32_t arg1, uint32_t arg2
 int WINAPI wglSwapBuffers (HDC hdc)
 {
     static POINT last_pos;
-    static uint32_t timestamp;
+    static DWORD timestamp;
     uint32_t ret, *swapRet = &mfifo[(MGLSHM_SIZE - ALIGNED(1)) >> 2];
-    uint32_t t = GetTickCount();
+    DWORD t = GetTickCount();
     CURSORINFO ci = { .cbSize = sizeof(CURSORINFO) };
     if (((t - timestamp) >= 16) &&
             display_device_supported() && GetCursorInfo(&ci)) {
         if (ci.flags != CURSOR_SHOWING)
             memset(&last_pos, 0, sizeof(POINT));
         else {
-            RECT wr, cr;
+            RECT cr;
             timestamp = t;
-            GetWindowRect(WindowFromDC(hdc), &wr);
             GetClientRect(WindowFromDC(hdc), &cr);
-            int top = (wr.bottom - wr.top) - cr.bottom;
-            ci.ptScreenPos.y = (ci.ptScreenPos.y > top)? (ci.ptScreenPos.y - top):0;
-            if ((ci.ptScreenPos.x < (wr.right - wr.left)) ||
-                (ci.ptScreenPos.y < (wr.bottom - wr.top))) {
-                ci.ptScreenPos.x = MulDiv(ci.ptScreenPos.x, GetSystemMetrics(SM_CXSCREEN) - 1,
-                        (wr.right - wr.left - 1));
-                ci.ptScreenPos.y = MulDiv(ci.ptScreenPos.y, GetSystemMetrics(SM_CYSCREEN) - 1,
-                        (wr.bottom - wr.top - 1));
-                memcpy(&last_pos, &ci.ptScreenPos, sizeof(POINT));
-                wglSetDeviceCursor3DFX(ci.hCursor);
-            }
+            ScreenToClient(WindowFromDC(hdc), &ci.ptScreenPos);
+            ci.ptScreenPos.x = MulDiv(ci.ptScreenPos.x, GetSystemMetrics(SM_CXSCREEN) - 1,
+                    (cr.right - cr.left - 1));
+            ci.ptScreenPos.y = MulDiv(ci.ptScreenPos.y, GetSystemMetrics(SM_CYSCREEN) - 1,
+                    (cr.bottom - cr.top - 1));
+            memcpy(&last_pos, &ci.ptScreenPos, sizeof(POINT));
+            wglSetDeviceCursor3DFX(ci.hCursor);
         }
     }
 #define CURSOR_DWORD(d,p) \
