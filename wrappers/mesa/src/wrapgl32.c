@@ -17304,6 +17304,8 @@ int WINAPI wglSwapBuffers (HDC hdc)
             timestamp = t;
             GetClientRect(WindowFromDC(hdc), &cr);
             ScreenToClient(WindowFromDC(hdc), &ci.ptScreenPos);
+            ci.ptScreenPos.x = max(0, ci.ptScreenPos.x);
+            ci.ptScreenPos.y = max(0, ci.ptScreenPos.y);
             ci.ptScreenPos.x = MulDiv(ci.ptScreenPos.x, GetSystemMetrics(SM_CXSCREEN) - 1,
                     (cr.right - cr.left - 1));
             ci.ptScreenPos.y = MulDiv(ci.ptScreenPos.y, GetSystemMetrics(SM_CYSCREEN) - 1,
