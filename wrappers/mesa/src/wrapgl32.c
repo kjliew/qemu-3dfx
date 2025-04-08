@@ -17301,15 +17301,22 @@ int WINAPI wglSwapBuffers (HDC hdc)
             memset(&last_pos, 0, sizeof(POINT));
         else {
             RECT cr;
+            LONG x_adj = ci.ptScreenPos.x, y_adj = ci.ptScreenPos.y;
             timestamp = t;
             GetClientRect(WindowFromDC(hdc), &cr);
             ScreenToClient(WindowFromDC(hdc), &ci.ptScreenPos);
             ci.ptScreenPos.x = max(0, ci.ptScreenPos.x);
             ci.ptScreenPos.y = max(0, ci.ptScreenPos.y);
+            x_adj -= ci.ptScreenPos.x;
+            x_adj = max(0, x_adj);
+            ci.ptScreenPos.x += x_adj;
+            y_adj -= ci.ptScreenPos.y;
+            y_adj = max(0, y_adj);
+            ci.ptScreenPos.y += y_adj;
             ci.ptScreenPos.x = MulDiv(ci.ptScreenPos.x, GetSystemMetrics(SM_CXSCREEN) - 1,
-                    (cr.right - cr.left - 1));
+                    (cr.right - cr.left + x_adj + x_adj - 1));
             ci.ptScreenPos.y = MulDiv(ci.ptScreenPos.y, GetSystemMetrics(SM_CYSCREEN) - 1,
-                    (cr.bottom - cr.top - 1));
+                    (cr.bottom - cr.top + x_adj + y_adj - 1));
             memcpy(&last_pos, &ci.ptScreenPos, sizeof(POINT));
             wglSetDeviceCursor3DFX(ci.hCursor);
         }
