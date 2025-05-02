@@ -49,9 +49,10 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #define GL_DELETECONTEXT(x)
 #define GL_CONTEXTATTRIB(x)
 #define GL_CREATECONTEXT(x)
-#endif
+#endif /* CONFIG_DARWIN */
 #ifdef CONFIG_LINUX
 #include <GL/glx.h>
+#include <linux/version.h>
 #include "sysemu/kvm.h"
 
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
@@ -141,7 +142,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
     } while(0)
 #define GL_CREATECONTEXT(x) \
     do { x = SDL_GL_CreateContext(window); } while(0)
-#endif
+#endif /* CONFIG_LINUX */
 #else
 #define MESAGL_SDLGL 0
 #endif
