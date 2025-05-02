@@ -144,7 +144,7 @@ static void TIME_MMTimeStart(void)
     if (TIME_hMMTimer) return;
 
     DWORD thread_id;
-    BOOL (WINAPI *p_getModuleHandleExA)(DWORD, LPCSTR, HMODULE *) =
+    BOOL (WINAPI *p_getModuleHandleExA)(DWORD, LPCSTR, HMODULE *) = (BOOL (WINAPI *)(DWORD, LPCSTR, HMODULE *))
         GetProcAddress(GetModuleHandle("kernel32.dll"), "GetModuleHandleExA");
     mod = NULL;
     if (p_getModuleHandleExA)
