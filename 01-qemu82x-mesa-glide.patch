@@ -360,14 +360,18 @@ diff -Nru ../orig/qemu-8.2.1/ui/sdl2.c ./ui/sdl2.c
              sdl_grab_end(scon);
          }
          break;
-@@ -794,6 +820,361 @@
+@@ -794,6 +820,362 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
 +static void sdl_display_valid(const char *feat)
 +{
 +    if (!sdl2_console) {
-+        error_report("%s: invalid sdl display. Use -display sdl", feat);
++        error_report("%s: invalid sdl display. Use '-display sdl'", feat);
++        exit(1);
++    }
++    if (sdl2_console[0].opengl) {
++        error_report("%s: qemu-3dfx activation conflicts with display 'sdl,gl=on'", feat);
 +        exit(1);
 +    }
 +}
@@ -409,11 +413,9 @@ diff -Nru ../orig/qemu-8.2.1/ui/sdl2.c ./ui/sdl2.c
 +        else {
 +            if (!s->scon->real_renderer)
 +                s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
-+            if (!s->scon->opengl) {
-+                sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
-+                if (!gui_fullscreen)
-+                    SDL_SetWindowPosition(s->scon->real_window, s->scon->x, s->scon->y);
-+            }
++            sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++            if (!gui_fullscreen)
++                SDL_SetWindowPosition(s->scon->real_window, s->scon->x, s->scon->y);
 +        }
 +    }
 +    else if (s->gui_saved_res) {
@@ -490,8 +492,7 @@ diff -Nru ../orig/qemu-8.2.1/ui/sdl2.c ./ui/sdl2.c
 +            if (!s->scon->real_renderer)
 +                s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
 +        }
-+        if (!s->scon->opengl)
-+            sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++        sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
 +        timer_del(s->ts);
 +        timer_free(s->ts);
 +        s->ts = 0;
@@ -722,17 +723,18 @@ diff -Nru ../orig/qemu-8.2.1/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -854,6 +1235,9 @@
+@@ -854,6 +1236,10 @@
 
      assert(o->type == DISPLAY_TYPE_SDL);
 
 +#ifdef __linux__
-+    SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11");
++    if (!g_getenv("SDL_VIDEODRIVER"))
++        SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11");
 +#endif
      if (SDL_GetHintBoolean("QEMU_ENABLE_SDL_LOGGING", SDL_FALSE)) {
          SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
      }
-@@ -948,6 +1332,7 @@
+@@ -948,6 +1334,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
