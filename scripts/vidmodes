@@ -1,0 +1,74 @@
+#!/bin/sh
+
+DEPS=" \
+    sdl2-config \
+" \
+
+for i in $DEPS; do
+    printf %s "checking for $i... "
+    if [ -z $(which $i 2>/dev/null) ]; then
+        echo not found
+        exit 1
+    fi
+    echo $(which $i)
+done
+echo "SDL2 version" `sdl2-config --version`
+cat >/tmp/res.c <<EOF
+#include <stdio.h>
+#include "SDL.h"
+
+static void sdl2_display_reslist(void)
+{           
+    SDL_DisplayMode dtMode, *dt = &dtMode;
+    int displayIndex = 0, numModes;
+    SDL_GetDesktopDisplayMode(displayIndex, dt);
+    fprintf(stderr, "%4d %-4d (%s)\n", dt->w, dt->h,"desktop");
+    numModes = SDL_GetNumDisplayModes(displayIndex);
+    if (numModes > 1) {
+        SDL_DisplayMode mode;
+        int width = 0, height = 0;
+        for (int i = 0; !SDL_GetDisplayMode(displayIndex, i, &mode); i++) {
+            if (width == mode.w && height == mode.h)
+                continue;
+            if (i && (mode.w > dt->w || mode.h > dt->h))
+                continue;
+            if (mode.w < 640 || mode.h < 480)
+                continue;
+            if ((mode.w < 1280) && ((4.0f/3) != ((1.0f*mode.w)/mode.h)))
+                continue;
+            if (mode.w % sizeof(uint64_t))
+                continue;
+            if (170 == (mode.w / sizeof(uint64_t)))
+                mode.w += 8;
+#define RES(w,h) ((w<<16) | h)                
+#define RESLIST_ADD(a,b) if (a) { fprintf(stderr, "\e[35m%4d %-4d aspect %.6f\n\e[0m", (b>>16), (b&0xFFFFU), 1.f*(b>>16)/(b&0xFFFFU)); }
+        RESLIST_ADD((mode.w == 1920 && mode.h == 1080 && width >= 2560), RES(1920,1440));
+        RESLIST_ADD((mode.w == 1600 && mode.h == 900 && width >= 1680), RES(1600,1200));
+        RESLIST_ADD((mode.w == 1352 && width == 1512 && dt->h >= 960), RES(1440,900));
+        RESLIST_ADD((mode.w == 1280 && mode.h == 800 && width > 1440), RES(1440,900));
+        RESLIST_ADD((mode.w == 1280 && mode.h == 720 && width > 1280), RES(1280,800));
+        RESLIST_ADD((mode.w == 1152 && mode.h == 864 && dt->h >= 960), RES(1200,900));
+        RESLIST_ADD((mode.w == 1024 && width == 1280 && dt->h >= 960), RES(1200,900));
+        RESLIST_ADD((mode.w == 1024 && width == 1280 && dt->h >= 960), RES(1152,864));
+            width = mode.w; height = mode.h;
+            fprintf(stderr, "%4d %-4d aspect %.6f\n", width, height, 1.f*width/height);
+        }
+        RESLIST_ADD((width > 1200 && dt->h >= 960), RES(1200,900));
+        RESLIST_ADD((width > 1152 && dt->h >= 960), RES(1152,864));
+        RESLIST_ADD((width > 1024), RES(1024,768));
+        RESLIST_ADD((width > 800), RES(800,600));
+        RESLIST_ADD((width > 640), RES(640,480));
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    if (SDL_Init(SDL_INIT_VIDEO))
+        exit(1);
+    sdl2_display_reslist();
+    return 0;
+}
+EOF
+cc `sdl2-config --cflags` -o /tmp/vidres /tmp/res.c  `sdl2-config --libs` && \
+  /tmp/vidres && \
+  rm -f /tmp/vidres /tmp/res.c
