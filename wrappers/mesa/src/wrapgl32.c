@@ -460,7 +460,7 @@ struct mglOptions {
     int vsyncOff;
     int xstrYear;
 };
-static int swapCur, swapFps;
+static int swapCur, swapFps, texClampFix;
 static int parse_value(const char *str, const char *tok, int *val)
 {
     int ret = (memcmp(str, tok, strlen(tok)))? 0:1;
@@ -503,6 +503,8 @@ static void parse_options(struct mglOptions *opt)
             opt->vsyncOff = ((i == 1) && v)? 1:opt->vsyncOff;
             i = parse_value(line, "ExtensionsYear,", &v);
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
+            i = parse_value(line, "ConformantTexClampOff,", &v);
+            texClampFix = ((i == 1) && v)? 1:texClampFix;
             i = parse_value(line, "CursorSyncOff,", &v);
             swapCur = ((i == 1) && v)? 0:swapCur;
             i = parse_value(line, "FpsLimit,", &v);
@@ -11041,7 +11043,9 @@ void PT_CALL glTexParameterIuivEXT(uint32_t arg0, uint32_t arg1, uint32_t arg2) 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_glTexParameterIuivEXT;
 }
 void PT_CALL glTexParameterf(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
+    float *f = (float *)&pt[3];
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
+    if (texClampFix && GL_CLAMP == *f) *f = GL_CLAMP_TO_EDGE;
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glTexParameterf, 3);
 }
 void PT_CALL glTexParameterfv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
@@ -11051,6 +11055,7 @@ void PT_CALL glTexParameterfv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 }
 void PT_CALL glTexParameteri(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
     pt[1] = arg0; pt[2] = arg1; pt[3] = arg2; 
+    if (texClampFix && GL_CLAMP == pt[3]) pt[3] = GL_CLAMP_TO_EDGE;
     pt0 = (uint32_t *)pt[0]; FIFO_GLFUNC(FEnum_glTexParameteri, 3);
 }
 void PT_CALL glTexParameteriv(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
