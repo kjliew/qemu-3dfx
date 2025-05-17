@@ -16968,12 +16968,16 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
             ReleaseDC(GLwnd, hdc);
             if (pbmi->bmiHeader.biBitCount == 1)
                 argsp[3] |= 1;
-            if (pbmi->bmiHeader.biBitCount > 16)
+            if (pbmi->bmiHeader.biBitCount > 16) {
+                int h, i;
 #define ALPHA_MASK 0xFF000000U
+                for (h = 0; h < (pbmi->bmiHeader.biSizeImage >> 2); h++)
+                    if (data[h] & ALPHA_MASK) break;
 #define COLOR_MASK 0x00FFFFFFU
-                for (int i = 0; i < (pbmi->bmiHeader.biSizeImage >> 2); i++)
+                for (i = 0; h == (pbmi->bmiHeader.biSizeImage >> 2) && i < h; i++)
                     data[i] = (data[i] && (data[i] ^ COLOR_MASK))?
                         (data[i] | ALPHA_MASK):COLOR_MASK;
+            }
             ptm[0xFDC >> 2] = MESAGL_MAGIC;
             last_cur = hCursor;
         }
