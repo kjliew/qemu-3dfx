@@ -411,11 +411,11 @@ int MGLSetPixelFormat(int fmt, const void *p)
     if (curr == 0) {
         curr = MGLPresetPixelFormat();
         ret = SetPixelFormat(hDC, curr, (ppfd->nSize)? ppfd:0);
+        DPRINTF("  *WARN* UNLIKELY() SetPixelFormat, %d %d", curr, ret);
     }
-    else {
+    else
         ret = 1;
-        TmpContextPurge();
-    }
+    TmpContextPurge();
 
     if (wglFuncs.GetPixelFormatAttribivARB) {
         static const int iattr[] = {

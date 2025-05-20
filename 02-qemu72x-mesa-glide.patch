@@ -465,9 +465,9 @@ diff -Nru ../orig/qemu-7.2.9/ui/sdl2.c ./ui/sdl2.c
 +        s->render_pause = 1;
 +        if (!s->opaque)
 +            s->cwnd_fn(s->scon->real_window, s->hnwnd, opaque);
++        SDL_GL_MakeCurrent(s->scon->real_window, NULL);
 +    }
 +    else {
-+        SDL_GL_MakeCurrent(s->scon->real_window, NULL);
 +        SDL_GL_DeleteContext(s->scon->winctx);
 +        s->scon->winctx = 0;
 +        s->render_pause = 0;

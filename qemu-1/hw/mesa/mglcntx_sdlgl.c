@@ -391,7 +391,7 @@ int MGLCreateContext(uint32_t gDC)
     }
     else {
         SDL_GL_MakeCurrent(window, NULL);
-        for (i = MAX_LVLCNTX; i > 1;) {
+        for (i = MAX_LVLCNTX; i > 0;) {
             if (ctx[--i]) {
                 GL_DELETECONTEXT(ctx[i]);
             }
