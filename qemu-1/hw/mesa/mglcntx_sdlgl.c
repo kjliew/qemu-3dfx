@@ -330,7 +330,8 @@ static void MesaInitGammaRamp(void)
         ramp.g[i] = (uint16_t)(((i << 8) | i) & 0xFFFFU);
         ramp.b[i] = (uint16_t)(((i << 8) | i) & 0xFFFFU);
     }
-    SDL_SetWindowGammaRamp(window, ramp.r, ramp.g, ramp.b);
+    if (window)
+        SDL_SetWindowGammaRamp(window, ramp.r, ramp.g, ramp.b);
 }
 
 static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)

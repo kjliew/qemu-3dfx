@@ -58,7 +58,8 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 
     return ret;
 }
-#endif
+#define GL_CONTEXTALPHA 1
+#endif /* CONFIG_LINUX */
 
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
@@ -197,6 +198,39 @@ static const int iAttribs[] = {
     0,0
 };
 
+static int syncFBConfigToXID(Display *dpy, const GLXFBConfig *fbc, const int nElem)
+{
+    const char *xid_str = g_getenv("SDL_VIDEO_X11_VISUALID");
+    int ret = 0;
+
+    if (xid_str) {
+        XVisualInfo *vinfo;
+        VisualID vid = -1, xid = strtoul(xid_str, NULL, 0);
+        for (int i = 0; i < nElem; i++) {
+            vinfo = glXGetVisualFromFBConfig(dpy, fbc[i]);
+            if (vinfo) {
+                vid = vinfo->visualid;
+                XFree(vinfo);
+            }
+            if (vid == xid) {
+                ret = i;
+                break;
+            }
+        }
+    }
+    else {
+        int bufsz, alphaBits;
+        for (int i = 0; i < nElem; i++) {
+            glXGetFBConfigAttrib(dpy, fbc[i], GLX_BUFFER_SIZE, &bufsz);
+            glXGetFBConfigAttrib(dpy, fbc[i], GLX_ALPHA_SIZE, &alphaBits);
+            if (bufsz == pfd.cColorBits && alphaBits == pfd.cAlphaBits) {
+                ret = i;
+                break;
+            }
+        }
+    }
+    return ret;
+}
 static int *iattribs_fb(Display *dpy, const int do_msaa)
 {
     static int ia[] = {
@@ -436,26 +470,26 @@ int MGLSwapBuffers(void)
 
 static int MGLPresetPixelFormat(void)
 {
-    const char nvstr[] = "NVIDIA ";
     dpy = XOpenDisplay(NULL);
     qatomic_set(&wnd_ready, 0);
     ImplMesaGLReset();
-    mesa_prepare_window(GetContextMSAA(), memcmp(xcstr, nvstr, sizeof(nvstr) - 1), 0, &cwnd_mesagl);
+    mesa_prepare_window(GetContextMSAA(), GL_CONTEXTALPHA, 0, &cwnd_mesagl);
 
-    int fbid, fbcnt, *attrib = iattribs_fb(dpy, GetContextMSAA());
+    int fbid, fbcnt, fi, *attrib = iattribs_fb(dpy, GetContextMSAA());
     GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
     if (GetContextMSAA() && !fbcnt && !fbcnf) {
         attrib = iattribs_fb(dpy, 0);
         fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
     }
-    xvi = glXGetVisualFromFBConfig(dpy, fbcnf[0]);
-    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_FBCONFIG_ID, &fbid);
-    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_ALPHA_SIZE, &cAlphaBits);
-    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_DEPTH_SIZE, &cDepthBits);
-    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_STENCIL_SIZE, &cStencilBits);
-    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_AUX_BUFFERS, &cAuxBuffers);
-    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_SAMPLE_BUFFERS, &cSampleBuf[0]);
-    glXGetFBConfigAttrib(dpy, fbcnf[0], GLX_SAMPLES, &cSampleBuf[1]);
+    fi = syncFBConfigToXID(dpy, fbcnf, fbcnt);
+    xvi = glXGetVisualFromFBConfig(dpy, fbcnf[fi]);
+    glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_FBCONFIG_ID, &fbid);
+    glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_ALPHA_SIZE, &cAlphaBits);
+    glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_DEPTH_SIZE, &cDepthBits);
+    glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_STENCIL_SIZE, &cStencilBits);
+    glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_AUX_BUFFERS, &cAuxBuffers);
+    glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_SAMPLE_BUFFERS, &cSampleBuf[0]);
+    glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_SAMPLES, &cSampleBuf[1]);
     int major, minor;
     xvidmode = XF86VidModeQueryExtension(dpy, &major, &minor)? 1:0;
     DPRINTF("FBConfig 0x%03x visual 0x%03lx nAux %d nSamples %d %d vidMode %d %s",
@@ -669,12 +703,13 @@ void MGLFuncHandler(const char *name)
             (GLXContext (*)(Display *, GLXFBConfig, GLXContext, Bool, const int *)) MesaGLGetProc(fname);
         if (fp) {
             uint32_t i, ret;
-            int fbcnt, *attrib = iattribs_fb(dpy, GetContextMSAA());
+            int fbcnt, fi, *attrib = iattribs_fb(dpy, GetContextMSAA());
             GLXFBConfig *fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
             if (GetContextMSAA() && !fbcnt && !fbcnf) {
                 attrib = iattribs_fb(dpy, 0);
                 fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
             }
+            fi = syncFBConfigToXID(dpy, fbcnf, fbcnt);
             for (i = 0; ((i < MAX_LVLCNTX) && ctx[i]); i++);
             argsp[1] = (argsp[0])? i:0;
             if (argsp[1] == 0) {
@@ -686,7 +721,7 @@ void MGLFuncHandler(const char *name)
                     }
                 }
                 MGLActivateHandler(0, 0);
-                ctx[0] = fp(dpy, fbcnf[0], 0, True, (const int *)&argsp[2]);
+                ctx[0] = fp(dpy, fbcnf[fi], 0, True, (const int *)&argsp[2]);
                 ret = (ctx[0])? 1:0;
             }
             else {
@@ -696,7 +731,7 @@ void MGLFuncHandler(const char *name)
                         ctx[i] = ctx[i + 1];
                     argsp[1] = i;
                 }
-                ctx[i] = fp(dpy, fbcnf[0], ctx[i-1], True, (const int *)&argsp[2]);
+                ctx[i] = fp(dpy, fbcnf[fi], ctx[i-1], True, (const int *)&argsp[2]);
                 ret = (ctx[i])? 1:0;
             }
             XFree(fbcnf);
