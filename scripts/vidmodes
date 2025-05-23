@@ -44,6 +44,7 @@ static void sdl2_display_reslist(void)
 #define RESLIST_ADD(a,b) if (a) { fprintf(stderr, "\e[35m%4d %-4d aspect %.6f\n\e[0m", (b>>16), (b&0xFFFFU), 1.f*(b>>16)/(b&0xFFFFU)); }
         RESLIST_ADD((mode.w == 1920 && mode.h == 1080 && width >= 2560), RES(1920,1440));
         RESLIST_ADD((mode.w == 1600 && mode.h == 900 && width >= 1680), RES(1600,1200));
+        RESLIST_ADD((mode.w == 1440 && mode.h == 900 && height < 1080), RES(1440,1080));
         RESLIST_ADD((mode.w == 1352 && width == 1512 && dt->h >= 960), RES(1440,900));
         RESLIST_ADD((mode.w == 1280 && mode.h == 800 && width > 1440), RES(1440,900));
         RESLIST_ADD((mode.w == 1280 && mode.h == 720 && width > 1280), RES(1280,800));
