@@ -198,35 +198,15 @@ static const int iAttribs[] = {
     0,0
 };
 
-static int syncFBConfigToXID(Display *dpy, const GLXFBConfig *fbc, const int nElem)
+static int syncFBConfigToPFD(Display *dpy, const GLXFBConfig *fbc, const int nElem)
 {
-    const char *xid_str = g_getenv("SDL_VIDEO_X11_VISUALID");
-    int ret = 0;
-
-    if (xid_str) {
-        XVisualInfo *vinfo;
-        VisualID vid = -1, xid = strtoul(xid_str, NULL, 0);
-        for (int i = 0; i < nElem; i++) {
-            vinfo = glXGetVisualFromFBConfig(dpy, fbc[i]);
-            if (vinfo) {
-                vid = vinfo->visualid;
-                XFree(vinfo);
-            }
-            if (vid == xid) {
-                ret = i;
-                break;
-            }
-        }
-    }
-    else {
-        int bufsz, alphaBits;
-        for (int i = 0; i < nElem; i++) {
-            glXGetFBConfigAttrib(dpy, fbc[i], GLX_BUFFER_SIZE, &bufsz);
-            glXGetFBConfigAttrib(dpy, fbc[i], GLX_ALPHA_SIZE, &alphaBits);
-            if (bufsz == pfd.cColorBits && alphaBits == pfd.cAlphaBits) {
-                ret = i;
-                break;
-            }
+    int ret = 0, colorBits, alphaBits;
+    for (int i = 0; i < nElem; i++) {
+        glXGetFBConfigAttrib(dpy, fbc[i], GLX_BUFFER_SIZE, &colorBits);
+        glXGetFBConfigAttrib(dpy, fbc[i], GLX_ALPHA_SIZE, &alphaBits);
+        if (colorBits == pfd.cColorBits && alphaBits == pfd.cAlphaBits) {
+            ret = i;
+            break;
         }
     }
     return ret;
@@ -247,18 +227,8 @@ static int *iattribs_fb(Display *dpy, const int do_msaa)
         None
     };
 
-    int nElem, cBufsz = 0;
-    GLXFBConfig *currFB = glXGetFBConfigs(dpy, DefaultScreen(dpy), &nElem);
-    if (currFB && nElem) {
-        glXGetFBConfigAttrib(dpy, currFB[0], GLX_BUFFER_SIZE, &cBufsz);
-        XFree(currFB);
-    }
-
     for (int i = 0; ia[i]; i+=2) {
         switch(ia[i]) {
-            case GLX_BUFFER_SIZE:
-                ia[i+1] = (cBufsz >= 24)? cBufsz:ia[i+1];
-                break;
             case GLX_SAMPLE_BUFFERS:
                 ia[i+1] = (do_msaa)? 1:0;
                 break;
@@ -481,7 +451,7 @@ static int MGLPresetPixelFormat(void)
         attrib = iattribs_fb(dpy, 0);
         fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
     }
-    fi = syncFBConfigToXID(dpy, fbcnf, fbcnt);
+    fi = syncFBConfigToPFD(dpy, fbcnf, fbcnt);
     xvi = glXGetVisualFromFBConfig(dpy, fbcnf[fi]);
     glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_FBCONFIG_ID, &fbid);
     glXGetFBConfigAttrib(dpy, fbcnf[fi], GLX_ALPHA_SIZE, &cAlphaBits);
@@ -709,7 +679,7 @@ void MGLFuncHandler(const char *name)
                 attrib = iattribs_fb(dpy, 0);
                 fbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrib, &fbcnt);
             }
-            fi = syncFBConfigToXID(dpy, fbcnf, fbcnt);
+            fi = syncFBConfigToPFD(dpy, fbcnf, fbcnt);
             for (i = 0; ((i < MAX_LVLCNTX) && ctx[i]); i++);
             argsp[1] = (argsp[0])? i:0;
             if (argsp[1] == 0) {
