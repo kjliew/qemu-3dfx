@@ -38,7 +38,7 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
 #ifdef CONFIG_LINUX
 #include <linux/version.h>
-#include "sysemu/kvm.h"
+#include "system/kvm.h"
 
 int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
 {

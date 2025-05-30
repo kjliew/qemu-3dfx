@@ -1,4 +1,4 @@
-i386_ss.add(files(
+i386_system_ss.add(files(
   'extensions_table.c',
   'mesagl_blit.c',
   'mesagl_impl.c',
