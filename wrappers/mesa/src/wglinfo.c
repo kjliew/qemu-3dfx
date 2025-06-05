@@ -195,7 +195,7 @@ void fxprobe(void)
         GrHwConfiguration hwc;
         char version[80];
         const char *sstType[] = {
-            "VOODOO", "SST96", "AT3D", "Voodoo2",
+            "VOODOO", "SST96", "AT3D", "Voodoo2", "Banshee", "Voodoo3", "Voodoo4", "Other",
         };
         if (_fx.sstQueryBoards(&hwc) && hwc.num_sst) {
             _fx.glideInit();
@@ -203,7 +203,7 @@ void fxprobe(void)
             printf("\nnum_sst %d - %s\n", hwc.num_sst, version);
             if (_fx.sstQueryHardware(&hwc)) {
                 for (int i = 0; i < hwc.num_sst; i++) {
-                    printf("  Board type: %s\n", sstType[hwc.SSTs[i].type]);
+                    printf("  Board type: %s\n", sstType[hwc.SSTs[i].type & 0x7U]);
                     printf("  FBI  rev %d: %2d MB\n", hwc.SSTs[i].sstBoard.VoodooConfig.fbiRev & 0xFU,
                             hwc.SSTs[i].sstBoard.VoodooConfig.fbRam);
                     for (int j = 0; j < hwc.SSTs[i].sstBoard.VoodooConfig.nTexelfx; j++)
