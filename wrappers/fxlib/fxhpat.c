@@ -97,6 +97,18 @@ static struct E_PATCH matrox_reef_2[] = {
     PATCH_D(0x79935, "\x4B"),
     E_PATCH_END()
 };
+static struct E_PATCH rush1024[] = {
+    PATCH_D(0x5fe1e, "\xEB"),
+    E_PATCH_END()
+};
+static struct E_PATCH rush800[] = {
+    PATCH_D(0x4ee0e, "\xEB"),
+    E_PATCH_END()
+};
+static struct E_PATCH rush640[] = {
+    PATCH_D(0x5fdfe, "\xEB"),
+    E_PATCH_END()
+};
 static COMPATFX fxCompatTbl[] = {
     /* Rage Expendable Retailed & G400 EMBM */
     { "go.exe", "330113cfeb00ae4de299f041fb5714ba", HP_ANYO, go_g400_3 },
@@ -135,6 +147,11 @@ static COMPATFX fxCompatTbl[] = {
     /* Matrox Reef Demo 1.1 */
     { "FishDemoClient.exe", "f02a846eeb79b6bf68f48f8746931580", HP_ANYO, matrox_reef_1 },
     { "FishDemoClient.exe", "016a923e609f837871396888e5a63fb9", HP_ANYO, matrox_reef_2 },
+    /* San Francisco Rush: The Rock Alcatraz edition */
+    { "rush1280.exe", "88f69a4ad549909c2995808834854108", HP_ANYO, rush1024 },
+    { "rush1024.exe", "88f69a4ad549909c2995808834854108", HP_ANYO, rush1024 },
+    { "rush800.exe", "fe8485db1ef3af6680b003cf9ebe4aa0", HP_ANYO, rush800 },
+    { "rush640.exe", "9f118eaba1374c5504bfc22aa4a9187a", HP_ANYO, rush640 },
     E_PATCH_END()
 };
    
