@@ -2420,10 +2420,11 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         if (argsp[0] && (argsp[1] == 0)) {
                             s->mglCntxCurrent = 0;
                             s->mglContext = (s->mglCntxAtt)? 0:argsp[0];
-                            s->mglCntxWGL = argsp[0];
+                            s->mglCntxWGL = s->mglContext;
+                            argsp[0] = s->mglCntxWGL;
                             ContextCreateCommon(s);
                         }
-                        DPRINTF("wglCreateContextAttribsARB cntx %d curr %d ret %d %s",
+                        DPRINTF_COND((!s->mglCntxAtt), "wglCreateContextAttribsARB cntx %d curr %d ret %d %s",
                             s->mglContext, s->mglCntxCurrent, argsp[0], (argsp[1] == 0)? "zero":"incr");
                     }
                     if (strncmp((const char *)func, "wglChoosePixelFormatARB", 64) == 0) {
