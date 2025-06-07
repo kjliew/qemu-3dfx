@@ -142,6 +142,7 @@ struct gl_extensions
    uint32_t EXT_memory_object_win32;
    uint32_t EXT_multisampled_render_to_texture;
    uint32_t EXT_packed_float;
+   uint32_t EXT_protected_textures;
    uint32_t EXT_provoking_vertex;
    uint32_t EXT_render_snorm;
    uint32_t EXT_semaphore;
@@ -153,8 +154,10 @@ struct gl_extensions
    uint32_t EXT_shader_samples_identical;
    uint32_t EXT_sRGB;
    uint32_t EXT_stencil_two_side;
+   uint32_t EXT_shadow_samplers;
    uint32_t EXT_texture_array;
    uint32_t EXT_texture_buffer_object;
+   uint32_t EXT_texture_compression_astc_decode_mode;
    uint32_t EXT_texture_compression_latc;
    uint32_t EXT_texture_compression_s3tc;
    uint32_t EXT_texture_compression_s3tc_srgb;
@@ -185,10 +188,14 @@ struct gl_extensions
    uint32_t OES_texture_cube_map_array;
    uint32_t OES_texture_view;
    uint32_t OES_viewport_array;
+   uint32_t OVR_multiview;
+   uint32_t OVR_multiview2;
+   uint32_t OVR_multiview_multisampled_render_to_texture;
    /* vendor extensions */
    uint32_t AMD_compressed_ATC_texture;
    uint32_t AMD_framebuffer_multisample_advanced;
    uint32_t AMD_depth_clamp_separate;
+   uint32_t AMD_gpu_shader_half_float;
    uint32_t AMD_performance_monitor;
    uint32_t AMD_pinned_memory;
    uint32_t AMD_seamless_cubemap_per_texture;
@@ -210,6 +217,7 @@ struct gl_extensions
    uint32_t KHR_blend_equation_advanced;
    uint32_t KHR_blend_equation_advanced_coherent;
    uint32_t KHR_robustness;
+   uint32_t KHR_shader_subgroup;
    uint32_t KHR_texture_compression_astc_hdr;
    uint32_t KHR_texture_compression_astc_ldr;
    uint32_t KHR_texture_compression_astc_sliced_3d;
