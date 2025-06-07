@@ -71,6 +71,7 @@ int InitMesaGL(void);
 void InitMesaGLExt(void);
 
 #include "mesagl_pfn.h"
+void MesaContextAttest(const char *, int *);
 void MesaBlitFree(void);
 void MesaBlitScale(void);
 void MesaRenderScaler(const uint32_t, void *);

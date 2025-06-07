@@ -60,7 +60,7 @@ typedef struct MesaPTState
     uintptr_t FRet;
     uint32_t reg[4];
     uintptr_t parg[4];
-    int mglContext, mglCntxCurrent, mglCntxWGL;
+    int mglContext, mglCntxCurrent, mglCntxAtt, mglCntxWGL;
     uint32_t MesaVer;
     uint32_t procRet;
     int pixfmt, pixfmtMax;
@@ -1618,6 +1618,7 @@ static void processArgs(MesaPTState *s)
                 (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB) &&
                 (sizeof(uint32_t) == s->arg[4]))
                 MGLMouseWarp(*(uint32_t *)(s->hshm));
+            ASSERT_ATTEST(((char *)(s->hshm)));
             DPRINTF_COND(((s->arg[0] == GL_DEBUG_SOURCE_OTHER_ARB) &&
                 (s->arg[1] == GL_DEBUG_TYPE_OTHER_ARB) &&
                 (s->arg[2] == GL_DEBUG_SEVERITY_LOW_ARB)), "%s", (char *)(s->hshm));
@@ -2221,6 +2222,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                 if ((memcmp(s->fbtm_ptr + MGLFBT_SIZE - ALIGNBO(1), rev_, ALIGNED(1)) == 0) &&
                     (InitMesaGL() == 0)) {
                     s->MesaVer = (uint32_t)((val >> 12) & 0xFFU) | ((val & 0xFFFU) << 8);
+                    s->mglCntxAtt = 0;
                     MGLTmpContext();
                     DPRINTF("DLL loaded");
                 }
@@ -2256,7 +2258,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
         }
         else {
             memset(s->fifo_ptr + (MGLSHM_SIZE - (3*PAGE_SIZE)), 0, ALIGNED(1));
-            DPRINTF("WARN: No GL context for func %04x", (uint32_t)val);
+            DPRINTF_COND((!s->mglCntxAtt), "WARN: No GL context for func %04x", (uint32_t)val);
         }
     }
     else if (val == MESAGL_MAGIC) {
@@ -2275,7 +2277,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                     uint32_t *cntxRC = (uint32_t *)(s->fifo_ptr + (MGLSHM_SIZE - PAGE_SIZE));
                     if (!s->mglContext) {
                         DPRINTF("wglCreateContext cntx %d curr %d", s->mglContext, s->mglCntxCurrent);
-                        s->mglContext = MGLCreateContext(cntxRC[0])? 0:1;
+                        s->mglContext = MGLCreateContext(cntxRC[0])? 0:((s->mglCntxAtt)? 0:1);
                         ContextCreateCommon(s);
                     }
                     else {
@@ -2417,7 +2419,7 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         uint32_t *argsp = (uint32_t *)(func + ALIGNED(strnlen((const char *)func, 64)));
                         if (argsp[0] && (argsp[1] == 0)) {
                             s->mglCntxCurrent = 0;
-                            s->mglContext = argsp[0];
+                            s->mglContext = (s->mglCntxAtt)? 0:argsp[0];
                             s->mglCntxWGL = argsp[0];
                             ContextCreateCommon(s);
                         }

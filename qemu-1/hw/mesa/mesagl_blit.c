@@ -24,6 +24,16 @@
 
 int mesa_gui_fullscreen(const void *);
 
+void MesaContextAttest(const char *div, int *out)
+{
+    const char *aiv[] = { ATTEST_IV };
+    *out = 1;
+    for (int i = 0; aiv[i]; i++) {
+        *out = memcmp(div, aiv[i], strlen(aiv[i]))? 0:1;
+        if (*out) break;
+    }
+}
+
 static struct {
     unsigned vao, vbo;
     int prog, vert, frag, black;
