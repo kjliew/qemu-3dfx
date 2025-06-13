@@ -243,6 +243,7 @@ typedef enum {
 
 #define GR_PARAM_DISABLE  0x00
 #define GR_PARAM_ENABLE   0x01
+#define GLIDEPT_CRASH_RC  3000
 
 #ifdef QEMU_OSDEP_H
 #if (((QEMU_VERSION_MAJOR << 8) | \

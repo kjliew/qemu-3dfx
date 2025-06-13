@@ -40,6 +40,8 @@
 #ifdef DEBUG_GLIDEPT
 #define DPRINTF(fmt, ...) \
     do { fprintf(stderr, "glidept: " fmt "\n", ## __VA_ARGS__); } while(0)
+#define DPRINTF_COND(cond,fmt, ...) \
+    if (cond) { fprintf(stderr, "glidept: " fmt "\n", ## __VA_ARGS__); }
 #define WARNONCE(cond, fmt, ...) \
     do { static int warn; if (cond && !warn) { warn = 1; \
          fprintf(stderr, "     *WARN* " fmt "\n", ## __VA_ARGS__); } } while(0)
@@ -97,6 +99,7 @@ typedef struct GlidePTState
     uint32_t initDLL;
     uint32_t GrRes;
     int cfgPushed;
+    int64_t crashRC;
     wrTexStruct GrTex;
     PERFSTAT perfs;
 } GlidePTState;
@@ -238,6 +241,11 @@ static void processArgs(GlidePTState *s)
             break;
 	case FEnum_grSstQueryBoards:
         case FEnum_grSstQueryHardware:
+            if (s->crashRC && qemu_clock_get_ms(QEMU_CLOCK_REALTIME) - s->crashRC > GLIDEPT_CRASH_RC) {
+                uint32_t *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
+                DPRINTF_COND((dataptr[1] > 1), "..reset refcnt %04x", dataptr[1]--);
+            }
+            s->crashRC = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
             s->datacb = ALIGNED(SIZE_GRHWCONFIG);
             memcpy(outshm, s->hshm, SIZE_GRHWCONFIG);
             s->parg[0] = VAL(outshm);
@@ -343,8 +351,7 @@ static void processArgs(GlidePTState *s)
             }
             if (glide_vsyncoff())
                 s->arg[0] = 0;
-            if (GRFuncTrace() == 2)
-                DPRINTF(">>>>>>>> _grBufferSwap <<<<<<<<");
+            DPRINTF_COND((GRFuncTrace() == 2), ">>>>>>>> _grBufferSwap <<<<<<<<");
             s->perfs.stat();
             break;
 	case FEnum_grLfbLock:
@@ -404,8 +411,8 @@ static void processArgs(GlidePTState *s)
                 if (s->GrTex.fbuf && s->GrTex.flen) {
                     int fd = open((char *)(s->hshm), O_BINARY | O_CREAT | O_WRONLY, 0666);
                     if (fd > 0) {
-                        if (s->GrTex.flen == write(fd, s->GrTex.fbuf, s->GrTex.flen))
-                            DPRINTF("Push texFile %s, size = %-8x", (char *)(s->hshm), s->GrTex.flen);
+                        DPRINTF_COND((s->GrTex.flen == write(fd, s->GrTex.fbuf, s->GrTex.flen)),
+                            "Push texFile %s, size = %-8x", (char *)(s->hshm), s->GrTex.flen);
                         close(fd);
                     }
                     s->GrTex.flen = 0;
@@ -602,8 +609,8 @@ static void processArgs(GlidePTState *s)
             break;
     }
     for (int i = 0; i < 4; i++) {
-        if (s->parg[i] & (sizeof(uintptr_t) - 1))
-            DPRINTF("WARN: FEnum 0x%02X Unaligned parg[%d]", s->FEnum, i);
+        DPRINTF_COND((s->parg[i] & (sizeof(uintptr_t) - 1)),
+            "WARN: FEnum 0x%02X Unaligned parg[%d]", s->FEnum, i);
     }
 }
 
@@ -751,10 +758,10 @@ static void processFRet(GlidePTState *s)
                     gLfbInfo->writeMode = s->arg[2];
                     gLfbInfo->origin = s->arg[3];
                 }
-                if ((s->lfbDev->grBuffer < 2) && (s->arg[2] < 0xff) && (s->arg[2] != gLfbInfo->writeMode))
-                    DPRINTF("LFB writeMode mismatch, buf %d %x %x", s->lfbDev->grBuffer, s->arg[2], gLfbInfo->writeMode);
-                if ((s->arg[3] < 0xff) && (s->arg[3] != gLfbInfo->origin))
-                    DPRINTF("LFB origin mismatch, %x %x", s->arg[3], gLfbInfo->origin);
+                DPRINTF_COND(((s->lfbDev->grBuffer < 2) && (s->arg[2] < 0xff) && (s->arg[2] != gLfbInfo->writeMode)),
+                    "LFB writeMode mismatch, buf %d %x %x", s->lfbDev->grBuffer, s->arg[2], gLfbInfo->writeMode);
+                DPRINTF_COND(((s->arg[3] < 0xff) && (s->arg[3] != gLfbInfo->origin)),
+                    "LFB origin mismatch, %x %x", s->arg[3], gLfbInfo->origin);
                 if (s->lfb_real == 0) {
                     if ((s->lfb_noaux && (s->lfbDev->grBuffer & 0xFEU)) || !glide_mapbufo(0, 0))
                         gLfbInfo->lfbPtr = (s->lfbDev->grBuffer & 0xFEU)? (s->lfb_h * 0x800):0;
@@ -857,9 +864,7 @@ static void processFRet(GlidePTState *s)
 		s->lfbDev->lfbPtr[s->lfbDev->grLock] = (uint8_t *)(s->FRet);
 		s->FRet = s->lfbDev->guestLfb;
 	    }
-	    if (s->arg[0] > 1) {
-		DPRINTF("LFB pointer, buffer %u", s->arg[0]);
-	    }
+	    DPRINTF_COND((s->arg[0] > 1), "LFB pointer, buffer %u", s->arg[0]);
 	    break;
 
         default:
@@ -881,11 +886,7 @@ static void processFifo(GlidePTState *s)
         fifostat.fifo = fifoptr[0];
         fifostat.data = dataptr[0];
 #define DEBUG_FIFO 0
-#if DEBUG_FIFO
-        if (dataptr[0] >= MAX_DATA) {
-            DPRINTF("  *WARN* Data bound overlapped 0x%02x dataptr %06X", s->FEnum, dataptr[0]);
-        }
-#endif
+        DPRINTF_COND((dataptr[0] >= MAX_DATA), "  *WARN* Data bound overlapped 0x%02x dataptr %06X", s->FEnum, dataptr[0]);
         while (i < fifoptr[0]) {
             int numArgs, numData;
             s->FEnum = fifoptr[i++];
@@ -916,8 +917,7 @@ static void processFifo(GlidePTState *s)
     }
     if (GRFifoTrace()) {
         const char *fstr = getGRFuncStr(s->FEnum);
-        if (fstr)
-            DPRINTF("FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifostat.fifo, fifostat.data);
+        DPRINTF_COND((fstr), "FIFO depth %s fifoptr %06x dataptr %06x", fstr, fifostat.fifo, fifostat.data);
     }
 
     s->datacb = 0;
@@ -985,6 +985,7 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
                 if (s->initDLL) {
                     s->initDLL = 0;
                     s->disp_cb.FEnum = 0;
+                    s->crashRC = 0;
                     fini_window(&s->disp_cb);
                     fini_glide2x();
                     memset(s->version, 0, sizeof(char [80]));
@@ -1003,8 +1004,7 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
                 uint32_t *dataptr = (uint32_t *)(s->fifo_ptr + (MAX_FIFO << 2));
                 uint32_t numData = (s->datacb & 0x03)? ((s->datacb >> 2) + 1):(s->datacb >> 2);
                 dataptr[0] -= numData;
-                if (dataptr[0] > (ALIGNED(1) >> 2))
-                    DPRINTF("WARN: FIFO data leak 0x%02x %d", s->FEnum, dataptr[0]);
+                DPRINTF_COND((dataptr[0] > (ALIGNED(1) >> 2)), "WARN: FIFO data leak 0x%02x %d", s->FEnum, dataptr[0]);
                 dataptr[0] = ALIGNED(1) >> 2;
             } while (0);
             break;
@@ -1032,9 +1032,7 @@ static uint64_t glideLfb_read(void *opaque, hwaddr addr, unsigned size)
     uint32_t val = 0;
 
     if (s->lfbPtr[0]) {
-	if (!s->v1Lfb && !s->lock[0]) {
-	    DPRINTF("LFB read without lock!");
-	}
+	DPRINTF_COND((!s->v1Lfb && !s->lock[0]), "LFB read without lock!");
 
 	if (s->emu211)
 	    addr = translateLfb(addr, s->stride[0]);
@@ -1063,9 +1061,7 @@ static void glideLfb_write(void *opaque, hwaddr addr, uint64_t val, unsigned siz
     s->lfbMax = (s->lfbMax < addr)? addr:s->lfbMax;
 
     if (s->lfbPtr[1]) {
-	if (!s->v1Lfb && !s->lock[1] && false) {
-	   DPRINTF("LFB write without lock!");
-	}
+	DPRINTF_COND((!s->v1Lfb && !s->lock[1] && false), "LFB write without lock!");
 
 	if (s->emu211)
 	    addr = translateLfb(addr, s->stride[1]);
