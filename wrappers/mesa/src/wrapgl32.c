@@ -17178,7 +17178,7 @@ mglCreateContext (uint32_t arg0)
 uint32_t PT_CALL COMPACT
 mglMakeCurrent (uint32_t arg0, uint32_t arg1)
 {
-    static const char icdBuild[] __attribute__((used)) = 
+    static const char icdBuild[] __attribute__((aligned(16),used)) =
         __TIME__" "__DATE__" build ";
     uint32_t *ptVer = &mfifo[(MGLSHM_SIZE - PAGE_SIZE) >> 2];
     if (!currDC && !mglCreateContext(arg0))
