@@ -37,7 +37,7 @@ void MesaContextAttest(const char *div, int *out)
 static struct {
     unsigned vao, vbo;
     int prog, vert, frag, black;
-    int adj, flip;
+    int adj, flip, has_swap;
 } blit;
 static unsigned blit_program_setup(void)
 {
@@ -244,6 +244,7 @@ void MesaBlitScale(void)
     MESA_PFN(PFNGLVIEWPORTPROC,                 glViewport);
 
     int v[4], fullscreen = mesa_gui_fullscreen(v);
+    blit.has_swap = 1;
 
     if (blit.adj) {
         blit.adj = !blit.adj;
@@ -321,12 +322,10 @@ void MesaBlitScale(void)
 void MesaRenderScaler(const uint32_t FEnum, void *args)
 {
     MESA_PFN(PFNGLGETINTEGERVPROC, glGetIntegerv);
-    int v[4], fullscreen, framebuffer_binding, aspect, blit_adj = 0;
+    int v[4], fullscreen = mesa_gui_fullscreen(v), framebuffer_binding, blit_adj = 0;
     uint32_t *box;
 
     PFN_CALL(glGetIntegerv(GL_FRAMEBUFFER_BINDING, &framebuffer_binding));
-    fullscreen = mesa_gui_fullscreen(v);
-    aspect = (v[1] & (1 << 15))? 0:1;
 
     switch(FEnum) {
         case FEnum_glBlitFramebuffer:
@@ -342,8 +341,10 @@ void MesaRenderScaler(const uint32_t FEnum, void *args)
             return;
     }
     if (DrawableContext() && !framebuffer_binding
-            && fullscreen && !RenderScalerOff()) {
-        int offs_x = v[2] - ((1.f * v[0] * v[3]) / (v[1] & 0x7FFFU));
+            && (fullscreen || (!blit.has_swap && (v[3] > (v[1] & 0x7FFFU))))
+            && !RenderScalerOff()) {
+        int aspect = (v[1] & (1 << 15))? 0:1,
+            offs_x = v[2] - ((v[0] * 1.f * v[3]) / (v[1] & 0x7FFFU));
         offs_x >>= 1;
         for (int i = 0; i < 4; i++)
             box[i] *= (1.f * v[3]) / (v[1] & 0x7FFFU);
