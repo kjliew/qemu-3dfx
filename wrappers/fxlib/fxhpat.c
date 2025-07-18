@@ -109,6 +109,10 @@ static struct E_PATCH rush640[] = {
     PATCH_D(0x5fdfe, "\xEB"),
     E_PATCH_END()
 };
+static struct E_PATCH mhead_exe[] = {
+    PATCH_D(0x70dec, "\xEB"),
+    E_PATCH_END()
+};
 static COMPATFX fxCompatTbl[] = {
     /* Rage Expendable Retailed & G400 EMBM */
     { "go.exe", "330113cfeb00ae4de299f041fb5714ba", HP_ANYO, go_g400_3 },
@@ -152,6 +156,8 @@ static COMPATFX fxCompatTbl[] = {
     { "rush1024.exe", "88f69a4ad549909c2995808834854108", HP_ANYO, rush1024 },
     { "rush800.exe", "fe8485db1ef3af6680b003cf9ebe4aa0", HP_ANYO, rush800 },
     { "rush640.exe", "9f118eaba1374c5504bfc22aa4a9187a", HP_ANYO, rush640 },
+    /* Motorhead Matrox G200 p3.0 */
+    { "motor.exe", "580e38ba69420a0d44469b92d509b093", HP_ANYO, mhead_exe },
     E_PATCH_END()
 };
    
