@@ -125,27 +125,38 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
     PBRC[x] = 0; PBDC[x] = 0; \
     argsp[0] = 1
 #define GL_DELETECONTEXT(x) \
-    do { SDL_GL_DeleteContext(x); x = 0; } while(0)
+    do { \
+        int pfmsk; \
+        if (SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, &pfmsk) < 0) \
+            fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError()); \
+        else if (!(pfmsk & SDL_GL_CONTEXT_PROFILE_CORE) && x) \
+            { SDL_GL_DeleteContext(x); x = 0; } \
+    } while (0)
 #define GL_CONTEXTATTRIB(x) \
     MGLActivateHandler(0, 0); \
     do { \
-        int major, minor, pfmsk, flags; \
-        major = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MAJOR_VERSION_ARB); \
-        minor = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MINOR_VERSION_ARB); \
-        pfmsk = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_PROFILE_MASK_ARB); \
-        flags = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_FLAGS_ARB); \
-        if (major) { \
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major); \
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor); \
+        int pfmsk; \
+        if (SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, &pfmsk) < 0) \
+            fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError()); \
+        else if (!(pfmsk & SDL_GL_CONTEXT_PROFILE_CORE)) { \
+            int major, minor, flags; \
+            major = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MAJOR_VERSION_ARB); \
+            minor = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MINOR_VERSION_ARB); \
+            pfmsk = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_PROFILE_MASK_ARB); \
+            flags = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_FLAGS_ARB); \
+            if (major) { \
+                SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major); \
+                SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor); \
+            } \
+            if (pfmsk) \
+                SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, pfmsk); \
+            if (flags) \
+                SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags); \
+            SDL_SetRelativeMouseMode(SDL_FALSE); \
         } \
-        if (pfmsk) \
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, pfmsk); \
-        if (flags) \
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags); \
-        SDL_SetRelativeMouseMode(SDL_FALSE); \
     } while(0)
 #define GL_CREATECONTEXT(x) \
-    do { x = SDL_GL_CreateContext(window); } while(0)
+    if(!x) { x = SDL_GL_CreateContext(window); }
 #endif /* CONFIG_LINUX */
 #else
 #define MESAGL_SDLGL 0
@@ -306,7 +317,7 @@ static SDL_GLContext ctx[MAX_LVLCNTX];
 GL_RENDER_TEXTURE_VAR;
 
 static HPBUFFERARB hPbuffer[MAX_PBUFFER];
-static int wnd_ready;
+static int wnd_ready, self_ctx;
 static int cAlphaBits, cDepthBits, cStencilBits;
 static int cAuxBuffers, cSampleBuf[2];
 
@@ -361,24 +372,28 @@ void MGLDeleteContext(int level)
 {
     int n = (level)? ((level % MAX_LVLCNTX)? (level % MAX_LVLCNTX):1):level;
     SDL_GL_MakeCurrent(window, NULL);
-    if (n == 0) {
+    if (n) {
+        GL_DELETECONTEXT(ctx[n]);
+    }
+    else {
         for (int i = MAX_LVLCNTX; i > 1;) {
             if (ctx[--i]) {
                 GL_DELETECONTEXT(ctx[i]);
             }
         }
         MesaBlitFree();
-    }
-    GL_DELETECONTEXT(ctx[n]);
-    if (!n)
         MGLActivateHandler(0, 0);
+    }
 }
 
 void MGLWndRelease(void)
 {
     if (window) {
+        if (self_ctx && ctx[0])
+            SDL_GL_DeleteContext(ctx[0]);
         MesaInitGammaRamp();
         mesa_release_window();
+        ctx[0] = 0;
         window = 0;
     }
 }
@@ -392,7 +407,7 @@ int MGLCreateContext(uint32_t gDC)
     }
     else {
         SDL_GL_MakeCurrent(window, NULL);
-        for (i = MAX_LVLCNTX; i > 0;) {
+        for (i = MAX_LVLCNTX; i > 1;) {
             if (ctx[--i]) {
                 GL_DELETECONTEXT(ctx[i]);
             }
@@ -456,9 +471,15 @@ int MGLSetPixelFormat(int fmt, const void *p)
     if (!window)
         MGLPresetPixelFormat();
     else {
-        ctx[0] = (ctx[0])? ctx[0]:SDL_GL_GetCurrentContext();
-        ctx[0] = (ctx[0])? ctx[0]:SDL_GL_CreateContext(window);
-        if (ctx[0]) {
+        self_ctx = 0;
+        ctx[0] = SDL_GL_GetCurrentContext();
+        if (!ctx[0]) {
+            ctx[0] = SDL_GL_CreateContext(window);
+            self_ctx = (ctx[0])? 1:0;
+        }
+        if (!ctx[0])
+            fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError());
+        else {
             int cColors[3];
             SDL_GL_MakeCurrent(window, ctx[0]);
             SDL_GL_GetAttribute(SDL_GL_ALPHA_SIZE, &cAlphaBits);

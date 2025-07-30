@@ -276,7 +276,11 @@ void MGLDeleteContext(int level)
 {
     int n = (level)? ((level % MAX_LVLCNTX)? (level % MAX_LVLCNTX):1):level;
     wglFuncs.MakeCurrent(NULL, NULL);
-    if (n == 0) {
+    if (n) {
+        wglFuncs.DeleteContext(hRC[n]);
+        hRC[n] = 0;
+    }
+    else {
         for (int i = MAX_LVLCNTX; i > 1;) {
             if (hRC[--i]) {
                 wglFuncs.DeleteContext(hRC[i]);
@@ -284,11 +288,10 @@ void MGLDeleteContext(int level)
             }
         }
         MesaBlitFree();
-    }
-    wglFuncs.DeleteContext(hRC[n]);
-    hRC[n] = 0;
-    if (!n)
+        wglFuncs.DeleteContext(hRC[n]);
+        hRC[n] = 0;
         MGLActivateHandler(0, 0);
+    }
 }
 
 void MGLWndRelease(void)

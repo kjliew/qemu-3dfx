@@ -353,7 +353,11 @@ void MGLDeleteContext(int level)
 {
     int n = (level)? ((level % MAX_LVLCNTX)? (level % MAX_LVLCNTX):1):level;
     glXMakeContextCurrent(dpy, None, None, NULL);
-    if (n == 0) {
+    if (n) {
+        glXDestroyContext(dpy, ctx[n]);
+        ctx[n] = 0;
+    }
+    else {
         for (int i = MAX_LVLCNTX; i > 1;) {
             if (ctx[--i]) {
                 glXDestroyContext(dpy, ctx[i]);
@@ -361,11 +365,10 @@ void MGLDeleteContext(int level)
             }
         }
         MesaBlitFree();
-    }
-    glXDestroyContext(dpy, ctx[n]);
-    ctx[n] = 0;
-    if (!n)
+        glXDestroyContext(dpy, ctx[n]);
+        ctx[n] = 0;
         MGLActivateHandler(0, 0);
+    }
 }
 
 void MGLWndRelease(void)
