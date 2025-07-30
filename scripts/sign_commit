@@ -4,7 +4,7 @@ TOP=.
 GIT=`echo $@ | sed "s/\-git=\(.*\)/\1/;s/\ .*//"`
 if [ -z $GIT ]; then GIT=.; else shift; fi;
 ARG=$@; if [ -z $ARG ]; then ARG=HEAD; fi
-REV=`cd $GIT; git rev-parse $ARG | sed "s/\(.......\).*/\1\-/"`
+REV=`cd $GIT; git rev-parse --short $ARG | sed "s/\(.*\)/\1\-/"`
 EMUS=$(basename $(dirname `find $TOP/include -name whpx.h`))
 MODS=$(cat $TOP/target/i386/meson.build | tail -n 2 | head -n 1 | \
     sed "s/.*:\ //;s/\}//")

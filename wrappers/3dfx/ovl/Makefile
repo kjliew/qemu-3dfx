@@ -15,7 +15,7 @@ glide2x.ovl: glideovl.obj
 	@if [ -d ../$(OUTDIR) ]; then cp -v $@ ../$(OUTDIR); fi
 
 glideovl.obj: glideovl.c
-	@git rev-parse HEAD | sed "s/\(.......\).*/\#define\ __REV__\ \"\1\-\"/" > stamp.h
+	@git rev-parse --short HEAD | sed "s/\(.*\)/\#define\ __REV__\ \"\1\-\"/" > stamp.h
 	@echo "  WCC $@"
 	@if [ x`uname | sed "s/_.*//"` == xMINGW32 ]; then \
 		INCLUDES=`echo $(INCLUDES) | sed "s/\//\\\\\/g"`; \

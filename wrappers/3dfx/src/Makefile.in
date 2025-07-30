@@ -1,6 +1,6 @@
 QEMU_SRC_DIR=../../../qemu-0
 FXLIB=../../fxlib
-GIT=$(shell git rev-parse HEAD | sed "s/\(.......\).*/\1\-/")
+GIT=$(shell git rev-parse --short HEAD | sed "s/\(.*\)/\1\-/")
 CROSS=
 CC=$(CROSS)gcc
 RC=windres
