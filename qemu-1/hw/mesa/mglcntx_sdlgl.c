@@ -125,38 +125,27 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
     PBRC[x] = 0; PBDC[x] = 0; \
     argsp[0] = 1
 #define GL_DELETECONTEXT(x) \
-    do { \
-        int pfmsk; \
-        if (SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, &pfmsk) < 0) \
-            fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError()); \
-        else if (!(pfmsk & SDL_GL_CONTEXT_PROFILE_CORE) && x) \
-            { SDL_GL_DeleteContext(x); x = 0; } \
-    } while (0)
+    do { SDL_GL_DeleteContext(x); x = 0; } while(0)
 #define GL_CONTEXTATTRIB(x) \
     MGLActivateHandler(0, 0); \
     do { \
-        int pfmsk; \
-        if (SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, &pfmsk) < 0) \
-            fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError()); \
-        else if (!(pfmsk & SDL_GL_CONTEXT_PROFILE_CORE)) { \
-            int major, minor, flags; \
-            major = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MAJOR_VERSION_ARB); \
-            minor = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MINOR_VERSION_ARB); \
-            pfmsk = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_PROFILE_MASK_ARB); \
-            flags = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_FLAGS_ARB); \
-            if (major) { \
-                SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major); \
-                SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor); \
-            } \
-            if (pfmsk) \
-                SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, pfmsk); \
-            if (flags) \
-                SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags); \
-            SDL_SetRelativeMouseMode(SDL_FALSE); \
+        int major, minor, pfmsk, flags; \
+        major = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MAJOR_VERSION_ARB); \
+        minor = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_MINOR_VERSION_ARB); \
+        pfmsk = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_PROFILE_MASK_ARB); \
+        flags = LookupAttribArray((const int *)&argsp[2], WGL_CONTEXT_FLAGS_ARB); \
+        if (major) { \
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major); \
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor); \
         } \
+        if (pfmsk) \
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, pfmsk); \
+        if (flags) \
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags); \
+        SDL_SetRelativeMouseMode(SDL_FALSE); \
     } while(0)
 #define GL_CREATECONTEXT(x) \
-    if(!x) { x = SDL_GL_CreateContext(window); }
+    do { x = SDL_GL_CreateContext(window); } while(0)
 #endif /* CONFIG_LINUX */
 #else
 #define MESAGL_SDLGL 0
@@ -389,8 +378,10 @@ void MGLDeleteContext(int level)
 void MGLWndRelease(void)
 {
     if (window) {
-        if (self_ctx && ctx[0])
+        if (self_ctx && ctx[0]) {
+            SDL_GL_MakeCurrent(window, NULL);
             SDL_GL_DeleteContext(ctx[0]);
+        }
         MesaInitGammaRamp();
         mesa_release_window();
         ctx[0] = 0;
@@ -412,7 +403,8 @@ int MGLCreateContext(uint32_t gDC)
                 GL_DELETECONTEXT(ctx[i]);
             }
         }
-        GL_CREATECONTEXT(ctx[0]);
+        if (!ctx[0])
+            GL_CREATECONTEXT(ctx[0]);
         ret = (ctx[0])? 0:1;
     }
     return ret;
@@ -676,9 +668,11 @@ void MGLFuncHandler(const char *name)
             argsp[1] = (argsp[0])? i:0;
             if (argsp[1] == 0) {
                 SDL_GL_MakeCurrent(window, NULL);
-                GL_DELETECONTEXT(ctx[0]);
-                GL_CONTEXTATTRIB(ctx[0]);
-                GL_CREATECONTEXT(ctx[0]);
+                if (CompareAttribArray((const int *)&argsp[2])) {
+                    GL_DELETECONTEXT(ctx[0]);
+                    GL_CONTEXTATTRIB(ctx[0]);
+                    GL_CREATECONTEXT(ctx[0]);
+                }
                 ret = (ctx[0])? 1:0;
             }
             else {
