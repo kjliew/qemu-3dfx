@@ -34,6 +34,7 @@ int MGLSwapBuffers(void);
 int MGLChoosePixelFormat(void);
 int MGLDescribePixelFormat(int, unsigned int, void *);
 int MGLSetPixelFormat(int, const void *);
+int CompareAttribArray(const int *);
 void MGLActivateHandler(const int, const int);
 void MGLCursorDefine(int, int, int, int, const void *);
 void MGLMouseWarp(const uint32_t);
