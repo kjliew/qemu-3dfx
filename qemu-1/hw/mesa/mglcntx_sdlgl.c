@@ -464,10 +464,12 @@ int MGLSetPixelFormat(int fmt, const void *p)
         MGLPresetPixelFormat();
     else {
         self_ctx = 0;
-        ctx[0] = SDL_GL_GetCurrentContext();
         if (!ctx[0]) {
-            ctx[0] = SDL_GL_CreateContext(window);
-            self_ctx = (ctx[0])? 1:0;
+            ctx[0] = SDL_GL_GetCurrentContext();
+            if (!ctx[0]) {
+                ctx[0] = SDL_GL_CreateContext(window);
+                self_ctx = (ctx[0])? 1:0;
+            }
         }
         if (!ctx[0])
             fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError());
