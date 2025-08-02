@@ -475,7 +475,10 @@ int MGLSetPixelFormat(int fmt, const void *p)
             fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError());
         else {
             int cColors[3];
-            SDL_GL_MakeCurrent(window, ctx[0]);
+            if (SDL_GL_MakeCurrent(window, ctx[0])) {
+                fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError());
+                return 0;
+            }
             SDL_GL_GetAttribute(SDL_GL_ALPHA_SIZE, &cAlphaBits);
             SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &cColors[0]);
             SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &cColors[1]);
@@ -503,10 +506,21 @@ int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)
     if (!window)
         MGLPresetPixelFormat();
     else {
-        ctx[0] = (ctx[0])? ctx[0]:SDL_GL_GetCurrentContext();
-        ctx[0] = (ctx[0])? ctx[0]:SDL_GL_CreateContext(window);
-        if (ctx[0]) {
-            SDL_GL_MakeCurrent(window, ctx[0]);
+        self_ctx = 0;
+        if (!ctx[0]) {
+            ctx[0] = SDL_GL_GetCurrentContext();
+            if (!ctx[0]) {
+                ctx[0] = SDL_GL_CreateContext(window);
+                self_ctx = (ctx[0])? 1:0;
+            }
+        }
+        if (!ctx[0])
+            fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError());
+        else {
+            if (SDL_GL_MakeCurrent(window, ctx[0])) {
+                fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, SDL_GetError());
+                return 0;
+            }
             SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &cDepthBits);
             SDL_GL_GetAttribute(SDL_GL_STENCIL_SIZE, &cStencilBits);
             glGetIntegerv(GL_AUX_BUFFERS, &cAuxBuffers);
