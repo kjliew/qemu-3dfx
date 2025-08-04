@@ -380,6 +380,7 @@ void MGLWndRelease(void)
         XFree(xvi);
         XCloseDisplay(dpy);
         mesa_release_window();
+        CompareAttribArray(NULL);
         ctx[0]= 0;
         xvi = 0;
         dpy = 0;

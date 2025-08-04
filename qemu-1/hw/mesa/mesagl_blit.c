@@ -252,8 +252,9 @@ void MesaBlitScale(void)
     }
     blit.flip = ScalerBlitFlip();
 
-    if (DrawableContext() && ((!fullscreen && (v[3] > (v[1] & 0x7FFFU)))
-            || RenderScalerOff())) {
+    if (DrawableContext()
+            && (v[3] > (v[1] & 0x7FFFU))
+            && (!fullscreen || RenderScalerOff())) {
         unsigned screen_texture, w = v[0], h = v[1] & 0x7FFFU,
                 last_prog = blit_program_setup();
         int aspect = (v[1] & (1 << 15))? 0:1,
@@ -341,7 +342,8 @@ void MesaRenderScaler(const uint32_t FEnum, void *args)
             return;
     }
     if (DrawableContext() && !framebuffer_binding
-            && (fullscreen || (!blit.has_swap && (v[3] > (v[1] & 0x7FFFU))))
+            && (v[3] > (v[1] & 0x7FFFU))
+            && (fullscreen || !blit.has_swap)
             && !RenderScalerOff()) {
         int aspect = (v[1] & (1 << 15))? 0:1,
             offs_x = v[2] - ((v[0] * 1.f * v[3]) / (v[1] & 0x7FFFU));

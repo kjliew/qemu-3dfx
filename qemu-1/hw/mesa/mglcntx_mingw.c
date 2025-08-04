@@ -303,6 +303,7 @@ void MGLWndRelease(void)
         ReleaseDC(hwnd, hDC);
         TmpContextPurge();
         GLWINDOW_FINI();
+        CompareAttribArray(NULL);
         hRC[0] = 0;
         hDC = 0;
         hwnd = 0;
@@ -751,7 +752,14 @@ int CompareAttribArray(const int *attrib)
     } s;
 
     int i;
-    for (i = 0; attrib[i]; i+=2)
+    if (!attrib) {
+        s.len = 0;
+        return 0;
+    }
+    for (i = 0; attrib[i]; i+=2) {
+        if (i && (s.len == (i * sizeof(int))) && !memcmp(s.array, attrib, s.len))
+            return 0;
+    }
     if (i && (s.len == (i * sizeof(int))) && !memcmp(s.array, attrib, s.len))
         return 0;
     s.len = i * sizeof(int);
