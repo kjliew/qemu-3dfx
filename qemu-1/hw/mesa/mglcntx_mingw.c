@@ -496,6 +496,7 @@ static int LookupAttribArray(const int *attrib, const int attr)
     }
     return ret;
 }
+
 void MGLFuncHandler(const char *name)
 {
     char fname[64];
@@ -805,6 +806,7 @@ void MGLMouseWarp(const uint32_t ci)
 static QEMUTimer *ts;
 static void deactivateOnce(void)
 {
+    CompareAttribArray(NULL);
     MGLMouseWarp(0);
     mesa_renderer_stat(0);
 }
