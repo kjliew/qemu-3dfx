@@ -368,7 +368,7 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
              sdl_grab_end(scon);
          }
          break;
-@@ -774,6 +800,362 @@
+@@ -774,6 +800,369 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
  }
  
@@ -383,19 +383,6 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
 +        exit(1);
 +    }
 +}
-+
-+static struct sdl_console_cb {
-+    QEMUTimer *ts;
-+    SDL_Surface *icon;
-+    struct sdl2_console *scon;
-+    int glide_on_mesa;
-+    int gui_saved_res;
-+    int render_pause;
-+    int res, msaa, alpha, dtimer, GLon12;
-+    void *opaque;
-+    void *hnwnd;
-+    void (*cwnd_fn)(void *, void *, void *);
-+} scon_cb;
 +static void sdl_gui_restart(struct sdl2_console *scon, SDL_Surface *icon)
 +{
 +    if (!gui_fullscreen)
@@ -409,102 +396,122 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
 +    if (!gui_fullscreen)
 +        SDL_SetWindowPosition(scon->real_window, scon->x, scon->y);
 +}
++
++static struct sdl_console_cb {
++    QEMUTimer *ts;
++    SDL_Surface *icon;
++    struct sdl2_console *scon;
++    int glide_on_mesa, gui_saved_res, render_pause;
++    int res, msaa, alpha, dtimer, GLon12;
++    void *hnwnd, *opaque;
++    void (*cwnd_fn)(void *, void *, void *);
++} scon_cb;
++static void wndproc_fxui_stat(struct sdl_console_cb *s)
++{
++    if (s->render_pause) {
++        SDL_DestroyTexture(s->scon->texture);
++        s->scon->texture = 0;
++    }
++    else {
++        if (!s->scon->real_renderer)
++            s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
++        sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++        if (!gui_fullscreen)
++            SDL_SetWindowPosition(s->scon->real_window, s->scon->x, s->scon->y);
++    }
++}
++static void wndproc_fxui_prepare(struct sdl_console_cb *s)
++{
++    SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
++    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  24);
++    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
++#ifdef CONFIG_DARWIN
++    if (!s->dtimer)
++        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
++#endif
++    if (s->alpha)
++        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
++    if (s->msaa) {
++        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, SDL_TRUE);
++        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, s->msaa);
++    }
++    const char hint[] = "opengl";
++    if (!SDL_GetHint(SDL_HINT_RENDER_DRIVER) ||
++        memcmp(SDL_GetHint(SDL_HINT_RENDER_DRIVER), hint, sizeof(hint) - 1)) {
++        SDL_SetHint(SDL_HINT_RENDER_DRIVER, hint);
++        sdl_gui_restart(s->scon, s->icon);
++    }
++    SDL_SysWMinfo wmi;
++    SDL_VERSION(&wmi.version);
++    if (SDL_GetWindowWMInfo(s->scon->real_window, &wmi)) {
++        switch(wmi.subsystem) {
++#if defined(SDL_VIDEO_DRIVER_WINDOWS)
++            case SDL_SYSWM_WINDOWS:
++                s->hnwnd = (void *)wmi.info.win.window;
++                break;
++#endif
++#if defined(SDL_VIDEO_DRIVER_X11)
++            case SDL_SYSWM_X11:
++                s->hnwnd = (void *)wmi.info.x11.window;
++                break;
++#endif
++#if defined(SDL_VIDEO_DRIVER_COCOA)
++            case SDL_SYSWM_COCOA:
++                s->hnwnd = (void *)wmi.info.cocoa.window;
++                break;
++#endif
++            default:
++                s->hnwnd = 0;
++                break;
++        }
++    }
++    SDL_DestroyRenderer(s->scon->real_renderer);
++    s->scon->real_renderer = 0;
++    s->render_pause = 1;
++    s->scon->winctx = SDL_GL_GetCurrentContext();
++    if (!s->scon->winctx)
++        s->scon->winctx = SDL_GL_CreateContext(s->scon->real_window);
++    if (!s->scon->winctx) {
++        error_report("%s", SDL_GetError());
++        exit(1);
++    }
++    if (!s->opaque)
++        s->cwnd_fn(s->scon->real_window, s->hnwnd, s->opaque);
++    SDL_GL_MakeCurrent(s->scon->real_window, NULL);
++}
++static void wndproc_fxui_release(struct sdl_console_cb *s)
++{
++    SDL_GL_DeleteContext(s->scon->winctx);
++    s->scon->winctx = 0;
++    s->render_pause = 0;
++    SDL_GL_ResetAttributes();
++    if (!s->GLon12) {
++        if (s->scon->texture) {
++            SDL_DestroyTexture(s->scon->texture);
++            s->scon->texture = 0;
++        }
++        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "");
++        sdl_gui_restart(s->scon, s->icon);
++    }
++    else {
++        if (!s->scon->real_renderer)
++            s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
++    }
++    sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++    timer_del(s->ts);
++    timer_free(s->ts);
++    s->ts = 0;
++}
 +static void sched_wndproc(void *opaque)
 +{
 +    struct sdl_console_cb *s = opaque;
 +
-+    if (s->res == -1) {
-+        if (s->render_pause) {
-+            SDL_DestroyTexture(s->scon->texture);
-+            s->scon->texture = 0;
-+        }
-+        else {
-+            if (!s->scon->real_renderer)
-+                s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
-+            sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
-+            if (!gui_fullscreen)
-+                SDL_SetWindowPosition(s->scon->real_window, s->scon->x, s->scon->y);
-+        }
-+    }
-+    else if (s->gui_saved_res) {
-+        SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
-+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  24);
-+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-+#ifdef CONFIG_DARWIN
-+        if (!s->dtimer)
-+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-+#endif
-+        if (s->alpha)
-+            SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-+        if (s->msaa) {
-+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, SDL_TRUE);
-+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, s->msaa);
-+        }
-+        const char hint[] = "opengl";
-+        if (!SDL_GetHint(SDL_HINT_RENDER_DRIVER) ||
-+            memcmp(SDL_GetHint(SDL_HINT_RENDER_DRIVER), hint, sizeof(hint) - 1)) {
-+            SDL_SetHint(SDL_HINT_RENDER_DRIVER, hint);
-+            sdl_gui_restart(s->scon, s->icon);
-+        }
-+        SDL_SysWMinfo wmi;
-+        SDL_VERSION(&wmi.version);
-+        if (SDL_GetWindowWMInfo(s->scon->real_window, &wmi)) {
-+            switch(wmi.subsystem) {
-+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
-+                case SDL_SYSWM_WINDOWS:
-+                    s->hnwnd = (void *)wmi.info.win.window;
-+                    break;
-+#endif
-+#if defined(SDL_VIDEO_DRIVER_X11)
-+                case SDL_SYSWM_X11:
-+                    s->hnwnd = (void *)wmi.info.x11.window;
-+                    break;
-+#endif
-+#if defined(SDL_VIDEO_DRIVER_COCOA)
-+                case SDL_SYSWM_COCOA:
-+                    s->hnwnd = (void *)wmi.info.cocoa.window;
-+                    break;
-+#endif
-+                default:
-+                    s->hnwnd = 0;
-+                    break;
-+            }
-+        }
-+        SDL_DestroyRenderer(s->scon->real_renderer);
-+        s->scon->real_renderer = 0;
-+        s->scon->winctx = SDL_GL_GetCurrentContext();
-+        s->scon->winctx = (s->scon->winctx)? s->scon->winctx:SDL_GL_CreateContext(s->scon->real_window);
-+        if (!s->scon->winctx) {
-+            error_report("%s", SDL_GetError());
-+            exit(1);
-+        }
-+        s->render_pause = 1;
-+        if (!s->opaque)
-+            s->cwnd_fn(s->scon->real_window, s->hnwnd, opaque);
-+        SDL_GL_MakeCurrent(s->scon->real_window, NULL);
-+    }
-+    else {
-+        SDL_GL_DeleteContext(s->scon->winctx);
-+        s->scon->winctx = 0;
-+        s->render_pause = 0;
-+        SDL_GL_ResetAttributes();
-+        if (!s->GLon12) {
-+            if (s->scon->texture) {
-+                SDL_DestroyTexture(s->scon->texture);
-+                s->scon->texture = 0;
-+            }
-+            SDL_SetHint(SDL_HINT_RENDER_DRIVER, "");
-+            sdl_gui_restart(s->scon, s->icon);
-+        }
-+        else {
-+            if (!s->scon->real_renderer)
-+                s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
-+        }
-+        sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
-+        timer_del(s->ts);
-+        timer_free(s->ts);
-+        s->ts = 0;
-+    }
++    if (s->res == -1)
++        wndproc_fxui_stat(s);
++    else if (s->gui_saved_res)
++        wndproc_fxui_prepare(s);
++    else
++        wndproc_fxui_release(s);
 +    if (s->res > 0)
 +        SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
 +    if (s->opaque || !s->render_pause)
@@ -731,7 +738,7 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -834,6 +1216,10 @@
+@@ -834,6 +1223,10 @@
 
      assert(o->type == DISPLAY_TYPE_SDL);
 
@@ -742,7 +749,7 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
      if (SDL_GetHintBoolean("QEMU_ENABLE_SDL_LOGGING", SDL_FALSE)) {
          SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
      }
-@@ -926,6 +1312,7 @@
+@@ -926,6 +1319,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
