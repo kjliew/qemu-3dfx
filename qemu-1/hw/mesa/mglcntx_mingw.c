@@ -757,10 +757,7 @@ int CompareAttribArray(const int *attrib)
         s.len = 0;
         return 0;
     }
-    for (i = 0; attrib[i]; i+=2) {
-        if (i && (s.len == (i * sizeof(int))) && !memcmp(s.array, attrib, s.len))
-            return 0;
-    }
+    for (i = 0; attrib[i]; i+=2);
     if (i && (s.len == (i * sizeof(int))) && !memcmp(s.array, attrib, s.len))
         return 0;
     s.len = i * sizeof(int);
@@ -775,7 +772,7 @@ void MGLActivateHandler(const int i, const int d)
 
     if (i != last) {
         last = i;
-        DPRINTF_COND(GLFuncTrace(), "wm_activate %-32d", i);
+        DPRINTF_COND(GLFuncTrace(), "wm_activate %s%-32d", (d)? "dfr ":"imm ", i);
         if (i) {
             deactivateGuiRefSched();
             mesa_renderer_stat(i);
@@ -806,7 +803,8 @@ void MGLMouseWarp(const uint32_t ci)
 static QEMUTimer *ts;
 static void deactivateOnce(void)
 {
-    CompareAttribArray(NULL);
+    if (!GetContextZERO())
+        CompareAttribArray(NULL);
     MGLMouseWarp(0);
     mesa_renderer_stat(0);
 }

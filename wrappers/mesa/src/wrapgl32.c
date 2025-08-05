@@ -455,6 +455,7 @@ struct mglOptions {
     int swapInt;
     int useMSAA;
     int useSRGB;
+    int useZERO;
     int bltFlip;
     int scalerOff;
     int vsyncOff;
@@ -475,12 +476,27 @@ static int display_device_supported(void)
     return (EnumDisplayDevices(NULL, 0, &dd, 0) &&
         !memcmp(dd.DeviceString, vidstr, strlen(vidstr)))? 1:0;
 }
+static int ctx0_quirks(void)
+{
+    const char *use_ctx0[] = {
+        "DX7HRDisplay",
+        "DX7HRTnLDisplay",
+        0,
+    };
+    int i;
+    for (i = 0; use_ctx0[i]; i++) {
+        if (GetModuleHandle(use_ctx0[i]))
+            break;
+    }
+    return (use_ctx0[i])? 1:0;
+}
 static void parse_options(struct mglOptions *opt)
 {
     FILE *f = opt_fopen();
     memset(opt, 0, sizeof(struct mglOptions));
     /* Sync host color cursor only for Bochs SVGA */
     swapCur = display_device_supported();
+    opt->useZERO = ctx0_quirks() << 5;
     if (f) {
         char line[MAX_XSTR];
         int i, v;
@@ -495,6 +511,8 @@ static void parse_options(struct mglOptions *opt)
             opt->useMSAA = ((i == 1) && v)? ((v & 0x03U) << 2):opt->useMSAA;
             i = parse_value(line, "ContextSRGB,", &v);
             opt->useSRGB = ((i == 1) && v)? 1:opt->useSRGB;
+            i = parse_value(line, "CtxZeroQuirksOff,", &v);
+            opt->useZERO = ((i == 1) && v)? 0:opt->useZERO;
             i = parse_value(line, "ScalerBltFlip,", &v);
             opt->bltFlip = ((i == 1) && v)? 0x12U:opt->bltFlip;
             i = parse_value(line, "RenderScalerOff,", &v);
@@ -17356,7 +17374,7 @@ int WINAPI mglSwapLayerBuffers(HDC hdc, UINT arg1) { return wgdSwapBuffers(hdc);
 #define PPFD_CONFIG() \
     struct mglOptions cfg; \
     parse_options(&cfg); \
-    xppfd[0] = cfg.bltFlip | cfg.useMSAA | cfg.scalerOff | cfg.bufoAcc; \
+    xppfd[0] = cfg.useZERO | cfg.bltFlip | cfg.useMSAA | cfg.scalerOff | cfg.bufoAcc; \
     xppfd[1] = (cfg.dispTimerMS & 0x8000U)? (cfg.dispTimerMS & 0x7FFFU):DISPTMR_DEFAULT
 
 int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd)

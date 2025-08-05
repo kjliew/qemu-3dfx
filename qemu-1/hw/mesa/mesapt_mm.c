@@ -2363,10 +2363,12 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
         disable = (*(int *)ppfd) & 0x02U, \
         msaa = (*(int *)ppfd) & 0x0CU, \
         flip = (*(int *)ppfd) & 0x10U, \
+        ctx0 = (*(int *)ppfd) & 0x20U, \
         msec = *(int *)PTR(ppfd, sizeof(int)); \
     GLBufOAccelCfg(enable); \
     GLRenderScaler(disable); \
     GLContextMSAA(msaa); \
+    GLContextZERO(ctx0); \
     GLBlitFlip(flip); \
     GLDispTimerCfg(msec)
                 do {

@@ -262,6 +262,7 @@ static int cAuxBuffers, cSampleBuf[2];
 
 static struct {
     void (*SwapIntervalEXT)(Display *, GLXDrawable, int);
+    int has_mesa_exts;
 } xglFuncs;
 
 int glwnd_ready(void) { return qatomic_read(&wnd_ready); }
@@ -342,6 +343,7 @@ void MGLTmpContext(void)
     if (find_xstr(xstr, "GLX_EXT_swap_control"))
         xglFuncs.SwapIntervalEXT = (void (*)(Display *, GLXDrawable, int))
             MesaGLGetProc("glXSwapIntervalEXT");
+    xglFuncs.has_mesa_exts = find_xstr(xstr, "GLX_MESA_swap_control");
     XCloseDisplay(tmpDisp);
 }
 
@@ -418,7 +420,7 @@ int MGLMakeCurrent(uint32_t cntxRC, int level)
             const int val = 0;
             if (xglFuncs.SwapIntervalEXT)
                 xglFuncs.SwapIntervalEXT(dpy, win, val);
-            else if (find_xstr(xstr, "GLX_MESA_swap_control")) {
+            else if (xglFuncs.has_mesa_exts) {
                 int (*SwapIntervalMESA)(unsigned int) =
                     (int (*)(unsigned int)) MesaGLGetProc("glXSwapIntervalMESA");
                 if (SwapIntervalMESA)
@@ -469,6 +471,7 @@ static int MGLPresetPixelFormat(void)
     DPRINTF("FBConfig 0x%03x visual 0x%03lx nAux %d nSamples %d %d vidMode %d %s",
         fbid, xvi->visualid, cAuxBuffers, cSampleBuf[0], cSampleBuf[1], xvidmode,
         ContextUseSRGB()? "sRGB":"");
+    DPRINTF("..using %s", (xglFuncs.SwapIntervalEXT)? "GLX_EXT_swap_control":"GLX_MESA_swap_control");
     MesaInitGammaRamp();
     XFree(fbcnf);
     XFlush(dpy);
@@ -617,7 +620,7 @@ void MGLFuncHandler(const char *name)
         return;
     }
     FUNCP_HANDLER("wglSwapIntervalEXT") {
-        if (!xglFuncs.SwapIntervalEXT && find_xstr(xstr, "GLX_MESA_swap_control")) {
+        if (!xglFuncs.SwapIntervalEXT && xglFuncs.has_mesa_exts) {
             uint32_t ret = 0;
             int (*GetSwapIntervalMESA)(void) =
                 (int (*)(void)) MesaGLGetProc("glXGetSwapIntervalMESA");
@@ -657,7 +660,7 @@ void MGLFuncHandler(const char *name)
         }
     }
     FUNCP_HANDLER("wglGetSwapIntervalEXT") {
-        if (!xglFuncs.SwapIntervalEXT && find_xstr(xstr, "GLX_MESA_swap_control")) {
+        if (!xglFuncs.SwapIntervalEXT && xglFuncs.has_mesa_exts) {
             uint32_t ret;
             int (*GetSwapIntervalMESA)(void) =
                 (int (*)(void)) MesaGLGetProc("glXGetSwapIntervalMESA");

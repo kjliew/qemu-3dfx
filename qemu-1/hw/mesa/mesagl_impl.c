@@ -1610,12 +1610,13 @@ static int cfg_dispTimerMS;
 static int cfg_bufoAccelEN;
 static int cfg_cntxMSAA;
 static int cfg_cntxSRGB;
+static int cfg_cntxZERO;
 static int cfg_blitFlip;
 static int cfg_cntxVsyncOff;
 static int cfg_renderScalerOff;
 static int cfg_fpsLimit;
 static int cfg_shaderDump;
-static int cfg_errorCheck;
+static int cfg_errCheck;
 static int cfg_traceFifo;
 static int cfg_traceFunc;
 static void conf_MGLOptions(void)
@@ -1627,7 +1628,7 @@ static void conf_MGLOptions(void)
     cfg_cntxVsyncOff = 0;
     cfg_fpsLimit = 0;
     cfg_shaderDump = 0;
-    cfg_errorCheck = 0;
+    cfg_errCheck = 0;
     cfg_traceFifo = 0;
     cfg_traceFunc = 0;
     FILE *fp = fopen(MESAGLCFG, "r");
@@ -1658,7 +1659,7 @@ static void conf_MGLOptions(void)
             i = sscanf(line, "DumpShader,%d", &v);
             cfg_shaderDump = ((i == 1) && v)? 1:cfg_shaderDump;
             i = sscanf(line, "CheckError,%d", &v);
-            cfg_errorCheck = ((i == 1) && v)? 1:cfg_errorCheck;
+            cfg_errCheck = ((i == 1) && v)? 1:cfg_errCheck;
             i = sscanf(line, "FifoTrace,%d", &v);
             cfg_traceFifo = ((i == 1) && v)? 1:cfg_traceFifo;
             i = sscanf(line, "FuncTrace,%d", &v);
@@ -1685,6 +1686,7 @@ int SwapFpsLimit(int fps)
 void GLBufOAccelCfg(int enable) { cfg_bufoAccelEN = enable; }
 void GLRenderScaler(int disable) { cfg_renderScalerOff = disable; }
 void GLContextMSAA(int msaa) { cfg_cntxMSAA = msaa; }
+void GLContextZERO(int ctx0) { cfg_cntxZERO = ctx0; }
 void GLBlitFlip(int flip) { cfg_blitFlip = flip; }
 void GLDispTimerCfg(int msec) { cfg_dispTimerMS = msec; }
 void GLExtUncapped(int xwine) { cfg_xWine = xwine; if (cfg_xWine) { cfg_xYear = 0; cfg_xLength = 0; }}
@@ -1694,13 +1696,14 @@ int GetVertCacheMB(void) { return cfg_vertCacheMB; }
 int GetDispTimerMS(void) { return cfg_dispTimerMS; }
 int GetBufOAccelEN(void) { return cfg_bufoAccelEN; }
 int GetContextMSAA(void) { return (cfg_cntxMSAA > 8)? 16:cfg_cntxMSAA; }
+int GetContextZERO(void) { return cfg_cntxZERO; }
 int ContextVsyncOff(void) { return cfg_cntxVsyncOff; }
 int RenderScalerOff(void) { return cfg_renderScalerOff; }
 int ScalerBlitFlip(void) { return cfg_blitFlip; }
 int ScalerSRGBCorr(void) { return cfg_xWine; }
 int GetFpsLimit(void) { return cfg_fpsLimit; }
 int GLShaderDump(void) { return cfg_shaderDump; }
-int GLCheckError(void) { return cfg_errorCheck; }
+int GLCheckError(void) { return cfg_errCheck; }
 int GLFifoTrace(void) { return cfg_traceFifo; }
 int GLFuncTrace(void) { return (cfg_traceFifo)? 0:cfg_traceFunc; }
 
