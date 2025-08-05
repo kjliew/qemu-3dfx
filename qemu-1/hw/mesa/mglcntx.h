@@ -26,7 +26,7 @@
 void SetMesaFuncPtr(void *);
 void *MesaGLGetProc(const char *);
 int MGLExtIsAvail(const char *, const char *);
-int MGLUpdateGuestBufo(mapbufo_t *, int);
+int MGLUpdateGuestBufo(mapbufo_t *, const int);
 void MGLTmpContext(void);
 void MGLWndRelease(void);
 int MGLMakeCurrent(uint32_t, int);

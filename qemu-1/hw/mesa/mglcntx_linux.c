@@ -38,14 +38,27 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, int add) { return 0; }
 #endif
 #ifdef CONFIG_LINUX
 #include <linux/version.h>
+#include <sys/utsname.h>
 #include "system/kvm.h"
 
-int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
+static int bufo_accel_en(void)
+{
+    struct utsname buf;
+
+    if (!uname(&buf)) {
+        int major, patch, sub, i = sscanf(buf.release, "%d.%d.%d", &major, &patch, &sub);
+        if (i == 3) {
+            return (KERNEL_VERSION(major, patch, sub) >=
+                    KERNEL_VERSION(6, 13, 0))? 1:0;
+        }
+    }
+    return 0;
+}
+int MGLUpdateGuestBufo(mapbufo_t *bufo, const int add)
 {
     int ret = (GetBufOAccelEN()
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
-            || (bufo && bufo->tgt == GL_PIXEL_UNPACK_BUFFER)
-#endif
+            || (bufo_accel_en() &&
+                (bufo && bufo->tgt == GL_PIXEL_UNPACK_BUFFER))
             )? kvm_enabled():0;
 
     if (ret && bufo) {

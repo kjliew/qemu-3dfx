@@ -34,10 +34,15 @@
 #include <GL/wgl.h>
 #include "system/whpx.h"
 
-int MGLUpdateGuestBufo(mapbufo_t *bufo, int add)
+static int bufo_accel_en(void)
+{
+    return 1;
+}
+int MGLUpdateGuestBufo(mapbufo_t *bufo, const int add)
 {
     int ret = (GetBufOAccelEN()
-            || (bufo && bufo->tgt == GL_PIXEL_UNPACK_BUFFER)
+            || (bufo_accel_en() &&
+                (bufo && bufo->tgt == GL_PIXEL_UNPACK_BUFFER))
             )? whpx_enabled():0;
 
     if (ret && bufo) {
