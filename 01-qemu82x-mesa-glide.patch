@@ -457,8 +457,8 @@ diff -Nru ../orig/qemu-8.2.1/ui/sdl2.c ./ui/sdl2.c
 +                break;
 +        }
 +    }
-+    SDL_DestroyRenderer(s->scon->real_renderer);
 +    SDL_DestroyTexture(s->scon->texture);
++    SDL_DestroyRenderer(s->scon->real_renderer);
 +    s->scon->real_renderer = NULL;
 +    s->scon->texture = NULL;
 +    s->render_pause = 1;
