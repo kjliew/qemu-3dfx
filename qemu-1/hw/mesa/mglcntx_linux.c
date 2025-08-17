@@ -217,14 +217,15 @@ static const int iAttribs[] = {
 
 static int syncFBConfigToPFD(Display *dpy, const GLXFBConfig *fbc, const int nElem)
 {
-    int ret = 0, colorBits, alphaBits;
+    int ret = 0, colorBits;
     for (int i = 0; i < nElem; i++) {
         glXGetFBConfigAttrib(dpy, fbc[i], GLX_BUFFER_SIZE, &colorBits);
-        glXGetFBConfigAttrib(dpy, fbc[i], GLX_ALPHA_SIZE, &alphaBits);
-        if (colorBits == pfd.cColorBits && alphaBits == pfd.cAlphaBits) {
+        XVisualInfo *vinfo = glXGetVisualFromFBConfig(dpy, fbc[i]);
+        if (vinfo->depth == colorBits)
             ret = i;
+        XFree(vinfo);
+        if (ret)
             break;
-        }
     }
     return ret;
 }
@@ -238,6 +239,7 @@ static int *iattribs_fb(Display *dpy, const int do_msaa)
         GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
         GLX_BUFFER_SIZE     , 32,
         GLX_DEPTH_SIZE      , 24,
+        GLX_ALPHA_SIZE      , 8,
         GLX_STENCIL_SIZE    , 8,
         GLX_DOUBLEBUFFER    , True,
         GLX_SAMPLE_BUFFERS  , 0,

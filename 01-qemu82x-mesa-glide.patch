@@ -482,7 +482,7 @@ diff -Nru ../orig/qemu-8.2.1/ui/sdl2.c ./ui/sdl2.c
 +    else {
 +        SDL_GL_DeleteContext(s->scon->winctx);
 +        SDL_GL_ResetAttributes();
-+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "");
++        SDL_ResetHint(SDL_HINT_RENDER_DRIVER);
 +        s->scon->winctx = NULL;
 +        sdl_gui_restart(s->scon, s->icon);
 +    }
