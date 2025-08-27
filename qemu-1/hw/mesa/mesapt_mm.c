@@ -23,7 +23,7 @@
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "hw/sysbus.h"
-#include "exec/address-spaces.h"
+#include "system/address-spaces.h"
 
 #include "mesagl_impl.h"
 
@@ -2504,7 +2504,7 @@ static void mesapt_finalize(Object *obj)
     //MesaPTState *s = MESAPT(obj);
 }
 
-static void mesapt_class_init(ObjectClass *klass, void *data)
+static void mesapt_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 

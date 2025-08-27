@@ -12,6 +12,9 @@ MODS=$(cat $TOP/target/i386/meson.build | tail -n 2 | head -n 1 | \
 if [ -z $REV ] || [ -z $EMUS ] || [ -z $MODS ]; then exit 1; fi
 [ ! -z $CRYP ]  && sed -i -e "s/HASH_ALGO/$CRYP/" \
     $TOP/hw/mesa/mesagl_pfn.h
+expr "$(grep base_init\) $TOP/include/qom/object.h)" : "\(.*\*klass,\ void\ \)" >/dev/null && \
+    sed -i -e "s/\*klass,\ const\ void/\*klass,\ void/;s/\"system\(\/address\-\)/\"exec\1/" \
+    $(grep -rl \*klass,\ const\ void $TOP/hw/{3dfx,mesa})
 sed -i -e "s/\"sys.*\//\"$EMUS\//" \
     $(grep -rl \"sys.*\/ $TOP/hw/{3dfx,mesa})
 sed -i -e "s/i386.*_ss/$MODS/" \

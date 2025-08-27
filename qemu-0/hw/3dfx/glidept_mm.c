@@ -23,7 +23,7 @@
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "hw/sysbus.h"
-#include "exec/address-spaces.h"
+#include "system/address-spaces.h"
 
 #include "glide2x_impl.h"
 #include "gllstbuf.h"
@@ -1170,7 +1170,7 @@ static void glidelfb_realize(DeviceState *dev, Error **errp)
     memset(s->stride, 0, 2 * sizeof(uint32_t));
     memset(s->lock, 0, 2 * sizeof(int));
 }
-static void glidelfb_class_init(ObjectClass *klass, void *data)
+static void glidelfb_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 
@@ -1178,7 +1178,7 @@ static void glidelfb_class_init(ObjectClass *klass, void *data)
     device_class_set_legacy_reset(dc, glidelfb_reset);
 }
 
-static void glidept_class_init(ObjectClass *klass, void *data)
+static void glidept_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 
