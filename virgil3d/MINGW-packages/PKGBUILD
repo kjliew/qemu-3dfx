@@ -3,7 +3,7 @@
 _realname=virglrenderer
 pkgbase=mingw-w64-${_realname}
 pkgname=${MINGW_PACKAGE_PREFIX}-${_realname}
-pkgver=1.1.1
+pkgver=1.2.0
 pkgrel=1
 pkgdesc='A virtual 3D GPU library, that allows the guest operating system to use the host GPU to accelerate 3D rendering'
 arch=('any')
@@ -12,26 +12,34 @@ url='https://virgil3d.github.io/'
 license=(MIT)
 depends=("${MINGW_PACKAGE_PREFIX}-libepoxy")
 makedepends=("${MINGW_PACKAGE_PREFIX}-python"
-             "${MINGW_PACKAGE_PREFIX}-python-yaml"
+             "${MINGW_PACKAGE_PREFIX}-cc"
              "${MINGW_PACKAGE_PREFIX}-meson"
              "${MINGW_PACKAGE_PREFIX}-ninja")
+_venv=(pyyaml)
 _tag=$pkgver
 source=("virglrenderer-$pkgver.tar.bz2::https://gitlab.freedesktop.org/virgl/virglrenderer/-/archive/$_tag/virglrenderer-$_tag.tar.bz2"
         "0001-Virglrenderer-on-Windows-and-macOS.patch")
-sha256sums=('0fe489a812fbeb3d6718199c27b0f36f8d51bc5c54d8093aad53b00d107de2b3'
-            '47c2573d6782214805b22735d0884472b67c84c06089a6b831f937cd7ddea5cf')
+sha256sums=('f4f52db11297b52b35c8c2d5bf5e21b7997b52f8bfad99ea2b1c155997cff4ad'
+            '930078db6a8bf66e43445707e40c5bb7e6356d63f964ea637275f9cfd02d0d13')
 
 prepare() {
   cd virglrenderer-$_tag
+  mkdir -p src/gallium/include/sys && \
+    touch src/gallium/include/sys/ioccom.h
   sed "s/\(error=switch\)/\1\',\'\-Wno\-unknown\-attributes\',\'\-Wno\-unused\-parameter/" -i meson.build
   sed "s/\(fvisibility=hidden\)/\1\',\'\-mno\-ms\-bitfields/" -i meson.build
+  sed "s/\(strstr.*Quadro.*\ NULL\)/1\ ||\ \1/" -i src/vrend/vrend_renderer.c
   patch -p2 -i ${srcdir}/0001-Virglrenderer-on-Windows-and-macOS.patch
 }
 
 build() {
   cd virglrenderer-$_tag
+  python -m venv pyvenv && \
+    source pyvenv/bin/activate
+  python -m pip install --upgrade pip
+  pip install $_venv
   MSYS2_ARG_CONV_EXCL="--prefix" \
-  CFLAGS="-march=x86-64-v2 -mtune=generic -flto -O3" \
+  CFLAGS="-march=x86-64-v2 -mtune=generic -flto=auto -O3" \
   meson setup --prefix="${MINGW_PREFIX}" build # -Dtests=true
   ninja -C build
 }
