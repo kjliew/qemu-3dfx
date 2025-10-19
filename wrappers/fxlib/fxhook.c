@@ -219,9 +219,23 @@ static void dolog_compat_patched(void)
     }
 }
 
+void HookGetTimeModAddr(const SYSTEM_INFO *si, const DWORD dwFFop, const uint32_t maddr)
+{
+    uint32_t addr = maddr, *patch, range;
+    for (int i = 0; addr && (i < si->dwPageSize); i+=0x04) {
+        if (0x4550U == *(uint32_t *)addr) break;
+        addr += 0x04;
+    }
+    addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0;
+    patch = (uint32_t *)(addr & ~(si->dwPageSize - 1));
+    range = si->dwPageSize;
+    HookParseRange(&addr, &patch, &range);
+    HookPatchTimer(addr, patch, range - (((uint32_t)patch) & (si->dwPageSize - 1)), dwFFop);
+}
+
 void HookTimeGetTime(const uint32_t caddr)
 {
-    uint32_t addr, *patch, range;
+    uint32_t addr, *patch;
     SYSTEM_INFO si;
     char buffer[MAX_PATH + 1], dotstr[] = ".hook";
     unsigned int len = GetModuleFileName(0, buffer, sizeof(buffer));
@@ -297,22 +311,10 @@ void HookTimeGetTime(const uint32_t caddr)
             HookPatchTimer(addr, patch, si.dwPageSize, dwFFop);
         }
     }
-#define TICK_HOOK(mod) \
-    addr = (uint32_t)GetModuleHandle(mod); \
-    addr = (addr)? addr:((uint32_t)LoadLibrary(mod)); \
-    for (int i = 0; addr && (i < si.dwPageSize); i+=0x04) { \
-        if (0x4550U == *(uint32_t *)addr) break; \
-        addr += 0x04; \
-    } \
-    addr = (addr && (0x4550U == *(uint32_t *)addr))? addr:0; \
-    patch = (uint32_t *)(addr & ~(si.dwPageSize - 1)); \
-    range = si.dwPageSize; \
-    HookParseRange(&addr, &patch, &range); \
-    HookPatchTimer(addr, patch, range - (((uint32_t)patch) & (si.dwPageSize - 1)), dwFFop);
     for (int i = 0; i <= modList.modNum; i++) {
-        TICK_HOOK(modList.modName[i]);
+        addr = (uint32_t)GetModuleHandle(modList.modName[i]);
+        addr = (addr)? addr:((uint32_t)LoadLibrary(modList.modName[i]));
+        HookGetTimeModAddr(&si, dwFFop, addr);
     }
-#undef TICK_HOOK
     dolog_compat_patched();
 }
-

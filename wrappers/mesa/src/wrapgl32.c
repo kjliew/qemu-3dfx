@@ -17067,6 +17067,14 @@ void HookDeviceGammaRamp(const uint32_t caddr)
 #undef GLGAMMA_HOOK
 }
 
+static void WINAPI
+HelperHookTime(const HMODULE mod)
+{
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    HookGetTimeModAddr(&si, 0, (uint32_t)mod);
+}
+
 BOOL WINAPI
 mglDescribeLayerPlane(HDC hdc, int iPixelFormat, int iLayerPlane,
                       UINT nBytes, LPLAYERPLANEDESCRIPTOR ppfd)
@@ -17152,6 +17160,8 @@ mglGetProcAddress (uint32_t arg0)
     FUNC_WGL_EXT(glDebugMessageCallbackARB);
     FUNC_WGL_EXT(glDebugMessageControlARB);
     FUNC_WGL_EXT(glDebugMessageInsertARB);
+    /* Helper */
+    FUNC_WGL_EXT(HelperHookTime);
 #undef FUNC_WGL_EXT
 
     ret = (uint32_t)fptr;

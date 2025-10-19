@@ -111,6 +111,7 @@ void kmdDrvInit(PDRVFUNC);
 void HookEntryHook(unsigned int *, const unsigned int);
 void HookParseRange(unsigned int *, unsigned int **, unsigned int *);
 void HookTimeGetTime(const unsigned int);
+void HookGetTimeModAddr(const SYSTEM_INFO *, const DWORD, const unsigned int);
 /* fxhpat.c */
 void HookPatchfxCompat(const DWORD);
 

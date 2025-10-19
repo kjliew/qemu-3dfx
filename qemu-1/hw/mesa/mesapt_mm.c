@@ -2322,6 +2322,8 @@ static void mesapt_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
                         DPRINTF_COND((ptVer[0] && (lvl_prev != level) && (0 == NumPbuffer())),
                             "wglMakeCurrent cntx %d curr %d lvl %d", s->mglContext, s->mglCntxCurrent, level);
                         lvl_prev = level;
+                        if (ptVer[0] && !level)
+                            dispTimerSched(s->dispTimer, &s->crashRC);
                         MGLMakeCurrent(ptVer[0], level);
                     }
                 } while(0);
