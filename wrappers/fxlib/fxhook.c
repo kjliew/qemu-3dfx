@@ -222,6 +222,7 @@ static void dolog_compat_patched(void)
 void HookGetTimeModAddr(const SYSTEM_INFO *si, const DWORD dwFFop, const uint32_t maddr)
 {
     uint32_t addr = maddr, *patch, range;
+    HookTimeTckRef(0);
     for (int i = 0; addr && (i < si->dwPageSize); i+=0x04) {
         if (0x4550U == *(uint32_t *)addr) break;
         addr += 0x04;
