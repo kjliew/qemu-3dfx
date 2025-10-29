@@ -113,6 +113,11 @@ static struct E_PATCH mhead_exe[] = {
     PATCH_D(0x70dec, "\xEB"),
     E_PATCH_END()
 };
+static struct E_PATCH sonicr_exe[] = {
+    PATCH_D(0x801c9, "\x0F\xB6\xD7\xB3\xAA"),
+    PATCH_D(0x801d7, "\xF7\xF9\xF7\xEB"),
+    E_PATCH_END()
+};
 static COMPATFX fxCompatTbl[] = {
     /* Rage Expendable Retailed & G400 EMBM */
     { "go.exe", "330113cfeb00ae4de299f041fb5714ba", HP_ANYO, go_g400_3 },
@@ -158,6 +163,8 @@ static COMPATFX fxCompatTbl[] = {
     { "rush640.exe", "9f118eaba1374c5504bfc22aa4a9187a", HP_ANYO, rush640 },
     /* Motorhead Matrox G200 p3.0 */
     { "motor.exe", "580e38ba69420a0d44469b92d509b093", HP_ANYO, mhead_exe },
+    /* Sonic R SEGA 1998 */
+    { "sonicr.exe", "ac3ccb986cb31d277afa0f2a43109e32", HP_ANYO, sonicr_exe },
     E_PATCH_END()
 };
    
