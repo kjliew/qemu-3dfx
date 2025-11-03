@@ -1,0 +1,53 @@
+name: CI-build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: install prerequisities
+      run: |
+        sudo apt update
+        sudo apt install mingw-w64 mingw-w64-tools libglib2.0-dev libsdl2-dev
+    - uses: actions/checkout@v4
+    - name: Open Watcom setup
+      uses: open-watcom/setup-watcom@v0
+      with:
+        version: "2.0"
+    - name: create build dirs
+      run: |
+        mkdir build
+        mkdir wrappers/3dfx/build
+        mkdir wrappers/mesa/build
+    - name: download qemu
+      run: |
+        wget https://download.qemu.org/qemu-9.2.2.tar.xz
+        tar xf qemu-9.2.2.tar.xz
+    - name: patch qemu
+      run: |
+        rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
+        patch -p0 -i ../00-qemu92x-mesa-glide.patch
+        bash ../scripts/sign_commit
+      working-directory: qemu-9.2.2
+    - name: build qemu
+      run: |
+        ../qemu-9.2.2/configure && make
+      working-directory: build
+    - name: make 3dfx
+      run: |
+        bash ../../../scripts/conf_wrapper
+        make && make clean
+      working-directory: wrappers/3dfx/build
+    - name: make mesa
+      run: |
+        bash ../../../scripts/conf_wrapper
+        make && make clean
+      working-directory: wrappers/mesa/build
