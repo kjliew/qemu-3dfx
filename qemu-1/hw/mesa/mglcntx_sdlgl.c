@@ -146,10 +146,12 @@ int MGLUpdateGuestBufo(mapbufo_t *bufo, const int add)
     }; \
     if (!dpy) dpy = glXGetCurrentDisplay(); \
     GLXFBConfig *pbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), ia, &pbcnt); \
-    PBDC[x] = glXCreatePbuffer(dpy, pbcnf[0], pa); \
-    PBRC[x] = glXCreateNewContext(dpy, pbcnf[0], GLX_RGBA_TYPE, glXGetCurrentContext(), true); \
-    XFree(pbcnf); \
-    argsp[0] = 1
+    if (!pbcnf) argsp[0] = 0; \
+    else { \
+        PBDC[x] = glXCreatePbuffer(dpy, pbcnf[0], pa); \
+        PBRC[x] = glXCreateNewContext(dpy, pbcnf[0], GLX_RGBA_TYPE, glXGetCurrentContext(), true); \
+        XFree(pbcnf); argsp[0] = 1; \
+    }
 #define GL_PBUFFER_DESTROY(x) \
     glXDestroyContext(dpy, PBRC[x]);\
     glXDestroyPbuffer(dpy, PBDC[x]);\

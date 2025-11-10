@@ -844,10 +844,14 @@ void MGLFuncHandler(const char *name)
             None,
         };
         GLXFBConfig *pbcnf = glXChooseFBConfig(dpy, DefaultScreen(dpy), ia, &pbcnt);
-        PBDC[i] = glXCreatePbuffer(dpy, pbcnf[0], pa);
-        PBRC[i] = glXCreateNewContext(dpy, pbcnf[0], GLX_RGBA_TYPE, glXGetCurrentContext(), true);
-        XFree(pbcnf);
-        argsp[0] = 1;
+        if (!pbcnf)
+            argsp[0] = 0;
+        else {
+            PBDC[i] = glXCreatePbuffer(dpy, pbcnf[0], pa);
+            PBRC[i] = glXCreateNewContext(dpy, pbcnf[0], GLX_RGBA_TYPE, glXGetCurrentContext(), true);
+            XFree(pbcnf);
+            argsp[0] = 1;
+        }
         argsp[1] = i;
         return;
     }

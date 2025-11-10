@@ -695,7 +695,7 @@ void MGLFuncHandler(const char *name)
                 return;
             }
             hPbuffer[i] = fp(hDC, argsp[0], argsp[1], argsp[2], (const int *)&argsp[4]);
-            hPBDC[i] = fpDC(hPbuffer[i]);
+            hPBDC[i] = (hPbuffer[i])? fpDC(hPbuffer[i]):0;
             argsp[0] = (hPbuffer[i] && hPBDC[i])? 1:0;
             argsp[1] = i;
             return;
