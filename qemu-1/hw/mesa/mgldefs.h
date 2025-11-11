@@ -1178,6 +1178,7 @@
 #define GL_PROGRAM_FORMAT_ASCII_ARB                             0x8875
 #define GL_PROGRAM_FORMAT_ARB                                   0x8876
 #define GL_GEOMETRY_SHADER_INVOCATIONS                          0x887F
+#define GL_DEPTH_BOUNDS_TEST_EXT                                0x8890
 #define GL_ARRAY_BUFFER                                         0x8892
 #define GL_ELEMENT_ARRAY_BUFFER                                 0x8893
 #define GL_ARRAY_BUFFER_BINDING                                 0x8894
@@ -1247,6 +1248,7 @@
 #define GL_MAX_ARRAY_TEXTURE_LAYERS                             0x88FF
 #define GL_MIN_PROGRAM_TEXEL_OFFSET                             0x8904
 #define GL_MAX_PROGRAM_TEXEL_OFFSET                             0x8905
+#define GL_STENCIL_TEST_TWO_SIDE_EXT                            0x8910
 #define GL_SAMPLES_PASSED                                       0x8914
 #define GL_GEOMETRY_VERTICES_OUT                                0x8916
 #define GL_GEOMETRY_INPUT_TYPE                                  0x8917
@@ -1256,6 +1258,15 @@
 #define GL_CLAMP_FRAGMENT_COLOR                                 0x891B
 #define GL_CLAMP_READ_COLOR                                     0x891C
 #define GL_FIXED_ONLY                                           0x891D
+#define GL_FRAGMENT_SHADER_ATI                                  0x8920
+#define GL_NUM_FRAGMENT_REGISTERS_ATI                           0x896E
+#define GL_NUM_FRAGMENT_CONSTANTS_ATI                           0x896F
+#define GL_NUM_PASSES_ATI                                       0x8970
+#define GL_NUM_INSTRUCTIONS_PER_PASS_ATI                        0x8971
+#define GL_NUM_INSTRUCTIONS_TOTAL_ATI                           0x8972
+#define GL_NUM_INPUT_INTERPOLATOR_COMPONENTS_ATI                0x8973
+#define GL_NUM_LOOPBACK_COMPONENTS_ATI                          0x8974
+#define GL_COLOR_ALPHA_PAIRING_ATI                              0x8975
 #define GL_UNIFORM_BUFFER                                       0x8A11
 #define GL_RGB_422_APPLE                                        0x8A1F
 #define GL_UNIFORM_BUFFER_BINDING                               0x8A28

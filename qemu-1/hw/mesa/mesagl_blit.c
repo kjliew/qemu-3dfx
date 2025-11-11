@@ -338,11 +338,19 @@ void MesaRenderScaler(const uint32_t FEnum, void *args)
         case FEnum_glViewport:
             box = args;
             break;
+        case GL_VIEWPORT:
+            box = args;
+            if (!box[0] && !box[1] && (v[3] > (v[1] & 0x7FFFU))) {
+                box[2] = v[0];
+                box[3] = v[1] & 0x7FFFU;
+            }
+            /* fall through */
         default:
             return;
     }
     if (DrawableContext() && !framebuffer_binding
             && (v[3] > (v[1] & 0x7FFFU))
+            && (v[3] > box[3] && box[3] == (v[1] & 0x7FFFU))
             && (fullscreen || !blit.has_swap)
             && !RenderScalerOff()) {
         int aspect = (v[1] & (1 << 15))? 0:1,

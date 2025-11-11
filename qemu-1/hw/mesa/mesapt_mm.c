@@ -1968,6 +1968,8 @@ static void processFRet(MesaPTState *s)
         case FEnum_glGetDoublev:
         case FEnum_glGetFloatv:
         case FEnum_glGetIntegerv:
+            if (s->FEnum == FEnum_glGetIntegerv)
+                MesaRenderScaler(s->arg[0], PTR(outshm, ALIGNED(sizeof(int))));
             if (GLFuncTrace() && ((GLFuncTrace() == 2) ||
                 ((s->logpname[s->arg[0] >> 3] & (1 << (s->arg[0] % 8))) == 0))) {
                 s->logpname[s->arg[0] >> 3] |= (1 << (s->arg[0] % 8));
