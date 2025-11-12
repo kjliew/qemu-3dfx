@@ -350,7 +350,6 @@ void MesaRenderScaler(const uint32_t FEnum, void *args)
     }
     if (DrawableContext() && !framebuffer_binding
             && (v[3] > (v[1] & 0x7FFFU))
-            && (v[3] > box[3] && box[3] == (v[1] & 0x7FFFU))
             && (fullscreen || !blit.has_swap)
             && !RenderScalerOff()) {
         int aspect = (v[1] & (1 << 15))? 0:1,
