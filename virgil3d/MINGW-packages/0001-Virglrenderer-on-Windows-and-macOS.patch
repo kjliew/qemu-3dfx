@@ -185,6 +185,23 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_shader.c src/virglrenderer-1.
           emit_ext(glsl_strbufs, "ARB_uniform_buffer_object", "require");
  
        if (ctx->num_cull_dist_prop || ctx->key->num_in_cull || ctx->key->num_out_cull)
+@@ -6322,6 +6322,16 @@
+       for (uint32_t i = 0; i < ARRAY_SIZE(shader_req_table); i++) {
+          if (shader_req_table[i].key == SHADER_REQ_SAMPLER_RECT && ctx->glsl_ver_required >= 140)
+             continue;
++         if (ctx->cfg->gl_apple) {
++            switch (shader_req_table[i].key) {
++            case SHADER_REQ_SAMPLER_MS:
++            case SHADER_REQ_INSTANCE_ID:
++            case SHADER_REQ_TXQ_LEVELS:
++               continue;
++            default:
++               break;
++            }
++         }
+
+          if (ctx->shader_req_bits & shader_req_table[i].key) {
+             emit_ext(glsl_strbufs, shader_req_table[i].string, "require");
 diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_shader.h src/virglrenderer-1.2.0/src/vrend/vrend_shader.h
 --- orig/virglrenderer-1.2.0/src/vrend/vrend_shader.h
 +++ src/virglrenderer-1.2.0/src/vrend/vrend_shader.h
