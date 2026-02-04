@@ -40,7 +40,7 @@ static void *LookupVertArry(PVERTARRY *pArry, uint32_t handle, uint32_t size)
         return NULL;
 
     while (p) {
-        if (((handle >= p->tagLo) && (handle < p->tagHi)) &&
+        if (((handle >= p->tagLo || p->tagLo == PAGE_SIZE) && (handle < p->tagHi)) &&
             ((p->tagHi - handle) >= (size >> 1)))
             break;
         if (p->next == NULL)
@@ -58,7 +58,7 @@ static void *LookupVertArry(PVERTARRY *pArry, uint32_t handle, uint32_t size)
         *pArry = p;
     }
     else {
-        if (((handle >= p->tagLo) && (handle < p->tagHi)) && 
+        if (((handle >= p->tagLo || p->tagLo == PAGE_SIZE) && (handle < p->tagHi)) &&
             ((p->tagHi - handle) >= (size >> 1))) { }
         else {
             p->next = g_new(VERTARRY, 1);

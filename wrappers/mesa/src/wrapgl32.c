@@ -252,9 +252,15 @@ static void PrepVertexArray(int start, int end, int sizei)
         n += ALIGNED((cbElem*(end - start) + Interleaved.size));
     }
     else {
+        void PT_CALL glDisableClientState(uint32_t);
         if (vtxArry.Color.enable && vtxArry.Color.ptr) {
+            int ucb;
             cbElem = (vtxArry.Color.stride)? vtxArry.Color.stride:szgldata(vtxArry.Color.size, vtxArry.Color.type);
-            n += ALIGNED((cbElem*(end - start) + szgldata(vtxArry.Color.size, vtxArry.Color.type)));
+            ucb = ALIGNED((cbElem*(end - start) + szgldata(vtxArry.Color.size, vtxArry.Color.type)));
+            if (IsBadReadPtr(vtxArry.Color.ptr, ucb))
+                glDisableClientState(GL_COLOR_ARRAY);
+            else
+                n += ucb;
         }
         if (vtxArry.EdgeFlag.enable && vtxArry.EdgeFlag.ptr) {
             cbElem = (vtxArry.EdgeFlag.stride)? vtxArry.EdgeFlag.stride:szgldata(vtxArry.EdgeFlag.size, vtxArry.EdgeFlag.type);
@@ -275,7 +281,6 @@ static void PrepVertexArray(int start, int end, int sizei)
                 ucb = ALIGNED((cbElem*(end - start) + szgldata(vtxArry.TexCoord[i].size, vtxArry.TexCoord[i].type)));
                 if (IsBadReadPtr(vtxArry.TexCoord[i].ptr, ucb)) {
                     void PT_CALL glClientActiveTexture(uint32_t);
-                    void PT_CALL glDisableClientState(uint32_t);
                     glClientActiveTexture(GL_TEXTURE0 + i);
                     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
                 }
@@ -17179,6 +17184,9 @@ mglGetProcAddress (uint32_t arg0)
     }
     return ret;
 }
+uint32_t PT_CALL COMPACT
+mglGetDefaultProcAddress (uint32_t arg0)
+{ return mglGetProcAddress(arg0); }
 
 uint32_t PT_CALL COMPACT
 mglCreateContext (uint32_t arg0)
