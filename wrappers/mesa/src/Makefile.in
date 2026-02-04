@@ -27,7 +27,7 @@ all: fxlib $(TARGET) exports-check $(TOOLS)
 
 exports-check: $(TARGET)
 	@if [ $$(objdump -x $(TARGET) | grep "\[[\ 0-9]*\]" | grep -v "^\[" | \
-		grep -v -e reloc -e Export\ RVA | wc -l) -ne 2976 ]; \
+		grep -v -e reloc -e Export\ RVA | wc -l) -ne 2977 ]; \
 		then exit 1; fi
 
 $(TARGET): $(C_OBJS) szdata.o wrapgl32.o stamp.o
