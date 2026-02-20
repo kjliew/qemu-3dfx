@@ -45,6 +45,13 @@ typedef struct {
 } guTexInfo;
 
 typedef struct {
+    uint32_t width, height;
+    uint32_t small, large;
+    uint32_t aspect;
+    uint32_t format;
+} wr3dfHeader;
+
+typedef struct {
     uint8_t header[SIZE_GU3DFHEADER];
     uint8_t table[SIZE_GUTEXTABLE];
     void *data;
@@ -198,6 +205,18 @@ static uint32_t guTexSize(const uint32_t mmid, const int lodLevel)
         }
     }
     return texBytes;
+}
+
+static uint32_t texTableValid(uint32_t format)
+{
+    switch(format) {
+        case 1:  /*GR_TEXFMT_YIQ_422*/
+        case 5:  /*GR_TEXFMT_P_8*/
+        case 9:  /*GR_TEXFMT_AYIQ_8422*/
+        case 14: /*GR_TEXFMT_AP_88*/
+            return 1;
+    }
+    return 0;
 }
 
 void PT_CALL grConstantColorValue(uint32_t arg0);
@@ -890,8 +909,11 @@ uint32_t PT_CALL gu3dfLoad(uint32_t arg0, uint32_t arg1) {
     pt[1] = arg0; pt[2] = arg1; 
     pt0 = (uint32_t *)pt[0]; *pt0 = FEnum_gu3dfLoad;
     ret = *pt0;
-    if (ret)
+    if (ret) {
         memcpy(info->data, &m3df[ALIGNED(1) >> 2], info->mem_required);
+        if (texTableValid(((wr3dfHeader *)info->header)->format))
+            fifoOutData(SIZE_GU3DFHEADER, (uint32_t)(info->table), SIZE_GUTEXTABLE);
+    }
     return ret;
 }
 void PT_CALL guAADrawTriangleWithClip(uint32_t arg0, uint32_t arg1, uint32_t arg2) {
