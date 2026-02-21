@@ -1,6 +1,7 @@
-diff -Nru orig/virglrenderer-1.2.0/src/gallium/auxiliary/tgsi/tgsi_text.h src/virglrenderer-1.2.0/src/gallium/auxiliary/tgsi/tgsi_text.h
---- orig/virglrenderer-1.2.0/src/gallium/auxiliary/tgsi/tgsi_text.h
-+++ src/virglrenderer-1.2.0/src/gallium/auxiliary/tgsi/tgsi_text.h
+diff -Nru orig/virglrenderer-1.3.0/meson.build src/virglrenderer-1.3.0/meson.build
+diff -Nru orig/virglrenderer-1.3.0/src/gallium/auxiliary/tgsi/tgsi_text.h src/virglrenderer-1.3.0/src/gallium/auxiliary/tgsi/tgsi_text.h
+--- orig/virglrenderer-1.3.0/src/gallium/auxiliary/tgsi/tgsi_text.h
++++ src/virglrenderer-1.3.0/src/gallium/auxiliary/tgsi/tgsi_text.h
 @@ -34,6 +34,9 @@
  
  #include "pipe/p_compiler.h"
@@ -11,9 +12,9 @@ diff -Nru orig/virglrenderer-1.2.0/src/gallium/auxiliary/tgsi/tgsi_text.h src/vi
  struct tgsi_token;
  
  bool
-diff -Nru orig/virglrenderer-1.2.0/src/mesa/compat/c11/threads_win32.h src/virglrenderer-1.2.0/src/mesa/compat/c11/threads_win32.h
---- orig/virglrenderer-1.2.0/src/mesa/compat/c11/threads_win32.h
-+++ src/virglrenderer-1.2.0/src/mesa/compat/c11/threads_win32.h
+diff -Nru orig/virglrenderer-1.3.0/src/mesa/compat/c11/threads_win32.h src/virglrenderer-1.3.0/src/mesa/compat/c11/threads_win32.h
+--- orig/virglrenderer-1.3.0/src/mesa/compat/c11/threads_win32.h
++++ src/virglrenderer-1.3.0/src/mesa/compat/c11/threads_win32.h
 @@ -175,7 +175,7 @@
      return 0;
  }
@@ -23,9 +24,9 @@ diff -Nru orig/virglrenderer-1.2.0/src/mesa/compat/c11/threads_win32.h src/virgl
  {
      int i;
      for (i = 0; i < EMULATED_THREADS_TSS_DTOR_SLOTNUM; i++) {
-diff -Nru orig/virglrenderer-1.2.0/src/virgl_util.h src/virglrenderer-1.2.0/src/virgl_util.h
---- orig/virglrenderer-1.2.0/src/virgl_util.h
-+++ src/virglrenderer-1.2.0/src/virgl_util.h
+diff -Nru orig/virglrenderer-1.3.0/src/virgl_util.h src/virglrenderer-1.3.0/src/virgl_util.h
+--- orig/virglrenderer-1.3.0/src/virgl_util.h
++++ src/virglrenderer-1.3.0/src/virgl_util.h
 @@ -29,6 +29,9 @@
  #include <stdbool.h>
  #include <stdint.h>
@@ -36,9 +37,9 @@ diff -Nru orig/virglrenderer-1.2.0/src/virgl_util.h src/virglrenderer-1.2.0/src/
  #ifdef HAVE_CONFIG_H
  #include "config.h"
  #endif
-diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_blitter.h src/virglrenderer-1.2.0/src/vrend/vrend_blitter.h
---- orig/virglrenderer-1.2.0/src/vrend/vrend_blitter.h
-+++ src/virglrenderer-1.2.0/src/vrend/vrend_blitter.h
+diff -Nru orig/virglrenderer-1.3.0/src/vrend/vrend_blitter.h src/virglrenderer-1.3.0/src/vrend/vrend_blitter.h
+--- orig/virglrenderer-1.3.0/src/vrend/vrend_blitter.h
++++ src/virglrenderer-1.3.0/src/vrend/vrend_blitter.h
 @@ -30,7 +30,7 @@
  /* shaders for blitting */
  
@@ -57,9 +58,9 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_blitter.h src/virglrenderer-1
     "// Blitter\n"                               \
  
  #define HEADER_GLES                             \
-diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_formats.c src/virglrenderer-1.2.0/src/vrend/vrend_formats.c
---- orig/virglrenderer-1.2.0/src/vrend/vrend_formats.c
-+++ src/virglrenderer-1.2.0/src/vrend/vrend_formats.c
+diff -Nru orig/virglrenderer-1.3.0/src/vrend/vrend_formats.c src/virglrenderer-1.3.0/src/vrend/vrend_formats.c
+--- orig/virglrenderer-1.3.0/src/vrend/vrend_formats.c
++++ src/virglrenderer-1.3.0/src/vrend/vrend_formats.c
 @@ -655,11 +655,11 @@
 
        if (table[i].internalformat != 0 &&
@@ -74,9 +75,9 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_formats.c src/virglrenderer-1
              glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 2,
                                        table[i].internalformat, 32, 32, GL_TRUE);
           } else {
-diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-1.2.0/src/vrend/vrend_renderer.c
---- orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c
-+++ src/virglrenderer-1.2.0/src/vrend/vrend_renderer.c
+diff -Nru orig/virglrenderer-1.3.0/src/vrend/vrend_renderer.c src/virglrenderer-1.3.0/src/vrend/vrend_renderer.c
+--- orig/virglrenderer-1.3.0/src/vrend/vrend_renderer.c
++++ src/virglrenderer-1.3.0/src/vrend/vrend_renderer.c
 @@ -387,6 +387,7 @@
     uint64_t features[feat_last / 64 + 1];
  
@@ -85,7 +86,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
     bool use_gles : 1;
     bool use_core_profile : 1;
     bool use_external_blob : 1;
-@@ -4887,6 +4888,7 @@
+@@ -4888,6 +4889,7 @@
                              box->width, box->height, box->depth,
                              format, type, data);
     } else {
@@ -93,7 +94,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
        glClearTexSubImage(res->gl_id, level,
                           box->x, box->y, box->z,
                           box->width, box->height, box->depth,
-@@ -7518,6 +7520,8 @@
+@@ -7519,6 +7521,8 @@
     GLenum err;
  
     err = glGetError();
@@ -102,7 +103,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
     if (err == GL_NO_ERROR)
        return true;
  
-@@ -7629,6 +7633,7 @@
+@@ -7656,6 +7660,7 @@
        virgl_info("gl_version %d - compat profile\n", gl_ver);
     }
  
@@ -110,7 +111,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
     vrend_state.use_integer = use_integer();
  
     init_features(gles ? 0 : gl_ver,
-@@ -7991,6 +7996,7 @@
+@@ -8020,6 +8025,7 @@
     grctx->shader_cfg.has_gpu_shader5 = has_feature(feat_gpu_shader5);
     grctx->shader_cfg.has_es31_compat = has_feature(feat_gles31_compatibility);
     grctx->shader_cfg.has_conservative_depth = has_feature(feat_conservative_depth);
@@ -118,7 +119,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
     grctx->shader_cfg.use_integer = vrend_state.use_integer;
     grctx->shader_cfg.has_dual_src_blend = has_feature(feat_dual_src_blend);
     grctx->shader_cfg.has_fbfetch_coherent = has_feature(feat_framebuffer_fetch);
-@@ -8617,6 +8623,7 @@
+@@ -8664,6 +8670,7 @@
  
     const bool format_can_texture_storage = has_feature(feat_texture_storage) &&
          (tex_conv_table[format].flags & VIRGL_TEXTURE_CAN_TEXTURE_STORAGE);
@@ -126,7 +127,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
  
     if (format_can_texture_storage)
        gr->storage_bits |= VREND_STORAGE_GL_IMMUTABLE;
-@@ -8690,7 +8697,7 @@
+@@ -8737,7 +8744,7 @@
        }
  
        if (pr->nr_samples > 1) {
@@ -135,7 +136,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
              if (gr->target == GL_TEXTURE_2D_MULTISAMPLE) {
                 glTexStorage2DMultisample(gr->target, pr->nr_samples,
                                           internalformat, pr->width0, pr->height0,
-@@ -9674,7 +9681,7 @@
+@@ -9721,7 +9728,7 @@
        glReadnPixelsARB(x, y, width, height, format, type, bufSize, data);
     else if (epoxy_gl_version() >= 45)
        glReadnPixels(x, y, width, height, format, type, bufSize, data);
@@ -144,7 +145,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
        glReadnPixelsKHR(x, y, width, height, format, type, bufSize, data);
     else
        glReadPixels(x, y, width, height, format, type, data);
-@@ -10503,7 +10510,7 @@
+@@ -10550,7 +10557,7 @@
     slice_offset = src_box->z * slice_size;
     cube_slice = (src_res->target == GL_TEXTURE_CUBE_MAP) ? src_box->z + src_box->depth : cube_slice;
     i = (src_res->target == GL_TEXTURE_CUBE_MAP) ? src_box->z : 0;
@@ -153,9 +154,9 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_renderer.c src/virglrenderer-
        virgl_error("Offset out of bound: %d\n", src_box->z);
        goto cleanup;
     }
-diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_shader.c src/virglrenderer-1.2.0/src/vrend/vrend_shader.c
---- orig/virglrenderer-1.2.0/src/vrend/vrend_shader.c
-+++ src/virglrenderer-1.2.0/src/vrend/vrend_shader.c
+diff -Nru orig/virglrenderer-1.3.0/src/vrend/vrend_shader.c src/virglrenderer-1.3.0/src/vrend/vrend_shader.c
+--- orig/virglrenderer-1.3.0/src/vrend/vrend_shader.c
++++ src/virglrenderer-1.3.0/src/vrend/vrend_shader.c
 @@ -3356,6 +3356,7 @@
     bool has_offset = strbuf_get_len (&offset_buf) != 0;
     // EXT_texture_shadow_lod defines a few more functions handling bias
@@ -185,7 +186,7 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_shader.c src/virglrenderer-1.
           emit_ext(glsl_strbufs, "ARB_uniform_buffer_object", "require");
  
        if (ctx->num_cull_dist_prop || ctx->key->num_in_cull || ctx->key->num_out_cull)
-@@ -6322,6 +6322,16 @@
+@@ -6320,6 +6322,16 @@
        for (uint32_t i = 0; i < ARRAY_SIZE(shader_req_table); i++) {
           if (shader_req_table[i].key == SHADER_REQ_SAMPLER_RECT && ctx->glsl_ver_required >= 140)
              continue;
@@ -202,9 +203,9 @@ diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_shader.c src/virglrenderer-1.
 
           if (ctx->shader_req_bits & shader_req_table[i].key) {
              emit_ext(glsl_strbufs, shader_req_table[i].string, "require");
-diff -Nru orig/virglrenderer-1.2.0/src/vrend/vrend_shader.h src/virglrenderer-1.2.0/src/vrend/vrend_shader.h
---- orig/virglrenderer-1.2.0/src/vrend/vrend_shader.h
-+++ src/virglrenderer-1.2.0/src/vrend/vrend_shader.h
+diff -Nru orig/virglrenderer-1.3.0/src/vrend/vrend_shader.h src/virglrenderer-1.3.0/src/vrend/vrend_shader.h
+--- orig/virglrenderer-1.3.0/src/vrend/vrend_shader.h
++++ src/virglrenderer-1.3.0/src/vrend/vrend_shader.h
 @@ -244,6 +244,7 @@
     uint32_t glsl_version : 12;
     uint32_t max_draw_buffers : 4;
