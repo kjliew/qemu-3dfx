@@ -257,6 +257,10 @@ void HookTimeGetTime(const uint32_t caddr)
             NULL,
         }
     };
+#ifndef HOOK_ME_9X
+    if (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))
+        return;
+#endif
 
     GetSystemInfo(&si);
     HookTimeTckRef(0);
