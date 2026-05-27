@@ -455,6 +455,8 @@ static void processArgs(GlidePTState *s)
                 uint8_t *vlist = PTR(s->hshm, ALIGNED(s->arg[0] * sizeof(int)));
                 for (i = 0; i < s->arg[0]; i++)
                     v = (ilist[i] > v)? ilist[i]:v;
+                if (v < 0 || v >= 0xFFFF)
+                    break;
                 s->vtxCache = g_malloc((v + 1) * SIZE_GRVERTEX);
                 for (i = 0; i < s->arg[0]; i++) {
                     memcpy(s->vtxCache + (ilist[i] * SIZE_GRVERTEX), vlist, SIZE_GRVERTEX);
@@ -623,7 +625,7 @@ static void processFRet(GlidePTState *s)
             g_free(s->vtxCache);
             break;
         case FEnum_grGlideGetVersion:
-            strncpy(s->version, (const char *)outshm, sizeof(char [80])-1);
+            g_strlcpy(s->version, (const char *)outshm, sizeof(char [80]));
             DPRINTF("grGlideGetVersion  %s", s->version);
             break;
         case FEnum_grDisable:
@@ -687,9 +689,9 @@ static void processFRet(GlidePTState *s)
             DPRINTF("%sWRAPFX32", (char *)outshm);
             if (s->initDLL == 0x301a0) {
                 init_g3ext();
-                strncpy((char *)outshm, wrGetString(GR_EXTENSION), sizeof(char[192])-1);
-                strncpy((char *)PTR(outshm, sizeof(char[192])), wrGetString(GR_HARDWARE), sizeof(char[16])-1);
-                strncpy((char *)PTR(outshm, sizeof(char[208])), wrGetString(GR_VERSION), sizeof(char[32])-1);
+                g_strlcpy((char *)outshm, wrGetString(GR_EXTENSION), sizeof(char[192]));
+                g_strlcpy((char *)PTR(outshm, sizeof(char[192])), wrGetString(GR_HARDWARE), sizeof(char[16]));
+                g_strlcpy((char *)PTR(outshm, sizeof(char[208])), wrGetString(GR_VERSION), sizeof(char[32]));
                 DPRINTF("\n  Extension: %s\n  Hardware: %s\n  Version: %s",
                         outshm, PTR(outshm, sizeof(char[192])), PTR(outshm, sizeof(char[208])));
 
@@ -715,7 +717,7 @@ static void processFRet(GlidePTState *s)
                     s->fifoMax, s->dataMax, (MAX_FIFO + s->dataMax) << 2, GLIDE_LFB_BASE + s->lfbDev->lfbMax);
             DPRINTF("  GrState %d VtxLayout %d", FreeGrState(), FreeVtxLayout());
 	    memset(s->arg, 0, sizeof(uint32_t [16]));
-	    strncpy(s->version, "Glide2x", sizeof(char [80])-1);
+	    g_strlcpy(s->version, "Glide2x", sizeof(char [80]));
             if (s->cfgPushed) {
                 s->cfgPushed = 0;
                 DPRINTF("cfgFile remove() ret %d", remove("glide.cfg"));
@@ -946,7 +948,7 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
                     break;
             }
 	    if (val == 0xa0243) {
-		strncpy(s->version, "Glide2x", sizeof(char [80])-1);
+		g_strlcpy(s->version, "Glide2x", sizeof(char [80]));
 		if (init_glide2x("glide2x.dll") == 0) {
 		    s->initDLL = 0x243a0;
 		    s->lfbDev->v1Lfb = 0;
@@ -955,7 +957,7 @@ static void glidept_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 		}
 	    }
             else if (val == 0xa0211) {
-		strncpy(s->version, "Glide", sizeof(char [80])-1);
+		g_strlcpy(s->version, "Glide", sizeof(char [80]));
 		if (init_glide2x("glide.dll") == 0) {
 		    s->initDLL = 0x211a0;
                     s->lfb_real = 1;
