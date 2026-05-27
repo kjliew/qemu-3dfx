@@ -179,10 +179,6 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
           funcTick[] = "GetTickCount",
           funcPerf[] = "QueryPerformanceCounter";
 
-#ifndef HOOK_ME_9X
-    if (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))
-        return;
-#endif
     if (addr && (addr == (uint32_t)patch) &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
         DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcTime),
@@ -195,6 +191,10 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
               hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0) &&
                       !(dwFFop & FFOP_KERNELTICK))?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf):0;
+#ifndef HOOK_ME_9X
+        if (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))
+            hkTime = hkEventSet = hkEventKill = hkTick = 0;
+#endif
         EVENTFX timeEvent;
         fxEventHookPtr(&timeEvent);
         for (int i = 0; i < (range >> 2); i++) {
