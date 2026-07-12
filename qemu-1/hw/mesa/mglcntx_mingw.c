@@ -197,10 +197,17 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
 static void TmpContextPurge(void)
 {
     HWND tmpWin = FindWindow("dummy", "dummy");
+    int n;
     if (tmpWin) {
         DestroyWindow(tmpWin);
         if (!UnregisterClass("dummy", GetModuleHandle(0)))
             DPRINTF("UnregisterClass() failed, Error 0x%08lx", GetLastError());
+    }
+    for (n = MAX_LVLCNTX; ((n > 1) && !hRC[--n]););
+    if ((n == 1) && hRC[--n]) {
+        BOOL ret = wglFuncs.DeleteContext(hRC[n]);
+        DPRINTF("MESAGL curr %d cntx [%p] purge %d", n, hRC[n], (ret)? 1:0);
+        hRC[n] = 0;
     }
 }
 
@@ -303,13 +310,13 @@ void MGLWndRelease(void)
         if (hRC[0]) {
             wglFuncs.MakeCurrent(NULL, NULL);
             wglFuncs.DeleteContext(hRC[0]);
+            hRC[0] = 0;
         }
         MesaInitGammaRamp();
         ReleaseDC(hwnd, hDC);
         TmpContextPurge();
         GLWINDOW_FINI();
         CompareAttribArray(NULL);
-        hRC[0] = 0;
         hDC = 0;
         hwnd = 0;
     }

@@ -341,6 +341,17 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
     qatomic_set(&wnd_ready, 1);
 }
 
+static void TmpContextPurge(void)
+{
+    int n;
+    for (n = MAX_LVLCNTX; ((n > 1) && !ctx[--n]););
+    if ((n == 1) && ctx[--n]) {
+        glXDestroyContext(dpy, ctx[n]);
+        DPRINTF("MESAGL curr %d cntx [%p] purge %d", n, ctx[n], 1);
+        ctx[n] = 0;
+    }
+}
+
 void SetMesaFuncPtr(void *p)
 {
 }
@@ -394,7 +405,7 @@ void MGLWndRelease(void)
         XCloseDisplay(dpy);
         mesa_release_window();
         CompareAttribArray(NULL);
-        ctx[0]= 0;
+        ctx[0] = 0;
         xvi = 0;
         dpy = 0;
         win = 0;
@@ -503,10 +514,11 @@ int MGLChoosePixelFormat(void)
 
 int MGLSetPixelFormat(int fmt, const void *p)
 {
-    DPRINTF("SetPixelFormat()");
-    if (xvi == 0)
-        return MGLPresetPixelFormat();
-    return 1;
+    int ret;
+    ret = (xvi == 0)? MGLPresetPixelFormat():1;
+    TmpContextPurge();
+    DPRINTF("SetPixelFormat() ret %d", ret);
+    return ret;
 }
 
 int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)

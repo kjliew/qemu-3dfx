@@ -377,6 +377,17 @@ static void cwnd_mesagl(void *swnd, void *nwnd, void *opaque)
     qatomic_set(&wnd_ready, 1);
 }
 
+static void TmpContextPurge(void)
+{
+    int n;
+    for (n = MAX_LVLCNTX; ((n > 1) && !ctx[--n]););
+    if ((n == 1) && ctx[--n]) {
+        void *ctx0 = (void *)ctx[n];
+        GL_DELETECONTEXT(ctx[n]);
+        DPRINTF_COND((ctx[n] == 0), "MESAGL curr %d cntx [%p] purge %d", n, ctx0, 1);
+    }
+}
+
 void SetMesaFuncPtr(void *p)
 {
 }
@@ -418,8 +429,8 @@ void MGLWndRelease(void)
         MesaInitGammaRamp();
         mesa_release_window();
         CompareAttribArray(NULL);
-        self_ctx = 0;
         ctx[0] = 0;
+        self_ctx = 0;
         window = 0;
     }
 }
@@ -488,13 +499,13 @@ int MGLChoosePixelFormat(void)
 {
     DPRINTF("ChoosePixelFormat()");
     if (!window)
-        MGLPresetPixelFormat();
+        return MGLPresetPixelFormat();
     return 1;
 }
 
 int MGLSetPixelFormat(int fmt, const void *p)
 {
-    DPRINTF("SetPixelFormat()");
+    int ret;
     if (!window)
         MGLPresetPixelFormat();
     else {
@@ -514,7 +525,10 @@ int MGLSetPixelFormat(int fmt, const void *p)
                 cAlphaBits, cColors[0], cColors[1], cColors[2], cDepthBits, cStencilBits,
                 cAuxBuffers, cSampleBuf[0], cSampleBuf[1], ContextUseSRGB()? "sRGB":"");
     }
-    return (ctx[0])? 1:0;
+    ret = (ctx[0])? 1:0;
+    TmpContextPurge();
+    DPRINTF("SetPixelFormat() ret %d", ret);
+    return ret;
 }
 
 int MGLDescribePixelFormat(int fmt, unsigned int sz, void *p)

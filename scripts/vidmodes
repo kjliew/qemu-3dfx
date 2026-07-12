@@ -52,7 +52,7 @@ static void sdl2_display_reslist(void)
         RESLIST_ADD((mode.w == 1280 && mode.h == 720 && width > 1280), RES(1280,800));
         RESLIST_ADD((mode.w == 1152 && mode.h == 864 && dt->h >= 960), RES(1200,900));
         RESLIST_ADD((mode.w == 1024 && width == 1280 && dt->h >= 960), RES(1200,900));
-        RESLIST_ADD((mode.w == 1024 && width == 1280 && dt->h >= 960), RES(1152,864));
+        RESLIST_ADD((mode.w == 1024 && width == 1280 && dt->h >= 900), RES(1152,864));
             width = mode.w; height = mode.h;
             fprintf(stderr, "%4d %-4d aspect %.6f\n", width, height, 1.f*width/height);
         }
