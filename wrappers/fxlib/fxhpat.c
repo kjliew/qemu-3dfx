@@ -21,10 +21,12 @@ static struct E_PATCH fforce_exe[] = {
     PATCH_D(0x367d4, "\x38\xE0"),
     E_PATCH_END()
 };
-static struct E_PATCH engrel_blit[] = {
-    PATCH_D(0xbf0a8, "\x00"),
-    E_PATCH_END()
-};
+/* Prefer upstream Wine fix in MR!10992
+ *static struct E_PATCH engrel_blit[] = {
+ *    PATCH_D(0xbf0a8, "\x00"),
+ *    E_PATCH_END()
+ *};
+ */
 static struct E_PATCH engrel_cursor[] = {
     PATCH_D(0x1805a, "\x38\xC4"),
     E_PATCH_END()
@@ -136,8 +138,8 @@ static COMPATFX fxCompatTbl[] = {
     /* Fighting Force */
     { "fforce.exe", "81ee5e035d23e130430f31723cecaf64", HP_2KXP, fforce_exe },
     /* Warhammer: Dark Omen */
-    { "engrel.exe", "8dc25757be926088167cb1663b7c7b76", HP_ANYO, engrel_blit },
-    { "engrel.exe", "1a0b17352c8fee8c62732ef4f7aae95f", HP_2KXP, engrel_cursor },
+    /*{ "engrel.exe", "8dc25757be926088167cb1663b7c7b76", HP_ANYO, engrel_blit },*/
+    { "engrel.exe", "1a0b17352c8fee8c62732ef4f7aae95f", HP_ANYO, engrel_cursor },
     /* Requiem Demo D3D */
     { "reqdemo_d3d.exe", "2ee1cf9120c4f13eef06da62600b0c23", HP_ANYO, req_demo },
     /* Requiem D3D 1.2 */
