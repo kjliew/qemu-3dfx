@@ -50,6 +50,7 @@ static inline int acpi_tick_asm(void)
 }
 
 struct tckRef {
+    LONGLONG offset;
     LARGE_INTEGER freq, run;
 };
 static void HookTimeTckRef(struct tckRef **tick)
@@ -62,7 +63,11 @@ static void HookTimeTckRef(struct tckRef **tick)
         if (!ref.freq.u.LowPart) {
             QueryPerformanceFrequency(&ref.freq);
             if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (ref.freq.QuadPart < TICK_8254)) {
-                LONGLONG mmTick = GetTickCount();
+                LARGE_INTEGER cout;
+                LONGLONG mm2q, mmTick = GetTickCount();
+                QueryPerformanceCounter(&cout);
+                mm2q = (mmTick * ref.freq.QuadPart) / 1000;
+                ref.offset = mm2q - cout.QuadPart;
                 __atomic_store_n(&ref.run.QuadPart, ((mmTick * TICK_ACPI) / 1000), __ATOMIC_RELAXED);
                 while (acpi_tick_asm() < (ref.run.u.LowPart & 0x00FFFFFFU))
                     asm volatile("pause\n");
@@ -73,29 +78,31 @@ static void HookTimeTckRef(struct tckRef **tick)
         *tick = &ref;
 }
 
-static BOOL WINAPI elapsedTickProc(LARGE_INTEGER *count)
+static BOOL WINAPI __attribute__((noinline))
+elapsedTickProc(LARGE_INTEGER *count)
 {
     struct tckRef *tick;
-    uintptr_t aligned = (uintptr_t)count;
+    BOOL retval;
     HookTimeTckRef(&tick);
 
-    if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (tick->freq.QuadPart < TICK_8254)) {
+    if (!count || (((uintptr_t)count) & (sizeof(void*) - 1))
+            || IsBadWritePtr(count, sizeof(LARGE_INTEGER))) {
+        SetLastError(ERROR_NOACCESS);
+        retval = FALSE;
+    }
+    else {
         DWORD t = acpi_tick_asm();
+        /* ACPI 24-bit overflow expansion into 64-bit */
         if ((tick->run.u.LowPart & 0x00FFFFFFU) > t)
             __atomic_store_n(&tick->run.QuadPart, ((((tick->run.QuadPart >> 24) + 1) << 24) | t), __ATOMIC_RELAXED);
         else
             __atomic_store_n(&tick->run.u.LowPart, ((tick->run.u.LowPart & 0xFF000000U) | t), __ATOMIC_RELAXED);
-
-        if (count && !(aligned & (sizeof(uintptr_t)-1)) && !IsBadWritePtr(count, sizeof(LARGE_INTEGER))) {
-            __atomic_store_n(&count->QuadPart, ((tick->run.QuadPart * tick->freq.QuadPart) / TICK_ACPI), __ATOMIC_RELAXED);
-            SetLastError(0);
-            return TRUE;
-        }
+        /* Convert ACPI to QPC ticks */
+        __atomic_store_n(&count->QuadPart, (((tick->run.QuadPart * tick->freq.QuadPart) / TICK_ACPI) - tick->offset), __ATOMIC_RELAXED);
+        SetLastError(0);
+        retval = TRUE;
     }
-    else if (count && !(aligned & (sizeof(uintptr_t)-1)) && !IsBadWritePtr(count, sizeof(LARGE_INTEGER)))
-        return QueryPerformanceCounter(count);
-    SetLastError(ERROR_NOACCESS);
-    return FALSE;
+    return retval;
 }
 
 static DWORD WINAPI TimeHookProc(void)
@@ -103,7 +110,7 @@ static DWORD WINAPI TimeHookProc(void)
     struct tckRef *tick;
     LARGE_INTEGER li;
     HookTimeTckRef(&tick);
-    if (tick->freq.QuadPart < TICK_8254)
+    if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (tick->freq.QuadPart < TICK_8254))
         elapsedTickProc(&li);
     else
         QueryPerformanceCounter(&li);
