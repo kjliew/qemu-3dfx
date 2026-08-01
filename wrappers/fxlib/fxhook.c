@@ -59,23 +59,23 @@ static void HookTimeTckRef(struct tckRef **tick)
 #define TICK_ACPI 0x369E99U /* 3.579545 MHz */
     static struct tckRef ref;
 
-    if (!tick) {
+    if (tick)
+        *tick = &ref;
+    else {
         if (!ref.freq.u.LowPart) {
             QueryPerformanceFrequency(&ref.freq);
+            LARGE_INTEGER cout;
+            LONGLONG mm2q, mmTick = GetTickCount();
+            QueryPerformanceCounter(&cout);
+            mm2q = (mmTick * ref.freq.QuadPart) / 1000;
+            ref.offset = mm2q - cout.QuadPart;
             if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (ref.freq.QuadPart < TICK_8254)) {
-                LARGE_INTEGER cout;
-                LONGLONG mm2q, mmTick = GetTickCount();
-                QueryPerformanceCounter(&cout);
-                mm2q = (mmTick * ref.freq.QuadPart) / 1000;
-                ref.offset = mm2q - cout.QuadPart;
                 __atomic_store_n(&ref.run.QuadPart, ((mmTick * TICK_ACPI) / 1000), __ATOMIC_RELAXED);
                 while (acpi_tick_asm() < (ref.run.u.LowPart & 0x00FFFFFFU))
                     asm volatile("pause\n");
             }
         }
     }
-    else
-        *tick = &ref;
 }
 
 static BOOL WINAPI __attribute__((noinline))
@@ -112,8 +112,10 @@ static DWORD WINAPI TimeHookProc(void)
     HookTimeTckRef(&tick);
     if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (tick->freq.QuadPart < TICK_8254))
         elapsedTickProc(&li);
-    else
+    else {
         QueryPerformanceCounter(&li);
+        li.QuadPart += tick->offset;
+    }
     return (li.QuadPart * 1000) / tick->freq.QuadPart;
 }
 #undef TICK_8254
