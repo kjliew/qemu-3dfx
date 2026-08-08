@@ -178,11 +178,24 @@ static COMPATFX fxCompatTbl[] = {
    
 const char *basename(const char *name);
 const char *md5page(const char *msg);
-const int fxCompatPlatformId(const int id)
+static void *fxCompatOsVersion(const void *in)
 {
-    static int PlatformId;
-    PlatformId = (id)? id:PlatformId;
-    return PlatformId;
+    static FXINFOW winnt;
+
+    const OSVERSIONINFO *os = (const OSVERSIONINFO *)in;
+    if (os) {
+        winnt.platformId = os->dwPlatformId;
+        winnt.version = (os->dwMajorVersion << 8) | os->dwMinorVersion;
+    }
+    return (void *)&winnt;
+}
+const int fxCompatWinnt(void)
+{
+    return ((const PFXINFOW)fxCompatOsVersion(0))->version;
+}
+const int fxCompatPlatformId(void)
+{
+    return ((const PFXINFOW)fxCompatOsVersion(0))->platformId;
 }
 const PCOMPATFX fxCompatTblPtr(void)
 {
@@ -193,10 +206,11 @@ const PCOMPATFX fxCompatTblPtr(void)
     }
     return 0;
 }
-void HookPatchfxCompat(const DWORD hpMask)
+void HookPatchfxCompat(const OSVERSIONINFO *osInfo)
 {
     TCHAR modName[MAX_PATH];
-    fxCompatPlatformId(hpMask);
+    const DWORD hpMask = osInfo->dwPlatformId;
+    fxCompatOsVersion(osInfo);
     if (GetModuleFileName(NULL, modName, MAX_PATH) < MAX_PATH) {
         int i = 0, j;
         while (fxCompatTbl[i].modName) {

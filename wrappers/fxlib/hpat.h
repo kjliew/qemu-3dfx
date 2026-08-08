@@ -15,13 +15,18 @@ struct E_PATCH {
 #define PATCH_D(a,b) { a, sizeof(b)/sizeof(char) - 1, b }
 #define E_PATCH_END() { 0, 0 }
 
+typedef struct fxInfow {
+    int version;
+    int platformId;
+} FXINFOW, * PFXINFOW;
 typedef struct fxCompatTbl {
     char *modName, *md5;
     int op_mask;
     struct E_PATCH *ptr;
 } COMPATFX, * PCOMPATFX;
 
-const int fxCompatPlatformId(const int);
+const int fxCompatWinnt(void);
+const int fxCompatPlatformId(void);
 const PCOMPATFX fxCompatTblPtr(void);
 /* fxtime.c */
 typedef struct timeEvent {

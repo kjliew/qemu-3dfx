@@ -17524,7 +17524,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule,
     DRVFUNC drv;
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     GetVersionEx(&osInfo);
-    HookPatchfxCompat(osInfo.dwPlatformId);
+    HookPatchfxCompat(&osInfo);
     if (osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) {
         mglSetAffinity();
         kmdDrvInit(&drv);

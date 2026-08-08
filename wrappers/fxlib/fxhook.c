@@ -69,7 +69,7 @@ static void HookTimeTckRef(struct tckRef **tick)
             QueryPerformanceCounter(&cout);
             mm2q = (mmTick * ref.freq.QuadPart) / 1000;
             ref.offset = mm2q - cout.QuadPart;
-            if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (ref.freq.QuadPart < TICK_8254)) {
+            if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId()) && (ref.freq.QuadPart < TICK_8254)) {
                 __atomic_store_n(&ref.run.QuadPart, ((mmTick * TICK_ACPI) / 1000), __ATOMIC_RELAXED);
                 while (acpi_tick_asm() < (ref.run.u.LowPart & 0x00FFFFFFU))
                     asm volatile("pause\n");
@@ -110,7 +110,7 @@ static DWORD WINAPI TimeHookProc(void)
     struct tckRef *tick;
     LARGE_INTEGER li;
     HookTimeTckRef(&tick);
-    if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0)) && (tick->freq.QuadPart < TICK_8254))
+    if ((VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId()) && (tick->freq.QuadPart < TICK_8254))
         elapsedTickProc(&li);
     else {
         QueryPerformanceCounter(&li);
@@ -189,6 +189,7 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
           funcPerf[] = "QueryPerformanceCounter";
 
     if (addr && (addr == (uint32_t)patch) &&
+        fxCompatWinnt() < _WIN32_WINNT_WIN8 &&
         VirtualProtect(patch, sizeof(intptr_t), PAGE_EXECUTE_READWRITE, &oldProt)) {
         DWORD hkTime = (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcTime),
               hkEventKill = (dwFFop & FFOP_TIMEEVENT)?
@@ -197,11 +198,11 @@ static void HookPatchTimer(const uint32_t start, const uint32_t *iat,
                   (DWORD)GetProcAddress(GetModuleHandle("winmm.dll"), funcEventSet):0,
               hkTick = (dwFFop & FFOP_KERNELTICK)?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcTick):0,
-              hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0) &&
+              hkPerf = (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId() &&
                       !(dwFFop & FFOP_KERNELTICK))?
                   (DWORD)GetProcAddress(GetModuleHandle("kernel32.dll"), funcPerf):0;
 #ifndef HOOK_ME_9X
-        if (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId(0))
+        if (VER_PLATFORM_WIN32_WINDOWS == fxCompatPlatformId())
             hkTime = hkEventSet = hkEventKill = hkTick = 0;
 #endif
         EVENTFX timeEvent;
