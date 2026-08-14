@@ -477,9 +477,15 @@ static int parse_value(const char *str, const char *tok, int *val)
 static int display_device_supported(void)
 {
     DISPLAY_DEVICE dd = { .cb = sizeof(DISPLAY_DEVICE) };
-    const char vidstr[] = "QEMU Bochs";
-    return (EnumDisplayDevices(NULL, 0, &dd, 0) &&
-        !memcmp(dd.DeviceString, vidstr, strlen(vidstr)))? 1:0;
+    const char *vidstr[2] = { "QEMU Bochs", "Red Hat VirtIO" };
+    int ret = 0;
+    if (EnumDisplayDevices(NULL, 0, &dd, 0)) {
+        if (!memcmp(dd.DeviceString, vidstr[0], strlen(vidstr[0])))
+            ret = 1;
+        if (!memcmp(dd.DeviceString, vidstr[1], strlen(vidstr[1])))
+            ret = 1;
+    }
+    return ret;
 }
 static int ctx0_quirks(void)
 {
