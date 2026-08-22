@@ -140,6 +140,7 @@ struct gl_extensions
    uint32_t EXT_memory_object;
    uint32_t EXT_memory_object_fd;
    uint32_t EXT_memory_object_win32;
+   uint32_t EXT_mesh_shader;
    uint32_t EXT_multisampled_render_to_texture;
    uint32_t EXT_packed_float;
    uint32_t EXT_protected_textures;
@@ -151,6 +152,8 @@ struct gl_extensions
    uint32_t EXT_shader_image_load_formatted;
    uint32_t EXT_shader_image_load_store;
    uint32_t EXT_shader_integer_mix;
+   uint32_t EXT_shader_pixel_local_storage;
+   uint32_t EXT_shader_realtime_clock;
    uint32_t EXT_shader_samples_identical;
    uint32_t EXT_sRGB;
    uint32_t EXT_stencil_two_side;
@@ -243,13 +246,14 @@ struct gl_extensions
    uint32_t NV_texture_barrier;
    uint32_t NV_texture_env_combine4;
    uint32_t NV_texture_rectangle;
-   uint32_t NV_vdpau_interop;
    uint32_t NV_conservative_raster;
    uint32_t NV_conservative_raster_dilate;
    uint32_t NV_conservative_raster_pre_snap_triangles;
    uint32_t NV_conservative_raster_pre_snap;
    uint32_t NV_viewport_array2;
    uint32_t NV_viewport_swizzle;
+   uint32_t NV_timeline_semaphore;
+   uint32_t NV_representative_fragment_test;
    uint32_t NVX_gpu_memory_info;
    uint32_t TDFX_texture_compression_FXT1;
    uint32_t OES_EGL_image;

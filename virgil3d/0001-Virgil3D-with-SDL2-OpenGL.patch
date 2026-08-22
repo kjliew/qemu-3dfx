@@ -69,7 +69,7 @@ diff -Nru ../orig/qemu-8.2.1/ui/egl-helpers.c ./ui/egl-helpers.c
      }
 +#else
 +    return "Unknown error";
-+#endif //CONFIG_EGL
++#endif /* CONFIG_EGL */
  }
 
  static void egl_fb_delete_texture(egl_fb *fb)
@@ -87,7 +87,7 @@ diff -Nru ../orig/qemu-8.2.1/ui/egl-helpers.c ./ui/egl-helpers.c
      return true;
  }
 +
-+#endif //#ifdef CONFIG_EGL
++#endif /* CONFIG_EGL */
 diff -Nru ../orig/qemu-8.2.1/ui/meson.build ./ui/meson.build
 --- ../orig/qemu-8.2.1/ui/meson.build
 +++ ./ui/meson.build
