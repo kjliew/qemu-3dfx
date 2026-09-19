@@ -82,9 +82,9 @@ diff -Nru ../orig/qemu-8.2.1/ui/egl-helpers.c ./ui/egl-helpers.c
  EGLSurface qemu_egl_init_surface_x11(EGLContext ectx, EGLNativeWindowType win)
  {
      EGLSurface esurface;
-@@ -661,3 +667,5 @@
-     display_opengl = 1;
-     return true;
+@@ -752,3 +758,5 @@
+         qemu_egl_display = NULL;
+     }
  }
 +
 +#endif /* CONFIG_EGL */
