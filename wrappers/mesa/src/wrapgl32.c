@@ -466,7 +466,7 @@ struct mglOptions {
     int vsyncOff;
     int xstrYear;
 };
-static int swapCur, swapFps, texClampFix;
+static int alphaCur, swapCur, swapFps, texClampFix;
 static int parse_value(const char *str, const char *tok, int *val)
 {
     int ret = (memcmp(str, tok, strlen(tok)))? 0:1;
@@ -534,6 +534,8 @@ static void parse_options(struct mglOptions *opt)
             opt->xstrYear = (i == 1)? v:opt->xstrYear;
             i = parse_value(line, "ConformantTexClampOff,", &v);
             texClampFix = ((i == 1) && v)? 1:texClampFix;
+            i = parse_value(line, "CursorAlphaOff,", &v);
+            alphaCur = ((i == 1) && v)? 1:alphaCur;
             i = parse_value(line, "CursorSyncOff,", &v);
             swapCur = ((i == 1) && v)? 0:swapCur;
             i = parse_value(line, "FpsLimit,", &v);
@@ -17002,6 +17004,7 @@ wglSetDeviceCursor3DFX(HCURSOR hCursor)
 #define ALPHA_MASK 0xFF000000U
                 for (h = 0; h < (pbmi->bmiHeader.biSizeImage >> 2); h++)
                     if (data[h] & ALPHA_MASK) break;
+                h = (alphaCur)? 0:h;
 #define COLOR_MASK 0x00FFFFFFU
                 for (i = 0; h == (pbmi->bmiHeader.biSizeImage >> 2) && i < h; i++)
                     data[i] = (data[i] && (data[i] ^ COLOR_MASK))?
