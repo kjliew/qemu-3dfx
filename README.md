@@ -8,9 +8,10 @@ KJ Liew \<liewkj@yahoo.com\>
     wrappers/3dfx       - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
     wrappers/mesa       - MESA GL wrapper for supported guest OS/environment (Windows)
 ## Patch
-    00-qemu92x-mesa-glide.patch - Patch for QEMU version 9.2.x (MESA & Glide)
-    01-qemu82x-mesa-glide.patch - Patch for QEMU version 8.2.x (MESA & Glide)
-    02-qemu72x-mesa-glide.patch - Patch for QEMU version 7.2.x (MESA & Glide)
+    00-qemu111x-mesa-glide.patch - Patch for QEMU version 11.1.x (MESA & Glide), tested with 11.1.2
+    01-qemu92x-mesa-glide.patch  - Patch for QEMU version 9.2.x (MESA & Glide)
+    02-qemu82x-mesa-glide.patch  - Patch for QEMU version 8.2.x (MESA & Glide)
+    03-qemu72x-mesa-glide.patch  - Patch for QEMU version 7.2.x (MESA & Glide)
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
 Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, modern Windows and Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to play them on modern Windows or Linux/Wine.
 - YouTube channel (https://www.youtube.com/@qemu-3dfx/videos)
@@ -20,19 +21,54 @@ Witness, experience and share your thoughts on modern CPU/GPU prowess for retro 
 Following instructions are based on `MSYS2/mingw-w64` BASH shell environment on modern Windows. It is meant to be simple and minor variations are inevitable due to different flavors of Linux distributions.
 
 Simple guide to apply the patch:<br>
-(using `00-qemu92x-mesa-glide.patch`)
+(using `00-qemu111x-mesa-glide.patch` and the MSYS2 UCRT64 shell for the Windows host build)
 
     $ mkdir ~/myqemu && cd ~/myqemu
     $ git clone https://github.com/kjliew/qemu-3dfx.git
     $ cd qemu-3dfx
-    $ wget https://download.qemu.org/qemu-9.2.2.tar.xz
-    $ tar xf qemu-9.2.2.tar.xz
-    $ cd qemu-9.2.2
+    $ wget https://download.qemu.org/qemu-11.1.2.tar.xz
+    $ MSYS=winsymlinks:nativestrict tar xf qemu-11.1.2.tar.xz
+    $ cd qemu-11.1.2
     $ rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
-    $ patch -p0 -i ../00-qemu92x-mesa-glide.patch
+    $ patch -p0 -i ../00-qemu111x-mesa-glide.patch
     $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
-    $ ../qemu-9.2.2/configure && make
+    $ ../qemu-11.1.2/configure --target-list=x86_64-softmmu \
+        --enable-sdl --enable-opengl --enable-whpx --enable-slirp
+    $ make
+
+The patch modifies QEMU integration points; copy both device overlays before applying it, then run `sign_commit`. It does not include duplicate copies of the device sources or a fixed commit stamp. The older patches use the same overlay/patch/sign procedure with their corresponding QEMU versions.
+
+`--enable-whpx` is Windows-specific; omit it on other hosts. Native symlink extraction in MSYS2 requires Windows Developer Mode or an elevated shell. Host-side OpenGLide DLLs must match the host QEMU executable's architecture. Build the Win32 guest wrappers separately with the MINGW32 toolchain, even when QEMU and OpenGLide are 64-bit.
+
+### QEMU 11.1.2 and 32-bit Windows XP
+Build `x86_64-softmmu` to use WHPX with 32-bit XP. The guest CPU can retain its 64-bit capability; the installed guest OS and its wrappers remain 32-bit. Example configuration for an existing XP disk on a Windows host with Windows Hypervisor Platform enabled:
+
+    $ qemu-system-x86_64 -machine pc-i440fx-11.1,hpet=off -accel whpx \
+        -cpu host -smp 2,sockets=1,cores=2,threads=1 -m 1024 \
+        -drive file=windows-xp.qcow2,format=qcow2,if=ide,index=0 \
+        -vga cirrus -display sdl -rtc base=localtime -boot order=c \
+        -device piix3-usb-uhci,id=usb,addr=0x3 \
+        -device usb-tablet,bus=usb.0 \
+        -audiodev sdl,id=snd0 -device AC97,audiodev=snd0,addr=0x5 \
+        -netdev user,id=net0 -device pcnet,netdev=net0,addr=0x4
+
+For TCG, replace `-accel whpx -cpu host` with `-accel tcg,thread=multi -cpu Nehalem`. The USB tablet allows the pointer to leave the window directly. Omit it for games that need relative mouse input; click inside the window to capture the mouse and use `Ctrl+Alt+G` to release it. XP SP3 supplies the AC97 and PCNET drivers used in this configuration. Install the pass-through driver and guest wrappers as described below.
+
+The 11.1.x patch adapts the console/cursor interfaces and WHPX guest-memory mapping to the newer QEMU APIs. It also carries these Windows XP fixes:
+
+- Disable the host IME before creating SDL windows with `ImmDisableIME((DWORD)-1)` and stop SDL text input, so host input methods do not consume physical keys intended for the guest.
+- Allow SDL to drain queued playback samples when a guest stream stops, preventing leftover audio from being replayed at the start of the next stream. Actual VM pauses still suspend playback.
+- Reset the WHPX partition with all vCPUs stopped, before restoring CPU registers. This fixes the `WHPX: Unexpected VP exit code 4` encountered during XP setup's reboot and subsequent guest restarts. The reset hook is based on [Mohamed Mediouni's partition-reset patch](https://patchew.org/QEMU/20260421205749.55060-1-mohamed%40unpredictable.fr/), with API failure checking. It also moves the existing ARM reset to the common stopped-vCPU hook. The API is optional; the workaround is only active on hosts providing [WHvResetPartition](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-platform/funcs/whvresetpartition).
+
+Validation used QEMU 11.1.2 on Windows 11 x64, an AMD Ryzen 9 9950X and NVIDIA GeForce RTX 3060 Ti, with 32-bit XP Professional SP3, two vCPUs and 1 GiB RAM:
+
+- Fresh XP installation under WHPX, cold boots, guest restarts and normal shutdowns passed. An existing XP installation also booted with TCG and WHPX.
+- OpenGL pixel readback and mapped-PBO texture readback passed with TCG and WHPX; Glide 2.x red/green framebuffer readback passed with WHPX.
+- AC97 playback at 44.1 kHz stereo, 22.05 kHz mono and 48 kHz stereo completed and closed the devices. Host WASAPI loopback recordings confirmed the 440/880 Hz tone sequence, silence intervals and playback tail under both accelerators.
+- The i440fx, RTC, UHCI, QMP and x86 CPUID compatibility qtest suites passed: 5 suites, 65 subtests.
+
+These checks do not cover the full QEMU test suite, individual games, Direct3D/WineD3D, Linux/KVM, macOS, ARM or older Windows hosts. The host IME fix is retained from the earlier build; physical-keyboard testing was not repeated for this port.
 
 ## Building Guest Wrappers
 **Requirements:**

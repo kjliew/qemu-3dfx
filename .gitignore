@@ -1,0 +1,7 @@
+/build/
+/build-*/
+/qemu-[0-9]*.[0-9]*/
+/qemu-*.tar.xz
+/qemu-*.tar.xz.sig
+/wrappers/3dfx/build/
+/wrappers/mesa/build/

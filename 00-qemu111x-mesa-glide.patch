@@ -1,0 +1,935 @@
+diff -Nru ../orig/qemu-11.1.2/accel/accel-system.c ./accel/accel-system.c
+--- ../orig/qemu-11.1.2/accel/accel-system.c
++++ ./accel/accel-system.c
+@@ -76,6 +76,16 @@
+     }
+ }
+
++void accel_reset(MachineState *ms)
++{
++    AccelState *accel = ms->accelerator;
++    AccelClass *acc = ACCEL_GET_CLASS(accel);
++
++    if (acc->reset_vm) {
++        acc->reset_vm(accel);
++    }
++}
++
+ /* initialize the arch-independent accel operation interfaces */
+ void accel_init_ops_interfaces(AccelClass *ac)
+ {
+diff -Nru ../orig/qemu-11.1.2/accel/kvm/kvm-all.c ./accel/kvm/kvm-all.c
+--- ../orig/qemu-11.1.2/accel/kvm/kvm-all.c
++++ ./accel/kvm/kvm-all.c
+@@ -1857,6 +1857,43 @@
+     s->kvm_dirty_ring_bytes = ring_bytes;
+
+     return 0;
++}
++
++void kvm_update_guest_pa_range(uint64_t start_pa, uint64_t size, void *host_va, int readonly, int add)
++{
++    KVMState *s = kvm_state;
++    KVMMemoryListener *kml = &s->memory_listener;
++
++    MemoryRegion mr;
++    MemoryRegionSection section;
++    RAMBlock ram_block;
++
++    memset(&ram_block, 0, sizeof(RAMBlock));
++    ram_block.mr = &mr;
++    ram_block.used_length = REAL_HOST_PAGE_ALIGN(size);
++    ram_block.max_length = REAL_HOST_PAGE_ALIGN(size);
++    ram_block.fd = -1;
++    ram_block.guest_memfd = -1;
++    ram_block.page_size = getpagesize();
++    ram_block.host = host_va;
++    ram_block.flags |= RAM_PREALLOC;
++
++    memory_region_init(&mr, NULL, NULL, REAL_HOST_PAGE_ALIGN(size));
++    mr.ram = true;
++    mr.ram_block = &ram_block;
++    mr.readonly = readonly;
++    mr.nonvolatile = false;
++
++    section.mr = &mr;
++    section.fv = 0;
++    section.offset_within_region = 0;
++    section.size = mr.size;
++    section.offset_within_address_space = start_pa;
++    section.readonly = mr.readonly;
++    section.nonvolatile = mr.nonvolatile;
++
++    kvm_set_phys_mem(kml, &section, add);
++    object_unref(OBJECT(&mr));
+ }
+
+ static void kvm_region_add(MemoryListener *listener,
+diff -Nru ../orig/qemu-11.1.2/accel/whpx/whpx-common.c ./accel/whpx/whpx-common.c
+--- ../orig/qemu-11.1.2/accel/whpx/whpx-common.c
++++ ./accel/whpx/whpx-common.c
+@@ -199,6 +199,23 @@
+     cpu->vcpu_dirty = false;
+ }
+
++/*
++ * Based on Mohamed Mediouni's 2026-04-21 partition-reset patch.  Register
++ * writes alone cannot clear all Hyper-V state after an x86 guest reboot.
++ * The machine reset hook runs with every vCPU stopped; mappings survive it.
++ */
++static void whpx_partition_reset(AccelState *as)
++{
++    if (whp_dispatch.WHvResetPartition) {
++        HRESULT hr = whp_dispatch.WHvResetPartition(whpx_global.partition);
++
++        if (FAILED(hr)) {
++            error_report("WHPX: failed to reset partition, hr=%08lx", hr);
++            exit(EXIT_FAILURE);
++        }
++    }
++}
++
+ static void do_whpx_cpu_synchronize_pre_loadvm(CPUState *cpu,
+                                                run_on_cpu_data arg)
+ {
+@@ -328,6 +345,38 @@
+          mem, gva, size, flags);
+     if (FAILED(hr)) {
+         error_report("WHPX: failed to map GPA range");
++        abort();
++    }
++}
++
++/* Map page-aligned host OpenGL/Glide buffers into the guest aperture. */
++void whpx_update_guest_pa_range(uint64_t start_pa, uint64_t size,
++                                void *host_va, int readonly, int add)
++{
++    struct whpx_state *whpx = &whpx_global;
++    uint64_t page_size = qemu_real_host_page_size();
++    WHV_MAP_GPA_RANGE_FLAGS flags = WHvMapGpaRangeFlagRead |
++                                  WHvMapGpaRangeFlagExecute;
++    HRESULT hr;
++
++    size = ROUND_UP(size, page_size);
++    if (!size) {
++        return;
++    }
++    assert(QEMU_IS_ALIGNED(start_pa, page_size));
++    if (add) {
++        assert(QEMU_IS_ALIGNED((uintptr_t)host_va, page_size));
++        if (!readonly) {
++            flags |= WHvMapGpaRangeFlagWrite;
++        }
++        hr = whp_dispatch.WHvMapGpaRange(whpx->partition, host_va,
++                                        start_pa, size, flags);
++    } else {
++        hr = whp_dispatch.WHvUnmapGpaRange(whpx->partition, start_pa, size);
++    }
++    if (FAILED(hr)) {
++        error_report("WHPX: failed to %s 3dfx GPA range, hr=%08lx",
++                     add ? "map" : "unmap", hr);
+         abort();
+     }
+ }
+@@ -526,6 +575,7 @@
+     ac->name = "WHPX";
+     ac->init_machine = whpx_accel_init;
+     ac->pre_resume_vm = whpx_pre_resume_vm;
++    ac->reset_vm = whpx_partition_reset;
+     ac->allowed = &whpx_allowed;
+
+     object_class_property_add(oc, "kernel-irqchip", "on|off|split",
+diff -Nru ../orig/qemu-11.1.2/audio/sdlaudio.c ./audio/sdlaudio.c
+--- ../orig/qemu-11.1.2/audio/sdlaudio.c
++++ ./audio/sdlaudio.c
+@@ -30,6 +30,7 @@
+ #include "qapi/error.h"
+ #include "qemu/audio.h"
+ #include "qom/object.h"
++#include "system/runstate.h"
+
+ #ifndef _WIN32
+ #ifdef __sun__
+@@ -372,6 +373,18 @@
+ {
+     SDLVoiceOut *sdl = (SDLVoiceOut *)hw;
+
++    /*
++     * A guest stream can stop after its samples have reached buf_emul but
++     * before the SDL callback has consumed them. Pausing here strands the
++     * tail, which is then replayed before the next stream. Keep the callback
++     * running while the VM runs: it drains queued samples and supplies
++     * silence when empty. Actual VM pauses still suspend playback, and
++     * sdl_close_out() stops the callback before closing the device.
++     */
++    if (!enable && runstate_is_running()) {
++        return;
++    }
++
+     SDL_PauseAudioDevice(sdl->devid, !enable);
+ }
+
+diff -Nru ../orig/qemu-11.1.2/hw/i386/pc.c ./hw/i386/pc.c
+--- ../orig/qemu-11.1.2/hw/i386/pc.c
++++ ./hw/i386/pc.c
+@@ -1135,6 +1135,10 @@
+             ? ON_OFF_AUTO_OFF : ON_OFF_AUTO_ON;
+     }
+
++    /* Glide pass-through */
++    glidept_mm_init();
++    /* MESA pass-through */
++    mesapt_mm_init();
+     /* Super I/O */
+     pc_superio_init(isa_bus, create_fdctrl, pcms->i8042_enabled,
+                     pcms->vmport != ON_OFF_AUTO_ON, &error_fatal);
+@@ -1157,6 +1161,23 @@
+     if (pci_bus) {
+         pci_init_nic_devices(pci_bus, mc->default_nic);
+     }
++}
++
++void glidept_mm_init(void)
++{
++    DeviceState *glidept_dev = NULL;
++
++    glidept_dev = qdev_new(TYPE_GLIDEPT);
++    sysbus_realize(SYS_BUS_DEVICE(glidept_dev), &error_fatal);
++    sysbus_mmio_map(SYS_BUS_DEVICE(glidept_dev), 0, GLIDEPT_MM_BASE);
++}
++void mesapt_mm_init(void)
++{
++    DeviceState *mesapt_dev = NULL;
++
++    mesapt_dev = qdev_new(TYPE_MESAPT);
++    sysbus_realize(SYS_BUS_DEVICE(mesapt_dev), &error_fatal);
++    sysbus_mmio_map(SYS_BUS_DEVICE(mesapt_dev), 0, MESAPT_MM_BASE);
+ }
+
+ void pc_i8259_create(ISABus *isa_bus, qemu_irq *i8259_irqs)
+diff -Nru ../orig/qemu-11.1.2/include/accel/accel-ops.h ./include/accel/accel-ops.h
+--- ../orig/qemu-11.1.2/include/accel/accel-ops.h
++++ ./include/accel/accel-ops.h
+@@ -35,6 +35,7 @@
+     /* system related hooks */
+     void (*setup_post)(AccelState *as);
+     void (*pre_resume_vm)(AccelState *as, bool step_pending);
++    void (*reset_vm)(AccelState *as);
+     bool (*has_memory)(AccelState *accel, AddressSpace *as,
+                        hwaddr start_addr, hwaddr size);
+
+diff -Nru ../orig/qemu-11.1.2/include/hw/i386/pc.h ./include/hw/i386/pc.h
+--- ../orig/qemu-11.1.2/include/hw/i386/pc.h
++++ ./include/hw/i386/pc.h
+@@ -198,6 +198,25 @@
+
+ #define TYPE_PORT92 "port92"
+
++#if (((QEMU_VERSION_MAJOR << 12) | (QEMU_VERSION_MINOR << 8) \
++     | QEMU_VERSION_MICRO) < 0x5100)
++#define qdev_new(x)         qdev_create(NULL,x)
++#define sysbus_realize(x,y) qdev_init_nofail((DeviceState *)x)
++#endif
++#if (((QEMU_VERSION_MAJOR << 12) | (QEMU_VERSION_MINOR << 8) \
++     | QEMU_VERSION_MICRO) < 0x9132)
++#define device_class_set_legacy_reset(x,y) x->reset = y
++#endif
++/* GLIDE pass-through */
++#define TYPE_GLIDEPT "glidept"
++#define GLIDEPT_MM_BASE 0xfbdff000
++void glidept_mm_init(void);
++
++/* MESA pass-through */
++#define TYPE_MESAPT "mesapt"
++#define MESAPT_MM_BASE 0xefffe000
++void mesapt_mm_init(void);
++
+ /* pc_sysfw.c */
+ void pc_system_flash_create(PCMachineState *pcms);
+ void pc_system_flash_cleanup_unused(PCMachineState *pcms);
+diff -Nru ../orig/qemu-11.1.2/include/qemu/accel.h ./include/qemu/accel.h
+--- ../orig/qemu-11.1.2/include/qemu/accel.h
++++ ./include/qemu/accel.h
+@@ -54,6 +54,9 @@
+
+ void accel_pre_resume(MachineState *ms, bool step_pending);
+
++/* Reset accelerator state while all vCPUs are stopped. */
++void accel_reset(MachineState *ms);
++
+ /**
+  * accel_cpu_instance_init:
+  * @cpu: The CPU that needs to do accel-specific object initializations.
+diff -Nru ../orig/qemu-11.1.2/include/system/kvm.h ./include/system/kvm.h
+--- ../orig/qemu-11.1.2/include/system/kvm.h
++++ ./include/system/kvm.h
+@@ -459,6 +459,8 @@
+ bool kvm_arch_supports_vmfd_change(void);
+ int kvm_arch_on_vmfd_change(MachineState *ms, KVMState *s);
+
++void kvm_update_guest_pa_range(uint64_t start_pa, uint64_t size, void *host_va, int readonly, int add);
++
+ void kvm_cpu_synchronize_state(CPUState *cpu);
+
+ void kvm_init_cpu_signals(CPUState *cpu);
+diff -Nru ../orig/qemu-11.1.2/include/system/whpx.h ./include/system/whpx.h
+--- ../orig/qemu-11.1.2/include/system/whpx.h
++++ ./include/system/whpx.h
+@@ -14,6 +14,9 @@
+
+ #ifndef QEMU_WHPX_H
+ #define QEMU_WHPX_H
++
++void whpx_update_guest_pa_range(uint64_t start_pa, uint64_t size,
++                                void *host_va, int readonly, int add);
+
+ #ifdef COMPILING_PER_TARGET
+ # ifdef CONFIG_WHPX
+diff -Nru ../orig/qemu-11.1.2/include/ui/console.h ./include/ui/console.h
+--- ../orig/qemu-11.1.2/include/ui/console.h
++++ ./include/ui/console.h
+@@ -352,6 +352,7 @@
+                                     void *opaque);
+ void qemu_graphic_console_close(QemuConsole *con);
+
++void graphic_hw_passthrough(QemuConsole *con, bool passthrough);
+ void qemu_console_hw_update(QemuConsole *con);
+ void qemu_console_hw_update_done(QemuConsole *con);
+ void qemu_console_hw_invalidate(QemuConsole *con);
+@@ -463,4 +464,19 @@
+                                       size_t size,
+                                       Error **errp);
+
++/* glidewnd.c */
++void glide_prepare_window(uint32_t, int, void *, void *);
++void glide_release_window(void *, void *);
++int glide_window_stat(const int);
++int glide_gui_fullscreen(int *, int *);
++void glide_renderer_stat(const int);
++
++/* mglcntx.c */
++void mesa_renderer_stat(const int);
++void mesa_prepare_window(int, int, int, void *);
++void mesa_release_window(void);
++void mesa_cursor_define(int, int, int, int, const void *);
++void mesa_mouse_warp(int, int, const int);
++int mesa_gui_fullscreen(int *);
++
+ #endif
+diff -Nru ../orig/qemu-11.1.2/meson.build ./meson.build
+--- ../orig/qemu-11.1.2/meson.build
++++ ./meson.build
+@@ -1641,6 +1641,7 @@
+     error('sdl-image required, but SDL was @0@'.format(
+           get_option('sdl').disabled() ? 'disabled' : 'not found'))
+   endif
++  error('Featuring qemu-3dfx required SDL2')
+   sdl_image = not_found
+ endif
+
+@@ -3806,6 +3807,8 @@
+   subdir('libdecnumber')
+   subdir('gdbstub')
+   subdir('target')
++  subdir('hw/3dfx')
++  subdir('hw/mesa')
+ endif
+
+ if have_block
+@@ -4270,6 +4273,11 @@
+   target_inc = [include_directories('target' / config_target['TARGET_BASE_ARCH'])]
+   if host_os == 'linux'
+     target_inc += include_directories('linux-headers', is_system: true)
++    link_args += ['-ldl', '-lX11', '-lXxf86vm', '-lGL']
++  endif
++  if host_os == 'darwin'
++    c_args += ['-I/opt/X11/include']
++    link_args += ['-L/opt/X11/lib', '-lX11', '-lXxf86vm', '-lGL', '-Wl,-framework,OpenGL']
+   endif
+   if target.endswith('-softmmu')
+     target_type='system'
+diff -Nru ../orig/qemu-11.1.2/system/runstate.c ./system/runstate.c
+--- ../orig/qemu-11.1.2/system/runstate.c
++++ ./system/runstate.c
+@@ -569,6 +569,11 @@
+         qapi_event_send_reset(shutdown_caused_by_guest(reason), reason);
+     }
+
++    if (current_machine) {
++        /* Reset hidden accelerator state before restoring CPU registers. */
++        accel_reset(current_machine);
++    }
++
+     /*
+      * Some boards use the machine reset callback to point CPUs to the firmware
+      * entry point.  Assume that this is not the case for boards that support
+diff -Nru ../orig/qemu-11.1.2/system/vl.c ./system/vl.c
+--- ../orig/qemu-11.1.2/system/vl.c
++++ ./system/vl.c
+@@ -875,6 +875,13 @@
+     return default_machineclass;
+ }
+
++static void feature(void)
++{
++    const char rev_[ALIGNED(1)]
++        ;
++    printf("  featuring qemu-3dfx@%s"__TIME__" "__DATE__" build\n", rev_);
++}
++
+ static void version(void)
+ {
+     printf("QEMU emulator version " QEMU_FULL_VERSION "\n"
+@@ -3114,6 +3121,7 @@
+                 break;
+             case QEMU_OPTION_version:
+                 version();
++                feature();
+                 exit(0);
+                 break;
+             case QEMU_OPTION_m:
+diff -Nru ../orig/qemu-11.1.2/target/arm/whpx/whpx-all.c ./target/arm/whpx/whpx-all.c
+--- ../orig/qemu-11.1.2/target/arm/whpx/whpx-all.c
++++ ./target/arm/whpx/whpx-all.c
+@@ -471,8 +471,6 @@
+             if (arm_cpu->power_state != PSCI_OFF) {
+                 whpx_psci_cpu_off(arm_cpu);
+             }
+-            /* Partition-wide reset, to reset state for reboots to succeed. */
+-            whp_dispatch.WHvResetPartition(whpx->partition);
+             bql_unlock();
+             break;
+         case WHvRunVpExitReasonNone:
+diff -Nru ../orig/qemu-11.1.2/ui/console-priv.h ./ui/console-priv.h
+--- ../orig/qemu-11.1.2/ui/console-priv.h
++++ ./ui/console-priv.h
+@@ -20,6 +20,7 @@
+     int gl_block;
+     QEMUTimer *gl_unblock_timer;
+     int window_id;
++    bool passthrough;
+     QemuUIInfo ui_info;
+     QEMUTimer *ui_timer;
+     const GraphicHwOps *hw_ops;
+diff -Nru ../orig/qemu-11.1.2/ui/console.c ./ui/console.c
+--- ../orig/qemu-11.1.2/ui/console.c
++++ ./ui/console.c
+@@ -150,12 +150,19 @@
+     }
+ }
+
++void graphic_hw_passthrough(QemuConsole *con, bool passthrough)
++{
++    con->passthrough = passthrough;
++}
++
+ void qemu_console_hw_update(QemuConsole *con)
+ {
+     if (!con) {
+         return;
+     }
+-    if (!con->hw_ops->gfx_update || con->hw_ops->gfx_update(con->hw)) {
++    /* Pass-through renders directly, but screen dump waiters must still wake. */
++    if (con->passthrough || !con->hw_ops->gfx_update ||
++        con->hw_ops->gfx_update(con->hw)) {
+         qemu_console_hw_update_done(con);
+     }
+ }
+diff -Nru ../orig/qemu-11.1.2/ui/meson.build ./ui/meson.build
+--- ../orig/qemu-11.1.2/ui/meson.build
++++ ./ui/meson.build
+@@ -163,6 +163,9 @@
+
+ if sdl.found()
+   sdl_ss = ss.source_set()
++  if host_os == 'windows'
++    sdl_ss.add(cc.find_library('imm32'))
++  endif
+   sdl_ss.add(sdl, sdl_image, pixman, glib, files(
+     'sdl2-2d.c',
+     'sdl2-input.c',
+diff -Nru ../orig/qemu-11.1.2/ui/sdl2.c ./ui/sdl2.c
+--- ../orig/qemu-11.1.2/ui/sdl2.c
++++ ./ui/sdl2.c
+@@ -25,6 +25,7 @@
+
+ #include "qemu/osdep.h"
+ #include "qemu/module.h"
++#include "qemu/error-report.h"
+ #include "qemu/cutils.h"
+ #include "ui/console.h"
+ #include "ui/input.h"
+@@ -37,6 +38,10 @@
+
+ #ifdef CONFIG_X11
+ #include <X11/Xlib.h>
++#endif
++
++#ifdef CONFIG_WIN32
++#include <imm.h>
+ #endif
+
+ static int sdl2_num_outputs;
+@@ -590,6 +595,29 @@
+     qemu_input_event_sync();
+ }
+
++static int fxui_grab_val(const int grab)
++{
++    static int fxui_grab;
++    fxui_grab = (grab & 0x80U)? (grab & 0x01U):fxui_grab;
++    return fxui_grab;
++}
++static int fxui_focus_lost(void)
++{
++    int ret = fxui_grab_val(0);
++    fxui_grab_val(0x80);
++    return ret;
++}
++static void fxui_focus_gained(struct sdl2_console *scon)
++{
++    if (fxui_grab_val(0)) {
++        if (gui_grab) {
++            sdl_grab_end(scon);
++            fxui_grab_val(0x80);
++        }
++        sdl_grab_start(scon);
++    }
++}
++
+ static void handle_windowevent(SDL_Event *ev)
+ {
+     struct sdl2_console *scon = get_scon_from_window(ev->window.windowID);
+@@ -614,6 +642,7 @@
+         sdl2_redraw(scon);
+         break;
+     case SDL_WINDOWEVENT_FOCUS_GAINED:
++        fxui_focus_gained(scon);
+         /* fall through */
+     case SDL_WINDOWEVENT_ENTER:
+         if (!gui_grab && (qemu_input_is_absolute(scon->dcl.con) || absolute_enabled)) {
+@@ -629,7 +658,8 @@
+         scon->ignore_hotkeys = get_mod_state();
+         break;
+     case SDL_WINDOWEVENT_FOCUS_LOST:
+-        if (gui_grab && !gui_fullscreen) {
++        if (!fxui_focus_lost() && gui_grab && !gui_fullscreen) {
++            fxui_grab_val(0x80 | gui_grab);
+             sdl_grab_end(scon);
+         }
+         break;
+@@ -812,6 +842,367 @@
+     SDL_QuitSubSystem(SDL_INIT_VIDEO);
+ }
+
++static void sdl_display_valid(const char *feat)
++{
++    if (!sdl2_console) {
++        error_report("%s: invalid sdl display. Use '-display sdl'", feat);
++        exit(1);
++    }
++    if (sdl2_console[0].opengl) {
++        error_report("%s: qemu-3dfx activation conflicts with display 'sdl,gl=on'", feat);
++        exit(1);
++    }
++}
++static void sdl_gui_restart(struct sdl2_console *scon, SDL_Surface *icon)
++{
++    if (!gui_fullscreen)
++        SDL_GetWindowPosition(scon->real_window, &scon->x, &scon->y);
++    fxui_grab_val(0x80 | gui_grab);
++    sdl_grab_end(scon);
++    sdl2_window_destroy(scon);
++    sdl2_window_create(scon);
++    if (icon)
++        SDL_SetWindowIcon(scon->real_window, icon);
++    if (!gui_fullscreen)
++        SDL_SetWindowPosition(scon->real_window, scon->x, scon->y);
++}
++
++static struct sdl_console_cb {
++    QEMUTimer *ts;
++    SDL_Surface *icon;
++    struct sdl2_console *scon;
++    int glide_on_mesa, gui_saved_res, render_pause;
++    int res, msaa, alpha, dtimer, GLon12;
++    void *hnwnd, *opaque;
++    void (*cwnd_fn)(void *, void *, void *);
++} scon_cb;
++static void wndproc_fxui_stat(struct sdl_console_cb *s)
++{
++    if (s->render_pause) {
++        SDL_DestroyTexture(s->scon->texture);
++        s->scon->texture = NULL;
++    }
++    else {
++        if (!s->scon->real_renderer)
++            s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
++        sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++        if (!gui_fullscreen)
++            SDL_SetWindowPosition(s->scon->real_window, s->scon->x, s->scon->y);
++    }
++}
++static void wndproc_fxui_prepare(struct sdl_console_cb *s)
++{
++    SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
++    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  24);
++    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
++#ifdef CONFIG_DARWIN
++    if (!s->dtimer)
++        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
++#endif
++    if (s->alpha)
++        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
++    if (s->msaa) {
++        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, SDL_TRUE);
++        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, s->msaa);
++    }
++    const char hint[] = "opengl";
++    if (!SDL_GetHint(SDL_HINT_RENDER_DRIVER) ||
++        memcmp(SDL_GetHint(SDL_HINT_RENDER_DRIVER), hint, sizeof(hint) - 1)) {
++        SDL_SetHint(SDL_HINT_RENDER_DRIVER, hint);
++        sdl_gui_restart(s->scon, s->icon);
++    }
++    SDL_SysWMinfo wmi;
++    SDL_VERSION(&wmi.version);
++    if (SDL_GetWindowWMInfo(s->scon->real_window, &wmi)) {
++        switch(wmi.subsystem) {
++#if defined(SDL_VIDEO_DRIVER_WINDOWS)
++            case SDL_SYSWM_WINDOWS:
++                s->hnwnd = (void *)wmi.info.win.window;
++                break;
++#endif
++#if defined(SDL_VIDEO_DRIVER_X11)
++            case SDL_SYSWM_X11:
++                s->hnwnd = (void *)wmi.info.x11.window;
++                break;
++#endif
++#if defined(SDL_VIDEO_DRIVER_COCOA)
++            case SDL_SYSWM_COCOA:
++                s->hnwnd = (void *)wmi.info.cocoa.window;
++                break;
++#endif
++            default:
++                s->hnwnd = NULL;
++                break;
++        }
++    }
++    SDL_DestroyTexture(s->scon->texture);
++    SDL_DestroyRenderer(s->scon->real_renderer);
++    s->scon->real_renderer = NULL;
++    s->scon->texture = NULL;
++    s->render_pause = 1;
++    s->scon->winctx = SDL_GL_GetCurrentContext();
++    if (!s->scon->winctx)
++        s->scon->winctx = SDL_GL_CreateContext(s->scon->real_window);
++    if (!s->scon->winctx) {
++        error_report("%s", SDL_GetError());
++        exit(1);
++    }
++    if (!s->opaque)
++        s->cwnd_fn(s->scon->real_window, s->hnwnd, s->opaque);
++    SDL_GL_MakeCurrent(s->scon->real_window, NULL);
++}
++static void wndproc_fxui_release(struct sdl_console_cb *s)
++{
++    if (s->GLon12) {
++        if (!s->scon->real_renderer)
++            s->scon->real_renderer = SDL_CreateRenderer(s->scon->real_window, -1 ,0);
++    }
++    else {
++        SDL_GL_DeleteContext(s->scon->winctx);
++        SDL_GL_ResetAttributes();
++        SDL_ResetHint(SDL_HINT_RENDER_DRIVER);
++        s->scon->winctx = NULL;
++        sdl_gui_restart(s->scon, s->icon);
++    }
++    sdl2_2d_switch(&s->scon->dcl, s->scon->surface);
++    s->render_pause = 0;
++    timer_del(s->ts);
++    timer_free(s->ts);
++    s->ts = NULL;
++}
++static void sched_wndproc(void *opaque)
++{
++    struct sdl_console_cb *s = opaque;
++
++    if (s->res == -1)
++        wndproc_fxui_stat(s);
++    else if (s->gui_saved_res)
++        wndproc_fxui_prepare(s);
++    else
++        wndproc_fxui_release(s);
++    if (s->res > 0)
++        SDL_SetWindowSize(s->scon->real_window, (s->res & 0xFFFFU), (s->res >> 0x10));
++    if (s->opaque || !s->render_pause)
++        graphic_hw_passthrough(s->scon->dcl.con, s->render_pause);
++}
++
++static int sdl_gui_fullscreen(int *sizev, const char *feat)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    sdl_display_valid(feat);
++    s->scon = &sdl2_console[0];
++    if (sizev) {
++        sizev[0] = surface_width(s->scon->surface);
++        sizev[1] = surface_height(s->scon->surface);
++        if (!memcmp(feat, "mesapt", sizeof("mesapt")))
++            SDL_GL_GetDrawableSize(s->scon->real_window, &sizev[2], &sizev[3]);
++    }
++    return gui_fullscreen;
++}
++
++static void sdl_renderer_stat(const int activate, const char *feat)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    if (activate == s->render_pause)
++        return;
++
++    sdl_display_valid(feat);
++    s->scon = &sdl2_console[0];
++    s->res = -1;
++    s->render_pause = activate;
++
++    if (!s->ts)
++        s->ts = timer_new_ms(QEMU_CLOCK_REALTIME, &sched_wndproc, s);
++    timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++}
++
++void glide_prepare_window(uint32_t res, int msaa, void *opaque, void *cwnd_fn)
++{
++    int scr_w, scr_h;
++    struct sdl_console_cb *s = &scon_cb;
++
++    sdl_display_valid("glidept");
++    s->scon = &sdl2_console[0];
++    s->opaque = opaque;
++    s->cwnd_fn = (void (*)(void *, void *, void *))cwnd_fn;
++    if (s->render_pause) {
++        s->glide_on_mesa = 1;
++        s->gui_saved_res = 0;
++    }
++    else {
++        SDL_GetWindowSize(s->scon->real_window, &scr_w, &scr_h);
++        s->gui_saved_res = ((scr_h & 0x7FFFU) << 0x10) | scr_w;
++        s->res = res;
++        s->msaa = msaa;
++        s->alpha = 1;
++#ifdef CONFIG_DARWIN
++        s->dtimer = s->alpha;
++#endif
++        if (!s->ts)
++            s->ts = timer_new_ms(QEMU_CLOCK_REALTIME, &sched_wndproc, s);
++        timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++    }
++}
++
++void glide_release_window(void *opaque, void *cwnd_fn)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    sdl_display_valid("glidept");
++    s->scon = &sdl2_console[0];
++    s->opaque = opaque;
++    s->cwnd_fn = (void (*)(void *, void *, void *))cwnd_fn;
++    if (s->gui_saved_res) {
++        s->res = s->gui_saved_res;
++        s->gui_saved_res = 0;
++        if (s->ts)
++            timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++    }
++}
++
++int glide_window_stat(const int activate)
++{
++    int stat;
++    struct sdl_console_cb *s = &scon_cb;
++
++    if (activate) {
++        if (s->scon->winctx) {
++            int scr_w, scr_h;
++            SDL_GetWindowSize(s->scon->real_window, &scr_w, &scr_h);
++#ifdef CONFIG_DARWIN
++            if (SDL_GL_MakeCurrent(s->scon->real_window, s->scon->winctx))
++                fprintf(stderr, "%s\n", SDL_GetError());
++#endif
++            stat = ((scr_h & 0x7FFFU) << 0x10) | scr_w;
++            s->cwnd_fn(s->scon->real_window, s->hnwnd, s->opaque);
++        }
++        else
++            stat = 1;
++    }
++    else {
++        s->cwnd_fn(s->scon->real_window, s->hnwnd, s->opaque);
++        stat = s->glide_on_mesa;
++        s->glide_on_mesa = 0;
++        stat ^= (s->scon->winctx)? 1:0;
++    }
++    return stat;
++}
++
++int glide_gui_fullscreen(int *width, int *height)
++{
++    int ret, v[2];
++    ret = sdl_gui_fullscreen(v, "glidept");
++    if (width)
++        *width = v[0];
++    if (height)
++        *height = v[1];
++    return ret;
++}
++
++void glide_renderer_stat(const int activate)
++{
++    sdl_renderer_stat(activate, "glidept");
++}
++
++void mesa_renderer_stat(const int activate)
++{
++    struct sdl_console_cb *s = &scon_cb;
++    sdl_renderer_stat(activate, "mesapt");
++    if (s->glide_on_mesa && !activate)
++        glide_renderer_stat(1);
++}
++
++void mesa_prepare_window(int msaa, int alpha, int scale_x, void *cwnd_fn)
++{
++    int scr_w, scr_h;
++    struct sdl_console_cb *s = &scon_cb;
++
++    sdl_display_valid("mesapt");
++    s->scon = &sdl2_console[0];
++    s->msaa = msaa;
++    s->alpha = alpha;
++#ifdef CONFIG_WIN32
++    s->GLon12 = s->alpha;
++    s->alpha = 1;
++#endif
++#ifdef CONFIG_DARWIN
++    s->dtimer = s->alpha;
++    s->alpha = 1;
++#endif
++    s->opaque = 0;
++    s->cwnd_fn = (void (*)(void *, void *, void *))cwnd_fn;
++
++    SDL_GetWindowSize(s->scon->real_window, &scr_w, &scr_h);
++    s->gui_saved_res = ((scr_h & 0x7FFFU) << 0x10) | scr_w;
++    s->res = (((int)(scale_x * ((1.f * scr_h) / scr_w)) & 0x7FFFU) << 0x10) | scale_x;
++
++    if (!s->ts)
++        s->ts = timer_new_ms(QEMU_CLOCK_REALTIME, &sched_wndproc, s);
++    timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++}
++
++void mesa_release_window(void)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    sdl_display_valid("mesapt");
++    s->scon = &sdl2_console[0];
++    s->res = 0;
++    s->opaque = 0;
++    s->cwnd_fn = 0;
++    s->gui_saved_res = 0;
++
++    if (guest_sprite)
++        SDL_FreeCursor(guest_sprite);
++    guest_sprite = SDL_CreateSystemCursor(0);
++
++    if (s->ts)
++        timer_mod(s->ts, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
++}
++
++void mesa_cursor_define(int hot_x, int hot_y, int width, int height, const void *data)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    QemuConsole *con = s->scon ? s->scon->dcl.con : NULL;
++    if (con) {
++        QEMUCursor *c = cursor_alloc(width, (height & 1)? (height >> 1):height);
++        c->hot_x = hot_x;
++        c->hot_y = hot_y;
++        if (height &  1) {
++            uint8_t *and_mask = (uint8_t *)data,
++                    *xor_mask = and_mask + cursor_get_mono_bpl(c) * c->height;
++            cursor_set_mono(c, 0xffffff, 0x000000, xor_mask, 1, and_mask);
++        }
++        else
++            memcpy(c->data, data, (width * height * sizeof(uint32_t)));
++        qemu_console_set_cursor(con, c);
++        cursor_unref(c);
++    }
++}
++
++void mesa_mouse_warp(int x, int y, const int on)
++{
++    struct sdl_console_cb *s = &scon_cb;
++
++    QemuConsole *con = s->scon ? s->scon->dcl.con : NULL;
++    if (con /*&& !qemu_input_is_absolute(con)*/) {
++        static int64_t last_update;
++        int64_t curr_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
++        if (!on || (curr_time >= (last_update + GUI_REFRESH_INTERVAL_DEFAULT))) {
++            last_update = curr_time;
++            qemu_console_set_mouse(con, x, y, on);
++        }
++    }
++}
++
++int mesa_gui_fullscreen(int *sizev)
++{
++    return sdl_gui_fullscreen(sizev, "mesapt");
++}
++
+ static const DisplayChangeListenerOps dcl_2d_ops = {
+     .dpy_name             = "sdl2-2d",
+     .dpy_gfx_update       = sdl2_2d_update,
+@@ -861,6 +1252,16 @@
+ static void sdl2_display_early_init(DisplayOptions *o)
+ {
+     assert(o->type == DISPLAY_TYPE_SDL);
++#ifdef CONFIG_WIN32
++    /*
++     * Forward physical keys to the guest instead of letting a host IME
++     * consume them. Disable it for this process, including future threads,
++     * before SDL creates its first window. Guest IMEs remain unaffected.
++     */
++    if (!ImmDisableIME((DWORD)-1)) {
++        warn_report("SDL: could not disable the host input method");
++    }
++#endif
+     if (o->has_gl && o->gl) {
+ #ifdef CONFIG_OPENGL
+         display_opengl = 1;
+@@ -908,6 +1309,10 @@
+
+     assert(o->type == DISPLAY_TYPE_SDL);
+
++#ifdef __linux__
++    if (!display_opengl && !g_getenv("SDL_VIDEODRIVER"))
++        SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11");
++#endif
+     if (SDL_GetHintBoolean("QEMU_ENABLE_SDL_LOGGING", SDL_FALSE)) {
+         SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
+     }
+@@ -917,6 +1322,10 @@
+                 SDL_GetError());
+         exit(1);
+     }
++#ifdef CONFIG_WIN32
++    /* SDL enables text input by default; do not re-enable its host IME. */
++    SDL_StopTextInput();
++#endif
+ #ifdef SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR /* only available since SDL 2.0.8 */
+     SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0");
+ #endif
+@@ -1002,6 +1411,7 @@
+     g_free(dir);
+     if (icon) {
+         SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
++        scon_cb.icon = icon;
+     }
+
+     mouse_mode_notifier.notify = sdl_mouse_mode_change;
