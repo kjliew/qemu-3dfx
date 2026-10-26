@@ -17492,19 +17492,19 @@ wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 static void mglSetAffinity(void)
 {
     const char *ThreadAffinity[] = {
-        "CrySystem",
+        "CrySystem", "Engine",
         "Unigine_x86",
         0,
     };
-    int i, unSafe = GetModuleHandle("d3d9")? 1:0;
+    int i;
     for (i = 0; ThreadAffinity[i]; i++) {
         if (GetModuleHandle(ThreadAffinity[i]))
             break;
     }
     DWORD affinityMask[2];
     GetProcessAffinityMask(GetCurrentProcess(), &affinityMask[0], &affinityMask[1]);
-    if (ThreadAffinity[i] || !unSafe) {
-        LogAffinity = strdup( (ThreadAffinity[i])? ThreadAffinity[i]:"safe" );
+    if (ThreadAffinity[i]) {
+        LogAffinity = strdup( ThreadAffinity[i] );
         SetThreadAffinityMask(GetCurrentThread(), (1 << ((GetCurrentThreadId() >> 2) &
                         ((sizeof(DWORD) << 3) - __builtin_clz(affinityMask[0]) - 1))));
     }
