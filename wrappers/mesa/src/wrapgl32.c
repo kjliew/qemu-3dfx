@@ -17494,13 +17494,22 @@ static void mglSetAffinity(void)
     const char *ThreadAffinity[] = {
         "CrySystem", "Engine",
         "Unigine_x86",
-        0,
+        0, "safe",
     };
-    int i;
+    int i, v;
+    FILE *f = opt_fopen();
+    if (f) {
+        char str[MAX_XSTR];
+        while (fgets(str, MAX_XSTR, f));
+        fclose(f);
+        i = parse_value(str, "ThreadAffinity,", &v);
+        v = (i == 0)? i:v;
+    }
     for (i = 0; ThreadAffinity[i]; i++) {
         if (GetModuleHandle(ThreadAffinity[i]))
             break;
     }
+    i += (ThreadAffinity[i] == 0 && v == 1)? 1:0;
     DWORD affinityMask[2];
     GetProcessAffinityMask(GetCurrentProcess(), &affinityMask[0], &affinityMask[1]);
     if (ThreadAffinity[i]) {
