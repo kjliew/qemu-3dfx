@@ -129,7 +129,7 @@ static char rendstr[128];
 static char vernstr[80];
 static char extnstr[3*PAGE_SIZE];
 static char glslstr[48];
-static char *logpname;
+static char *logpname, *LogAffinity;
 static struct {
     vtxarry_t Color, EdgeFlag, Index, Normal, TexCoord[MAX_TEXUNIT], Vertex,
               SecondaryColor, FogCoord, Weight, GenAttrib[2];
@@ -17465,6 +17465,11 @@ wglSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
     HookTimeGetTime(ret);
     if (!hdc && !format)
         return 0;
+    if (LogAffinity) {
+        OHST_DMESG("..affinity Thread(%s)", LogAffinity);
+        free(LogAffinity);
+        LogAffinity = 0;
+    }
     if (currGLRC) {
         mglMakeCurrent(0, 0);
         mglDeleteContext(MESAGL_MAGIC);
@@ -17487,19 +17492,22 @@ wgdSetPixelFormat(HDC hdc, int format, const PIXELFORMATDESCRIPTOR *ppfd)
 static void mglSetAffinity(void)
 {
     const char *ThreadAffinity[] = {
+        "CrySystem",
         "Unigine_x86",
         0,
     };
-    int i;
+    int i, unSafe = GetModuleHandle("d3d9")? 1:0;
     for (i = 0; ThreadAffinity[i]; i++) {
         if (GetModuleHandle(ThreadAffinity[i]))
             break;
     }
     DWORD affinityMask[2];
     GetProcessAffinityMask(GetCurrentProcess(), &affinityMask[0], &affinityMask[1]);
-    if (ThreadAffinity[i])
+    if (ThreadAffinity[i] || !unSafe) {
+        LogAffinity = strdup( (ThreadAffinity[i])? ThreadAffinity[i]:"safe" );
         SetThreadAffinityMask(GetCurrentThread(), (1 << ((GetCurrentThreadId() >> 2) &
                         ((sizeof(DWORD) << 3) - __builtin_clz(affinityMask[0]) - 1))));
+    }
     else
         SetProcessAffinityMask(GetCurrentProcess(), (1 << ((GetCurrentProcessId() >> 2) &
                         ((sizeof(DWORD) << 3) - __builtin_clz(affinityMask[0]) - 1))));
